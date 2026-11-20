@@ -3520,6 +3520,20 @@ static campaign_t s_campaigns[MAX_CAMPAIGNS];
 static const char *s_ls_cmd = NULL;
 static char s_ls_status[64];
 
+/* optech2: episodes the game menu offers (from mapdb.json), like the
+   re-release: Quake II, The Reckoning, Ground Zero, Call of the Machine,
+   Quake II 64 */
+#define MAX_EPISODES 16
+
+typedef struct
+{
+	char name[64];
+	char command[160];
+} menu_episode_t;
+
+static menu_episode_t s_episodes[MAX_EPISODES];
+static int s_episode_count;
+
 static campaign_t *
 AddCampaign(const char *name)
 {
@@ -3547,6 +3561,7 @@ typedef struct
 {
 	char id[32];
 	char name[64];
+	char command[64]; /* optech2: console command that starts it (newgame_xatrix, ...) */
 } mapdb_episode_t;
 
 typedef struct
@@ -3600,10 +3615,10 @@ LevelSelectParseMapDBEpisodes(char* s, mapdb_episode_t **episodes, int *count)
 			*episodes = tmp;
 		}
 		else if (!strcmp(token, "id") ||
-			!strcmp(token, "name"))
+				 !strcmp(token, "name") ||
+				 !strcmp(token, "command"))
 		{
 			/* Ignored for now:
-			 * - "command"
 			 * - "activity"
 			 * - "needsSkillSelect"
 			 */
@@ -3627,6 +3642,10 @@ LevelSelectParseMapDBEpisodes(char* s, mapdb_episode_t **episodes, int *count)
 			else if (!strcmp(key, "name"))
 			{
 				Q_strlcpy((*episodes)[curr].name, token, sizeof((*episodes)[curr].name));
+			}
+			else if (!strcmp(key, "command"))
+			{
+				Q_strlcpy((*episodes)[curr].command, token, sizeof((*episodes)[curr].command));
 			}
 		}
 	}
@@ -3806,6 +3825,7 @@ LevelSelect_Free(void)
 	s_ls_cmd = NULL;
 	*s_ls_status = '\0';
 	Menu_SetStatusBar(&s_game_menu, NULL);
+	s_episode_count = 0; /* optech2 */
 }
 
 static void
@@ -3827,9 +3847,43 @@ LevelSelect_NamesInit(void)
 
 		FS_FreeFile(buffer);
 
+		s_episode_count = 0;
+
 		for (i = 0; i < num_episodes; i++)
 		{
 			int j;
+
+			/* optech2: each episode can be started from the game menu, with its
+			   own command if the game data defines it, else at its first map */
+			if (s_episode_count < MAX_EPISODES)
+			{
+				const char *start = NULL;
+
+				if (episodes[i].command[0] && Cmd_AliasExists(episodes[i].command))
+				{
+					start = episodes[i].command;
+				}
+				else
+				{
+					for (j = 0; j < num_maps; j++)
+					{
+						if (maps[j].sp && !strcmp(maps[j].episode, episodes[i].id))
+						{
+							start = va("killserver ; maxclients 1 ; deathmatch 0 ; map %s", maps[j].bsp);
+							break;
+						}
+					}
+				}
+
+				if (start)
+				{
+					Q_strlcpy(s_episodes[s_episode_count].name, episodes[i].name,
+						sizeof(s_episodes[0].name));
+					Q_strlcpy(s_episodes[s_episode_count].command, start,
+						sizeof(s_episodes[0].command));
+					s_episode_count++;
+				}
+			}
 
 			camp = AddCampaign(episodes[i].name);
 
@@ -4217,10 +4271,64 @@ ModsFunc(void *unused)
 	M_Menu_Mods_f();
 }
 
+/* optech2: episode list (from mapdb.json) and the skill choice after it */
+static menuaction_s s_episode_actions[MAX_EPISODES];
+static menuframework_s s_skill_menu;
+static menuaction_s s_skill_actions[4];
+static int s_selected_episode;
+
+static void
+SkillSelectFunc(void *self)
+{
+	const menucommon_s *item = (const menucommon_s *)self;
+
+	Cvar_ForceSet("skill", va("%d", item->localdata[0]));
+	s_ls_cmd = s_episodes[s_selected_episode].command;
+	StartGame();
+}
+
+static void
+M_Menu_Skill_f(void)
+{
+	static const char *skill_names[] = {"easy", "medium", "hard", "hard+"};
+	static const char *skill_alttext[] = {"$m_easy", "$m_medium", "$m_hard", "$m_nightmare"};
+	int i;
+
+	s_skill_menu.x = (int)(viddef.width * 0.50f);
+	s_skill_menu.nitems = 0;
+	s_skill_menu.banner = "m_banner_game";
+
+	for (i = 0; i < 4; i++)
+	{
+		s_skill_actions[i].generic.type = MTYPE_ACTION;
+		s_skill_actions[i].generic.flags = QMF_LEFT_JUSTIFY;
+		s_skill_actions[i].generic.x = 0;
+		s_skill_actions[i].generic.y = i * 10;
+		s_skill_actions[i].generic.name = skill_names[i];
+		s_skill_actions[i].generic.alttext = skill_alttext[i];
+		s_skill_actions[i].generic.localdata[0] = i;
+		s_skill_actions[i].generic.callback = SkillSelectFunc;
+		Menu_AddItem(&s_skill_menu, (void *)&s_skill_actions[i]);
+	}
+
+	Menu_SetStatusBar(&s_skill_menu, s_episodes[s_selected_episode].name);
+	Menu_Center(&s_skill_menu);
+	s_skill_menu.draw = Default_MenuDraw;
+	s_skill_menu.key = Default_MenuKey;
+	M_PushMenu(&s_skill_menu);
+}
+
+static void
+EpisodeSelectFunc(void *self)
+{
+	s_selected_episode = ((const menucommon_s *)self)->localdata[0];
+	M_Menu_Skill_f();
+}
+
 static void
 Game_MenuInit(void)
 {
-	int y;
+	int y, episode;
 
 	Mods_NamesInit();
 	LevelSelect_NamesInit();
@@ -4294,10 +4402,40 @@ Game_MenuInit(void)
 	s_credits_action.generic.alttext = "$m_credits";
 	s_credits_action.generic.callback = CreditsFunc;
 
-	Menu_AddItem(&s_game_menu, (void *)&s_easy_game_action);
-	Menu_AddItem(&s_game_menu, (void *)&s_medium_game_action);
-	Menu_AddItem(&s_game_menu, (void *)&s_hard_game_action);
-	Menu_AddItem(&s_game_menu, (void *)&s_hardp_game_action);
+	if (s_episode_count > 1)
+	{
+		/* optech2: game data with several episodes (the re-release): one
+		   entry each, then the skill choice; the items below move down */
+		int shift = s_episode_count * 10 - 40;
+
+		for (episode = 0; episode < s_episode_count; episode++)
+		{
+			menuaction_s *action = &s_episode_actions[episode];
+
+			memset(action, 0, sizeof(*action));
+			action->generic.type = MTYPE_ACTION;
+			action->generic.flags = QMF_LEFT_JUSTIFY;
+			action->generic.x = 0;
+			action->generic.y = episode * 10;
+			action->generic.name = s_episodes[episode].name;
+			action->generic.localdata[0] = episode;
+			action->generic.callback = EpisodeSelectFunc;
+			Menu_AddItem(&s_game_menu, (void *)action);
+		}
+
+		s_load_game_action.generic.y += shift;
+		s_save_game_action.generic.y += shift;
+		s_credits_action.generic.y += shift;
+		y += shift;
+	}
+	else
+	{
+		Menu_AddItem(&s_game_menu, (void *)&s_easy_game_action);
+		Menu_AddItem(&s_game_menu, (void *)&s_medium_game_action);
+		Menu_AddItem(&s_game_menu, (void *)&s_hard_game_action);
+		Menu_AddItem(&s_game_menu, (void *)&s_hardp_game_action);
+	}
+
 	Menu_AddItem(&s_game_menu, (void *)&s_blankline);
 	Menu_AddItem(&s_game_menu, (void *)&s_load_game_action);
 	Menu_AddItem(&s_game_menu, (void *)&s_save_game_action);

@@ -507,6 +507,7 @@ void Cmd_AddCommand(const char *cmd_name, xcommand_t function);
 void Cmd_RemoveCommand(const char *cmd_name);
 
 qboolean Cmd_Exists(const char *cmd_name);
+qboolean Cmd_AliasExists(const char *alias_name); /* optech2 */
 
 /* used by the cvar code to check for cvar / command name overlap */
 

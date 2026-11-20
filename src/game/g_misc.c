@@ -4528,3 +4528,36 @@ SP_npc_timeminder(edict_t *self)
 
 	gi.linkentity(self);
 }
+
+/*
+ * QUAKED func_eye (0 1 0) ?
+ *
+ * optech2: Call of the Machine's watching eyes (re-release). For now a
+ * solid brush model that stays put; the re-release turns it towards the
+ * player.
+ */
+void
+SP_func_eye(edict_t *self)
+{
+	if (!self)
+	{
+		return;
+	}
+
+	self->movetype = MOVETYPE_PUSH;
+	self->solid = SOLID_BSP;
+	gi.setmodel(self, self->model);
+	gi.linkentity(self);
+}
+
+/*
+ * QUAKED target_poi (1 0 0) (-4 -4 -4) (4 4 4)
+ *
+ * optech2: re-release "point of interest" (the objective compass). Not
+ * used yet, so removed instead of being reported as unknown.
+ */
+void
+SP_target_poi(edict_t *self)
+{
+	G_FreeEdict(self);
+}
