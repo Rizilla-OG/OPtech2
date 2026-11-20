@@ -1184,10 +1184,12 @@ ai_run_slide(edict_t *self, float distance)
 		M_ChangeYaw(self);
 	}
 
-	/* clamp maximum sideways move for non flyers to make them look less jerky */
+	/* clamp maximum sideways move for non flyers to make them look less jerky
+	   (optech2: 8 units per 0.1 s, so a share of that per server frame, as in
+	   the re-release; unscaled, chaingunners strafed 3x too far at 60 Hz) */
 	if (!(self->flags & FL_FLY))
 	{
-		distance = Q_min(distance, 8.0);
+		distance = Q_min(distance, 8.0 * level.ticktime / FRAMETIME);
 	}
 
 	if (M_walkmove(self, self->ideal_yaw + ofs, distance))

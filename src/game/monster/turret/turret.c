@@ -272,7 +272,7 @@ TurretAim(edict_t *self)
 	}
 
 	current = self->s.angles[PITCH];
-	speed = self->yaw_speed;
+	speed = self->yaw_speed * level.ticktime / FRAMETIME; /* optech2: yaw_speed is per 0.1 s (re-release scales it too) */
 
 	if (idealPitch != current)
 	{
@@ -317,7 +317,7 @@ TurretAim(edict_t *self)
 	}
 
 	current = self->s.angles[YAW];
-	speed = self->yaw_speed;
+	speed = self->yaw_speed * level.ticktime / FRAMETIME; /* optech2: yaw_speed is per 0.1 s (re-release scales it too) */
 
 	if (idealYaw != current)
 	{
