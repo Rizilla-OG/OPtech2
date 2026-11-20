@@ -393,7 +393,9 @@ SV_WritePlayerstateToClient(client_frame_t *from, client_frame_t *to,
 	stats_size = 0;
 	memset(statbits, 0, sizeof(statbits));
 
-	for (group = 0; group < MAX_STATS; group++)
+	/* optech2: compare every stat the protocol carries (64 for ours),
+	   was MAX_STATS (32): stats 32-63 from the game never reached clients */
+	for (group = 0; group < Q_min(P_GetCountOfStats(protocol), MAX_XSTATS); group++)
 	{
 		if (ps->stats[group] != ops->stats[group])
 		{

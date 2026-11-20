@@ -234,7 +234,7 @@ void Info_Print(const char *s);
 /* ReRelease network protocol */
 #define PROTOCOL_RR23_VERSION 2023
 /* Quake 2 Customized Network Release */
-#define PROTOCOL_VERSION 2024
+#define PROTOCOL_VERSION 2025 /* optech2: was 2024; MAX_IMAGES 2048 moved the configstrings */
 
 /* Quake 2 originaly uses 255 as player model */
 #define QII97_PLAYER_MODEL 255

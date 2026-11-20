@@ -188,7 +188,7 @@ typedef unsigned char byte;
 #define MAX_LIGHTSTYLES 256
 #define MAX_MODELS 1024             /* these are sent over the net as bytes */
 #define MAX_SOUNDS 1024             /* so they cannot be blindly increased */
-#define MAX_IMAGES 256
+#define MAX_IMAGES 2048 /* optech2: was 256 (HUD pics, icons); changes the configstring layout */
 #define MAX_ITEMS 512
 #define MAX_GENERAL (MAX_CLIENTS * 2)       /* general config strings */
 #define MAX_SHADOW_LIGHTS 256

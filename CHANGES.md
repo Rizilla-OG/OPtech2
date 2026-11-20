@@ -27,3 +27,5 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 - Multiplayer check: `python3 tests/multiplayer/mp_check.py` runs a dedicated server and two hidden clients on q2dm1 and checks joining, chat both ways, seeing each other and movement (~40 s, no windows).
 - `delay <ms> <command>` console command: runs a command later without holding up the command buffer (a long `wait` chain blocks the commands a server sends while connecting).
 - Fixed: two clients started in the same second on one machine got the same qport, and the server treated them as one player. The qport now mixes in the process id.
+- Images (HUD pics, icons) per map raised from 256 to 2048. This moves the configstrings, so the network protocol is now 2025 (was 2024); older OPtech2 builds and saves will not match.
+- Fixed: the server only sent the first 32 player stats; all 64 the game provides now reach the client.
