@@ -40,7 +40,8 @@ WALK_SECONDS = 0.6    # walking forward from FAR_X towards +x
 MIN_WALKED = 100      # units the player must cover in that time
 MIN_BRIGHTNESS = 10   # average 0-255 brightness of a lit screenshot
 
-SHOTS = [("east_end", f"{FAR_X} 0 24 0 0 0"), ("west_end", f"-{FAR_X} 0 24 0 180 0"), ("middle", "0 -700 160 10 90 0")]
+SHOTS = [("east_end", f"{FAR_X} 0 24 0 0 0"), ("west_end", f"-{FAR_X} 0 24 0 180 0"), ("middle", "0 -700 160 10 90 0"),
+         ("shadow_room", "-110 980 230 40 32 0")]  # looking down at the post's shadow (lightmap resolution)
 
 
 def client_settings(renderer):

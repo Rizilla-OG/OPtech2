@@ -94,7 +94,20 @@ def build_map_text(data_dir):
         box_brush((-length - wall, -width, 0), (-length, width, height), MARKER_TEXTURE),
         box_brush((length, -width, 0), (length + wall, width, height), MARKER_TEXTURE),
     ]
+    # shadow room: a sealed side room lit by one low light, with a thin post casting a hard
+    # shadow on the floor. Shows the lightmap resolution (decoupled BSPX lightmap vs stock).
+    room_y = width + wall + 64
+    world_brushes += [
+        box_brush((-288, room_y - 32, -32), (288, room_y + 544, 0), FLOOR_TEXTURE),
+        box_brush((-288, room_y - 32, 256), (288, room_y + 544, 288), CEILING_TEXTURE),
+        box_brush((-288, room_y - 32, 0), (288, room_y, 256), WALL_TEXTURE),
+        box_brush((-288, room_y + 512, 0), (288, room_y + 544, 256), WALL_TEXTURE),
+        box_brush((-288, room_y, 0), (-256, room_y + 512, 256), WALL_TEXTURE),
+        box_brush((256, room_y, 0), (288, room_y + 512, 256), WALL_TEXTURE),
+        box_brush((36, room_y + 252, 0), (44, room_y + 260, 160), PILLAR_TEXTURE),  # the post
+    ]
     entities = [entity({"classname": "worldspawn", "message": "OPtech2 limits test", "sky": "unit1_"}, world_brushes)]
+    entities.append(entity({"classname": "light", "origin": f"0 {room_y + 256} 64", "light": "400"}))
 
     for classname in ("info_player_start", "info_player_deathmatch", "info_player_coop"):
         entities.append(entity({"classname": classname, "origin": "0 0 24", "angle": "0"}))
@@ -140,6 +153,8 @@ def main():
     parser.add_argument("--datadir", type=Path, default=DEFAULT_DATA_DIR, help="folder holding the stock baseq2/")
     parser.add_argument("--tools", type=Path, default=DEFAULT_TOOLS_DIR, help="ericw-tools folder (qbsp, vis, light)")
     parser.add_argument("--map-only", action="store_true", help="write the .map, don't compile")
+    parser.add_argument("--luxel", type=int, default=16,
+                        help="world units per luxel of the decoupled (BSPX) lightmap; 0 = none")
     arguments = parser.parse_args()
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -156,7 +171,8 @@ def main():
     game_paths = ["-basedir", str(arguments.datadir / "baseq2"), "-gamedir", str(arguments.datadir / "baseq2")]
     run_tool(arguments.tools, ["qbsp", "-qbism", "-subdivide", "240", *game_paths, str(map_path), str(bsp_path)])
     run_tool(arguments.tools, ["vis", *game_paths, str(bsp_path)])
-    run_tool(arguments.tools, ["light", "-world_units_per_luxel", "16", *game_paths, str(bsp_path)])
+    decoupled = ["-world_units_per_luxel", str(arguments.luxel)] if arguments.luxel > 0 else []
+    run_tool(arguments.tools, ["light", *decoupled, *game_paths, str(bsp_path)])
     print(f"built {bsp_path}")
     return 0
 
