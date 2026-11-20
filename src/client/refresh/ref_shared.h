@@ -207,7 +207,7 @@ typedef struct mvtx_s {
 	float	texCoord[2];
 	float	lmTexCoord[2]; /* lightmap texture coordinate (sometimes unused) */
 	vec3_t	normal;
-	unsigned int	lightFlags[DLIGHT_MASK_WORDS]; /* optech2: bit i set means: dynlight i affects surface */
+	unsigned int lightFlags[DLIGHT_MASK_WORDS]; /* optech2: bit i set means: dynlight i affects surface */
 } mvtx_t;
 
 typedef struct mpoly_s
@@ -264,7 +264,7 @@ typedef struct msurface_s
 
 	/* lighting info */
 	int	dlightframe;
-	unsigned int	dlightbits[DLIGHT_MASK_WORDS]; /* optech2: was one int (32 lights) */
+	unsigned int dlightbits[DLIGHT_MASK_WORDS]; /* optech2: was one int (32 lights) */
 	qboolean dirty_lightmap;	// lightmap has dynamic lights from previous frame (mtex only)
 
 	int	lightmaptexturenum;

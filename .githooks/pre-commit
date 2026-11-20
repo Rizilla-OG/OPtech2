@@ -1,0 +1,14 @@
+#!/bin/sh
+# optech2: format the staged changed lines in id style (.clang-format) and re-stage them.
+# Only changed lines are touched (git clang-format), so stock id/Yamagi code keeps small diffs.
+# Shader sources (*_shaders.c) are GLSL inside C strings and are left alone.
+if ! command -v git-clang-format >/dev/null 2>&1; then
+	echo "pre-commit: git-clang-format not found" >&2
+	exit 1
+fi
+files=$(git diff --cached --name-only --diff-filter=ACM -- 'src/*.c' 'src/*.h' ':!src/client/refresh/*/*_shaders.c')
+[ -z "$files" ] && exit 0
+git clang-format --staged --quiet -- $files >/dev/null
+echo "$files" | while IFS= read -r f; do
+	git add "$f"
+done

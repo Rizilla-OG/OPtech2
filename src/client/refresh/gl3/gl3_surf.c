@@ -65,7 +65,7 @@ GL3_SurfInit(void)
 
 	glEnableVertexAttribArray(GL3_ATTRIB_LIGHTFLAGS);
 	qglVertexAttribIPointer(GL3_ATTRIB_LIGHTFLAGS, DLIGHT_MASK_WORDS, // optech2: was 1 uint
-		 GL_UNSIGNED_INT, sizeof(mvtx_t), offsetof(mvtx_t, lightFlags));
+		GL_UNSIGNED_INT, sizeof(mvtx_t), offsetof(mvtx_t, lightFlags));
 
 	glGenBuffers(1, &gl3state.ebo3D);
 

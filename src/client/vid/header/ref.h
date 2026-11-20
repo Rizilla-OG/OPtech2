@@ -31,9 +31,9 @@
 #include "vid.h"
 
 #define	DLIGHT_CUTOFF	64
-#define	MAX_DLIGHTS		128 // optech2: was 32; renderers keep a bitmask of DLIGHT_MASK_WORDS uints
-#define	MAX_ENTITIES	4096 // optech2: was 512, raised for bigger scenes
-#define	MAX_PARTICLES	16384 // optech2: was 4096
+#define MAX_DLIGHTS 128 // optech2: was 32; renderers keep a bitmask of DLIGHT_MASK_WORDS uints
+#define MAX_ENTITIES 4096 // optech2: was 512, raised for bigger scenes
+#define MAX_PARTICLES 16384 // optech2: was 4096
 #define	MAX_LIGHTSTYLES	256
 
 #define POWERSUIT_SCALE		4.0F
@@ -113,7 +113,7 @@ typedef struct {
 	int			num_entities;
 	entity_t	*entities;
 
-	int			num_dlights; // <= MAX_DLIGHTS
+	int num_dlights; // <= MAX_DLIGHTS
 	dlight_t	*dlights;
 
 	int			num_particles;

@@ -1,0 +1,21 @@
+# id Software style, as in q2arpg: tabs, Allman braces. Plus Yamagi's C layout
+# (return type on its own line) so new code matches the files around it.
+# Applied only to changed lines (git clang-format, see .githooks/pre-commit),
+# so stock id/Yamagi code keeps its diffs small.
+BasedOnStyle: Microsoft
+UseTab: Always
+IndentWidth: 4
+TabWidth: 4
+BreakBeforeBraces: Allman
+ColumnLimit: 0
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: None
+AlwaysBreakAfterReturnType: TopLevelDefinitions
+PointerAlignment: Right
+SortIncludes: Never
+IndentCaseLabels: true
+SpaceAfterCStyleCast: false
+AlignAfterOpenBracket: DontAlign
+ContinuationIndentWidth: 4
+AlignTrailingComments: false
+AlignConsecutiveMacros: None
