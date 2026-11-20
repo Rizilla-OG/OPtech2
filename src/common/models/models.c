@@ -2493,6 +2493,10 @@ Mod_LoadModelFile(const char *mod_name, const void *buffer, int modfilelen)
 			extradata = Mod_LoadModel_MD5(mod_name, buffer, modfilelen);
 			break;
 
+		case IQMHEADER: /* optech2 */
+			extradata = Mod_LoadModel_IQM(mod_name, buffer, modfilelen);
+			break;
+
 		case IDOBJHEADER:
 			extradata = Mod_LoadModel_OBJ(mod_name, buffer, modfilelen);
 			break;

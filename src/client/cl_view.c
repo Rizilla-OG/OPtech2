@@ -637,7 +637,17 @@ V_Gun_Model_f(void)
 		return;
 	}
 
-	Com_sprintf(name, sizeof(name), "models/%s/tris.md2", Cmd_Argv(1));
+	/* optech2: a path with an extension is used as given (any model
+	   format), a bare name means models/<name>/tris.md2 as before */
+	if (strchr(COM_SkipPath(Cmd_Argv(1)), '.'))
+	{
+		Q_strlcpy(name, Cmd_Argv(1), sizeof(name));
+	}
+	else
+	{
+		Com_sprintf(name, sizeof(name), "models/%s/tris.md2", Cmd_Argv(1));
+	}
+
 	gun_model = R_RegisterModel(name);
 }
 

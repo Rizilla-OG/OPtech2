@@ -554,6 +554,7 @@ set(Client-Source
 	${COMMON_SRC_DIR}/models/models_mda.c
 	${COMMON_SRC_DIR}/models/models_mdl.c
 	${COMMON_SRC_DIR}/models/models_mdr.c
+	${COMMON_SRC_DIR}/models/models_iqm.c
 	${COMMON_SRC_DIR}/models/mesh.c
 	${COMMON_SRC_DIR}/models/models_sdef.c
 	${COMMON_SRC_DIR}/models/models_utils.c
@@ -655,6 +656,7 @@ set(Server-Source
 	${COMMON_SRC_DIR}/models/models_mda.c
 	${COMMON_SRC_DIR}/models/models_mdl.c
 	${COMMON_SRC_DIR}/models/models_mdr.c
+	${COMMON_SRC_DIR}/models/models_iqm.c
 	${COMMON_SRC_DIR}/models/mesh.c
 	${COMMON_SRC_DIR}/models/models_sdef.c
 	${COMMON_SRC_DIR}/models/models_utils.c

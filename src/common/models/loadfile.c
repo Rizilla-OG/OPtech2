@@ -429,6 +429,17 @@ Mod_LoadFileWithoutExtModel(const char *namewe, size_t tlen, void **buffer)
 	char newname[256];
 	int filesize;
 
+	/* optech2: IQM first, the project's model format; an .iqm next to a
+	   stock .md2 of the same name replaces it */
+	Q_strlcpy(newname, namewe, sizeof(newname));
+	Q_strlcpy(newname + tlen, ".iqm", sizeof(newname) - tlen);
+	filesize = FS_LoadFile(newname, buffer);
+	if (filesize > 0)
+	{
+		Com_DPrintf("%s: %s loaded as iqm\n", __func__, namewe);
+		return filesize;
+	}
+
 	/* Check ReRelease / Doom 3 / Quake 4 model */
 	filesize = Mod_LoadFileMD5Merge(namewe, buffer);
 	if (filesize > 0)
@@ -933,6 +944,7 @@ Mod_LoadFile(const char *name, void **buffer)
 		!strcmp(ext, "md3") ||
 		!strcmp(ext, "mdr") ||
 		!strcmp(ext, "md5mesh") ||
+		!strcmp(ext, "iqm") || /* optech2 */
 		!strcmp(ext, "mdx") ||
 		!strcmp(ext, "mdl") ||
 		!strcmp(ext, "obj") ||

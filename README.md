@@ -46,6 +46,13 @@ Compile for Quake II's extended format with `qbsp -qbism -subdivide 240` (the so
 faces subdivided like stock maps); `light -world_units_per_luxel N` adds decoupled lightmaps.
 `tests/maps/make_limits_map.py` shows the full command lines.
 
+## Models
+
+OPtech2's model format is **IQM** (Inter-Quake Model, version 2): one binary file holding the mesh,
+skeleton and animations. Export it from Blender with the [IQM exporter](https://github.com/lsalzman/iqm)
+(add-ons up to Blender 5.0). Each animation shows up as a frame group named after it. Materials name
+the skin image. Stock MD2 and the other formats keep loading.
+
 ## Checks
 
 All checks use a temporary HOME, so your own config and saves are never touched.
@@ -57,6 +64,7 @@ All checks use a temporary HOME, so your own config and saves are never touched.
 - `python3 tests/multiplayer/split_check.py`: packet splitting, clean and with loss
 - `python3 tests/maps/make_limits_map.py`, then `tests/maps/limits_check.py`: oversized test map
 - `python3 tests/maps/make_stress_map.py`, then `tests/maps/stress_check.py`: ~3800 entities, frame times
+- `python3 tests/models/iqm_check.py`: IQM test model (two bones, bend animation) in a small map
 - `python3 tests/tickrate/tick_check.py`, `damage_check.py`: 10 Hz vs 60 Hz behaviour
 
 ## License

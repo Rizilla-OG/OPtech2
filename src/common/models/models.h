@@ -105,6 +105,8 @@ void *Mod_LoadModel_MDL(const char *mod_name, const void *buffer,
 	int modfilelen);
 void *Mod_LoadModel_MDR(const char *mod_name, const void *buffer,
 	int modfilelen);
+void *Mod_LoadModel_IQM(const char *mod_name, const void *buffer,
+	int modfilelen); /* optech2 */
 void *Mod_LoadModel_SDEF(const char *mod_name, const void *buffer,
 	int modfilelen);
 

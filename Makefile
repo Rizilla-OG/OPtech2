@@ -1325,6 +1325,7 @@ CLIENT_OBJS_ := \
 	src/common/models/models_mda.o \
 	src/common/models/models_mdl.o \
 	src/common/models/models_mdr.o \
+	src/common/models/models_iqm.o \
 	src/common/models/mesh.o \
 	src/common/models/models_sdef.o \
 	src/common/models/models_utils.o \
@@ -1647,6 +1648,7 @@ SERVER_OBJS_ := \
 	src/common/models/models_mda.o \
 	src/common/models/models_mdl.o \
 	src/common/models/models_mdr.o \
+	src/common/models/models_iqm.o \
 	src/common/models/mesh.o \
 	src/common/models/models_sdef.o \
 	src/common/models/models_utils.o \

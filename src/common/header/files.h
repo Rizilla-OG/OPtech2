@@ -659,6 +659,8 @@ typedef struct md3_header_s
 
 /* .MD5 model file format */
 #define IDMD5HEADER (('V' << 24) + ('5' << 16) + ('D' << 8) + 'M') /* little-endian "MD5V" */
+/* optech2: IQM, first 4 bytes of "INTERQUAKEMODEL" */
+#define IQMHEADER (('E' << 24) + ('T' << 16) + ('N' << 8) + 'I') /* little-endian "INTE" */
 
 /* Internal model render format */
 typedef struct
