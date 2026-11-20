@@ -902,6 +902,42 @@ M_MoveToGoal(edict_t *ent, float dist)
 		return;
 	}
 
+	/* optech2 (from the re-release): with a clear line to the goal, step
+	   straight at it instead of following the 8-way chase directions
+	   (the zig-zag). If that step fails, use the stock chase for 5 s. */
+	if (goal && ((ent->monsterinfo.bad_move_time <= level.time) ||
+					(ent->monsterinfo.aiflags & AI_CHARGING)))
+	{
+		trace_t straightTrace;
+		vec3_t toGoal;
+
+		if (!FacingIdeal(ent))
+		{
+			M_ChangeYaw(ent);
+			return;
+		}
+
+		straightTrace = gi.trace(ent->s.origin, NULL, NULL, goal->s.origin, ent, MASK_MONSTERSOLID);
+
+		if ((straightTrace.fraction == 1.0f) || (straightTrace.ent == goal))
+		{
+			VectorSubtract(goal->s.origin, ent->s.origin, toGoal);
+
+			if (SV_StepDirection(ent, vectoyaw(toGoal), dist))
+			{
+				return;
+			}
+		}
+
+		/* no straight step: don't try for a while, unless going to a path corner */
+		if (goal->classname && strcmp(goal->classname, "path_corner") &&
+			strcmp(goal->classname, "point_combat"))
+		{
+			ent->monsterinfo.bad_move_time = level.time + 5;
+			ent->monsterinfo.aiflags &= ~AI_CHARGING;
+		}
+	}
+
 	/* optech2: roll for a random direction change at most once per 0.1 s,
 	   as stock did once per frame */
 	randomBump = false;

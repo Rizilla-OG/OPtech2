@@ -636,6 +636,7 @@ typedef struct
 	float next_move_time; /* when the next animation frame is due */
 	float checkattack_time; /* when the next attack check may run */
 	float random_change_time; /* when the next random direction roll may run */
+	float bad_move_time; /* optech2 (re-release): no straight-line chasing until this time */
 } monsterinfo_t;
 
 /* this determines how long to wait after a duck to duck again.

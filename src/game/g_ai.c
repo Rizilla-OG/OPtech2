@@ -114,6 +114,51 @@ ai_move(edict_t *self, float dist)
  * position adjustments needed by the
  * animations
  */
+/*
+ * optech2 (from the re-release): gap between two bounding boxes,
+ * 0 when they touch or overlap.
+ */
+static float
+AI_DistanceBetweenBoxes(const vec3_t minsA, const vec3_t maxsA,
+	const vec3_t minsB, const vec3_t maxsB)
+{
+	float gapSquared = 0;
+	int i;
+
+	for (i = 0; i < 3; i++)
+	{
+		float gap = 0;
+
+		if (maxsA[i] < minsB[i])
+		{
+			gap = minsB[i] - maxsA[i];
+		}
+		else if (maxsB[i] < minsA[i])
+		{
+			gap = minsA[i] - maxsB[i];
+		}
+
+		gapSquared += gap * gap;
+	}
+
+	return sqrtf(gapSquared);
+}
+
+/*
+ * optech2 (from the re-release): when the enemy is right next to the
+ * monster (bboxes within 50 units), turn twice as fast so players
+ * cannot simply circle around it.
+ */
+static void
+AI_TurnFasterWhenClose(edict_t *self)
+{
+	if (self->enemy && (AI_DistanceBetweenBoxes(self->absmin, self->absmax,
+							self->enemy->absmin, self->enemy->absmax) <= 50))
+	{
+		M_ChangeYaw(self);
+	}
+}
+
 void
 ai_stand(edict_t *self, float dist)
 {
@@ -129,6 +174,22 @@ ai_stand(edict_t *self, float dist)
 
 	if (self->monsterinfo.aiflags & AI_STAND_GROUND)
 	{
+		/* optech2 (from the re-release): if we were pushed off our
+		   point_combat, walk back to it instead of fighting from here */
+		if (!(self->monsterinfo.aiflags & AI_TEMP_STAND_GROUND) &&
+			self->movetarget && self->movetarget->classname &&
+			!strcmp(self->movetarget->classname, "point_combat") &&
+			((self->absmin[0] > self->movetarget->absmax[0]) || (self->absmax[0] < self->movetarget->absmin[0]) ||
+				(self->absmin[1] > self->movetarget->absmax[1]) || (self->absmax[1] < self->movetarget->absmin[1]) ||
+				(self->absmin[2] > self->movetarget->absmax[2]) || (self->absmax[2] < self->movetarget->absmin[2])))
+		{
+			self->monsterinfo.aiflags &= ~AI_STAND_GROUND;
+			self->monsterinfo.aiflags |= AI_COMBAT_POINT;
+			self->goalentity = self->movetarget;
+			self->monsterinfo.run(self);
+			return;
+		}
+
 		if (self->enemy)
 		{
 			qboolean retval;
@@ -312,6 +373,8 @@ ai_charge(edict_t *self, float dist)
 			M_walkmove(self, self->s.angles[YAW], dist);
 		}
 	}
+
+	AI_TurnFasterWhenClose(self); /* optech2 (from the re-release) */
 }
 
 /*
@@ -476,12 +539,16 @@ infront(edict_t *self, edict_t *other)
 	VectorNormalize(vec);
 	dot = DotProduct(vec, forward);
 
-	if (dot > 0.3)
+	/* optech2 (from the re-release): ambush monsters that have not seen an
+	   enemy yet get a narrower cone, so they do not ruin surprises; every
+	   other check sees wider (dot > -0.3, about 107 degrees to each side,
+	   was 0.3, about 73 degrees) */
+	if ((self->spawnflags & SPAWNFLAG_MONSTER_AMBUSH) && !self->monsterinfo.trail_time && !self->enemy)
 	{
-		return true;
+		return dot > 0.15;
 	}
 
-	return false;
+	return dot > -0.3;
 }
 
 /* ============================================================================ */
@@ -551,6 +618,23 @@ FoundTarget(edict_t *self)
 	}
 
 	self->show_hostile = level.time + 1; /* wake up other monsters */
+
+	/* optech2 (from the re-release): the first time a monster spots
+	   something, give the player a moment before it fires; easy and
+	   medium get a little more reaction time */
+	if (!self->monsterinfo.trail_time)
+	{
+		self->monsterinfo.attack_finished = level.time + 0.6;
+	}
+
+	if (skill->value < 1)
+	{
+		self->monsterinfo.attack_finished += 0.4;
+	}
+	else if (skill->value < 2)
+	{
+		self->monsterinfo.attack_finished += 0.2;
+	}
 
 	VectorCopy(self->enemy->s.origin, self->monsterinfo.last_sighting);
 	self->monsterinfo.trail_time = level.time;
@@ -1652,6 +1736,8 @@ ai_run(edict_t *self, float dist)
 		self->monsterinfo.trail_time = level.time;
 		VectorCopy(self->enemy->s.origin, self->monsterinfo.blind_fire_target);
 		self->monsterinfo.blind_fire_delay = 0;
+
+		AI_TurnFasterWhenClose(self); /* optech2 (from the re-release) */
 
 		return;
 	}

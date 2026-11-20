@@ -257,8 +257,17 @@ SV_FlyMove(edict_t *ent, float time, int mask)
 
 		if (trace.allsolid)
 		{
-			/* entity is trapped in another solid */
+			/* entity is trapped in another solid
+			   (optech2, from the re-release: treat what we hit as ground
+			   so velocity does not build up while stuck) */
+			if (trace.ent)
+			{
+				ent->groundentity = trace.ent;
+				ent->groundentity_linkcount = trace.ent->linkcount;
+			}
+
 			VectorCopy(vec3_origin, ent->velocity);
+			VectorCopy(vec3_origin, ent->avelocity);
 			return 3;
 		}
 
