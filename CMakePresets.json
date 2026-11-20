@@ -1,0 +1,19 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "default",
+      "binaryDir": "build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "VK_RENDERER": "OFF"
+      }
+    }
+  ],
+  "buildPresets": [ { "name": "default", "configurePreset": "default", "jobs": 0 } ],
+  "workflowPresets": [
+    { "name": "default", "steps": [
+      { "type": "configure", "name": "default" },
+      { "type": "build", "name": "default" } ] }
+  ]
+}
