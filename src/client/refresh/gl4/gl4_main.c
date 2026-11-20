@@ -39,7 +39,7 @@
 #define DG_DYNARR_IMPLEMENTATION
 #include "../files/DG_dynarr.h"
 
-#define REF_VERSION "Yamagi Quake II OpenGL4 Refresher"
+#define REF_VERSION "OPtech2 OpenGL4 Refresher"
 
 refimport_t ri;
 

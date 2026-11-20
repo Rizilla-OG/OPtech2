@@ -24,7 +24,7 @@ from PIL import Image, ImageChops
 
 CHECK_DIR = Path(__file__).resolve().parent
 REPO_DIR = CHECK_DIR.parent.parent
-GAME_BINARY = REPO_DIR / "build" / "release" / "quake2"
+GAME_BINARY = REPO_DIR / "build" / "release" / "optech2"
 REFERENCE_DIR = CHECK_DIR / "reference"
 OUTPUT_DIR = REPO_DIR / "build" / "screenshot-check"
 DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
@@ -74,7 +74,7 @@ def build_script(map_name, spots):
 
 def capture_map(map_name, spots, data_dir, temp_home):
     """Run the game for one map; return the screenshots it wrote, in order."""
-    game_dir = temp_home / ".yq2" / "baseq2"
+    game_dir = temp_home / ".optech2" / "baseq2"
     game_dir.mkdir(parents=True, exist_ok=True)
     (game_dir / "screenshot_check.cfg").write_text(build_script(map_name, spots))
     shot_dir = game_dir / "scrnshot"

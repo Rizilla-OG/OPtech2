@@ -16,3 +16,4 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 - Fixed an uninitialized lump count when a map file has an unknown format.
 - Pack files: only Quake 2 PAK and PK3/ZIP (pk2, pkz) are loaded. Quake 1/Half-Life WAD, Anachronox DAT, SiN and Daikatana pack formats removed.
 - Network protocols 25 (Quake 2 test demos) and 51 (Heretic 2 demo) removed. Stock Quake 2 (26, 31, 32, 34), re-release (2022, 2023) and OPtech2 (2024) remain.
+- Renamed to OPtech2 (v0.1.0-dev): executables `optech2` and `optech2ded`, window titles, console banner and crash report. User data now lives in `~/.local/share/OPtech2` (was `YamagiQ2`).

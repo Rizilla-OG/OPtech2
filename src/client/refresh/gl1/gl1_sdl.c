@@ -353,9 +353,9 @@ int RI_InitContext(void* win)
 	char title[64] = {0};
 
 #ifdef YQ2_GL1_GLES
-	snprintf(title, sizeof(title), "Yamagi Quake II %s - OpenGL ES 1.0", YQ2VERSION);
+	snprintf(title, sizeof(title), "OPtech2 %s - OpenGL ES 1.0", YQ2VERSION);
 #else
-	snprintf(title, sizeof(title), "Yamagi Quake II %s - OpenGL 1.4", YQ2VERSION);
+	snprintf(title, sizeof(title), "OPtech2 %s - OpenGL 1.4", YQ2VERSION);
 #endif
 	SDL_SetWindowTitle(window, title);
 

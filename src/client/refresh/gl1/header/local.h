@@ -36,11 +36,11 @@
 #include "../../files/lightmap.h"
 
 #ifdef YQ2_GL1_GLES
-#define REF_VERSION "Yamagi Quake II OpenGL ES1 Refresher"
+#define REF_VERSION "OPtech2 OpenGL ES1 Refresher"
 #define GL_COLOR_INDEX	GL_RGBA
 #define GL_COLOR_INDEX8_EXT	GL_RGBA
 #else
-#define REF_VERSION "Yamagi Quake II OpenGL Refresher"
+#define REF_VERSION "OPtech2 OpenGL Refresher"
 #ifndef GL_COLOR_INDEX8_EXT
 #define GL_COLOR_INDEX8_EXT	GL_COLOR_INDEX
 #endif

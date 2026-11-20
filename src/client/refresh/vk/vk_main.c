@@ -33,7 +33,7 @@
 
 #include "header/local.h"
 
-#define	REF_VERSION	"Yamagi Quake II Vulkan Refresher (based on vkQuake2 v1.4.3)"
+#define	REF_VERSION	"OPtech2 Vulkan Refresher (based on vkQuake2 v1.4.3)"
 
 // world rendered and ready to render 2d elements
 static qboolean world_rendered;
@@ -1591,7 +1591,7 @@ RE_InitContext(void *win)
 	}
 
 	/* Window title - set here so we can display renderer name in it */
-	snprintf(title, sizeof(title), "Yamagi Quake II - Vulkan Render");
+	snprintf(title, sizeof(title), "OPtech2 - Vulkan Render");
 	SDL_SetWindowTitle(window, title);
 	// window is ready, initialize Vulkan now
 	QVk_SetWindow(window);

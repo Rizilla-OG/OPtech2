@@ -1009,12 +1009,14 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 		${BACKENDS_SRC_DIR}/windows/icon.rc
 		)
 	add_executable(quake2 WIN32 ${Wrapper-Source})
-	set_target_properties(quake2 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/release)
+	set_target_properties(quake2 PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/release
+		OUTPUT_NAME optech2) # optech2: own executable name
 else()
 	add_executable(quake2 ${Client-Source} ${Client-SDL-Source} ${Client-Header}
 			${Platform-Specific-Source} ${Backends-Generic-Source})
 	set_target_properties(quake2 PROPERTIES
 			RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/release
+			OUTPUT_NAME optech2 # optech2: own executable name
 			)
 	target_link_libraries(quake2 ${yquake2LinkerFlags} ${yquake2ClientLinkerFlags}
 		${yquake2SDLLinkerFlags} ${yquake2ZLibLinkerFlags})
@@ -1029,6 +1031,7 @@ add_executable(q2ded ${Server-Source} ${Server-Header} ${Platform-Specific-Sourc
 set_target_properties(q2ded PROPERTIES
 	COMPILE_DEFINITIONS "DEDICATED_ONLY"
 	RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/release
+	OUTPUT_NAME optech2ded # optech2: own executable name
 	)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	target_link_libraries(q2ded ${yquake2LinkerFlags} ${yquake2ZLibLinkerFlags} ws2_32 winmm)

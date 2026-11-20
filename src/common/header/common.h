@@ -32,7 +32,10 @@
 #include "shared.h"
 #include "crc.h"
 
-#define YQ2VERSION "8.71RR16"
+#define YQ2VERSION "8.71RR16" /* upstream version this fork is based on */
+/* optech2: engine name and own version */
+#define ENGINE_NAME "OPtech2"
+#define OPTECH2_VERSION "0.1.0-dev"
 #define BASEDIRNAME "baseq2"
 
 #ifndef YQ2OSTYPE
@@ -43,10 +46,10 @@
 #define BUILD_DATE __DATE__
 #endif
 
-#define CFGDIRNAME_SHORT "yq2"
+#define CFGDIRNAME_SHORT "optech2" // optech2: own user data folder
 
 #if defined(USE_XDG) || defined(_WIN32)
-  #define CFGDIRNAME "YamagiQ2"
+  #define CFGDIRNAME "OPtech2"
 #else
   #ifdef __HAIKU__
     #define CFGDIRNAME CFGDIRNAME_SHORT
