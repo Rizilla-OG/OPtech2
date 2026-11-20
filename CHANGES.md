@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 
 ## Unreleased
 
+- Fixed: Quake II 64's intro (a camera scene ending in a level change) went to `maps/(null).bsp`: `target_changelevel` ignored being used without an activator. It now goes on to q64/outpost, as in the re-release.
 - Game menu lists the episodes of the game data (from its mapdb.json), like the re-release: with the re-release data (`-datadir ".../Quake 2/rerelease"`) that is Quake II, Call of the Machine, The Reckoning, Ground Zero and Quake II 64. Picking one asks for the skill, then starts it with the data's own start command (intro video and first map), or at its first map if the data has none. Data without episodes keeps the easy / medium / hard menu.
 - `func_eye` (Call of the Machine) spawns as a static brush model and `target_poi` (re-release objective marker) is removed, instead of both being reported as unknown.
 - The game library has its own client game module: the HUD code of id's Quake II re-release (cg_main, cg_screen, p_move; github.com/id-Software/quake2-rerelease-dll commit 8dc1fc9, GPL 2) is built into it as C++20 (`src/game/rerelease/`, unchanged except three marked lines in q_std.cpp; build settings in `optech2_prelude.h`). The HUD now comes from that module by default; it draws the same as the built-in HUD (stock screenshot check pixel-identical). The game library links the C++ runtime (statically on Windows).
