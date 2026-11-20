@@ -628,6 +628,14 @@ typedef struct
 	float quad_framenum;
 	float invincible_framenum;
 	float double_framenum;
+
+	/* optech2: high tick rates (as in the re-release). Monsters think every
+	   server frame and move/turn a share of each 0.1 s step, while animation
+	   frames, frame actions, attack checks and random direction changes keep
+	   their 0.1 s pace. */
+	float next_move_time; /* when the next animation frame is due */
+	float checkattack_time; /* when the next attack check may run */
+	float random_change_time; /* when the next random direction roll may run */
 } monsterinfo_t;
 
 /* this determines how long to wait after a duck to duck again.

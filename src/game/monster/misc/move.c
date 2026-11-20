@@ -608,7 +608,7 @@ M_ChangeYaw(edict_t *ent)
 	}
 
 	move = ideal - current;
-	speed = ent->yaw_speed;
+	speed = ent->yaw_speed * level.ticktime / FRAMETIME; /* optech2: yaw_speed is per 0.1 s */
 
 	if (ideal > current)
 	{
@@ -881,6 +881,7 @@ void
 M_MoveToGoal(edict_t *ent, float dist)
 {
 	edict_t *goal;
+	qboolean randomBump; /* optech2 */
 
 	if (!ent)
 	{
@@ -894,15 +895,26 @@ M_MoveToGoal(edict_t *ent, float dist)
 		return;
 	}
 
-	/* if the next step hits the enemy, return immediately */
-	if (ent->enemy && SV_CloseEnough(ent, ent->enemy, dist))
+	/* if the next step hits the enemy, return immediately
+	   (optech2: dist is a share of the 0.1 s step, check against the whole step) */
+	if (ent->enemy && SV_CloseEnough(ent, ent->enemy, dist * FRAMETIME / level.ticktime))
 	{
 		return;
 	}
 
+	/* optech2: roll for a random direction change at most once per 0.1 s,
+	   as stock did once per frame */
+	randomBump = false;
+
+	if (ent->monsterinfo.random_change_time <= level.time + 0.001f)
+	{
+		randomBump = ((randk() & 3) == 1);
+		ent->monsterinfo.random_change_time = level.time + FRAMETIME;
+	}
+
 	/* bump around... */
-	if ((((randk() & 3) == 1) &&
-		 !(ent->monsterinfo.aiflags & AI_CHARGING)) ||
+	if ((randomBump &&
+			!(ent->monsterinfo.aiflags & AI_CHARGING)) ||
 		!SV_StepDirection(ent, ent->ideal_yaw, dist))
 	{
 		if (ent->monsterinfo.aiflags & AI_BLOCKED)

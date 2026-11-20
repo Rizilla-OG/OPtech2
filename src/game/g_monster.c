@@ -1125,6 +1125,8 @@ M_MoveFrame(edict_t *self)
 {
 	int index, firstframe, lastframe;
 	qboolean reverse = false;
+	qboolean runFrame; /* optech2: true when the 0.1 s animation step is due */
+	float tickScale = level.ticktime / FRAMETIME; /* optech2: share of a 0.1 s step moved this frame */
 	mmove_t *move;
 
 	if (!self)
@@ -1163,11 +1165,19 @@ M_MoveFrame(edict_t *self)
 		return;
 	}
 
-	self->nextthink = level.time + FRAMETIME;
+	/* optech2: think every server frame; step the animation every 0.1 s */
+	self->nextthink = level.time + level.ticktime;
 
-	if ((self->monsterinfo.nextframe) &&
-		(self->monsterinfo.nextframe >= firstframe) &&
-		(self->monsterinfo.nextframe <= lastframe))
+	runFrame = (self->monsterinfo.next_move_time <= level.time + 0.001f) ||
+			   (self->s.frame < firstframe) || (self->s.frame > lastframe);
+
+	if (!runFrame)
+	{
+		/* between animation frames: only move and turn (below) */
+	}
+	else if ((self->monsterinfo.nextframe) &&
+			 (self->monsterinfo.nextframe >= firstframe) &&
+			 (self->monsterinfo.nextframe <= lastframe))
 	{
 		if (self->s.frame != self->monsterinfo.nextframe)
 		{
@@ -1272,6 +1282,11 @@ M_MoveFrame(edict_t *self)
 		}
 	}
 
+	if (runFrame)
+	{
+		self->monsterinfo.next_move_time = level.time + FRAMETIME;
+	}
+
 	index = self->s.frame - firstframe;
 
 	if (move && move->frame[index].aifunc)
@@ -1279,7 +1294,7 @@ M_MoveFrame(edict_t *self)
 		if (!(self->monsterinfo.aiflags & AI_HOLD_FRAME))
 		{
 			move->frame[index].aifunc(self,
-					move->frame[index].dist * self->monsterinfo.scale);
+				move->frame[index].dist * self->monsterinfo.scale * tickScale);
 		}
 		else
 		{
@@ -1296,7 +1311,7 @@ M_MoveFrame(edict_t *self)
 			if (!(self->monsterinfo.aiflags & AI_HOLD_FRAME))
 			{
 				ai_run(self,
-					self->monsterinfo.run_dist * self->monsterinfo.scale);
+					self->monsterinfo.run_dist * self->monsterinfo.scale * tickScale);
 			}
 			else
 			{
@@ -1308,7 +1323,7 @@ M_MoveFrame(edict_t *self)
 			if (!(self->monsterinfo.aiflags & AI_HOLD_FRAME))
 			{
 				ai_walk(self,
-					self->monsterinfo.walk_dist * self->monsterinfo.scale);
+					self->monsterinfo.walk_dist * self->monsterinfo.scale * tickScale);
 			}
 			else
 			{
@@ -1335,6 +1350,12 @@ M_MoveFrame(edict_t *self)
 		{
 			ai_charge(self, 0);
 		}
+	}
+
+	/* optech2: frame actions (fire, sounds) only when the frame stepped */
+	if (!runFrame)
+	{
+		return;
 	}
 
 	if (move)

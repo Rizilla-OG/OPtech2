@@ -1384,7 +1384,15 @@ ai_checkattack(edict_t *self)
 		enemy_yaw = vectoyaw(temp);
 	}
 
-	retval = self->monsterinfo.checkattack(self);
+	/* optech2: attack checks roll dice; keep them at most once per 0.1 s
+	   (the re-release does the same) now that monsters think every frame */
+	retval = false;
+
+	if (self->monsterinfo.checkattack_time <= level.time + 0.001f)
+	{
+		self->monsterinfo.checkattack_time = level.time + FRAMETIME;
+		retval = self->monsterinfo.checkattack(self);
+	}
 
 	if (retval)
 	{
