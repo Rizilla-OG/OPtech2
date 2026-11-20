@@ -441,6 +441,14 @@ ExitLevel(void)
 	BOT_RemoveBot("all");
 	//[end]
 
+	/* optech2: no next map (an intermission left early): stay instead of
+	   asking the server for "maps/(null).bsp" */
+	if (!level.changemap)
+	{
+		gi.dprintf("ExitLevel: no next map set, staying on this level\n");
+		return;
+	}
+
 	Com_sprintf(command, sizeof(command), "gamemap \"%s\"\n", level.changemap);
 	gi.AddCommandString(command);
 	level.changemap = NULL;

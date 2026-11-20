@@ -3171,8 +3171,11 @@ ClientThink(edict_t *ent, usercmd_t *ucmd)
 
 		client->ps.pmove.pm_type = PM_FREEZE;
 
-		/* can exit intermission after five seconds */
-		if ((level.time > level.intermissiontime + 5.0) &&
+		/* can exit intermission after five seconds; optech2: only once a
+		   next map is set, as in the re-release (a target_camera cut scene
+		   is an intermission without one until it ends, e.g. Quake II 64's
+		   intro; a key press there left for "maps/(null).bsp") */
+		if (level.changemap && (level.time > level.intermissiontime + 5.0) &&
 			(ucmd->buttons & BUTTON_ANY))
 		{
 			level.exitintermission = true;
