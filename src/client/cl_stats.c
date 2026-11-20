@@ -65,6 +65,7 @@ static int stats_line_count;
 
 #ifdef __linux__
 static char gpu_sysfs_dir[64]; /* /sys/class/drm/cardN/device with gpu_busy_percent, or "" */
+static char gpu_hwmon_dir[96]; /* its hwmon folder (temperatures, clocks, power, fan), or "" */
 static qboolean gpu_sysfs_checked;
 static long long last_process_ticks, last_system_total, last_system_idle;
 
@@ -122,7 +123,29 @@ Stats_FindGpu(void)
 
 		if (Stats_ReadNumber(path) >= 0)
 		{
+			DIR *dir;
+
 			snprintf(gpu_sysfs_dir, sizeof(gpu_sysfs_dir), "/sys/class/drm/card%d/device", card);
+			snprintf(path, sizeof(path), "%s/hwmon", gpu_sysfs_dir);
+			gpu_hwmon_dir[0] = 0;
+			dir = opendir(path);
+
+			if (dir)
+			{
+				struct dirent *entry;
+
+				while ((entry = readdir(dir)))
+				{
+					if (!strncmp(entry->d_name, "hwmon", 5))
+					{
+						snprintf(gpu_hwmon_dir, sizeof(gpu_hwmon_dir), "%s/%s", path, entry->d_name);
+						break;
+					}
+				}
+
+				closedir(dir);
+			}
+
 			return;
 		}
 	}
@@ -486,6 +509,28 @@ SCR_StatsAccumulate(long long server_us, long long game_us, long long client_us,
 				snprintf(stats_lines[line++], sizeof(stats_lines[0]),
 					"GPU  busy %3lld%%   VRAM %5.2f / %5.2f GB",
 					busy, used / 1073741824.0, total / 1073741824.0);
+
+				if (gpu_hwmon_dir[0])
+				{
+					/* temperatures in millidegrees, clocks in Hz, power in microwatts */
+					static const char *sensor_files[] = {"temp1_input", "temp2_input", "temp3_input",
+						"freq1_input", "freq2_input", "power1_average", "fan1_input"};
+					long long sensor[ARRLEN(sensor_files)];
+					size_t n;
+
+					for (n = 0; n < ARRLEN(sensor_files); n++)
+					{
+						snprintf(path, sizeof(path), "%s/%s", gpu_hwmon_dir, sensor_files[n]);
+						sensor[n] = Stats_ReadNumber(path);
+					}
+
+					snprintf(stats_lines[line++], sizeof(stats_lines[0]),
+						"     edge %3lldC  hotspot %3lldC  mem %3lldC",
+						sensor[0] / 1000, sensor[1] / 1000, sensor[2] / 1000);
+					snprintf(stats_lines[line++], sizeof(stats_lines[0]),
+						"     core %4lld MHz  mem %4lld MHz  power %3lld W  fan %4lld rpm",
+						sensor[3] / 1000000, sensor[4] / 1000000, sensor[5] / 1000000, sensor[6]);
+				}
 			}
 			else
 			{
