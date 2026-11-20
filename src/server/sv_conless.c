@@ -315,6 +315,9 @@ gotnewcl:
 
 	Netchan_Setup(NS_SERVER, &newcl->netchan, adr, qport);
 
+	/* optech2: only our own protocol knows split packets */
+	newcl->netchan.allow_fragments = (version == PROTOCOL_VERSION);
+
 	newcl->state = cs_connected;
 	newcl->protocol = SV_GetRecomendedProtocol();
 

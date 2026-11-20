@@ -691,19 +691,22 @@ SV_PrintNetStats(void)
 			continue;
 		}
 
-		Com_Printf("netstats %s sent %d B %d pkt received %d B %d pkt ratedrops %d rate %d\n",
+		Com_Printf("netstats %s sent %d B %d pkt received %d B %d pkt ratedrops %d rate %d split %d largest %d\n",
 			c->name,
 			c->netchan.stats_bytes_sent - c->stats_last_bytes_sent,
 			c->netchan.stats_packets_sent - c->stats_last_packets_sent,
 			c->netchan.stats_bytes_received - c->stats_last_bytes_received,
 			c->netchan.stats_packets_received - c->stats_last_packets_received,
-			c->stats_rate_drops - c->stats_last_rate_drops, c->rate);
+			c->stats_rate_drops - c->stats_last_rate_drops, c->rate,
+			c->netchan.stats_fragmented_sent - c->stats_last_fragmented_sent,
+			c->netchan.stats_largest_sent);
 
 		c->stats_last_bytes_sent = c->netchan.stats_bytes_sent;
 		c->stats_last_packets_sent = c->netchan.stats_packets_sent;
 		c->stats_last_bytes_received = c->netchan.stats_bytes_received;
 		c->stats_last_packets_received = c->netchan.stats_packets_received;
 		c->stats_last_rate_drops = c->stats_rate_drops;
+		c->stats_last_fragmented_sent = c->netchan.stats_fragmented_sent;
 	}
 }
 

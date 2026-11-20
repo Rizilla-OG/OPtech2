@@ -530,6 +530,22 @@ CL_FixUpGender(void)
 	}
 }
 
+/*
+ * optech2: traffic and packet splitting counters of the server connection
+ */
+static void
+CL_Netstats_f(void)
+{
+	const netchan_t *chan = &cls.netchan;
+
+	Com_Printf("netstats received %d B %d pkt reassembled %d fragdrops %d "
+			   "sent %d B %d pkt split %d\n",
+		chan->stats_bytes_received, chan->stats_packets_received,
+		chan->stats_fragmented_received, chan->stats_fragments_dropped,
+		chan->stats_bytes_sent, chan->stats_packets_sent,
+		chan->stats_fragmented_sent);
+}
+
 static void
 CL_Userinfo_f(void)
 {
@@ -694,6 +710,7 @@ CL_InitLocal(void)
 	Cmd_AddCommand("skins", CL_Skins_f);
 
 	Cmd_AddCommand("userinfo", CL_Userinfo_f);
+	Cmd_AddCommand("cl_netstats", CL_Netstats_f);
 	Cmd_AddCommand("snd_restart", CL_Snd_Restart_f);
 
 	Cmd_AddCommand("changing", CL_Changing_f);

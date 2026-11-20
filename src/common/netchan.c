@@ -83,8 +83,13 @@
  * something in the unacknowledged reliable
  */
 
+/* optech2: bit 30 of the first sequence word marks a fragment; sequences
+   never get that high (2^30 packets = 200 days at 60 Hz) */
+#define NETCHAN_FRAGMENT_BIT (1U << 30)
+
 cvar_t *showpackets;
 cvar_t *showdrop;
+cvar_t *net_fragmentloss; /* optech2: test only, % of fragments not sent */
 cvar_t *qport;
 
 netadr_t net_from;
@@ -122,6 +127,7 @@ Netchan_Init(void)
 
 	showpackets = Cvar_Get("showpackets", "0", 0);
 	showdrop = Cvar_Get("showdrop", "0", 0);
+	net_fragmentloss = Cvar_Get("net_fragmentloss", "0", 0);
 	qport = Cvar_Get("qport", va("%i", port), CVAR_NOSET);
 }
 
@@ -217,6 +223,69 @@ Netchan_NeedReliable(const netchan_t *chan)
 }
 
 /*
+ * optech2: sends one message as several packets. Each fragment repeats the
+ * sequence words (bit 30 of the first marks a fragment), then a long with
+ * the byte offset in bits 0-30 and "more fragments follow" in bit 31.
+ */
+static void
+Netchan_TransmitFragments(netchan_t *chan, unsigned w1, unsigned w2,
+	const byte *payload, int payload_length)
+{
+	sizebuf_t send;
+	byte send_buf[NETCHAN_FRAGMENT_SIZE + 32];
+	int offset;
+
+	offset = 0;
+
+	while (offset < payload_length)
+	{
+		int fragment_length;
+		qboolean more_fragments;
+
+		fragment_length = payload_length - offset;
+
+		if (fragment_length > NETCHAN_FRAGMENT_SIZE)
+		{
+			fragment_length = NETCHAN_FRAGMENT_SIZE;
+		}
+
+		more_fragments = (offset + fragment_length < payload_length);
+
+		SZ_Init(&send, send_buf, sizeof(send_buf));
+		MSG_WriteLong(&send, w1 | NETCHAN_FRAGMENT_BIT);
+		MSG_WriteLong(&send, w2);
+
+		if (chan->sock == NS_CLIENT)
+		{
+			MSG_WriteShort(&send, qport->value);
+		}
+
+		MSG_WriteLong(&send, offset | (more_fragments ? (1U << 31) : 0));
+		SZ_Write(&send, payload + offset, fragment_length);
+
+		/* net_fragmentloss: pretend the network lost this fragment */
+		if ((net_fragmentloss->value <= 0) ||
+			((randk() % 100) >= net_fragmentloss->value))
+		{
+			NET_SendPacket(chan->sock, send.cursize, send.data,
+				chan->remote_address);
+
+			chan->stats_bytes_sent += send.cursize;
+			chan->stats_packets_sent++;
+		}
+
+		offset += fragment_length;
+	}
+
+	chan->stats_fragmented_sent++;
+
+	if (payload_length > chan->stats_largest_sent)
+	{
+		chan->stats_largest_sent = payload_length;
+	}
+}
+
+/*
  * tries to send an unreliable message to a connection, and handles the
  * transmition / retransmition of the reliable messages.
  *
@@ -229,6 +298,7 @@ Netchan_Transmit(netchan_t *chan, int length, const byte *data)
 	byte send_buf[MAX_MSGLEN];
 	qboolean send_reliable;
 	unsigned w1, w2;
+	int header_length, payload_length;
 
 	/* check for message overflow */
 	if (chan->message.overflowed)
@@ -286,12 +356,26 @@ Netchan_Transmit(netchan_t *chan, int length, const byte *data)
 		Com_Printf("%s: dumped unreliable\n", __func__);
 	}
 
-	/* send the datagram */
-	NET_SendPacket(chan->sock, send.cursize, send.data, chan->remote_address);
+	/* optech2: split big messages into fragments (not over loopback) */
+	header_length = (chan->sock == NS_CLIENT) ? 10 : 8;
+	payload_length = send.cursize - header_length;
 
-	/* optech2: traffic counters */
-	chan->stats_bytes_sent += send.cursize;
-	chan->stats_packets_sent++;
+	if (chan->allow_fragments &&
+		(chan->remote_address.type != NA_LOOPBACK) &&
+		(payload_length > NETCHAN_FRAGMENT_SIZE))
+	{
+		Netchan_TransmitFragments(chan, w1, w2, send.data + header_length,
+			payload_length);
+	}
+	else
+	{
+		/* send the datagram */
+		NET_SendPacket(chan->sock, send.cursize, send.data, chan->remote_address);
+
+		/* optech2: traffic counters */
+		chan->stats_bytes_sent += send.cursize;
+		chan->stats_packets_sent++;
+	}
 
 	if (showpackets->value)
 	{
@@ -321,6 +405,10 @@ Netchan_Process(netchan_t *chan, sizebuf_t *msg)
 {
 	unsigned sequence, sequence_ack;
 	unsigned reliable_ack, reliable_message;
+	qboolean is_fragment;
+	int packet_size;
+
+	packet_size = msg->cursize;
 
 	/* get sequence numbers */
 	MSG_BeginReading(msg);
@@ -335,8 +423,9 @@ Netchan_Process(netchan_t *chan, sizebuf_t *msg)
 
 	reliable_message = sequence >> 31;
 	reliable_ack = sequence_ack >> 31;
+	is_fragment = (sequence & NETCHAN_FRAGMENT_BIT) != 0; /* optech2 */
 
-	sequence &= ~(1U << 31);
+	sequence &= ~((1U << 31) | NETCHAN_FRAGMENT_BIT);
 	sequence_ack &= ~(1U << 31);
 
 	if (showpackets->value)
@@ -367,6 +456,64 @@ Netchan_Process(netchan_t *chan, sizebuf_t *msg)
 		}
 
 		return false;
+	}
+
+	/* optech2: collect fragments; the message is used once the last one
+	   is in. A lost or out of order fragment loses the whole message, like
+	   a lost packet (reliable data is sent again as usual). */
+	if (is_fragment)
+	{
+		unsigned fragment_word;
+		int offset, fragment_length, header_length;
+		qboolean more_fragments;
+
+		header_length = msg->readcount;
+		fragment_word = MSG_ReadLong(msg);
+		offset = fragment_word & ~(1U << 31);
+		more_fragments = (fragment_word >> 31) != 0;
+		fragment_length = msg->cursize - msg->readcount;
+
+		chan->stats_bytes_received += packet_size;
+		chan->stats_packets_received++;
+
+		if (sequence != (unsigned)chan->fragment_sequence)
+		{
+			chan->fragment_sequence = sequence;
+			chan->fragment_length = 0;
+		}
+
+		if ((fragment_length < 0) || (offset != chan->fragment_length) ||
+			(header_length + offset + fragment_length > MAX_MSGLEN))
+		{
+			if (showdrop->value)
+			{
+				Com_Printf("%s:Dropped fragment at %i of %i\n",
+					NET_AdrToString(chan->remote_address),
+					offset, sequence);
+			}
+
+			chan->fragment_length = 0;
+			chan->stats_fragments_dropped++;
+			return false;
+		}
+
+		memcpy(chan->fragment_buf + offset, msg->data + msg->readcount,
+			fragment_length);
+		chan->fragment_length += fragment_length;
+
+		if (more_fragments)
+		{
+			return false;
+		}
+
+		/* whole message: payload after the header this fragment had, so
+		   readers (demo recording skips 8 bytes) see a normal packet */
+		memcpy(msg->data + header_length, chan->fragment_buf,
+			chan->fragment_length);
+		msg->cursize = header_length + chan->fragment_length;
+		msg->readcount = header_length;
+		chan->fragment_length = 0;
+		chan->stats_fragmented_received++;
 	}
 
 	/* dropped packets don't keep the message from being used */
@@ -402,9 +549,12 @@ Netchan_Process(netchan_t *chan, sizebuf_t *msg)
 	/* the message can now be read from the current message pointer */
 	chan->last_received = curtime;
 
-	/* optech2: traffic counters */
-	chan->stats_bytes_received += msg->cursize;
-	chan->stats_packets_received++;
+	/* optech2: traffic counters (fragments were counted above) */
+	if (!is_fragment)
+	{
+		chan->stats_bytes_received += packet_size;
+		chan->stats_packets_received++;
+	}
 
 	return true;
 }

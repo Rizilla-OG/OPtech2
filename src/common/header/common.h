@@ -626,6 +626,9 @@ extern qboolean userinfo_modified;
 
 #define PORT_ANY -1
 #define MAX_MSGLEN 32768            /* max length of a message */
+/* optech2: payload bytes per fragment; with the 14 byte netchan header and
+   48 byte IPv6 + UDP header it stays under the 1280 byte minimum IPv6 MTU */
+#define NETCHAN_FRAGMENT_SIZE 1200
 #define PACKET_HEADER 10            /* two ints and a short */
 
 typedef enum
@@ -711,6 +714,18 @@ typedef struct
 	int stats_packets_sent;
 	int stats_bytes_received;
 	int stats_packets_received;
+
+	/* optech2: packet splitting. Messages bigger than NETCHAN_FRAGMENT_SIZE
+	   go out as several UDP packets (no IP fragmentation, which routers
+	   drop or lose), the receiver puts them back together */
+	qboolean allow_fragments; /* other side understands fragments */
+	int fragment_sequence; /* sequence being reassembled */
+	int fragment_length; /* bytes reassembled so far */
+	byte fragment_buf[MAX_MSGLEN];
+	int stats_fragmented_sent; /* messages sent split */
+	int stats_fragmented_received; /* messages reassembled */
+	int stats_largest_sent; /* biggest split message, bytes */
+	int stats_fragments_dropped; /* fragments thrown away (gap) */
 } netchan_t;
 
 extern netadr_t net_from;

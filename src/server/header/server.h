@@ -144,6 +144,7 @@ typedef struct client_s
 	int stats_last_bytes_received;
 	int stats_last_packets_received;
 	int stats_last_rate_drops;
+	int stats_last_fragmented_sent;
 
 	char name[32];                      /* extracted from userinfo, high bits masked */
 

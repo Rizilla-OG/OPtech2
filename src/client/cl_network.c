@@ -606,6 +606,10 @@ CL_ConnectionlessPacket(void)
 		}
 
 		Netchan_Setup(NS_CLIENT, &cls.netchan, net_from, cls.quakePort);
+
+		/* optech2: we only connect to servers on our own protocol,
+		   which know split packets */
+		cls.netchan.allow_fragments = true;
 #ifdef USE_CURL
 		char *buff = NET_AdrToString(cls.netchan.remote_address);
 #endif
