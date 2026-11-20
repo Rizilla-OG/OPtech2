@@ -3486,6 +3486,19 @@ ClientBeginServerFrame(edict_t *ent)
 
 	client = ent->client;
 
+	/* optech2: weapons run every server frame (Think_Weapon keeps their
+	   0.1 s animation pace); the rest of this keeps the 0.1 s pace */
+	if (!level.thinkframe)
+	{
+		if (!client->resp.spectator && (ent->movetype != MOVETYPE_NOCLIP) && !ent->deadflag)
+		{
+			Think_Weapon(ent);
+		}
+
+		client->weapon_thunk = false;
+		return;
+	}
+
 	if (client->delayedstart > 0)
 	{
 		client->delayedstart--;
@@ -3507,16 +3520,15 @@ ClientBeginServerFrame(edict_t *ent)
 		return;
 	}
 
-	/* run weapon animations if it hasn't been done by a ucmd_t */
-	if (!client->weapon_thunk && !client->resp.spectator
-		&& (ent->movetype != MOVETYPE_NOCLIP))
+	/* run weapon animations (optech2: always; Think_Weapon only runs a
+	   weapon frame when one is due, so a ucmd_t that already ran it this
+	   frame cannot cause a second one) */
+	if (!client->resp.spectator && (ent->movetype != MOVETYPE_NOCLIP))
 	{
 		Think_Weapon(ent);
 	}
-	else
-	{
-		client->weapon_thunk = false;
-	}
+
+	client->weapon_thunk = false;
 
 	if (ent->deadflag)
 	{

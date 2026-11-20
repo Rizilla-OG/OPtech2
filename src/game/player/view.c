@@ -1729,8 +1729,8 @@ ClientEndServerFrame(edict_t *ent)
 	VectorCopy(ent->client->ps.viewangles, ent->client->oldviewangles);
 
 	/* optech2: the rest keeps the 0.1 s pace: player model animation,
-	   falling reference velocity, weapon kicks (shown for 0.1 s, as set
-	   by the weapon frames) and menu/inventory updates */
+	   falling reference velocity and menu/inventory updates. Weapon kicks
+	   are cleared in Think_Weapon when the next weapon frame runs. */
 	if (!level.thinkframe)
 	{
 		return;
@@ -1739,10 +1739,6 @@ ClientEndServerFrame(edict_t *ent)
 	G_SetClientFrame(ent, 0);
 
 	VectorCopy(ent->velocity, ent->client->oldvelocity);
-
-	/* clear weapon kicks */
-	VectorClear(ent->client->kick_origin);
-	VectorClear(ent->client->kick_angles);
 
 	if (!(level.framenum & 31))
 	{

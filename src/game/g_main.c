@@ -537,11 +537,8 @@ G_RunFrame(void)
 
 		if ((i > 0) && (i <= maxclients->value))
 		{
-			/* optech2: weapon frames and respawn checks keep their 10 Hz pace */
-			if (level.thinkframe)
-			{
-				ClientBeginServerFrame(ent);
-			}
+			/* optech2: runs every server frame; weapons inside keep their 0.1 s pace */
+			ClientBeginServerFrame(ent);
 
 			//JABot[start]
 			if (!ent->ai)

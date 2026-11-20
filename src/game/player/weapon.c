@@ -698,6 +698,55 @@ Think_Weapon(edict_t *ent)
 	/* call active weapon think routine */
 	if (ent->client->pers.weapon && ent->client->pers.weapon->weaponthink)
 	{
+		gclient_t *client = ent->client;
+		qboolean frameDue, fireEarly;
+		int stateBefore;
+		float nextFrameTime;
+
+		/* optech2: Think_Weapon runs every server frame (re-release style),
+		   but weapon functions advance one animation frame per call, tuned
+		   for 0.1 s. Run them when their frame is due, or at once when an
+		   idle, ready weapon is told to fire or switch, so a press does not
+		   wait for the next 0.1 s beat. A weapon that just fired stays busy
+		   until its next frame, so fire rates are unchanged. Times more than
+		   a second ahead are left over from another map (level.time restarts). */
+		if (client->weapon_think_time > level.time + 1)
+		{
+			client->weapon_think_time = level.time;
+		}
+
+		if (client->weapon_fire_finished > level.time + 1)
+		{
+			client->weapon_fire_finished = level.time;
+		}
+
+		frameDue = (client->weapon_think_time <= level.time + 0.001f);
+		fireEarly = !frameDue && (client->weaponstate == WEAPON_READY) &&
+					(client->weapon_fire_finished <= level.time + 0.001f) &&
+					(((client->latched_buttons | client->buttons) & BUTTON_ATTACK) || client->newweapon);
+
+		if (!frameDue && !fireEarly)
+		{
+			return;
+		}
+
+		/* keep the 0.1 s pace exact: schedule from when the frame was due */
+		if (frameDue && (client->weapon_think_time > level.time - level.ticktime - 0.001f))
+		{
+			nextFrameTime = client->weapon_think_time + FRAMETIME;
+		}
+		else
+		{
+			nextFrameTime = level.time + FRAMETIME;
+		}
+
+		stateBefore = client->weaponstate;
+
+		/* recoil from the previous weapon frame ends here (it used to end
+		   with the 0.1 s server frame) */
+		VectorClear(client->kick_origin);
+		VectorClear(client->kick_angles);
+
 		P_DamageModifier(ent);
 
 		if (ent->client->silencer_shots)
@@ -710,6 +759,13 @@ Think_Weapon(edict_t *ent)
 		}
 
 		ent->client->pers.weapon->weaponthink(ent);
+
+		client->weapon_think_time = nextFrameTime;
+
+		if ((stateBefore != WEAPON_READY) || (client->weaponstate != WEAPON_READY))
+		{
+			client->weapon_fire_finished = nextFrameTime;
+		}
 	}
 	else if (ent->client->pers.weapon)
 	{

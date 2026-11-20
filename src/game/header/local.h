@@ -1535,6 +1535,8 @@ struct gclient_s
 	int latched_buttons;
 
 	qboolean weapon_thunk;
+	float weapon_think_time; /* optech2: when the weapon's next 0.1 s animation frame is due */
+	float weapon_fire_finished; /* optech2: weapon busy until this time; after it a press fires at once */
 
 	const gitem_t *newweapon;
 

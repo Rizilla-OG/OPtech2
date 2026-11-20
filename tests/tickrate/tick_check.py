@@ -7,6 +7,7 @@ hidden client, and measures:
   - machine gun    (bullets fired while the trigger is held for 2 s)
   - rocket speed   (units per second of game time)
   - berserker run  (how fast a berserker runs at the player, units per second)
+  - weapons        (ammo each weapon uses while fire is held for 3 s: fire rate)
 
 Then compares 60 Hz against 10 Hz within a tolerance per measurement.
 
@@ -34,7 +35,7 @@ REPO_DIR = CHECK_DIR.parent.parent
 CLIENT_BINARY = REPO_DIR / "build" / "release" / "optech2"
 OUTPUT_DIR = REPO_DIR / "build" / "tick-check"
 DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
-GAME_TIMEOUT_SECONDS = 120
+GAME_TIMEOUT_SECONDS = 180
 
 CLIENT_SETTINGS = [
     "+set", "vid_renderer", "soft", "+set", "r_mode", "4", "+set", "vid_fullscreen", "0",
@@ -54,6 +55,12 @@ TOLERANCES = {
     "rocket speed": 0.05,
     "berserker run speed": 0.30,  # AI picks run frames with some randomness
 }
+# ammo used while each weapon fires for 3 s (fire rate check); exact match expected within one shot
+WEAPONS = [("shotgun", "shells"), ("super shotgun", "shells"), ("chaingun", "bullets"),
+           ("grenade launcher", "grenades"), ("rocket launcher", "rockets"), ("hyperblaster", "cells"),
+           ("railgun", "slugs"), ("bfg10k", "cells")]
+for weapon_name, _ammo in WEAPONS:
+    TOLERANCES[f"{weapon_name} ammo used in 3 s"] = 0.10
 
 
 def script_lines():
@@ -77,7 +84,15 @@ def script_lines():
     # berserker: let it see the player and run at them
     lines += [at(13500, "notarget"), at(13550, f"teleport {BIG_ROOM_SPOT}"), at(13600, f"cmd spawnentity monster_berserk {BERSERKER_SPOT}"),
               at(14300, "snap"), at(14800, "snap")]
-    lines.append(at(15500, "quit"))
+    # weapons: hold fire for 3 s each, sampling ammo before and after
+    start = 15500
+    lines += [at(start - 400, "notarget"), at(start - 300, f"teleport {BIG_ROOM_SPOT}")]  # monsters ignore the player again
+    for weapon_name, ammo_name in WEAPONS:
+        lines += [at(start, f"give {weapon_name}"), at(start + 50, f"give {ammo_name}"),
+                  at(start + 100, f"use {weapon_name}"), at(start + 1800, "snap"),
+                  at(start + 1900, "+attack"), at(start + 4900, "-attack"), at(start + 6500, "snap")]
+        start += 7000
+    lines.append(at(start, "quit"))
     return lines
 
 
@@ -136,8 +151,9 @@ def speed_between(snap_a, snap_b, classname):
 def measure(log_text):
     """Turn one session's samples into the four measurements (None when missing)."""
     snaps = parse_snaps(log_text)
-    if len(snaps) != 13:
-        return {name: None for name in TOLERANCES}, f"expected 13 samples, got {len(snaps)}"
+    expected_samples = 13 + 2 * len(WEAPONS)
+    if len(snaps) != expected_samples:
+        return {name: None for name in TOLERANCES}, f"expected {expected_samples} samples, got {len(snaps)}"
     door, gun_before, gun_after, rocket_snaps, berserk_a, berserk_b = (
         snaps[0:4], snaps[4], snaps[5], snaps[6:11], snaps[11], snaps[12])
     # the rocket fires on the first weapon frame after +attack and explodes on the ceiling:
@@ -149,7 +165,12 @@ def measure(log_text):
     door_speed = None
     if len(rising) >= 2:
         door_speed = (rising[-1][1] - rising[0][1]) / (rising[-1][0] - rising[0][0])
+    weapon_results = {}
+    for index, (weapon_name, _ammo) in enumerate(WEAPONS):
+        before, after = snaps[13 + 2 * index], snaps[14 + 2 * index]
+        weapon_results[f"{weapon_name} ammo used in 3 s"] = before["ammo"] - after["ammo"]
     return {
+        **weapon_results,
         "door speed": door_speed,
         "machine gun bullets in 2 s": gun_before["ammo"] - gun_after["ammo"],
         "rocket speed": speed_between(flying[0], flying[-1], "rocket") if len(flying) >= 2 else None,
@@ -176,11 +197,11 @@ def main():
             print(f"{tick_rate} Hz: {problem}. See {OUTPUT_DIR}/{tick_rate}hz.log")
 
     failures = 0
-    header = f"{'measurement':<28}" + "".join(f"{str(rate) + ' Hz':>12}" for rate in results)
+    header = f"{'measurement':<34}" + "".join(f"{str(rate) + ' Hz':>12}" for rate in results)
     print(header)
     for name, tolerance in TOLERANCES.items():
         reference = results[10][name]
-        row = f"{name:<28}"
+        row = f"{name:<34}"
         verdicts = []
         for tick_rate, values in results.items():
             value = values[name]
