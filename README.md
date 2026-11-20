@@ -31,6 +31,20 @@ Output lands in `build/release/` (`optech2`, `optech2ded`). Point it at a Quake 
 build/release/optech2 -datadir "<path to Quake 2>"
 ```
 
+## Map tools
+
+Maps are compiled with [ericw-tools](https://github.com/ericwa/ericw-tools) (qbsp, vis, light).
+OPtech2 is tested with **ericw-tools 2.0.0-alpha11**. To get exactly that version (official release,
+sha256 checked) into `build/tools/ericw-tools/`:
+
+```
+python3 tools/get_ericw_tools.py
+```
+
+Compile for Quake II's extended format with `qbsp -qbism -subdivide 240` (the software renderer needs
+faces subdivided like stock maps); `light -world_units_per_luxel N` adds decoupled lightmaps.
+`tests/maps/make_limits_map.py` shows the full command lines.
+
 ## Checks
 
 All checks use a temporary HOME, so your own config and saves are never touched.
@@ -40,8 +54,7 @@ All checks use a temporary HOME, so your own config and saves are never touched.
 - `python3 tests/multiplayer/mp_check.py`: two clients on a dedicated server
 - `python3 tests/multiplayer/net_check.py`: traffic per player at several tick rates
 - `python3 tests/multiplayer/split_check.py`: packet splitting, clean and with loss
-- `python3 tests/maps/make_limits_map.py`, then `tests/maps/limits_check.py`: oversized test map (needs
-  [ericw-tools](https://github.com/ericwa/ericw-tools) 2.x, `--tools` or `$ERICW_TOOLS`)
+- `python3 tests/maps/make_limits_map.py`, then `tests/maps/limits_check.py`: oversized test map
 - `python3 tests/tickrate/tick_check.py`, `damage_check.py`: 10 Hz vs 60 Hz behaviour
 
 ## License

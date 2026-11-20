@@ -13,8 +13,9 @@ Usage:
   make_limits_map.py                  write + compile into build/maps/
   make_limits_map.py --map-only       only write the .map
 
-Needs ericw-tools 2.x (default ~/Projects/q2engine/tools/ericw-tools, or
---tools / $ERICW_TOOLS) and the stock data (for textures and the sound list).
+Needs ericw-tools (python3 tools/get_ericw_tools.py installs the tested
+version into build/tools/ericw-tools; or --tools / $ERICW_TOOLS) and the
+stock data (for textures and the sound list).
 """
 
 import argparse
@@ -29,7 +30,7 @@ REPO_DIR = Path(__file__).resolve().parent.parent.parent
 OUTPUT_DIR = REPO_DIR / "build" / "maps"
 MAP_NAME = "optech2_limits"
 DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
-DEFAULT_TOOLS_DIR = Path(os.environ.get("ERICW_TOOLS", Path.home() / "Projects/q2engine/tools/ericw-tools"))
+DEFAULT_TOOLS_DIR = Path(os.environ.get("ERICW_TOOLS", REPO_DIR / "build" / "tools" / "ericw-tools"))  # tools/get_ericw_tools.py
 
 # hall interior
 HALL_HALF_LENGTH = 6144
@@ -125,7 +126,8 @@ def build_map_text(data_dir):
 
 def run_tool(tools_dir, arguments):
     started = time.monotonic()
-    result = subprocess.run([str(tools_dir / arguments[0]), *arguments[1:]], capture_output=True, text=True)
+    program = arguments[0] + (".exe" if os.name == "nt" else "")
+    result = subprocess.run([str(tools_dir / program), *arguments[1:]], capture_output=True, text=True)
     log_path = OUTPUT_DIR / f"{MAP_NAME}_{arguments[0]}.log"
     log_path.write_text(result.stdout + result.stderr)
     if result.returncode != 0:
@@ -147,8 +149,9 @@ def main():
     if arguments.map_only:
         return 0
 
-    if not (arguments.tools / "qbsp").exists():
-        sys.exit(f"ericw-tools not found in {arguments.tools} (--tools or $ERICW_TOOLS)")
+    if not any((arguments.tools / name).exists() for name in ("qbsp", "qbsp.exe")):
+        sys.exit(f"ericw-tools not found in {arguments.tools}: run python3 tools/get_ericw_tools.py "
+                 "(or pass --tools / set $ERICW_TOOLS)")
     bsp_path = OUTPUT_DIR / f"{MAP_NAME}.bsp"
     game_paths = ["-basedir", str(arguments.datadir / "baseq2"), "-gamedir", str(arguments.datadir / "baseq2")]
     run_tool(arguments.tools, ["qbsp", "-qbism", "-subdivide", "240", *game_paths, str(map_path), str(bsp_path)])
