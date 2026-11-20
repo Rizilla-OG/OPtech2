@@ -7,9 +7,11 @@ folder, so you can play them yourself:
                    loop their first animation next to it
   optech2_limits   12288 unit hall, 320 brush models, 300 sounds, shadow room
   optech2_stress   ~3800 entities: items, rotating pillars, 300 soldiers
+  sound demo       every new sound format, one after another with a label:
+                   "exec optech2_sound_demo.cfg" in the game console
 
-Only adds files: maps/optech2_*.bsp and models/optech2/... in the game
-folder (your config, saves and screenshots are not touched). Run it again
+Only adds files: maps/optech2_*.bsp, models/optech2/..., sound/optech2/demo/
+and optech2_sound_demo.cfg in the game folder (your config, saves and screenshots are not touched). Run it again
 after changes to rebuild and reinstall.
 
 Usage:
@@ -34,7 +36,9 @@ REPO_DIR = Path(__file__).resolve().parent.parent
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(REPO_DIR / "tests" / "maps"))
 sys.path.insert(0, str(REPO_DIR / "tests" / "models"))
+sys.path.insert(0, str(REPO_DIR / "tests" / "sound"))
 import make_iqm_test  # noqa: E402
+import make_sound_demo  # noqa: E402
 import make_limits_map as map_tools  # noqa: E402
 
 BUILD_DIR = REPO_DIR / "build" / "test-content"
@@ -171,10 +175,14 @@ def main():
         shutil.copy(REPO_DIR / "build" / "maps" / bsp, game_dir / "maps")
         print(f"installed maps/{bsp}")
 
+    clip_count, demo_seconds = make_sound_demo.write_demo(game_dir)
+    print(f"installed sound/optech2/demo/ ({clip_count} clips) and optech2_sound_demo.cfg ({demo_seconds:.0f} s)")
+
     print(f"\nGame folder: {game_dir}")
     print("Play (cheats are on in single player: god, notarget, noclip):")
     for map_name in (SHOWCASE_MAP, "optech2_limits", "optech2_stress"):
         print(f'  {CLIENT_BINARY} -datadir "{arguments.datadir}" +map {map_name}')
+    print("Sound demo (in the game console):  exec optech2_sound_demo.cfg")
     return 0
 
 
