@@ -2,6 +2,7 @@
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
+#include <libavutil/opt.h> /* optech2 */
 #include <stdint.h>
 
 typedef struct cinavdecode
@@ -28,6 +29,8 @@ typedef struct cinavdecode
 	long video_curr;
 	long video_frame_size;
 	double video_timestamp;
+	uint8_t *video_last; /* optech2: last decoded frame, for repeat packets */
+	int video_last_valid;
 
 	/* audio */
 	int channels, rate;
@@ -141,6 +144,7 @@ cinavdecode_close(cinavdecode_t *state)
 	if (state->video_res)
 	{
 		free(state->video_res);
+		free(state->video_last); /* optech2 */
 	}
 
 	if (state->audio_res)
@@ -286,9 +290,26 @@ cinavdecode_init(cinavdecode_t *state, int max_width, int max_height)
 				state->width = width;
 				state->height = height;
 
-				state->swsctx_image = sws_getContext(
-					codec_ctx->width, codec_ctx->height, codec_ctx->pix_fmt,
-					width, height, AV_PIX_FMT_RGBA, 0, 0, 0, 0);
+				/* optech2: convert on all cores; one core can't keep up with
+				   1080p at 60 fps (the re-release's videos) */
+				state->swsctx_image = sws_alloc_context();
+				if (state->swsctx_image)
+				{
+					av_opt_set_int(state->swsctx_image, "srcw", codec_ctx->width, 0);
+					av_opt_set_int(state->swsctx_image, "srch", codec_ctx->height, 0);
+					av_opt_set_int(state->swsctx_image, "src_format", codec_ctx->pix_fmt, 0);
+					av_opt_set_int(state->swsctx_image, "dstw", width, 0);
+					av_opt_set_int(state->swsctx_image, "dsth", height, 0);
+					av_opt_set_int(state->swsctx_image, "dst_format", AV_PIX_FMT_RGBA, 0);
+					av_opt_set_int(state->swsctx_image, "sws_flags", SWS_BILINEAR, 0);
+					av_opt_set_int(state->swsctx_image, "threads", 0, 0); /* auto */
+
+					if (sws_init_context(state->swsctx_image, NULL, NULL) < 0)
+					{
+						sws_freeContext(state->swsctx_image);
+						state->swsctx_image = NULL;
+					}
+				}
 			}
 			else
 			{
@@ -316,7 +337,8 @@ cinavdecode_init(cinavdecode_t *state, int max_width, int max_height)
 				}
 			}
 
-			/* Open decoder */
+			/* Open decoder; optech2: on all cores where the codec can */
+			codec_ctx->thread_count = 0;
 			ret = avcodec_open2(codec_ctx, dec, NULL);
 			if (ret < 0)
 			{
@@ -367,6 +389,8 @@ cinavdecode_init(cinavdecode_t *state, int max_width, int max_height)
 	state->video_frame_size = 4 * state->width * state->height;
 	state->video_buffsize = state->video_frame_size * (state->fps / 2 + 1);
 	state->video_res = malloc(state->video_buffsize);
+	state->video_last = malloc(state->video_frame_size);
+	state->video_last_valid = 0;
 
 	return state;
 }
@@ -452,6 +476,43 @@ next_frame_ready(const cinavdecode_t *state)
 	return 1;
 }
 
+/*
+ * optech2: room for one more video frame in video_res (compacts or grows
+ * the buffer); NULL when out of memory.
+ */
+static uint8_t *
+cinavdecode_reserve_video(cinavdecode_t *state)
+{
+	long required_space = state->video_frame_size;
+
+	/* compact frame */
+	if ((state->video_pos + required_space) > state->video_buffsize &&
+		(state->video_curr > 0))
+	{
+		memmove(state->video_res,
+			state->video_res + state->video_curr,
+			state->video_pos - state->video_curr);
+		state->video_pos -= state->video_curr;
+		state->video_curr = 0;
+	}
+
+	/* realloc memory */
+	if ((state->video_pos + required_space) > state->video_buffsize)
+	{
+		uint8_t *new_buffer;
+
+		state->video_buffsize = (state->video_buffsize + required_space) * 2;
+		new_buffer = realloc(state->video_res, state->video_buffsize);
+		if (!new_buffer)
+		{
+			return NULL;
+		}
+		state->video_res = new_buffer;
+	}
+
+	return state->video_res + state->video_pos;
+}
+
 static void
 cinavdecode_parse_next(cinavdecode_t *state)
 {
@@ -466,6 +527,32 @@ cinavdecode_parse_next(cinavdecode_t *state)
 		}
 
 		stream_index = state->packet->stream_index;
+
+		/* optech2: an empty video packet repeats the previous frame (Theora in
+		   Ogg, e.g. the re-release's videos). FFmpeg takes an empty packet as
+		   end of stream, which stopped those videos after a second. */
+		if (state->packet->size == 0)
+		{
+			if (state->dec_ctx[stream_index] &&
+				state->dec_ctx[stream_index]->codec_type == AVMEDIA_TYPE_VIDEO &&
+				state->video_last_valid)
+			{
+				uint8_t *frame = cinavdecode_reserve_video(state);
+
+				if (!frame)
+				{
+					state->eof = 1;
+					av_packet_unref(state->packet);
+					break;
+				}
+
+				memcpy(frame, state->video_last, state->video_frame_size);
+				state->video_pos += state->video_frame_size;
+			}
+
+			av_packet_unref(state->packet);
+			continue;
+		}
 
 		/* send the packet with the compressed data to the decoder */
 		ret = avcodec_send_packet(state->dec_ctx[stream_index], state->packet);
@@ -563,34 +650,11 @@ cinavdecode_parse_next(cinavdecode_t *state)
 
 				required_space = state->video_frame_size;
 
-				/* compact frame */
-				if ((state->video_pos + required_space) > state->video_buffsize &&
-					(state->video_curr > 0))
+				if (!cinavdecode_reserve_video(state))
 				{
-					memmove(state->video_res,
-						state->video_res + state->video_curr,
-						state->video_pos - state->video_curr);
-					state->video_pos -= state->video_curr;
-					state->video_curr = 0;
-				}
-
-				/* realloc memory */
-				if ((state->video_pos + required_space) > state->video_buffsize)
-				{
-					uint8_t *new_buffer;
-					/* add current frame size */
-					state->video_buffsize += required_space;
-					/* double buffer */
-					state->video_buffsize *= 2;
-					/* realloacate buffer */
-					new_buffer = realloc(state->video_res, state->video_buffsize);
-					if (!new_buffer)
-					{
-						/* Memalloc error */
-						state->eof = 1;
-						break;
-					}
-					state->video_res = new_buffer;
+					/* Memalloc error */
+					state->eof = 1;
+					break;
 				}
 
 				/* RGB stride with single plane */
@@ -608,6 +672,9 @@ cinavdecode_parse_next(cinavdecode_t *state)
 					state->eof = 1;
 					break;
 				}
+
+				memcpy(state->video_last, out[0], state->video_frame_size); /* optech2 */
+				state->video_last_valid = 1;
 				state->video_pos += required_space;
 			}
 		}

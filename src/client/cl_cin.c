@@ -579,8 +579,23 @@ SCR_RunCinematic(void)
 
 	if (frame > cl.cinematicframe + 1)
 	{
-		Com_Printf("Dropped frame: %i > %i\n", frame, cl.cinematicframe + 1);
-		cl.cinematictime = cls.realtime - cl.cinematicframe * 1000 / cin.fps;
+#ifdef AVMEDIADECODE
+		/* optech2: FFmpeg videos skip ahead to catch up (keeps real time and
+		   the sound in sync); slowing the clock made 60 fps videos play slow */
+		if (cin.video_type == video_av)
+		{
+			while (frame > cl.cinematicframe + 1 && cin.pic_pending)
+			{
+				Z_Free(cin.pic_pending);
+				cin.pic_pending = SCR_ReadNextAVFrame();
+			}
+		}
+		else
+#endif
+		{
+			Com_DPrintf("Dropped frame: %i > %i\n", frame, cl.cinematicframe + 1);
+			cl.cinematictime = cls.realtime - cl.cinematicframe * 1000 / cin.fps;
+		}
 	}
 
 	if (cin.pic)

@@ -99,6 +99,10 @@
    animation still advance in 0.1 s steps; physics uses level.ticktime. */
 #define FRAMETIME 0.1
 
+/* optech2: re-release target_changelevel spawnflags */
+#define SPAWNFLAG_CHANGELEVEL_NO_END_OF_UNIT 16 /* no end-of-unit screen */
+#define SPAWNFLAG_CHANGELEVEL_IMMEDIATE_LEAVE 64 /* with 16: leave at once */
+
 /* memory tags to allow dynamic memory to be cleaned up */
 #define TAG_GAME 765        /* clear when unloading the dll */
 #define TAG_LEVEL 766       /* clear when loading a new level */
