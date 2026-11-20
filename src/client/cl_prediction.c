@@ -26,6 +26,7 @@
  */
 
 #include "header/client.h"
+#include "sound/header/local.h" /* optech2: underwater sound */
 
 void
 CL_CheckPredictionError(void)
@@ -221,6 +222,40 @@ CL_PMpointcontents(const vec3_t point)
 }
 
 /*
+ * optech2: underwater sound filter from the view position, each frame. It
+ * was switched from inside player movement, which is game code now (and
+ * did not run in demos or with prediction off).
+ */
+void
+CL_UpdateUnderwaterSound(const vec3_t vieworg)
+{
+	static qboolean underwater;
+	qboolean now_underwater;
+
+	now_underwater = (cls.state == ca_active) &&
+					 ((CL_PMpointcontents(vieworg) & MASK_WATER) != 0);
+
+	if (now_underwater && !underwater)
+	{
+		underwater = true;
+		snd_is_underwater = true;
+
+#ifdef USE_OPENAL
+		AL_Underwater();
+#endif
+	}
+	else if (!now_underwater && underwater)
+	{
+		underwater = false;
+		snd_is_underwater = false;
+
+#ifdef USE_OPENAL
+		AL_Overwater();
+#endif
+	}
+}
+
+/*
  * Sets cl.predicted_origin and cl.predicted_angles
  */
 void
@@ -274,7 +309,7 @@ CL_PredictMovement(void)
 	memset (&pm, 0, sizeof(pm));
 	pm.trace = CL_PMTrace;
 	pm.pointcontents = CL_PMpointcontents;
-	pm_airaccelerate = atof(cl.configstrings[CS_AIRACCEL]);
+	pm.airaccelerate = atof(cl.configstrings[CS_AIRACCEL]);
 	pm.s = cl.frame.playerstate.pmove;
 
 	/* TODO: mins/maxs should be updated on current frame number */
@@ -298,7 +333,7 @@ CL_PredictMovement(void)
 		}
 
 		pm.cmd = *cmd;
-		PmoveEx(&pm, origin);
+		CL_CGame_PmoveEx(&pm, origin); /* optech2: the game's movement */
 
 		/* save for debug checking */
 		VectorCopy(origin, cl.predicted_origins[frame]);

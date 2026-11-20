@@ -22,12 +22,21 @@
  * Player movement code. This is the core of Quake IIs legendary physics
  * engine
  *
+ * optech2: shared code, compiled into the engine (client prediction for
+ * games without their own) and into the game library (server movement and
+ * the game's prediction, see src/game/g_pmove.c), so a mod changes movement
+ * in one place. It only uses shared.h: no engine state, no sound.
+ * PMOVE_API marks the two entry points; the game library makes them static
+ * so the engine's copy (exported with -rdynamic) can't stand in for them.
+ *
  * =======================================================================
  */
 
-#include "header/common.h"
-#include "../client/sound/header/local.h"
-#include "../client/header/client.h"
+#include "../header/shared.h"
+
+#ifndef PMOVE_API
+#define PMOVE_API
+#endif
 
 #define STEPSIZE 18
 
@@ -60,7 +69,6 @@ static float pm_stopspeed = 100;
 static float pm_maxspeed = 300;
 static float pm_duckspeed = 100;
 static float pm_accelerate = 10;
-float pm_airaccelerate = 0;
 static float pm_wateraccelerate = 10;
 static float pm_friction = 6;
 static float pm_waterfriction = 1;
@@ -673,7 +681,7 @@ PM_AirMove(void)
 	else
 	{
 		/* not on ground, so little effect on velocity */
-		if (pm_airaccelerate)
+		if (pm->airaccelerate)
 		{
 			PM_AirAccelerate(wishdir, wishspeed, pm_accelerate);
 		}
@@ -1249,7 +1257,8 @@ PM_InitialSnapPosition(void)
 		}
 	}
 
-	Com_DPrintf("Bad InitialSnapPosition\n");
+	/* optech2: no position found; the developer print that stood here
+	   needs the engine, and this file is shared with the game */
 }
 
 static void
@@ -1288,76 +1297,6 @@ PM_ClampAngles(void)
 
 	AngleVectors(pm->viewangles, pml.forward, pml.right, pml.up);
 }
-
-#if !defined(DEDICATED_ONLY)
-static void
-PM_CalculateViewHeightForDemo()
-{
-	if (pm->s.pm_type == PM_GIB)
-	{
-		pm->viewheight = 8;
-	}
-	else
-	{
-		if ((pm->s.pm_flags & PMF_DUCKED) != 0)
-		{
-			pm->viewheight = -2;
-		}
-		else
-		{
-			pm->viewheight = 22;
-		}
-	}
-}
-
-static void
-PM_CalculateWaterLevelForDemo(void)
-{
-	vec3_t point;
-	int cont;
-
-	point[0] = pml.origin[0];
-	point[1] = pml.origin[1];
-	point[2] = pml.origin[2] + pm->viewheight;
-
-	pm->waterlevel = WATER_NONE;
-	pm->watertype = 0;
-
-	cont = pm->pointcontents(point);
-
-	if ((cont & MASK_WATER) != 0)
-	{
-		pm->waterlevel = WATER_UNDER;
-		pm->watertype = cont;
-	}
-}
-
-static void
-PM_UpdateUnderwaterSfx()
-{
-	static int underwater;
-
-	if ((pm->waterlevel == WATER_UNDER) && !underwater)
-	{
-		underwater = 1;
-		snd_is_underwater = 1;
-
-#ifdef USE_OPENAL
-		AL_Underwater();
-#endif
-	}
-
-	if ((pm->waterlevel < WATER_UNDER) && underwater)
-	{
-		underwater = 0;
-		snd_is_underwater = 0;
-
-#ifdef USE_OPENAL
-		AL_Overwater();
-#endif
-	}
-}
-#endif
 
 /*
  * Can be called by either the server or the client
@@ -1405,15 +1344,8 @@ Pmove_(void)
 
 	if (pm->s.pm_type == PM_FREEZE)
 	{
-#if !defined(DEDICATED_ONLY)
-		if (cl.attractloop)
-		{
-			PM_CalculateViewHeightForDemo();
-			PM_CalculateWaterLevelForDemo();
-			PM_UpdateUnderwaterSfx();
-		}
-#endif
-
+		/* optech2: the demo view height / underwater sound that stood here
+		   moved to the client (CL_PredictMovement) */
 		return; /* no movement at all */
 	}
 
@@ -1508,15 +1440,12 @@ Pmove_(void)
 	/* set groundentity, watertype, and waterlevel for final spot */
 	PM_CatagorizePosition();
 
-#if !defined(DEDICATED_ONLY)
-	PM_UpdateUnderwaterSfx();
-#endif
 
 	PM_SnapPosition();
 }
 
 /* Old version of pmove */
-void
+PMOVE_API void
 Pmove(pmove_t *pmove)
 {
 	pm = pmove;
@@ -1531,7 +1460,7 @@ Pmove(pmove_t *pmove)
 	VectorCopy(pml.current_origin, pmove->s.origin);
 }
 
-void
+PMOVE_API void
 PmoveEx(pmove_t *pmove, int *origin)
 {
 	pm = pmove;

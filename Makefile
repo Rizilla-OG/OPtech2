@@ -1211,6 +1211,7 @@ GAME_OBJS_ = \
 	src/game/g_light.o \
 	src/game/g_main.o \
 	src/game/g_misc.o \
+	src/game/g_pmove.o \
 	src/game/g_monster.o \
 	src/game/g_newai.o \
 	src/game/g_newdm.o \
@@ -1363,7 +1364,7 @@ CLIENT_OBJS_ := \
 	src/common/movemsg.o \
 	src/common/frame.o \
 	src/common/netchan.o \
-	src/common/pmove.o \
+	src/common/shared/pmove.o \
 	src/common/protocol.o \
 	src/common/szone.o \
 	src/common/zone.o \
@@ -1685,7 +1686,7 @@ SERVER_OBJS_ := \
 	src/common/models/sprites.o \
 	src/common/movemsg.o \
 	src/common/netchan.o \
-	src/common/pmove.o \
+	src/common/shared/pmove.o \
 	src/common/protocol.o \
 	src/common/szone.o \
 	src/common/zone.o \

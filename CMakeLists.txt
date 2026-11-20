@@ -383,6 +383,7 @@ set(Game-Source
 	${GAME_SRC_DIR}/g_light.c
 	${GAME_SRC_DIR}/g_main.c
 	${GAME_SRC_DIR}/g_misc.c
+	${GAME_SRC_DIR}/g_pmove.c
 	${GAME_SRC_DIR}/g_monster.c
 	${GAME_SRC_DIR}/g_newai.c
 	${GAME_SRC_DIR}/g_newdm.c
@@ -564,7 +565,7 @@ set(Client-Source
 	${COMMON_SRC_DIR}/models/sprites.c
 	${COMMON_SRC_DIR}/frame.c
 	${COMMON_SRC_DIR}/netchan.c
-	${COMMON_SRC_DIR}/pmove.c
+	${COMMON_SRC_DIR}/shared/pmove.c
 	${COMMON_SRC_DIR}/protocol.c
 	${COMMON_SRC_DIR}/szone.c
 	${COMMON_SRC_DIR}/zone.c
@@ -668,7 +669,7 @@ set(Server-Source
 	${COMMON_SRC_DIR}/frame.c
 	${COMMON_SRC_DIR}/movemsg.c
 	${COMMON_SRC_DIR}/netchan.c
-	${COMMON_SRC_DIR}/pmove.c
+	${COMMON_SRC_DIR}/shared/pmove.c
 	${COMMON_SRC_DIR}/protocol.c
 	${COMMON_SRC_DIR}/szone.c
 	${COMMON_SRC_DIR}/zone.c

@@ -515,6 +515,7 @@ void CL_LocalizeFormat(const char *format, const char **args, int num_args, char
 void CL_CGame_Load(void);
 void CL_CGame_Unload(void);
 qboolean CL_CGame_Active(void);
+void CL_CGame_PmoveEx(pmove_t *pmove, int *origin); /* optech2 */
 void CL_CGame_DrawHUD(void);
 void CL_CGame_CenterPrint(const char *text);
 void CL_CGame_ConfigString(int index, const char *text);
@@ -628,6 +629,7 @@ const char *CL_GetBindByAction(const char *binding);
 
 
 void CL_PredictMovement(void);
+void CL_UpdateUnderwaterSound(const vec3_t vieworg); /* optech2 */
 trace_t CL_PMTrace(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end);
 
 /* optech2: timedemo frame-time stats */

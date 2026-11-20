@@ -813,7 +813,6 @@ byte * Mod_LoadEmbededLMP(const char *mod_name, int *width, int *height,
 	int *bitsPerPixel);
 /* PLAYER MOVEMENT CODE */
 
-extern float pm_airaccelerate;
 
 void Pmove(pmove_t *pmove);
 void PmoveEx(pmove_t *pmove, int *origin);

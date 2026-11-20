@@ -29,6 +29,7 @@
 #include "../monster/misc/player.h"
 
 static edict_t *pm_passent;
+static cvar_t *sv_airaccelerate; /* optech2: for player movement */
 
 /*
  * The ugly as hell coop spawnpoint fixup function.
@@ -3277,9 +3278,18 @@ ClientThink(edict_t *ent, usercmd_t *ucmd)
 		pm.trace = PM_trace; /* adds default parms */
 		pm.pointcontents = gi.pointcontents;
 
-		/* perform a pmove */
+		/* optech2: air acceleration as the server puts it in CS_AIRACCEL
+		   (deathmatch only), for the client's prediction to match */
+		if (!sv_airaccelerate)
+		{
+			sv_airaccelerate = gi.cvar("sv_airaccelerate", "0", 0);
+		}
+
+		pm.airaccelerate = deathmatch->value ? sv_airaccelerate->value : 0;
+
+		/* perform a pmove; optech2: the game's own movement code */
 		M_SetStandMinMax(ent, pm.mins, pm.maxs);
-		gi.PmoveEx(&pm, origin);
+		G_PmoveEx(&pm, origin);
 
 		/* save results of pmove */
 		client->ps.pmove = pm.s;

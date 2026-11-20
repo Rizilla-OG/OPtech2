@@ -31,6 +31,7 @@
 
 #include "header/client.h"
 #include "header/cgame_rerelease.h"
+#include "../common/header/optech2_ext.h"
 
 /* module allocations live in their own zone tags, apart from the server's game */
 #define CGAME_TAG_OFFSET 1000
@@ -38,6 +39,7 @@
 static cvar_t *cl_cgame; /* library to load instead of the game folder's game library */
 static void *cgame_library;
 static cgame_export_t *cgame;
+static const optech2_pmove_ext_t *cgame_pmove; /* the game library's player movement, or NULL */
 static cgame_import_t cgame_import;
 
 /* ------------------------------------------------------------------ */
@@ -492,6 +494,27 @@ CL_CGame_Load(void)
 	}
 
 	Com_Printf("client game: loaded (cgame API %d)\n", CGAME_API_VERSION);
+
+	/* the game library's own player movement, for prediction */
+	{
+		OPtech2_GetExtension_t get_extension =
+			(OPtech2_GetExtension_t)Sys_GetProcAddress(cgame_library, "OPtech2_GetExtension");
+		const optech2_pmove_ext_t *pmove_ext =
+			get_extension ? get_extension(OPTECH2_EXT_PMOVE) : NULL;
+
+		if (pmove_ext && pmove_ext->version == OPTECH2_PMOVE_EXT_VERSION &&
+			pmove_ext->pmove_size == (int)sizeof(pmove_t) && pmove_ext->PmoveEx)
+		{
+			cgame_pmove = pmove_ext;
+			Com_Printf("client game: player movement from the game library\n");
+		}
+		else if (pmove_ext)
+		{
+			Com_Printf("client game: player movement version %d / size %d don't match, using the engine's\n",
+				pmove_ext->version, pmove_ext->pmove_size);
+		}
+	}
+
 	cgame->Init();
 
 	if (cgame->TouchPics)
@@ -503,6 +526,8 @@ CL_CGame_Load(void)
 void
 CL_CGame_Unload(void)
 {
+	cgame_pmove = NULL;
+
 	if (cgame)
 	{
 		cgame->Shutdown();
@@ -520,6 +545,21 @@ qboolean
 CL_CGame_Active(void)
 {
 	return cgame != NULL;
+}
+
+/* player movement for prediction: the game library's when it has its own,
+   else the engine's copy of the shared code */
+void
+CL_CGame_PmoveEx(pmove_t *pmove, int *origin)
+{
+	if (cgame_pmove)
+	{
+		cgame_pmove->PmoveEx(pmove, origin);
+	}
+	else
+	{
+		PmoveEx(pmove, origin);
+	}
 }
 
 /* ------------------------------------------------------------------ */

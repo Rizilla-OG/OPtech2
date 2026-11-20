@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 
 ## Unreleased
 
+- Player movement is game code: the shared movement code (`src/common/shared/pmove.c`) is compiled into the game library, the game runs its own copy, and the client predicts with the game library's copy (`OPtech2_GetExtension("optech2_pmove")`, falls back to the engine's copy for games without one). A mod that changes movement now keeps prediction working. `pmove_t` carries `airaccelerate` instead of an engine global; the underwater sound filter is decided by the client from the view position. New check: `tests/pmove/pmove_check.py`.
 - Videos: the CMake build now plays FFmpeg videos (`.ogv`, `.mpg`, `.avi`), as the Makefile build did (`AVCODEC_SUPPORT`, on when FFmpeg is found). The re-release's videos (Theora 1080p at 60 fps) played for one second and stopped: their empty "repeat frame" packets now repeat the last frame instead of ending the video. Decoding and scaling use all cores, and a video that falls behind skips frames instead of slowing down, so it keeps real time with its sound.
 - Fixed: the end of a video repeated old sound (a long note): once the decoded sound runs out the decoder now gives silence.
 - Fixed: Quake II 64's intro waited about 7 s after its camera scene. The re-release `target_changelevel` flags 16 (no end-of-unit screen) and 64 (leave at once) are now followed.

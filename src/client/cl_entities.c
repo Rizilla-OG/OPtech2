@@ -1061,6 +1061,7 @@ CL_AddEntities(void)
 	}
 
 	CL_CalcViewValues();
+	CL_UpdateUnderwaterSound(cl.refdef.vieworg); /* optech2 */
 	CL_AddPacketEntities(&cl.frame);
 	CL_AddTEnts();
 	CL_AddParticles();
