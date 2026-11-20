@@ -87,6 +87,15 @@
    sizeof(edict_t), always positive) */
 #define LEVEL_FILE_TAGGED (-0x4F505432) /* -"OPT2" */
 
+/* optech2: set while reading Yamagi's raw struct format. That format only
+   loads in a build with the same struct layout; broken data then means an
+   older build, which the error message should say. */
+static qboolean reading_raw_format;
+
+#define OLD_SAVE_MESSAGE "This savegame is from an older build in the old save format, "          \
+						 "which only loads in a build with the same game structures. Saves made " \
+						 "now keep loading after updates."
+
 #ifndef BUILD_DATE
 #define BUILD_DATE __DATE__
 #endif
@@ -636,6 +645,12 @@ ReadStringToBuf(FILE *f, int len, char *out, size_t out_sz)
 	if (len < 0)
 	{
 		fclose(f);
+		if (reading_raw_format)
+		{
+			gi.error(OLD_SAVE_MESSAGE);
+			return;
+		}
+
 		gi.error("%s: string length < 0", __func__);
 		return;
 	}
@@ -643,6 +658,12 @@ ReadStringToBuf(FILE *f, int len, char *out, size_t out_sz)
 	if (len >= (int)out_sz)
 	{
 		fclose(f);
+		if (reading_raw_format)
+		{
+			gi.error(OLD_SAVE_MESSAGE);
+			return;
+		}
+
 		gi.error("%s: string is too long for buffer: %i > %i ",
 				__func__, len, (int)out_sz);
 		return;
@@ -666,6 +687,12 @@ ReadString(FILE *f, int len, int tag)
 	if (len < 0 || len > MAX_TOKEN_CHARS)
 	{
 		fclose(f);
+		if (reading_raw_format)
+		{
+			gi.error(OLD_SAVE_MESSAGE);
+			return NULL;
+		}
+
 		gi.error("%s: bad string length: %i", __func__, len);
 		return NULL;
 	}
@@ -1364,6 +1391,7 @@ ReadGame(const char *filename)
 	short save_ver;
 
 	gi.FreeTags(TAG_GAME);
+	reading_raw_format = false; /* an earlier failed load may have left it set */
 
 	f = Q_fopen(filename, "rb");
 
@@ -1418,6 +1446,7 @@ ReadGame(const char *filename)
 	else
 	{
 		/* Yamagi's raw struct format */
+		reading_raw_format = true;
 		ReadStruct(f, &game, &sd_game, save_ver);
 		SanitizeGameStruct();
 
@@ -1428,6 +1457,8 @@ ReadGame(const char *filename)
 		{
 			ReadClient(f, &game.clients[i], save_ver);
 		}
+
+		reading_raw_format = false;
 	}
 
 	/* Read and recheck items class names */
@@ -1536,6 +1567,7 @@ ReadLevel(const char *filename)
 	edict_t *ent;
 
 	G_ScreenFader_Reset();
+	reading_raw_format = false; /* an earlier failed load may have left it set */
 
 	f = Q_fopen(filename, "rb");
 
@@ -1570,12 +1602,13 @@ ReadLevel(const char *filename)
 	else if (i != sizeof(edict_t))
 	{
 		fclose(f);
-		gi.error("%s: mismatched edict size", __func__);
+		gi.error(OLD_SAVE_MESSAGE);
 		return;
 	}
 	else
 	{
 		/* load the level locals */
+		reading_raw_format = true;
 		ReadLevelLocals(f);
 	}
 
@@ -1629,6 +1662,7 @@ ReadLevel(const char *filename)
 
 	fclose(f);
 	free(edict_schema);
+	reading_raw_format = false;
 
 	G_ScreenFader_Relink();
 
