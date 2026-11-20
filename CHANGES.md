@@ -15,3 +15,4 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 - Map loader accepts only Quake 2 (IBSP 38, extended QBSP/XBSP, BSPX) and Quake 3 (IBSP 46) maps. Quake 1, Hexen 2, Half-Life, Daikatana, SiN, Heretic 2, Kingpin and Doom map support removed.
 - Fixed an uninitialized lump count when a map file has an unknown format.
 - Pack files: only Quake 2 PAK and PK3/ZIP (pk2, pkz) are loaded. Quake 1/Half-Life WAD, Anachronox DAT, SiN and Daikatana pack formats removed.
+- Network protocols 25 (Quake 2 test demos) and 51 (Heretic 2 demo) removed. Stock Quake 2 (26, 31, 32, 34), re-release (2022, 2023) and OPtech2 (2024) remain.

@@ -218,8 +218,6 @@ void Info_Print(const char *s);
 
 /* PROTOCOL */
 
-/* Quake 2 Test Demos */
-#define PROTOCOL_Q2TEST_VERSION 25
 /* Quake 2 Release Demos */
 #define PROTOCOL_RELEASE_VERSION 26
 /* Quake 2 Demo */
@@ -228,8 +226,6 @@ void Info_Print(const char *s);
 #define PROTOCOL_XATRIX_VERSION 32
 /* Quake 2 Network Release */
 #define PROTOCOL_R97_VERSION 34
-/* Heretic 2 Release Demos */
-#define PROTOCOL_H2DEMO_VERSION 51
 /* ReRelease demo files */
 #define PROTOCOL_RR22_VERSION 2022
 /* ReRelease network protocol */

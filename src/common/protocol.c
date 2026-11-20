@@ -84,38 +84,13 @@
 #define MAX_STATS_RR22DEMO 64
 
 /* Heretic 2 */
-#define MAX_STATS_H2DEMO 48
 /* Protocol 51 ranges. */
-#define	MAX_CLIENTS_H2DEMO 32
-#define	MAX_LIGHTSTYLES_H2DEMO 256
-#define	MAX_MODELS_H2DEMO 256
-#define	MAX_SOUNDS_H2DEMO 768
-#define	MAX_IMAGES_H2DEMO 256
-#define	MAX_ITEMS_H2DEMO 256
-#define CS_NAME_H2DEMO 0
-#define CS_CDTRACK_H2DEMO 1
-#define CS_SKY_H2DEMO 2
-#define CS_SKYAXIS_H2DEMO 3
-#define CS_SKYROTATE_H2DEMO 4
-#define CS_LEVEL_NUMBER_H2DEMO 5 /* Unexisted in Quake 2 */
-#define CS_STATUSBAR_H2DEMO 6
-#define CS_MAXCLIENTS_H2DEMO 30
-#define CS_MAPCHECKSUM_H2DEMO 31
-#define CS_MODELS_H2DEMO 32
-#define CS_SOUNDS_H2DEMO (CS_MODELS_H2DEMO + MAX_MODELS_H2DEMO)
-#define CS_IMAGES_H2DEMO (CS_SOUNDS_H2DEMO + MAX_SOUNDS_H2DEMO)
-#define CS_LIGHTS_H2DEMO (CS_IMAGES_H2DEMO + MAX_IMAGES_H2DEMO)
-#define CS_ITEMS_H2DEMO (CS_LIGHTS_H2DEMO + MAX_LIGHTSTYLES_H2DEMO)
-#define CS_PLAYERSKINS_H2DEMO (CS_ITEMS_H2DEMO + MAX_ITEMS_H2DEMO)
-#define CS_WELCOME_H2DEMO (CS_PLAYERSKINS_H2DEMO + MAX_CLIENTS_H2DEMO) /* Unexisted in Quake 2 */
-#define MAX_CONFIGSTRINGS_H2DEMO CS_WELCOME_H2DEMO + 4
 
 /* Convert from current protocol to internal */
 int
 P_ConvertConfigStringFrom(int i, int protocol)
 {
-	if (IS_QII97_PROTOCOL(protocol) ||
-		(protocol == PROTOCOL_Q2TEST_VERSION))
+	if (IS_QII97_PROTOCOL(protocol))
 	{
 		if (i >= CS_AIRACCEL_Q2DEMO && i < CS_MODELS_Q2DEMO)
 		{
@@ -148,49 +123,6 @@ P_ConvertConfigStringFrom(int i, int protocol)
 		else if (i >= CS_GENERAL_Q2DEMO && i < MAX_CONFIGSTRINGS_Q2DEMO)
 		{
 			i += CS_GENERAL - CS_GENERAL_Q2DEMO;
-		}
-	}
-	else if (protocol == PROTOCOL_H2DEMO_VERSION)
-	{
-		if (i == CS_LEVEL_NUMBER_H2DEMO)
-		{
-			i = CS_SKIP;
-		}
-		else if (i == CS_STATUSBAR_H2DEMO)
-		{
-			i = CS_STATUSBAR;
-		}
-		else if (i >= CS_MAXCLIENTS_H2DEMO && i < CS_MODELS_H2DEMO)
-		{
-			i += CS_MAXCLIENTS - CS_MAXCLIENTS_H2DEMO;
-		}
-		else if (i >= CS_MODELS_H2DEMO && i < CS_SOUNDS_H2DEMO)
-		{
-			i += CS_MODELS - CS_MODELS_H2DEMO;
-		}
-		else if (i >= CS_SOUNDS_H2DEMO && i < CS_IMAGES_H2DEMO)
-		{
-			i += CS_SOUNDS - CS_SOUNDS_H2DEMO;
-		}
-		else if (i >= CS_IMAGES_H2DEMO && i < CS_LIGHTS_H2DEMO)
-		{
-			i += CS_IMAGES - CS_IMAGES_H2DEMO;
-		}
-		else if (i >= CS_LIGHTS_H2DEMO && i < CS_ITEMS_H2DEMO)
-		{
-			i += CS_LIGHTS - CS_LIGHTS_H2DEMO;
-		}
-		else if (i >= CS_ITEMS_H2DEMO && i < CS_PLAYERSKINS_H2DEMO)
-		{
-			i += CS_ITEMS - CS_ITEMS_H2DEMO;
-		}
-		else if (i >= CS_PLAYERSKINS_H2DEMO && i < CS_WELCOME_H2DEMO)
-		{
-			i += CS_PLAYERSKINS - CS_PLAYERSKINS_H2DEMO;
-		}
-		else if (i >= CS_WELCOME_H2DEMO)
-		{
-			i = CS_SKIP;
 		}
 	}
 	else if (IS_QIIRR_PROTOCOL(protocol))
@@ -258,8 +190,7 @@ P_ConvertConfigStringFrom(int i, int protocol)
 int
 P_ConvertConfigStringTo(int i, int protocol)
 {
-	if (IS_QII97_PROTOCOL(protocol) ||
-		(protocol == PROTOCOL_Q2TEST_VERSION))
+	if (IS_QII97_PROTOCOL(protocol))
 	{
 		if (i >= CS_MODELS && i < CS_SOUNDS)
 		{
@@ -339,75 +270,6 @@ P_ConvertConfigStringTo(int i, int protocol)
 			}
 		}
 	}
-	else if (protocol == PROTOCOL_H2DEMO_VERSION)
-	{
-		if (i >= CS_MODELS && i < CS_SOUNDS)
-		{
-			i += CS_MODELS_H2DEMO - CS_MODELS;
-
-			if (i >= CS_SOUNDS_H2DEMO)
-			{
-				Com_Error(ERR_DROP, "%s: CS_SOUNDS: bad index %i\n",
-					__func__, i);
-				return i;
-			}
-		}
-		else if (i >= CS_SOUNDS && i < CS_IMAGES)
-		{
-			i += CS_SOUNDS_H2DEMO - CS_SOUNDS;
-
-			if (i >= CS_IMAGES_H2DEMO)
-			{
-				Com_Error(ERR_DROP, "%s: CS_IMAGES: bad index %i\n",
-					__func__, i);
-				return i;
-			}
-		}
-		else if (i >= CS_IMAGES && i < CS_LIGHTS)
-		{
-			i += CS_IMAGES_H2DEMO - CS_IMAGES;
-
-			if (i >= CS_LIGHTS_H2DEMO)
-			{
-				Com_Error(ERR_DROP, "%s: CS_LIGHTS: bad index %i\n",
-					__func__, i);
-				return i;
-			}
-		}
-		else if (i >= CS_LIGHTS && i < CS_ITEMS)
-		{
-			i += CS_LIGHTS_H2DEMO - CS_LIGHTS;
-
-			if (i >= CS_ITEMS_H2DEMO)
-			{
-				Com_Error(ERR_DROP, "%s: CS_ITEMS: bad index %i\n",
-					__func__, i);
-				return i;
-			}
-		}
-		else if (i >= CS_ITEMS && i < CS_PLAYERSKINS)
-		{
-			i += CS_ITEMS_H2DEMO - CS_ITEMS;
-
-			if (i >= CS_PLAYERSKINS_H2DEMO)
-			{
-				Com_Error(ERR_DROP, "%s: CS_PLAYERSKINS: bad index %i\n",
-					__func__, i);
-				return i;
-			}
-		}
-		else if (i >= CS_PLAYERSKINS && i < CS_GENERAL)
-		{
-			i += CS_PLAYERSKINS_H2DEMO - CS_PLAYERSKINS;
-
-			if (i >= CS_WELCOME_H2DEMO)
-			{
-				Com_Error(ERR_DROP, "%s: CS_GENERAL: bad index %i\n",
-					__func__, i);
-				return i;
-			}
-		}
-	}
 
 	return i;
 }
@@ -415,8 +277,7 @@ P_ConvertConfigStringTo(int i, int protocol)
 int
 P_GetCountOfItems(int protocol)
 {
-	if (IS_QII97_PROTOCOL(protocol) ||
-		(protocol == PROTOCOL_Q2TEST_VERSION))
+	if (IS_QII97_PROTOCOL(protocol))
 	{
 		return MAX_ITEMS_Q2DEMO;
 	}
@@ -435,10 +296,6 @@ P_GetCountOfStats(int protocol)
 	{
 		return MAX_STATS_Q2DEMO;
 	}
-	else if (protocol == PROTOCOL_H2DEMO_VERSION)
-	{
-		return MAX_STATS_H2DEMO;
-	}
 	else if (IS_QIIRR_PROTOCOL(protocol))
 	{
 		return MAX_STATS_RR22DEMO;
@@ -450,145 +307,12 @@ P_GetCountOfStats(int protocol)
 int
 P_CmdConvert(int cmd, int protocol)
 {
-	if (protocol == PROTOCOL_Q2TEST_VERSION)
-	{
-		static const int convert_cmd[] = {
-			svc_bad,
-			svc_nop,
-			svc_disconnect,
-			svc_reconnect,
-			svc_sound,
-			svc_print,
-			svc_stufftext,
-			svc_serverdata,
-			svc_configstring,
-			svc_spawnbaseline,
-			svc_temp_entity,
-			svc_centerprint,
-			svc_muzzleflash,
-			svc_download,
-			svc_playerinfo,
-			svc_chokecount,
-			svc_packetentities,
-			svc_deltapacketentities,
-			svc_frame,
-			svc_muzzleflash2,
-			svc_inventory,
-			svc_layout,
-		};
-
-		if (cmd < 0 || cmd >= ARRLEN(convert_cmd))
-		{
-			return cmd;
-		}
-
-		return convert_cmd[cmd];
-	}
-	else if (protocol == PROTOCOL_H2DEMO_VERSION)
-	{
-		static const int convert_cmd[] = {
-			svc_bad,
-			svc_layout,
-			svc_inventory,
-			-1, /* svc_client_effect */
-			svc_nop,
-			svc_disconnect,
-			svc_reconnect,
-			svc_sound,
-			svc_print,
-			-1, /* svc_gamemsg_print */
-			svc_stufftext,
-			svc_serverdata,
-			svc_configstring,
-			svc_spawnbaseline,
-			svc_centerprint,
-			-1, /* svc_gamemsg_centerprint */
-			-1, /* svc_gamemsgvar_centerprint */
-			-1, /* svc_levelmsg_centerprint */
-			-1, /* svc_captionprint */
-			-1, /* svc_obituary */
-			svc_download,
-			svc_playerinfo,
-			svc_packetentities,
-			svc_deltapacketentities,
-			svc_frame,
-			-1, /* svc_removeentities */
-			-1, /* svc_changeCDtrack */
-			-1, /* svc_framenum */
-			-1, /* svc_demo_client_effect */
-			-1, /* svc_special_client_effect */
-			-1, /* svc_gamemsgdual_centerprint */
-			-1, /* svc_nameprint */
-		};
-
-		if (cmd < 0 || cmd >= ARRLEN(convert_cmd))
-		{
-			return cmd;
-		}
-
-		return convert_cmd[cmd];
-	}
 
 	return cmd;
-}
-
-static uint64_t
-P_EntityBitsConvertFlags(uint64_t bits, const uint64_t *convert, size_t size)
-{
-	uint64_t sflags = 0;
-	int i;
-
-	if (!convert)
-	{
-		return bits;
-	}
-
-	for (i = 0; i < size; i++)
-	{
-		if (bits & (1ULL << i))
-		{
-			sflags |= convert[i];
-		}
-	}
-
-	return sflags;
 }
 
 uint64_t
 P_EntityBitsConvert(uint64_t bits, int protocol)
 {
-	if (protocol == PROTOCOL_Q2TEST_VERSION)
-	{
-		static const uint64_t convert[] = {
-			U_ORIGIN1,           /* 0 */
-			U_ORIGIN2,           /* 1 */
-			U_ORIGIN3,           /* 2 */
-			U_FRAME8,            /* 3 */
-			0,                   /* 4 */
-			0,                   /* 5 */
-			0,                   /* 6 */
-			0,                   /* 7 */
-			U_ANGLE1,            /* 8 */
-			U_ANGLE2,            /* 9 */
-			U_ANGLE3,            /* 10 */
-			U_MODEL,             /* 11 */
-			U_RENDERFX8,         /* 12 */
-			U_SKIN8,             /* 13 */
-			U_EFFECTS8,          /* 14 */
-			0,                   /* 15 */
-			U_FRAME16,           /* 16 */
-			U_RENDERFX16,        /* 17 */
-			U_EFFECTS16,         /* 18 */
-			U_MODEL2,            /* 19 */
-			U_MODEL3,            /* 20 */
-			U_MODEL4,            /* 21 */
-			U_OLDORIGIN,         /* 22 */
-			U_SKIN8 | U_SKIN16,  /* 23 */
-			U_SOUND,             /* 24 */
-		};
-
-		return P_EntityBitsConvertFlags(bits, convert, ARRLEN(convert));
-	}
-
 	return bits;
 }

@@ -96,111 +96,6 @@ CL_RegisterSounds(void)
 	S_EndRegistration();
 }
 
-static int
-CL_ParseEntityBitsH2Demo(uint64_t *bits)
-{
-	int i, mask, number;
-	uint64_t total = 0;
-
-	mask = MSG_ReadByte(&net_message);
-	if (mask < 0)
-	{
-		Com_Error(ERR_DROP, "%s: unexpected message end", __func__);
-		return 0;
-	}
-
-	for (i = 0; i < 5; i++)
-	{
-		if (mask & (1 << i))
-		{
-			int b;
-
-			b = MSG_ReadByte(&net_message);
-			if (b < 0)
-			{
-				Com_Error(ERR_FATAL, "%s: unexpected message end", __func__);
-				return 0;
-			}
-
-			total |= (uint64_t)b << (i * 8);
-		}
-	}
-
-	if (total & (1LL << 30)) /* Heretic 2 U_NUMBER16 */
-	{
-		number = MSG_ReadShort(&net_message);
-	}
-	else
-	{
-		number = MSG_ReadByte(&net_message);
-	}
-
-	if (number < 0)
-	{
-		Com_Error(ERR_DROP, "%s: unexpected message end", __func__);
-		return 0;
-	}
-
-	/* Heretic 2 flags is not converted yet */
-	/* count the bits for net profiling */
-	for (i = 0; i < ARRLEN(bitcounts); i++)
-	{
-		if (total & (1ULL << i))
-		{
-			bitcounts[i]++;
-		}
-	}
-
-	*bits = total;
-	return number;
-}
-
-static unsigned
-CL_ParseEntityBitsQ2Test(uint64_t *bits)
-{
-	int i, number, extra_bytes, packed;
-	uint64_t total;
-
-	packed = MSG_ReadShort(&net_message);
-	if (packed < 0)
-	{
-		Com_Error(ERR_FATAL, "%s: unexpected message end", __func__);
-		return 0;
-	}
-
-	total = (short)packed & 0x0f;
-	extra_bytes = ((short)packed >> 4) & 0x03;
-	number = ((short)packed) >> 6;
-
-	for (i = 0; i < extra_bytes; i++)
-	{
-		int b;
-
-		b = MSG_ReadByte(&net_message);
-		if (b < 0)
-		{
-			Com_Error(ERR_FATAL, "%s: unexpected message end", __func__);
-			return 0;
-		}
-
-		total |= (uint64_t)b << ((i + 1) * 8);
-	}
-
-	total = P_EntityBitsConvert(total, cls.serverProtocol);
-
-	/* count the bits for net profiling */
-	for (i = 0; i < ARRLEN(bitcounts); i++)
-	{
-		if (total & (1ULL << i))
-		{
-			bitcounts[i]++;
-		}
-	}
-
-	*bits = total;
-	return number;
-}
-
 static unsigned
 CL_ParseEntityBitsQ2RR(uint64_t *bits)
 {
@@ -299,18 +194,7 @@ CL_ParseEntityBitsQ2RR(uint64_t *bits)
 static unsigned
 CL_ParseEntityBits(uint64_t *bits)
 {
-	if (cls.serverProtocol == PROTOCOL_Q2TEST_VERSION)
-	{
-		return CL_ParseEntityBitsQ2Test(bits);
-	}
-	else if (cls.serverProtocol == PROTOCOL_H2DEMO_VERSION)
-	{
-		return CL_ParseEntityBitsH2Demo(bits);
-	}
-	else
-	{
-		return CL_ParseEntityBitsQ2RR(bits);
-	}
+	return CL_ParseEntityBitsQ2RR(bits);
 }
 
 /*
@@ -351,7 +235,6 @@ CL_ParseDelta(const entity_xstate_t *from, entity_xstate_t *to, int number, uint
 	}
 
 	if (IS_QII97_PROTOCOL(cls.serverProtocol) ||
-		(cls.serverProtocol == PROTOCOL_Q2TEST_VERSION) ||
 		(IS_QIIRR_PROTOCOL(cls.serverProtocol) && !(bits & U_MODEL16)))
 	{
 		if (bits & U_MODEL)
@@ -636,8 +519,7 @@ CL_ParseDelta(const entity_xstate_t *from, entity_xstate_t *to, int number, uint
 					__func__, volume);
 			}
 		}
-		else if (IS_QII97_PROTOCOL(cls.serverProtocol) ||
-			(cls.serverProtocol == PROTOCOL_Q2TEST_VERSION))
+		else if (IS_QII97_PROTOCOL(cls.serverProtocol))
 		{
 			to->sound = MSG_ReadByte(&net_message);
 		}
@@ -1471,8 +1353,6 @@ CL_GetProtocolName(int protocol)
 {
 	switch (protocol)
 	{
-		case PROTOCOL_Q2TEST_VERSION:
-			return "Quake 2 Test Demo";
 		case PROTOCOL_RELEASE_VERSION:
 			return "Quake 2 Demo";
 		case PROTOCOL_XATRIX_VERSION:
@@ -1482,9 +1362,6 @@ CL_GetProtocolName(int protocol)
 		/* Network protocol */
 		case PROTOCOL_R97_VERSION:
 			return "Quake 2";
-		/* Heretic 2 demo */
-		case PROTOCOL_H2DEMO_VERSION:
-			return "Heretic II Demo";
 		/* ReRelease Demo */
 		case PROTOCOL_RR22_VERSION:
 			return "ReRelease Quake 2 Demo";
@@ -1523,8 +1400,6 @@ CL_ParseServerData(void)
 	if (Com_ServerState() && (
 		IS_QII97_PROTOCOL(i) ||
 		IS_QIIRR_PROTOCOL(i) ||
-		(i == PROTOCOL_Q2TEST_VERSION) ||
-		(i == PROTOCOL_H2DEMO_VERSION) ||
 		(i == PROTOCOL_VERSION)))
 	{
 		Com_Printf("Network protocol: %s\n", CL_GetProtocolName(i));
@@ -1554,30 +1429,10 @@ CL_ParseServerData(void)
 
 	Com_DPrintf("Used %d ms frame time\n", cl.frame_msec);
 
-	if ((cl_shownet->value == 0) &&
-		((i == PROTOCOL_H2DEMO_VERSION) ||
-		 (i == PROTOCOL_Q2TEST_VERSION)))
-	{
-		Com_Error(ERR_DROP, "Network protocol '%s' is currently unsupported\n",
-			CL_GetProtocolName(i));
-		return;
-	}
-
 	/* game directory */
 	str = MSG_ReadString(&net_message);
 	Q_strlcpy(cl.gamedir, str, sizeof(cl.gamedir));
 
-	if (cls.serverProtocol == PROTOCOL_H2DEMO_VERSION)
-	{
-		const char *version;
-		int download;
-
-		download = MSG_ReadByte(&net_message);
-		version = MSG_ReadString(&net_message);
-
-		Com_DPrintf("%s: Download type %d, client version '%s'\n",
-			__func__, download, version);
-	}
 
 	/* set gamedir */
 	if ((*str && (!fs_gamedirvar->string || !*fs_gamedirvar->string ||
@@ -2606,18 +2461,6 @@ CL_ParseServerMessage(void)
 		{
 			SHOWNET("END OF MESSAGE");
 			break;
-		}
-
-		if (!cls.serverProtocol)
-		{
-			if (cmd == 0x07)
-			{
-				cls.serverProtocol = PROTOCOL_Q2TEST_VERSION;
-			}
-			else if (cmd == 0x0b)
-			{
-				cls.serverProtocol = PROTOCOL_H2DEMO_VERSION;
-			}
 		}
 
 		cmd = P_CmdConvert(cmd, cls.serverProtocol);
