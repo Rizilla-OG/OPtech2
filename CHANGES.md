@@ -44,5 +44,6 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 - Tick rate check also compares fire rates of 8 weapons (ammo used while firing for 3 s).
 - `g_damagelog 1`: prints every hit (time, attacker, target, damage, means of death), for tests.
 - Damage check: `python3 tests/tickrate/damage_check.py` fires every weapon at a supertank for 3 s at 10 and 60 Hz and compares damage per ammo (~4 min, no windows). Result: identical except rocket/grenade splash within 6%.
+- Default tick rate is now 60 Hz (`sv_tickrate 60`). Set `sv_tickrate 10` before starting a game for stock timing. Multiplayer check defaults to 60 too (`--tickrate 10` for stock).
 - `playerinfo` cheat command: prints game time, health, ammo and position on one line (for tests).
 - Tick rate check: `python3 tests/tickrate/tick_check.py` runs base1 at 10 and 60 Hz and compares door speed, machine gun fire rate, rocket speed and berserker run speed (~40 s, no windows).

@@ -608,7 +608,7 @@ SV_Init(void)
 	SV_InitOperatorCommands();
 
 	/* optech2: server frames per second. Latched: a change applies on the next new game. */
-	sv_tickrate = Cvar_Get("sv_tickrate", "10", CVAR_SERVERINFO | CVAR_LATCH); /* latched: game and server read it at the same point */
+	sv_tickrate = Cvar_Get("sv_tickrate", "60", CVAR_SERVERINFO | CVAR_LATCH); /* latched: game and server read it at the same point */
 	sv_optimize_sp_loadtime = Cvar_Get("sv_optimize_sp_loadtime", "31", 0);
 	sv_optimize_mp_loadtime = Cvar_Get("sv_optimize_mp_loadtime", "7", 0);
 
