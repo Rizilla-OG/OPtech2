@@ -44,6 +44,7 @@ cvar_t *cl_noskins;
 cvar_t *cl_footsteps;
 cvar_t *cl_timeout;
 cvar_t *cl_predict;
+cvar_t *cl_predict_movers; /* optech2 */
 cvar_t *cl_showfps;
 cvar_t *cl_showspeed;
 cvar_t *cl_gun;
@@ -683,6 +684,7 @@ CL_InitLocal(void)
 	cl_footsteps = Cvar_Get("cl_footsteps", "1", 0);
 	cl_noskins = Cvar_Get("cl_noskins", "0", 0);
 	cl_predict = Cvar_Get("cl_predict", "1", 0);
+	cl_predict_movers = Cvar_Get("cl_predict_movers", "1", 0); /* optech2: carry the player on lifts in prediction */
 	cl_showfps = Cvar_Get("cl_showfps", "0", CVAR_ARCHIVE);
 	cl_showspeed = Cvar_Get("cl_showspeed", "0", CVAR_ARCHIVE);
 	cl_laseralpha = Cvar_Get("cl_laseralpha", "0.3", 0);
