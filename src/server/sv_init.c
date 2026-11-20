@@ -296,7 +296,7 @@ SV_SpawnServer(char *server, char *spawnpoint, server_state_t serverstate,
 	SV_ClearBaselines();
 	memset(&sv, 0, sizeof(sv));
 	svs.realtime = 0;
-	/* optech2: frames per second for this map; the game code still assumes 10 */
+	/* optech2: frames per second for this map (the game reads the same cvar) */
 	sv.tickrate = Q_clamp((int)sv_tickrate->value, 10, 120);
 	sv.loadgame = loadgame;
 	sv.attractloop = attractloop;

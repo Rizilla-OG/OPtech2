@@ -1044,7 +1044,7 @@ stalker_do_pounce(edict_t *self, vec3_t dest)
 		VectorNormalize(forward);
 
 		VectorScale(forward, velocity * cos(DEG2RAD(jumpAngles[0])), self->velocity);
-		self->velocity[2] = velocity * sin(DEG2RAD(jumpAngles[0])) + (0.5 * sv_gravity->value * FRAMETIME);
+		self->velocity[2] = velocity * sin(DEG2RAD(jumpAngles[0])) + (0.5 * sv_gravity->value * level.ticktime) /* optech2: one physics step */;
 		return 1;
 	}
 
@@ -1054,7 +1054,7 @@ stalker_do_pounce(edict_t *self, vec3_t dest)
 		VectorNormalize(forward);
 
 		VectorScale(forward, velocity * cos(DEG2RAD(jumpAngles[1])), self->velocity);
-		self->velocity[2] = velocity * sin(DEG2RAD(jumpAngles[1])) + (0.5 * sv_gravity->value * FRAMETIME);
+		self->velocity[2] = velocity * sin(DEG2RAD(jumpAngles[1])) + (0.5 * sv_gravity->value * level.ticktime) /* optech2: one physics step */;
 		return 1;
 	}
 

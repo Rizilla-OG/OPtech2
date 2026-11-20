@@ -95,6 +95,8 @@
 #define FL_NOGIB 0x00010000                 /* player has been vaporized by a nuke, drop no gibs */
 #define FL_FLASHLIGHT 0x00020000            /* enable flashlight */
 
+/* optech2: the think and animation step. Monsters, weapons and player
+   animation still advance in 0.1 s steps; physics uses level.ticktime. */
 #define FRAMETIME 0.1
 
 /* memory tags to allow dynamic memory to be cleaned up */
@@ -375,8 +377,11 @@ typedef struct
    it is read/written to the level.sav file for savegames */
 typedef struct
 {
-	int framenum;
-	float time;
+	int framenum; /* optech2: 10 Hz counter (level.time * 10), not server frames: timers and blinks count in it */
+	float time; /* optech2: advances by ticktime each server frame */
+	float ticktime; /* optech2: one server frame in seconds (1 / sv_tickrate) */
+	int tickrate; /* optech2: server frames per second */
+	qboolean thinkframe; /* optech2: true on the server frames where framenum advanced (every 0.1 s) */
 
 	char level_name[MAX_QPATH];         /* the descriptive name (Outer Base, etc) */
 	char mapname[MAX_QPATH];            /* the server name (base1, etc) */
@@ -747,6 +752,7 @@ extern cvar_t *g_commanderbody_nogod;
 extern cvar_t *filterban;
 
 extern cvar_t *sv_gravity;
+extern cvar_t *sv_tickrate; /* optech2: server frames per second, set by the server */
 extern cvar_t *sv_maxvelocity;
 
 extern cvar_t *gun_x, *gun_y, *gun_z;

@@ -575,7 +575,7 @@ SV_movestep(edict_t *ent, vec3_t move, qboolean relink)
 
 		/* [Paril-KEX] this is something N64 does to avoid doors opening
 		 * at the start of a level, which triggers some monsters to spawn. */
-		if (!level.is_n64 || level.time > FRAMETIME)
+		if (!level.is_n64 || level.time > level.ticktime) /* optech2: after the first server frame */
 		{
 			G_TouchTriggers(ent);
 		}

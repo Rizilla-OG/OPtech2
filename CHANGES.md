@@ -31,3 +31,5 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 - Images (HUD pics, icons) per map raised from 256 to 2048. This moves the configstrings, so the network protocol is now 2025 (was 2024); older OPtech2 builds and saves will not match.
 - Fixed: the server only sent the first 32 player stats; all 64 the game provides now reach the client.
 - `sv_tickrate` (server frames per second, default 10, applies from the next map): the server steps at that rate and protocol 2025 tells clients, which time interpolation by it. The game code still assumes 10, so leave it at 10 until the game is converted.
+- Game runs at any `sv_tickrate`: physics steps by the real frame time, while thinks, monster and weapon frames and player animation keep their 0.1 s pace (`level.framenum` is now a 10 Hz counter, `level.ticktime` is one server frame). Lava/slime damage stays per 0.1 s. At 60 Hz, monsters still move in 0.1 s steps (client smoothing comes next). `sv_tickrate` is latched: set it before starting a game.
+- Multiplayer check takes `--tickrate N`.

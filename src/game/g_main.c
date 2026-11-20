@@ -67,6 +67,7 @@ cvar_t *filterban;
 
 cvar_t *sv_maxvelocity;
 cvar_t *sv_gravity;
+cvar_t *sv_tickrate; /* optech2 */
 
 cvar_t *sv_rollspeed;
 cvar_t *sv_rollangle;
@@ -475,8 +476,22 @@ G_RunFrame(void)
 	int i;
 	edict_t *ent;
 
-	level.framenum++;
-	level.time = level.framenum * FRAMETIME;
+	/* optech2: advance by one server frame (1 / sv_tickrate). The tick is
+	   recomputed from level.time, so a save made at another rate still loads.
+	   level.framenum stays a 10 Hz counter; level.thinkframe marks the
+	   frames where it advanced, for code that must keep its 10 Hz pace. */
+	{
+		int tick;
+		int thinkFrameNumber;
+
+		level.tickrate = Q_clamp((int)sv_tickrate->value, 10, 120); /* same clamp as the server */
+		level.ticktime = 1.0f / level.tickrate;
+		tick = (int)(level.time * level.tickrate + 0.5f) + 1;
+		level.time = (float)((double)tick / level.tickrate);
+		thinkFrameNumber = (int)(level.time * 10 + 0.001f);
+		level.thinkframe = (thinkFrameNumber != level.framenum);
+		level.framenum = thinkFrameNumber;
+	}
 
 	gibsthisframe = 0;
 	debristhisframe = 0;
@@ -522,7 +537,12 @@ G_RunFrame(void)
 
 		if ((i > 0) && (i <= maxclients->value))
 		{
-			ClientBeginServerFrame(ent);
+			/* optech2: weapon frames and respawn checks keep their 10 Hz pace */
+			if (level.thinkframe)
+			{
+				ClientBeginServerFrame(ent);
+			}
+
 			//JABot[start]
 			if (!ent->ai)
 			//[end]

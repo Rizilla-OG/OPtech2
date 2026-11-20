@@ -381,12 +381,12 @@ SV_AddGravity(edict_t *ent)
 
 	if (ent->gravityVector[2] > 0)
 	{
-		VectorMA(ent->velocity, ent->gravity * sv_gravity->value * FRAMETIME,
-				ent->gravityVector, ent->velocity);
+		VectorMA(ent->velocity, ent->gravity * sv_gravity->value * level.ticktime,
+			ent->gravityVector, ent->velocity);
 	}
 	else
 	{
-		ent->velocity[2] -= ent->gravity * sv_gravity->value * FRAMETIME;
+		ent->velocity[2] -= ent->gravity * sv_gravity->value * level.ticktime;
 	}
 }
 
@@ -892,8 +892,8 @@ SV_Physics_Pusher(edict_t *ent)
 			continue;
 		}
 
-		VectorScale(part->velocity, FRAMETIME, move);
-		VectorScale(part->avelocity, FRAMETIME, amove);
+		VectorScale(part->velocity, level.ticktime, move);
+		VectorScale(part->avelocity, level.ticktime, amove);
 
 		obstacle = SV_Push(part, move, amove);
 		if (obstacle)
@@ -910,7 +910,7 @@ SV_Physics_Pusher(edict_t *ent)
 		{
 			if (mv->nextthink > 0)
 			{
-				mv->nextthink += FRAMETIME;
+				mv->nextthink += level.ticktime;
 			}
 		}
 
@@ -964,8 +964,8 @@ SV_Physics_Noclip(edict_t *ent)
 		return;
 	}
 
-	VectorMA(ent->s.angles, FRAMETIME, ent->avelocity, ent->s.angles);
-	VectorMA(ent->s.origin, FRAMETIME, ent->velocity, ent->s.origin);
+	VectorMA(ent->s.angles, level.ticktime, ent->avelocity, ent->s.angles);
+	VectorMA(ent->s.origin, level.ticktime, ent->velocity, ent->s.origin);
 
 	gi.linkentity(ent);
 }
@@ -1041,10 +1041,10 @@ SV_Physics_Toss(edict_t *ent)
 	}
 
 	/* move angles */
-	VectorMA(ent->s.angles, FRAMETIME, ent->avelocity, ent->s.angles);
+	VectorMA(ent->s.angles, level.ticktime, ent->avelocity, ent->s.angles);
 
 	/* move origin */
-	VectorScale(ent->velocity, FRAMETIME, move);
+	VectorScale(ent->velocity, level.ticktime, move);
 	trace = SV_PushEntity(ent, move);
 
 	if (!ent->inuse)
@@ -1155,8 +1155,8 @@ SV_AddRotationalFriction(edict_t *ent)
 		return;
 	}
 
-	VectorMA(ent->s.angles, FRAMETIME, ent->avelocity, ent->s.angles);
-	adjustment = FRAMETIME * sv_stopspeed->value * FRICTION;
+	VectorMA(ent->s.angles, level.ticktime, ent->avelocity, ent->s.angles);
+	adjustment = level.ticktime * sv_stopspeed->value * FRICTION;
 
 	for (n = 0; n < 3; n++)
 	{
@@ -1248,7 +1248,7 @@ SV_Physics_Step(edict_t *ent)
 		speed = fabs(ent->velocity[2]);
 		control = speed < sv_stopspeed->value ? sv_stopspeed->value : speed;
 		friction = FRICTION / 3;
-		newspeed = speed - (FRAMETIME * control * friction);
+		newspeed = speed - (level.ticktime * control * friction);
 
 		if (newspeed < 0)
 		{
@@ -1264,7 +1264,7 @@ SV_Physics_Step(edict_t *ent)
 	{
 		speed = fabs(ent->velocity[2]);
 		control = speed < sv_stopspeed->value ? sv_stopspeed->value : speed;
-		newspeed = speed - (FRAMETIME * control * WATERFRICTION * ent->waterlevel);
+		newspeed = speed - (level.ticktime * control * WATERFRICTION * ent->waterlevel);
 
 		if (newspeed < 0)
 		{
@@ -1295,7 +1295,7 @@ SV_Physics_Step(edict_t *ent)
 					friction = FRICTION;
 
 					control = speed < sv_stopspeed->value ? sv_stopspeed->value : speed;
-					newspeed = speed - FRAMETIME * control * friction;
+					newspeed = speed - level.ticktime * control * friction;
 
 					if (newspeed < 0)
 					{
@@ -1320,7 +1320,7 @@ SV_Physics_Step(edict_t *ent)
 		}
 
 		VectorCopy(ent->s.origin, oldorig);
-		SV_FlyMove(ent, FRAMETIME, mask);
+		SV_FlyMove(ent, level.ticktime, mask);
 
 		/* Evil hack to work around dead parasites (and maybe other monster)
 		   falling through the worldmodel into the void. We copy the current
@@ -1346,7 +1346,7 @@ SV_Physics_Step(edict_t *ent)
 		 * [Paril-KEX] this is something N64 does to avoid doors opening
 		 * at the start of a level, which triggers some monsters to spawn.
 		 */
-		if (!level.is_n64 || level.time > FRAMETIME)
+		if (!level.is_n64 || level.time > level.ticktime)
 		{
 			G_TouchTriggers(ent);
 		}
@@ -1658,7 +1658,7 @@ SV_Physics_NewToss(edict_t *ent)
 		VectorScale(ent->velocity, newspeed, ent->velocity);
 	}
 
-	SV_FlyMove(ent, FRAMETIME, ent->clipmask);
+	SV_FlyMove(ent, level.ticktime, ent->clipmask);
 	gi.linkentity(ent);
 
 	G_TouchTriggers(ent);

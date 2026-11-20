@@ -1600,9 +1600,6 @@ ClientEndServerFrame(edict_t *ent)
 
 	AngleVectors(ent->client->v_angle, forward, right, up);
 
-	/* burn from lava, etc */
-	P_WorldEffects();
-
 	/* set model angles from view angles so other things in
 	   the world can tell which direction you are looking */
 	if (ent->client->v_angle[PITCH] > 180)
@@ -1617,6 +1614,16 @@ ClientEndServerFrame(edict_t *ent)
 	ent->s.angles[YAW] = ent->client->v_angle[YAW];
 	ent->s.angles[ROLL] = 0;
 	ent->s.angles[ROLL] = SV_CalcRoll(ent->s.angles, ent->velocity) * 4;
+
+	/* optech2: the rest (bob, damage feedback, view and gun offsets,
+	   effects, player animation) is tuned for 0.1 s steps */
+	if (!level.thinkframe)
+	{
+		return;
+	}
+
+	/* burn from lava, etc (optech2: moved below the 10 Hz gate, damage is per 0.1 s) */
+	P_WorldEffects();
 
 	/* calculate speed and cycle to be used for
 	   all cyclic walking effects */

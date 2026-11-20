@@ -11,6 +11,7 @@ machine, then checks that:
 
 Usage:
   mp_check.py              run the check (exit 1 on failure)
+  mp_check.py --tickrate 60   same with the server at 60 frames per second
 
 Clients run with the software renderer on SDL's dummy video driver, so no
 windows open. Every process gets its own temporary HOME, so the user's own
@@ -132,6 +133,7 @@ def changed_pixels(path_a, path_b):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--datadir", type=Path, default=DEFAULT_DATA_DIR, help="folder holding the stock baseq2/")
+    parser.add_argument("--tickrate", type=int, default=10, help="server frames per second (sv_tickrate)")
     arguments = parser.parse_args()
 
     for binary in (CLIENT_BINARY, SERVER_BINARY):
@@ -151,7 +153,7 @@ def main():
         server, server_log = start(
             [str(SERVER_BINARY), "-datadir", str(arguments.datadir),
              "+set", "port", str(SERVER_PORT), "+set", "public", "0", "+set", "deathmatch", "1",
-             "+set", "cheats", "1", "+set", "maxclients", "4",
+             "+set", "cheats", "1", "+set", "maxclients", "4", "+set", "sv_tickrate", str(arguments.tickrate),
              "+set", "dmflags", "3",  # no items or health: rotating pickups would change the shots "+set", "timelimit", "0", "+set", "fraglimit", "0",
              "+map", MAP_NAME],
             homes["server"], OUTPUT_DIR / "server.log")

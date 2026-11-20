@@ -607,9 +607,8 @@ SV_Init(void)
 	SV_SendInitBuffers();
 	SV_InitOperatorCommands();
 
-	/* optech2: server frames per second, used from the next map on.
-	   Stays 10 until the game code is converted to other tick rates. */
-	sv_tickrate = Cvar_Get("sv_tickrate", "10", CVAR_SERVERINFO);
+	/* optech2: server frames per second. Latched: a change applies on the next new game. */
+	sv_tickrate = Cvar_Get("sv_tickrate", "10", CVAR_SERVERINFO | CVAR_LATCH); /* latched: game and server read it at the same point */
 	sv_optimize_sp_loadtime = Cvar_Get("sv_optimize_sp_loadtime", "31", 0);
 	sv_optimize_mp_loadtime = Cvar_Get("sv_optimize_mp_loadtime", "7", 0);
 
