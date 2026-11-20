@@ -64,6 +64,13 @@ build/release/optech2 -datadir "<path to Quake 2>" +map optech2_iqm
 `optech2_stress` has ~3800 entities. The script only adds `maps/optech2_*` and `models/optech2/` to your
 game folder.
 
+## Savegames
+
+Saves store every field by name, so they keep loading after the game code changes. After adding,
+removing or changing a field of a saved struct (`edict_t`, `gclient_t`, `level_locals_t`,
+`game_locals_t` and what they contain), run `python3 tools/gen_save_fields.py` and commit the table
+it writes.
+
 ## Checks
 
 All checks use a temporary HOME, so your own config and saves are never touched.
@@ -76,6 +83,7 @@ All checks use a temporary HOME, so your own config and saves are never touched.
 - `python3 tests/maps/make_limits_map.py`, then `tests/maps/limits_check.py`: oversized test map
 - `python3 tests/maps/make_stress_map.py`, then `tests/maps/stress_check.py`: ~3800 entities, frame times
 - `python3 tests/models/iqm_check.py`: IQM test model (two bones, bend animation) in a small map
+- `python3 tests/savegame/save_check.py`: save and load, player and every entity compared
 - `python3 tests/tickrate/tick_check.py`, `damage_check.py`: 10 Hz vs 60 Hz behaviour
 
 ## License

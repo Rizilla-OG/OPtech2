@@ -91,4 +91,24 @@ typedef struct
 	char arch[32];
 } savegameHeader_t;
 
+/* optech2: tagged savegame format, see tables/savefields.h */
+typedef enum
+{
+	SF_RAW, /* plain data, saved as bytes */
+	SF_STRING, /* char pointer, saved as text */
+	SF_EDICT, /* edict_t pointer, saved as entity number */
+	SF_CLIENT, /* gclient_t pointer, saved as client number */
+	SF_ITEM, /* gitem_t pointer, saved as item index */
+	SF_FUNCTION, /* function pointer, saved as the function's name */
+	SF_MMOVE /* mmove_t pointer, saved as the move's name */
+} savefieldkind_t;
+
+typedef struct
+{
+	const char *name; /* member path, e.g. "monsterinfo.stand" */
+	size_t ofs;
+	size_t size;
+	savefieldkind_t kind;
+} savefield_t;
+
 #endif /* SAVEGAME_LOCAL_H */
