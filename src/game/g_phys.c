@@ -690,6 +690,49 @@ Pushed_TouchTriggers(void)
 	}
 }
 
+/* optech2: entities SV_Push may touch, from the area tree */
+static edict_t *push_candidates[MAX_EDICTS];
+
+static int
+SV_PushCandidateCompare(const void *a, const void *b)
+{
+	const edict_t *first = *(edict_t *const *)a;
+	const edict_t *second = *(edict_t *const *)b;
+
+	return (int)(first - second);
+}
+
+/*
+ * optech2: collects the solid and trigger entities whose boxes touch the
+ * pusher's final box grown by its move (riders that stood on it before the
+ * move are inside that). Not linked = not in the old loop either. Sorted by
+ * entity number, so pushes and blocks happen in the same order as before.
+ */
+static int
+SV_PushCandidates(edict_t *pusher, const vec3_t move, const vec3_t realmins,
+	const vec3_t realmaxs)
+{
+	vec3_t mins, maxs;
+	int i, count;
+
+	for (i = 0; i < 3; i++)
+	{
+		float reach = (float)fabs(move[i]) + 2;
+
+		mins[i] = realmins[i] - reach;
+		maxs[i] = realmaxs[i] + reach;
+	}
+
+	count = gi.BoxEdicts(mins, maxs, push_candidates, MAX_EDICTS, AREA_SOLID);
+	count += gi.BoxEdicts(mins, maxs, push_candidates + count,
+		MAX_EDICTS - count, AREA_TRIGGERS);
+
+	qsort(push_candidates, count, sizeof(push_candidates[0]),
+		SV_PushCandidateCompare);
+
+	return count;
+}
+
 /*
  * Objects need to be moved back on a failed push,
  * otherwise riders would continue to slide.
@@ -697,7 +740,7 @@ Pushed_TouchTriggers(void)
 static edict_t *
 SV_Push(edict_t *pusher, vec3_t move, vec3_t amove)
 {
-	int i;
+	int i, candidate, candidate_count;
 	edict_t *check;
 	vec3_t org, forward, right, up;
 	vec3_t realmins, realmaxs;
@@ -743,10 +786,16 @@ SV_Push(edict_t *pusher, vec3_t move, vec3_t amove)
 	   rotating brush models. */
 	RealBoundingBox(pusher, realmins, realmaxs);
 
+	/* optech2: only look at entities the area tree has near the move, not
+	   every entity (500 pushers x 4000 entities was most of a frame) */
+	candidate_count = SV_PushCandidates(pusher, move, realmins, realmaxs);
+
 	/* see if any solid entities
 	   are inside the final position */
-	for (check = g_edicts + 1; check < &g_edicts[globals.num_edicts]; check++)
+	for (candidate = 0; candidate < candidate_count; candidate++)
 	{
+		check = push_candidates[candidate];
+
 		if (!check->inuse)
 		{
 			continue;

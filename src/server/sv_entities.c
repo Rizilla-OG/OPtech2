@@ -551,6 +551,35 @@ SV_FatPVS(vec3_t org, size_t *fatpvs_size)
 	return fatpvs;
 }
 
+/* optech2: visible entities of the frame being built, before the cap */
+typedef struct
+{
+	int number;
+	float distance; /* squared, from the viewer */
+} visible_entity_t;
+
+static visible_entity_t visible_entities[MAX_EDICTS];
+
+static int
+SV_CompareVisibleDistance(const void *a, const void *b)
+{
+	const visible_entity_t *first = a, *second = b;
+
+	if (first->distance != second->distance)
+	{
+		return (first->distance < second->distance) ? -1 : 1;
+	}
+
+	return first->number - second->number;
+}
+
+static int
+SV_CompareVisibleNumber(const void *a, const void *b)
+{
+	return ((const visible_entity_t *)a)->number -
+		   ((const visible_entity_t *)b)->number;
+}
+
 /*
  * Decides which entities are going to be visible to the client, and
  * copies off the playerstat and areabits.
@@ -558,7 +587,7 @@ SV_FatPVS(vec3_t org, size_t *fatpvs_size)
 void
 SV_BuildClientFrame(client_t *client)
 {
-	int e, i;
+	int e, i, visible_count;
 	vec3_t org;
 	edict_t *ent;
 	edict_t *clent;
@@ -636,10 +665,10 @@ SV_BuildClientFrame(client_t *client)
 	frame->num_entities = 0;
 	frame->first_entity = svs.next_client_entities;
 
+	visible_count = 0;
+
 	for (e = 1; e < ge->num_edicts; e++)
 	{
-		entity_xstate_t *state;
-
 		ent = EDICT_NUM(e);
 
 		/* ignore ents without visible models */
@@ -728,14 +757,46 @@ SV_BuildClientFrame(client_t *client)
 			}
 		}
 
-		/* optech2: never add more than MAX_PACKET_ENTITIES, or this frame
-		   would overwrite older frames still used as delta sources */
-		if (frame->num_entities >= MAX_PACKET_ENTITIES)
+		/* optech2: collect first, pick and add below */
+		visible_entities[visible_count].number = e;
+		visible_entities[visible_count].distance = 0;
+
+		if (ent != clent)
 		{
-			Com_DPrintf("%s: more than %d visible entities, rest not sent\n",
-				__func__, MAX_PACKET_ENTITIES);
-			break;
+			vec3_t delta;
+
+			VectorSubtract(org, ent->s.origin, delta);
+			visible_entities[visible_count].distance = VectorLengthSquared(delta);
 		}
+
+		visible_count++;
+	}
+
+	/* optech2: a frame holds at most MAX_PACKET_ENTITIES (more would
+	   overwrite older frames still used as delta sources). With more
+	   visible, send the nearest ones (the player's own entity is at
+	   distance 0), not simply the lowest entity numbers: those are often
+	   map items, and every monster spawned later went missing. */
+	if (visible_count > MAX_PACKET_ENTITIES)
+	{
+		Com_DPrintf("%s: %d visible entities, sending the nearest %d\n",
+			__func__, visible_count, MAX_PACKET_ENTITIES);
+
+		qsort(visible_entities, visible_count, sizeof(visible_entities[0]),
+			SV_CompareVisibleDistance);
+		visible_count = MAX_PACKET_ENTITIES;
+
+		/* deltas need the entities in number order */
+		qsort(visible_entities, visible_count, sizeof(visible_entities[0]),
+			SV_CompareVisibleNumber);
+	}
+
+	for (i = 0; i < visible_count; i++)
+	{
+		entity_xstate_t *state;
+
+		e = visible_entities[i].number;
+		ent = EDICT_NUM(e);
 
 		/* add it to the circular client_entities array */
 		state = &svs.client_entities[svs.next_client_entities %

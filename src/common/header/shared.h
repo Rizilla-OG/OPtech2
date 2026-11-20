@@ -184,7 +184,7 @@ typedef unsigned char byte;
 
 /* per-level limits */
 #define MAX_CLIENTS 256             /* absolute limit */
-#define MAX_EDICTS 2048             /* must change protocol to increase more */
+#define MAX_EDICTS 8192 /* optech2: was 2048; entity numbers go as 16 bit (U_NUMBER16) */
 #define MAX_LIGHTSTYLES 256
 #define MAX_MODELS 1024             /* these are sent over the net as bytes */
 #define MAX_SOUNDS 1024             /* so they cannot be blindly increased */

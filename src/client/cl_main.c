@@ -1037,14 +1037,14 @@ CL_Frame(int packetdelta, int renderdelta, int timedelta, qboolean packetframe, 
 		/* update the screen */
 		if (host_speeds->value)
 		{
-			time_before_ref = Sys_Milliseconds();
+			time_before_ref = Sys_Microseconds();
 		}
 
 		SCR_UpdateScreen();
 
 		if (host_speeds->value)
 		{
-			time_after_ref = Sys_Milliseconds();
+			time_after_ref = Sys_Microseconds();
 		}
 
 		/* update audio */

@@ -336,7 +336,7 @@ SV_RunGameFrame(void)
 #ifndef DEDICATED_ONLY
 	if (host_speeds->value)
 	{
-		time_before_game = Sys_Milliseconds();
+		time_before_game = Sys_Microseconds();
 	}
 #endif
 
@@ -367,7 +367,7 @@ SV_RunGameFrame(void)
 #ifndef DEDICATED_ONLY
 	if (host_speeds->value)
 	{
-		time_after_game = Sys_Milliseconds();
+		time_after_game = Sys_Microseconds();
 	}
 #endif
 }

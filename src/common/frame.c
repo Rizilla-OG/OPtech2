@@ -56,10 +56,11 @@ qboolean R_IsVSyncActive(void);
 #endif
 
 /* host_speeds times */
-int time_before_game;
-int time_after_game;
-int time_before_ref;
-int time_after_ref;
+/* optech2: microseconds (were milliseconds, too coarse to measure) */
+long long time_before_game;
+long long time_after_game;
+long long time_before_ref;
+long long time_after_ref;
 
 // Used in the network- and input paths.
 int curtime;
@@ -451,8 +452,8 @@ Qcommon_Frame(int usec)
 	char *s;
 
 	// Statistics.
-	int time_before = 0;
-	int time_between = 0;
+	long long time_before = 0;
+	long long time_between = 0;
 
 	// Target packetframerate.
 	float pfps;
@@ -687,7 +688,11 @@ Qcommon_Frame(int usec)
 
 	if (host_speeds->value)
 	{
-		time_before = Sys_Milliseconds();
+		/* optech2: clear stamps from earlier passes, or a pass that ran no
+		   game or render frame reported the old times again */
+		time_before_game = time_after_game = 0;
+		time_before_ref = time_after_ref = 0;
+		time_before = Sys_Microseconds();
 	}
 
 
@@ -705,7 +710,7 @@ Qcommon_Frame(int usec)
 
 	if (host_speeds->value)
 	{
-		time_between = Sys_Milliseconds();
+		time_between = Sys_Microseconds();
 	}
 
 
@@ -718,10 +723,10 @@ Qcommon_Frame(int usec)
 
 	if (host_speeds->value)
 	{
-		int all, sv, gm, cl, rf;
-		int time_after;
+		long long all, sv, gm, cl, rf;
+		long long time_after;
 
-		time_after = Sys_Milliseconds();
+		time_after = Sys_Microseconds();
 		all = time_after - time_before;
 		sv = time_between - time_before;
 		cl = time_after - time_between;
@@ -729,7 +734,14 @@ Qcommon_Frame(int usec)
 		rf = time_after_ref - time_before_ref;
 		sv -= gm;
 		cl -= rf;
-		Com_Printf("all:%3i sv:%3i gm:%3i cl:%3i rf:%3i\n", all, sv, gm, cl, rf);
+		/* optech2: milliseconds with two decimals, only for passes that
+		   ran a game or render frame (the loop spins in between) */
+		if ((gm > 0) || (rf > 0))
+		{
+			Com_Printf("all:%6.2f sv:%6.2f gm:%6.2f cl:%6.2f rf:%6.2f\n",
+				all / 1000.0, sv / 1000.0, gm / 1000.0, cl / 1000.0,
+				rf / 1000.0);
+		}
 	}
 
 

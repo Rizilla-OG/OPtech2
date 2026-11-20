@@ -316,6 +316,13 @@ InitAllocations(void)
 		gi.cvar_forceset("maxentities", va("%d", num_c + 1));
 	}
 
+	/* optech2: engine and game lists hold at most MAX_EDICTS */
+	if (num_e > MAX_EDICTS)
+	{
+		num_e = MAX_EDICTS;
+		gi.cvar_forceset("maxentities", va("%d", MAX_EDICTS));
+	}
+
 	g_edicts = gi.TagMalloc (num_e * sizeof(g_edicts[0]), TAG_GAME);
 	game.maxentities = num_e;
 
@@ -342,6 +349,12 @@ ReinitGameEntities(int ent_cnt)
 	if (num_e < (num_c + 1 + ent_cnt * 2))
 	{
 		num_e = num_c + 1 + ent_cnt * 2;
+	}
+
+	/* optech2: engine and game lists hold at most MAX_EDICTS */
+	if (num_e > MAX_EDICTS)
+	{
+		num_e = MAX_EDICTS;
 	}
 
 	if (num_e <= game.maxentities)
@@ -408,7 +421,7 @@ InitGame(void)
 	coop_baseq2 = gi.cvar("coop_baseq2", "0", CVAR_LATCH);
 	coop_elevator_delay = gi.cvar("coop_elevator_delay", "1.0", CVAR_ARCHIVE);
 	skill = gi.cvar("skill", "1", CVAR_LATCH);
-	maxentities = gi.cvar("maxentities", "1024", CVAR_LATCH);
+	maxentities = gi.cvar("maxentities", "8192", CVAR_LATCH); /* optech2: was 1024 */
 	gamerules = gi.cvar("gamerules", "0", CVAR_LATCH);			//PGM
 	g_footsteps = gi.cvar("g_footsteps", "1", CVAR_ARCHIVE);
 	g_monsterfootsteps = gi.cvar("g_monsterfootsteps", "0", CVAR_ARCHIVE);

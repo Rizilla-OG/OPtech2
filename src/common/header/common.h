@@ -953,10 +953,10 @@ void CleanCachedMapsList(void);
 extern FILE *log_stats_file;
 
 /* host_speeds times */
-extern int time_before_game;
-extern int time_after_game;
-extern int time_before_ref;
-extern int time_after_ref;
+extern long long time_before_game;
+extern long long time_after_game;
+extern long long time_before_ref;
+extern long long time_after_ref;
 
 #include "zone.h"
 

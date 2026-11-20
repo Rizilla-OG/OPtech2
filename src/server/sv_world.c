@@ -26,8 +26,13 @@
 
 #include "header/server.h"
 
-#define AREA_DEPTH 4
-#define AREA_NODES 32
+/* optech2: deeper area tree (was depth 4 = 16 leaves for any map size). With
+   thousands of entities the few big leaves held long lists that every
+   trace and touch query walked. Splitting stops at AREA_MIN_SIZE, so small
+   maps keep a small tree. */
+#define AREA_DEPTH 8
+#define AREA_NODES 512
+#define AREA_MIN_SIZE 256
 #define MAX_TOTAL_ENT_LEAFS 128
 
 #define STRUCT_FROM_LINK(l, t, m) ((t *)((byte *)l - (byte *)&(((t *)NULL)->m)))
@@ -91,14 +96,15 @@ SV_CreateAreaNode(int depth, vec3_t mins, vec3_t maxs)
 	ClearLink(&anode->trigger_edicts);
 	ClearLink(&anode->solid_edicts);
 
-	if (depth == AREA_DEPTH)
+	VectorSubtract(maxs, mins, size);
+
+	if ((depth == AREA_DEPTH) ||
+		((size[0] < AREA_MIN_SIZE) && (size[1] < AREA_MIN_SIZE)))
 	{
 		anode->axis = -1;
 		anode->children[0] = anode->children[1] = NULL;
 		return anode;
 	}
-
-	VectorSubtract(maxs, mins, size);
 
 	if (size[0] > size[1])
 	{
