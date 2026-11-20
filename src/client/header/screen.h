@@ -30,6 +30,7 @@
 void	SCR_Init(void);
 
 void	SCR_UpdateScreen(void);
+void SCR_DrawStatsOverlay(void); /* optech2: cl_perf */
 
 void	SCR_SizeUp(void);
 void	SCR_SizeDown(void);

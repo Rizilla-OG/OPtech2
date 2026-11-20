@@ -1287,6 +1287,7 @@ CLIENT_OBJS_ := \
 	src/client/cl_particles.o \
 	src/client/cl_prediction.o \
 	src/client/cl_screen.o \
+	src/client/cl_stats.o \
 	src/client/cl_tempentities.o \
 	src/client/cl_view.o \
 	src/client/curl/download.o \

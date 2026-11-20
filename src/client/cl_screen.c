@@ -1821,6 +1821,7 @@ SCR_UpdateScreen(void)
 		}
 	}
 
+	SCR_DrawStatsOverlay(); /* optech2 */
 	SCR_Framecounter();
 	R_EndFrame();
 }

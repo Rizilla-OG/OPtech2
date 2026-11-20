@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 
 ## Unreleased
 
+- `cl_perf 1`: performance overlay (top left, averaged over half a second): frame rate and frame time (average and worst), engine server and game time per tick, client and render submission time per frame, entities / lights / particles drawn, the game's and the whole system's CPU load, GPU load and video memory (Linux; GPU values need amdgpu). Note: with `busywait 1` the frame limiter spins, so the game shows about one full core.
 - cvar_t has the re-release layout (M2 groundwork for re-release client game modules): `modified` counts changes (engine code still treats non zero as changed), new `integer` field kept equal to the value, YQ2's `default_string` moved after it.
 - Forked from Yamagi Quake II Remaster (511b7b0e).
 - Project named OPtech2 (Open Tech 2).
