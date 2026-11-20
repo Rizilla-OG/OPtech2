@@ -706,7 +706,24 @@ cinavdecode_next_frame(cinavdecode_t *state, uint8_t *video, uint8_t *audio)
 		cinavdecode_parse_next(state);
 	};
 
-	memcpy(audio, state->audio_res + state->audio_curr, state->audio_frame_size);
+	/* optech2: silence once the decoded sound runs out; copying from the
+	   reset buffer replayed old sound (a long note at the end of a video) */
+	if ((state->audio_pos - state->audio_curr) >= state->audio_frame_size)
+	{
+		memcpy(audio, state->audio_res + state->audio_curr, state->audio_frame_size);
+	}
+	else
+	{
+		long left = state->audio_pos - state->audio_curr;
+
+		if (left < 0)
+		{
+			left = 0;
+		}
+
+		memcpy(audio, state->audio_res + state->audio_curr, left);
+		memset(audio + left, 0, state->audio_frame_size - left);
+	}
 	state->audio_curr += state->audio_frame_size;
 	if (state->audio_curr >= state->audio_pos)
 	{

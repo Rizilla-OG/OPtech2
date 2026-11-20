@@ -5,6 +5,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 ## Unreleased
 
 - Videos: the CMake build now plays FFmpeg videos (`.ogv`, `.mpg`, `.avi`), as the Makefile build did (`AVCODEC_SUPPORT`, on when FFmpeg is found). The re-release's videos (Theora 1080p at 60 fps) played for one second and stopped: their empty "repeat frame" packets now repeat the last frame instead of ending the video. Decoding and scaling use all cores, and a video that falls behind skips frames instead of slowing down, so it keeps real time with its sound.
+- Fixed: the end of a video repeated old sound (a long note): once the decoded sound runs out the decoder now gives silence.
 - Fixed: Quake II 64's intro waited about 7 s after its camera scene. The re-release `target_changelevel` flags 16 (no end-of-unit screen) and 64 (leave at once) are now followed.
 - Fixed: with the client game module, a center message left a bar in the top-left corner (the console separator line it echoes, shown as a notify line). The module now handles center messages alone and the notify area is cleared after its echo, as the built-in center print does.
 - Fixed: re-release map messages showed as keys (`$map_shoot_barrels_to_make_them_explo_0`). `Q2Game.kpf` (the re-release's localization and UI files) is now loaded from the data dir instead of the working directory, center and console prints with a `$key` are localized, and the client game module's `Localize` fills in the text and its `{}` / `{N}` arguments (shared with `svc_locprint`).
