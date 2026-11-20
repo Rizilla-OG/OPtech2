@@ -32,7 +32,9 @@
 
 #define MAX_MASTERS 8
 #define LATENCY_COUNTS 16
-#define RATE_MESSAGES 10
+/* optech2: was 10 (one second at 10 Hz). Holds one second of messages at the
+   highest tick rate; SV_RateDrop sums the last sv.tickrate of them. */
+#define RATE_MESSAGES 120
 
 /* MAX_CHALLENGES is made large to prevent a denial
    of service attack that could cycle all of them
@@ -136,6 +138,12 @@ typedef struct client_s
 	int message_size[RATE_MESSAGES];    /* used to rate drop packets */
 	int rate;
 	int surpressCount;                  /* number of messages rate supressed */
+	int stats_rate_drops; /* optech2: frames held back by the rate limiter, total */
+	int stats_last_bytes_sent; /* optech2: counters at the last sv_netstats print */
+	int stats_last_packets_sent;
+	int stats_last_bytes_received;
+	int stats_last_packets_received;
+	int stats_last_rate_drops;
 
 	char name[32];                      /* extracted from userinfo, high bits masked */
 
@@ -214,6 +222,7 @@ extern server_t sv;                         /* local server */
 
 extern cvar_t *sv_paused;
 extern cvar_t *sv_tickrate; /* optech2: server frames per second for new maps */
+extern cvar_t *sv_netstats; /* optech2: 1 = print traffic per client once a second */
 extern cvar_t *maxclients;
 extern cvar_t *sv_noreload;                 /* don't reload level state when reentering */
 extern cvar_t *sv_airaccelerate;            /* don't reload level state when reentering */

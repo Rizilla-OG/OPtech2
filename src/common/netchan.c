@@ -289,6 +289,10 @@ Netchan_Transmit(netchan_t *chan, int length, const byte *data)
 	/* send the datagram */
 	NET_SendPacket(chan->sock, send.cursize, send.data, chan->remote_address);
 
+	/* optech2: traffic counters */
+	chan->stats_bytes_sent += send.cursize;
+	chan->stats_packets_sent++;
+
 	if (showpackets->value)
 	{
 		if (send_reliable)
@@ -397,6 +401,10 @@ Netchan_Process(netchan_t *chan, sizebuf_t *msg)
 
 	/* the message can now be read from the current message pointer */
 	chan->last_received = curtime;
+
+	/* optech2: traffic counters */
+	chan->stats_bytes_received += msg->cursize;
+	chan->stats_packets_received++;
 
 	return true;
 }

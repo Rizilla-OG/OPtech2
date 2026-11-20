@@ -577,14 +577,18 @@ SV_RateDrop(client_t *c)
 
 	total = 0;
 
-	for (i = 0; i < RATE_MESSAGES; i++)
+	/* optech2: rate is bytes per second, so sum the messages of the last
+	   second: sv.tickrate of them (was always the last 10, which at 60 Hz
+	   is 1/6 s and let clients receive 6x their rate) */
+	for (i = 0; i < sv.tickrate && i < RATE_MESSAGES; i++)
 	{
-		total += c->message_size[i];
+		total += c->message_size[(sv.framenum - i + RATE_MESSAGES) % RATE_MESSAGES];
 	}
 
 	if (total > c->rate)
 	{
 		c->surpressCount++;
+		c->stats_rate_drops++; /* optech2 */
 		c->message_size[sv.framenum % RATE_MESSAGES] = 0;
 		return true;
 	}
@@ -661,6 +665,48 @@ SV_SendDisconnect(client_t *c)
 	Netchan_Transmit(&c->netchan, 0, NULL);
 }
 
+/*
+ * optech2: with sv_netstats 1, print each spawned client's traffic once a
+ * second: netchan payload bytes and packets each way (add 28 bytes per packet
+ * for UDP/IPv4) and frames the rate limiter held back.
+ */
+static void
+SV_PrintNetStats(void)
+{
+	static int lastPrintTime;
+	int i;
+	client_t *c;
+
+	if (!sv_netstats->value || (svs.realtime - lastPrintTime < 1000))
+	{
+		return;
+	}
+
+	lastPrintTime = svs.realtime;
+
+	for (i = 0, c = svs.clients; i < maxclients->value; i++, c++)
+	{
+		if (c->state != cs_spawned)
+		{
+			continue;
+		}
+
+		Com_Printf("netstats %s sent %d B %d pkt received %d B %d pkt ratedrops %d rate %d\n",
+			c->name,
+			c->netchan.stats_bytes_sent - c->stats_last_bytes_sent,
+			c->netchan.stats_packets_sent - c->stats_last_packets_sent,
+			c->netchan.stats_bytes_received - c->stats_last_bytes_received,
+			c->netchan.stats_packets_received - c->stats_last_packets_received,
+			c->stats_rate_drops - c->stats_last_rate_drops, c->rate);
+
+		c->stats_last_bytes_sent = c->netchan.stats_bytes_sent;
+		c->stats_last_packets_sent = c->netchan.stats_packets_sent;
+		c->stats_last_bytes_received = c->netchan.stats_bytes_received;
+		c->stats_last_packets_received = c->netchan.stats_packets_received;
+		c->stats_last_rate_drops = c->stats_rate_drops;
+	}
+}
+
 void
 SV_SendClientMessages(void)
 {
@@ -668,6 +714,8 @@ SV_SendClientMessages(void)
 	client_t *c;
 	int msglen;
 	byte *msgbuf = NULL;
+
+	SV_PrintNetStats(); /* optech2 */
 
 	msglen = 0;
 

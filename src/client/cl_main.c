@@ -661,7 +661,7 @@ CL_InitLocal(void)
 	/* userinfo */
 	name = Cvar_Get("name", "unnamed", CVAR_USERINFO | CVAR_ARCHIVE);
 	skin = Cvar_Get("skin", "male/grunt", CVAR_USERINFO | CVAR_ARCHIVE);
-	rate = Cvar_Get("rate", "8000", CVAR_USERINFO | CVAR_ARCHIVE);
+	rate = Cvar_Get("rate", "50000", CVAR_USERINFO | CVAR_ARCHIVE); /* optech2: was 8000; bytes/s, a 60 Hz fight is ~25 KB/s */
 	hand = Cvar_Get("hand", "0", CVAR_USERINFO | CVAR_ARCHIVE);
 	fov = Cvar_Get("fov", "90", CVAR_USERINFO | CVAR_ARCHIVE);
 	horplus = Cvar_Get("horplus", "1", CVAR_ARCHIVE);

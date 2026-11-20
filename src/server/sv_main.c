@@ -51,6 +51,7 @@ cvar_t *sv_noreload; /* don't reload level state when reentering */
 cvar_t *maxclients; /* rename sv_maxclients */
 cvar_t *sv_showclamp;
 cvar_t *sv_tickrate; /* optech2 */
+cvar_t *sv_netstats; /* optech2 */
 cvar_t *hostname;
 cvar_t *public_server; /* should heartbeats be sent */
 cvar_t *sv_entfile; /* External entity files. */
@@ -587,9 +588,10 @@ SV_UserinfoChanged(client_t *cl)
 			cl->rate = 100;
 		}
 
-		if (cl->rate > 15000)
+		/* optech2: was 15000 (modem era); a 60 Hz fight is ~25 KB/s */
+		if (cl->rate > 100000)
 		{
-			cl->rate = 15000;
+			cl->rate = 100000;
 		}
 	}
 	else
@@ -609,6 +611,7 @@ SV_Init(void)
 
 	/* optech2: server frames per second. Latched: a change applies on the next new game. */
 	sv_tickrate = Cvar_Get("sv_tickrate", "60", CVAR_SERVERINFO | CVAR_LATCH); /* latched: game and server read it at the same point */
+	sv_netstats = Cvar_Get("sv_netstats", "0", 0); /* optech2: 1 = print traffic per client once a second */
 	sv_optimize_sp_loadtime = Cvar_Get("sv_optimize_sp_loadtime", "31", 0);
 	sv_optimize_mp_loadtime = Cvar_Get("sv_optimize_mp_loadtime", "7", 0);
 

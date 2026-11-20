@@ -704,6 +704,13 @@ typedef struct
 	/* message is copied to this buffer when it is first transfered */
 	int reliable_length;
 	byte reliable_buf[MAX_MSGLEN - 16];         /* unacked reliable message */
+
+	/* optech2: traffic counters (netchan payload, without the 28 byte
+	   UDP/IPv4 header), for sv_netstats / cl_netstats */
+	int stats_bytes_sent;
+	int stats_packets_sent;
+	int stats_bytes_received;
+	int stats_packets_received;
 } netchan_t;
 
 extern netadr_t net_from;
