@@ -1324,6 +1324,29 @@ CL_ParseFrame(void)
 
 	CL_ParsePlayerstate(old, &cl.frame, cls.serverProtocol);
 
+	/* optech2: note weapon animation frame changes for smoothing */
+	{
+		const player_xstate_t *ps = &cl.frame.playerstate;
+		int frameMsec = 1000 / cl.tickrate;
+
+		if (ps->gunindex != cl.gun_index_now)
+		{
+			/* new weapon: no blending from the old one */
+			cl.gun_prev_frame = ps->gunframe;
+			cl.gun_change_time = cl.frame.servertime;
+			cl.gun_lerp_msec = frameMsec;
+		}
+		else if (ps->gunframe != cl.gun_frame_now)
+		{
+			cl.gun_lerp_msec = cl_smoothmovers->value ? Q_clamp(cl.frame.servertime - cl.gun_change_time, frameMsec, 100) : frameMsec;
+			cl.gun_prev_frame = cl.gun_frame_now;
+			cl.gun_change_time = cl.frame.servertime;
+		}
+
+		cl.gun_frame_now = ps->gunframe;
+		cl.gun_index_now = ps->gunindex;
+	}
+
 	/* read packet entities */
 	cmd = P_CmdConvert(MSG_ReadByte(&net_message), cls.serverProtocol);
 	CL_ShowNetCmd(cmd);

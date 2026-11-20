@@ -858,12 +858,13 @@ CL_AddViewWeapon(player_xstate_t *ps, player_xstate_t *ops)
 		}
 		else
 		{
-			gun.oldframe = ops->gunframe;
+			gun.oldframe = cl.gun_prev_frame; /* optech2: was ops->gunframe */
 		}
 	}
 
 	gun.flags = RF_MINLIGHT | RF_DEPTHHACK | RF_WEAPONMODEL;
-	gun.backlerp = 1.0f - cl.lerpfrac;
+	/* optech2: blend over the time since the previous frame change, not one server frame */
+	gun.backlerp = gun_frame ? (1.0f - cl.lerpfrac) : (1.0f - CL_EntityLerpFraction(cl.gun_change_time, cl.gun_lerp_msec));
 	VectorCopy(gun.origin, gun.oldorigin); /* don't lerp at all */
 	V_AddEntity(&gun);
 }

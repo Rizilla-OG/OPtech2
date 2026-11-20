@@ -181,6 +181,15 @@ typedef struct
 	vec3_t		viewangles;
 
 	int tickrate; /* optech2: server frames per second (was frame_msec) */
+
+	/* optech2: weapon model animation frames change every 0.1 s; like
+	   monsters (centity_t), each change is spread over the time since the
+	   previous one (at most 100 ms) */
+	int gun_frame_now; /* gunframe in the latest server frame */
+	int gun_index_now; /* gunindex in the latest server frame */
+	int gun_prev_frame; /* gunframe before the last change */
+	int gun_change_time; /* server time of the last change (msec) */
+	int gun_lerp_msec; /* how long that change is spread over */
 	int			time; /* this is the time value that the client is rendering at. always <= cls.realtime */
 	float		lerpfrac; /* between oldframe and frame */
 

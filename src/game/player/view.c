@@ -533,6 +533,10 @@ SV_CalcGunOffset(edict_t *ent)
 				delta += 360;
 			}
 
+			/* optech2: oldviewangles is one server frame old; scale the
+			   turn to what it would be over 0.1 s */
+			delta *= FRAMETIME / level.ticktime;
+
 			if (delta > 45)
 			{
 				delta = 45;
@@ -797,7 +801,7 @@ SV_CalcBlend(edict_t *ent)
 	G_ScreenFader_AddBlend(ent);
 
 	/* drop the damage value */
-	ent->client->damage_alpha -= 0.06;
+	ent->client->damage_alpha -= 0.06 * level.ticktime / FRAMETIME; /* optech2: 0.06 per 0.1 s */
 
 	if (ent->client->damage_alpha < 0)
 	{
@@ -805,7 +809,7 @@ SV_CalcBlend(edict_t *ent)
 	}
 
 	/* drop the bonus value */
-	ent->client->bonus_alpha -= 0.1;
+	ent->client->bonus_alpha -= 0.1 * level.ticktime / FRAMETIME; /* optech2: 0.1 per 0.1 s */
 
 	if (ent->client->bonus_alpha < 0)
 	{
@@ -1562,6 +1566,7 @@ void
 ClientEndServerFrame(edict_t *ent)
 {
 	float bobtime;
+	float tickScale; /* optech2: one server frame as a share of 0.1 s */
 	int i;
 
 	if (!ent)
@@ -1615,15 +1620,17 @@ ClientEndServerFrame(edict_t *ent)
 	ent->s.angles[ROLL] = 0;
 	ent->s.angles[ROLL] = SV_CalcRoll(ent->s.angles, ent->velocity) * 4;
 
-	/* optech2: the rest (bob, damage feedback, view and gun offsets,
-	   effects, player animation) is tuned for 0.1 s steps */
-	if (!level.thinkframe)
-	{
-		return;
-	}
+	/* optech2: view effects (bob, view and gun offsets, blends) run every
+	   server frame so the view stays smooth at high tick rates; their fixed
+	   per-call steps are scaled by tickScale. Damage, falling, player
+	   animation and menus keep the 0.1 s pace (level.thinkframe). */
+	tickScale = level.ticktime / FRAMETIME;
 
-	/* burn from lava, etc (optech2: moved below the 10 Hz gate, damage is per 0.1 s) */
-	P_WorldEffects();
+	/* burn from lava, etc (damage is per 0.1 s) */
+	if (level.thinkframe)
+	{
+		P_WorldEffects();
+	}
 
 	/* calculate speed and cycle to be used for
 	   all cyclic walking effects */
@@ -1653,7 +1660,7 @@ ClientEndServerFrame(edict_t *ent)
 		}
 	}
 
-	bobtime = (current_client->bobtime += bobmove);
+	bobtime = (current_client->bobtime += bobmove * tickScale); /* optech2: bobmove is per 0.1 s */
 
 	if (current_client->ps.pmove.pm_flags & PMF_DUCKED)
 	{
@@ -1663,8 +1670,11 @@ ClientEndServerFrame(edict_t *ent)
 	bobcycle = (int)bobtime;
 	bobfracsin = fabs(sin(bobtime * M_PI));
 
-	/* detect hitting the floor */
-	P_FallingDamage(ent);
+	/* detect hitting the floor (optech2: compares with oldvelocity from 0.1 s ago) */
+	if (level.thinkframe)
+	{
+		P_FallingDamage(ent);
+	}
 
 	/* apply all the damage taken this frame */
 	P_DamageFeedback(ent);
@@ -1710,10 +1720,19 @@ ClientEndServerFrame(edict_t *ent)
 	G_SetClientEvent(ent);
 	G_SetClientEffects(ent);
 	G_SetClientSound(ent);
+	VectorCopy(ent->client->ps.viewangles, ent->client->oldviewangles);
+
+	/* optech2: the rest keeps the 0.1 s pace: player model animation,
+	   falling reference velocity, weapon kicks (shown for 0.1 s, as set
+	   by the weapon frames) and menu/inventory updates */
+	if (!level.thinkframe)
+	{
+		return;
+	}
+
 	G_SetClientFrame(ent, 0);
 
 	VectorCopy(ent->velocity, ent->client->oldvelocity);
-	VectorCopy(ent->client->ps.viewangles, ent->client->oldviewangles);
 
 	/* clear weapon kicks */
 	VectorClear(ent->client->kick_origin);
