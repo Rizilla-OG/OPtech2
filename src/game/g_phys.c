@@ -892,7 +892,14 @@ SV_Physics_Pusher(edict_t *ent)
 			continue;
 		}
 
-		VectorScale(part->velocity, level.ticktime, move);
+		vec3_t wantedMove;
+
+		/* optech2: SV_Push rounds moves to 1/8 unit. At high tick rates
+		   that loses distance every frame (doors stopped 3 units short at
+		   60 Hz), so carry the rounded-off part into the next push. */
+		VectorScale(part->velocity, level.ticktime, wantedMove);
+		VectorAdd(wantedMove, part->push_remainder, wantedMove);
+		VectorCopy(wantedMove, move);
 		VectorScale(part->avelocity, level.ticktime, amove);
 
 		obstacle = SV_Push(part, move, amove);
@@ -900,6 +907,8 @@ SV_Physics_Pusher(edict_t *ent)
 		{
 			break;
 		}
+
+		VectorSubtract(wantedMove, move, part->push_remainder); /* move now holds the rounded push */
 	}
 
 	if (part) /* move failed */

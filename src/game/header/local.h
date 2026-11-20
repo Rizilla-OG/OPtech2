@@ -1745,6 +1745,7 @@ struct edict_s
 
 	vec3_t velocity;
 	vec3_t avelocity;
+	vec3_t push_remainder; /* optech2: part of the last push lost to 1/8 unit rounding, added to the next one */
 	int mass;
 	float air_finished;
 	float gravity;              /* per entity gravity multiplier (1.0 is normal) */

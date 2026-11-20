@@ -1802,6 +1802,38 @@ Cmd_SpawnOnStart_f(edict_t *ent)
 	}
 }
 
+/*
+ * optech2: "playerinfo" prints game time, health, ammo for the current
+ * weapon and position, one line, for automated tests (cheat).
+ */
+static void
+Cmd_PlayerInfo_f(edict_t *ent)
+{
+	gclient_t *client;
+	int ammo = -1;
+
+	if (!ent || !ent->client)
+	{
+		return;
+	}
+
+	if ((deathmatch->value || coop->value) && !sv_cheats->value)
+	{
+		gi.cprintf(ent, PRINT_HIGH, "You must run the server with '+set cheats 1' to enable this command.\n");
+		return;
+	}
+
+	client = ent->client;
+
+	if (client->ammo_index)
+	{
+		ammo = client->pers.inventory[client->ammo_index];
+	}
+
+	gi.cprintf(ent, PRINT_HIGH, "playerinfo time %.3f health %d ammo %d origin %.1f %.1f %.1f\n",
+		level.time, ent->health, ammo, ent->s.origin[0], ent->s.origin[1], ent->s.origin[2]);
+}
+
 static void
 Cmd_ListEntities_f(edict_t *ent)
 {
@@ -2430,6 +2462,10 @@ ClientCommand(edict_t *ent)
 	else if (Q_stricmp(cmd, "listentities") == 0)
 	{
 		Cmd_ListEntities_f(ent);
+	}
+	else if (Q_stricmp(cmd, "playerinfo") == 0) /* optech2 */
+	{
+		Cmd_PlayerInfo_f(ent);
 	}
 	else if (Q_stricmp(cmd, "listitems") == 0)
 	{
