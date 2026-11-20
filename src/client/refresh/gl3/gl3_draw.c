@@ -1040,5 +1040,6 @@ GL3_EndFrame(void)
 	glInvalidateFramebuffer(GL_FRAMEBUFFER, 3, attachments);
 #endif
 
+	GL3_CapturePendingScreenShot(); // optech2: must run before the swap
 	GL3_SwapWindow();
 }

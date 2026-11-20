@@ -120,8 +120,45 @@ GL3_InitParticleTexture(void)
 	                            8, 0, 8, 0, 8 * 8, it_wall, 32);
 }
 
+// optech2: the "screenshot" command only queues a capture. Reading the screen
+// between frames gets an undefined buffer (black or stale on some drivers),
+// so the read happens in GL3_EndFrame, before the buffer swap.
+static qboolean screenshot_pending = false;
+static char screenshot_arguments[256];
+
 void
 GL3_ScreenShot(void)
+{
+	int argument_index;
+
+	screenshot_arguments[0] = '\0';
+	for (argument_index = 1; argument_index < ri.Cmd_Argc(); argument_index++)
+	{
+		Q_strlcat(screenshot_arguments, " ", sizeof(screenshot_arguments));
+		Q_strlcat(screenshot_arguments, ri.Cmd_Argv(argument_index), sizeof(screenshot_arguments));
+	}
+	screenshot_pending = true;
+}
+
+// optech2: called at the end of a frame, before the swap
+void
+GL3_CapturePendingScreenShot(void)
+{
+	char capture_command[300];
+
+	if (!screenshot_pending)
+	{
+		return;
+	}
+	screenshot_pending = false;
+	// Run the capture as a command so the screenshot writer sees the original arguments.
+	Com_sprintf(capture_command, sizeof(capture_command), "gl3_screenshot_capture%s\n", screenshot_arguments);
+	ri.Cmd_ExecuteText(EXEC_NOW, capture_command);
+}
+
+// optech2: reads the back buffer; only valid before the buffer swap
+void
+GL3_ScreenShotCapture(void)
 {
 	size_t w = vid.width, h = vid.height;
 

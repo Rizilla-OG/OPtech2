@@ -1,0 +1,10 @@
+# map  x y z  pitch yaw roll   (from deathmatch spawn spots in the stock maps)
+base1  128 -320 32    0 135 0
+base1  -392 840 -104  0 0 0
+base1  608 -224 -168  15 45 0
+base2  -32 -32 8      0 0 0
+base2  360 1896 24     0 270 0
+base2  -96 2600 24    10 315 0
+base3  296 1188 -808  0 315 0
+base3  2120 592 -464  0 180 0
+base3  520 -1088 -480 0 45 0

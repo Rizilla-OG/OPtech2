@@ -1616,9 +1616,10 @@ Cmd_Teleport_f(edict_t *ent)
 		return;
 	}
 
-	if (gi.argc() != 4)
+	// optech2: optional pitch/yaw/roll so test scripts can aim the view
+	if ((gi.argc() != 4) && (gi.argc() != 7))
 	{
-		gi.cprintf(ent, PRINT_HIGH, "Usage: teleport x y z\n");
+		gi.cprintf(ent, PRINT_HIGH, "Usage: teleport x y z [pitch yaw roll]\n");
 		return;
 	}
 
@@ -1644,6 +1645,23 @@ Cmd_Teleport_f(edict_t *ent)
 	VectorClear(ent->s.angles);
 	VectorClear(ent->client->ps.viewangles);
 	VectorClear(ent->client->v_angle);
+
+	// optech2: aim the view when angles are given
+	if (gi.argc() == 7)
+	{
+		int axis;
+
+		for (axis = 0; axis < 3; axis++)
+		{
+			float wanted_angle = (float)strtod(gi.argv(4 + axis), (char **)NULL);
+
+			ent->client->v_angle[axis] = wanted_angle;
+			ent->client->ps.viewangles[axis] = wanted_angle;
+			ent->client->ps.pmove.delta_angles[axis] = ANGLE2SHORT(
+				wanted_angle - ent->client->resp.cmd_angles[axis]);
+		}
+		VectorSet(ent->s.angles, 0, ent->client->v_angle[YAW], 0);
+	}
 
 	/* Telefrag everything that's in the target location. */
 	KillBox(ent);

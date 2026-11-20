@@ -254,6 +254,7 @@ GL3_Register(void)
 
 	ri.Cmd_AddCommand("imagelist", GL3_ImageList_f);
 	ri.Cmd_AddCommand("screenshot", GL3_ScreenShot);
+	ri.Cmd_AddCommand("gl3_screenshot_capture", GL3_ScreenShotCapture); // optech2: internal, see GL3_CapturePendingScreenShot
 	ri.Cmd_AddCommand("modellist", GL3_Mod_Modellist_f);
 	ri.Cmd_AddCommand("gl_strings", GL3_Strings_f);
 }
@@ -544,6 +545,7 @@ GL3_Shutdown(void)
 {
 	ri.Cmd_RemoveCommand("modellist");
 	ri.Cmd_RemoveCommand("screenshot");
+	ri.Cmd_RemoveCommand("gl3_screenshot_capture");
 	ri.Cmd_RemoveCommand("imagelist");
 	ri.Cmd_RemoveCommand("gl_strings");
 

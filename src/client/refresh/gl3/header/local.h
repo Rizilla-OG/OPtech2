@@ -485,6 +485,8 @@ extern int GL3_GetSDLVersion(void);
 // gl3_misc.c
 extern void GL3_InitParticleTexture(void);
 extern void GL3_ScreenShot(void);
+extern void GL3_ScreenShotCapture(void);
+extern void GL3_CapturePendingScreenShot(void);
 extern void GL3_SetDefaultState(void);
 
 // gl3_model.c
