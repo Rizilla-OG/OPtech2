@@ -1203,7 +1203,7 @@ CL_ParseFrame(void)
 
 	cl.frame.serverframe = MSG_ReadLong(&net_message);
 	cl.frame.deltaframe = MSG_ReadLong(&net_message);
-	cl.frame.servertime = cl.frame.serverframe * cl.frame_msec;
+	cl.frame.servertime = (int)((long long)cl.frame.serverframe * 1000 / cl.tickrate); /* optech2 */
 
 	/* BIG HACK to let old demos continue to work */
 	if (cls.serverProtocol != PROTOCOL_RELEASE_VERSION)
@@ -1260,9 +1260,9 @@ CL_ParseFrame(void)
 		cl.time = cl.frame.servertime;
 	}
 
-	else if (cl.time < cl.frame.servertime - 100)
+	else if (cl.time < cl.frame.servertime - 1000 / cl.tickrate) /* optech2: was 100 */
 	{
-		cl.time = cl.frame.servertime - 100;
+		cl.time = cl.frame.servertime - 1000 / cl.tickrate;
 	}
 
 	/* read areabits */
@@ -1413,9 +1413,10 @@ CL_ParseServerData(void)
 
 	cl.servercount = MSG_ReadLong(&net_message);
 	cl.attractloop = MSG_ReadByte(&net_message);
-	cl.frame_msec = 100;
+	cl.tickrate = 10;
 
-	if (IS_QIIRR_PROTOCOL(cls.serverProtocol))
+	/* optech2: our protocol carries the tick rate too */
+	if (IS_QIIRR_PROTOCOL(cls.serverProtocol) || (cls.serverProtocol == PROTOCOL_VERSION))
 	{
 		int fps;
 
@@ -1423,11 +1424,11 @@ CL_ParseServerData(void)
 
 		if (fps > 0)
 		{
-			cl.frame_msec = 1000 / fps;
+			cl.tickrate = fps;
 		}
 	}
 
-	Com_DPrintf("Used %d ms frame time\n", cl.frame_msec);
+	Com_DPrintf("Server runs at %d frames per second\n", cl.tickrate);
 
 	/* game directory */
 	str = MSG_ReadString(&net_message);

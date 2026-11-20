@@ -49,7 +49,7 @@ SV_UpdateDemoFPS(void)
 	}
 
 	/* Reset to default 10 fps */
-	sv.frame_msec = 100;
+	sv.tickrate = 10;
 
 	if (FS_FRead(msgbuf, sizeof(msgbuf), 1, demofile) == sizeof(msgbuf))
 	{
@@ -58,7 +58,7 @@ SV_UpdateDemoFPS(void)
 			(LittleLong(*((int*)(msgbuf + 5))) == PROTOCOL_RR22_VERSION) && /* only RR22 demo */
 			msgbuf[14] > 0)
 		{
-			sv.frame_msec = 1000 / msgbuf[14];
+			sv.tickrate = msgbuf[14];
 		}
 	}
 
@@ -138,18 +138,16 @@ SV_New_f(void)
 	   to make sure the protocol is right, and to set the gamedir */
 	gamedir = (char *)Cvar_VariableString("gamedir");
 
-	/* use 10 fps by default */
-	sv.frame_msec = 100;
-
 	/* send the serverdata */
 	sv_client->protocol = SV_GetRecomendedProtocol();
 	MSG_WriteByte(&sv_client->netchan.message, svc_serverdata);
 	MSG_WriteLong(&sv_client->netchan.message, sv_client->protocol);
 	MSG_WriteLong(&sv_client->netchan.message, svs.spawncount);
 	MSG_WriteByte(&sv_client->netchan.message, sv.attractloop);
-	if (IS_QIIRR_PROTOCOL(sv_client->protocol))
+	/* optech2: our protocol carries the tick rate too */
+	if (IS_QIIRR_PROTOCOL(sv_client->protocol) || (sv_client->protocol == PROTOCOL_VERSION))
 	{
-		MSG_WriteByte(&sv_client->netchan.message, 1000 / sv.frame_msec);
+		MSG_WriteByte(&sv_client->netchan.message, sv.tickrate);
 	}
 	MSG_WriteString(&sv_client->netchan.message, gamedir);
 

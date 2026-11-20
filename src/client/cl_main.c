@@ -258,9 +258,9 @@ CL_Record_f(void)
 	MSG_WriteLong(&buf, cls.serverProtocol);
 	MSG_WriteLong(&buf, 0x10000 + cl.servercount);
 	MSG_WriteByte(&buf, 1);  /* demos are always attract loops */
-	if (cls.serverProtocol == PROTOCOL_RR22_VERSION)
+	if ((cls.serverProtocol == PROTOCOL_RR22_VERSION) || (cls.serverProtocol == PROTOCOL_VERSION)) /* optech2 */
 	{
-		MSG_WriteByte(&buf, 1000 / cl.frame_msec);
+		MSG_WriteByte(&buf, cl.tickrate);
 	}
 
 	MSG_WriteString(&buf, cl.gamedir);

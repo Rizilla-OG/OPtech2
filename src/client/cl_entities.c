@@ -1010,19 +1010,20 @@ CL_AddEntities(void)
 		cl.time = cl.frame.servertime;
 		cl.lerpfrac = 1.0;
 	}
-	else if (cl.time < cl.frame.servertime - 100)
+	else if (cl.time < cl.frame.servertime - 1000 / cl.tickrate) /* optech2: was 100 */
 	{
 		if (cl_showclamp->value)
 		{
-			Com_Printf("low clamp %i\n", cl.frame.servertime - 100 - cl.time);
+			Com_Printf("low clamp %i\n", cl.frame.servertime - 1000 / cl.tickrate - cl.time);
 		}
 
-		cl.time = cl.frame.servertime - 100;
+		cl.time = cl.frame.servertime - 1000 / cl.tickrate;
 		cl.lerpfrac = 0;
 	}
 	else
 	{
-		cl.lerpfrac = 1.0 - (cl.frame.servertime - cl.time) * 0.01f;
+		/* optech2: fraction of one server frame, was * 0.01 (100 ms frames) */
+		cl.lerpfrac = 1.0 - (cl.frame.servertime - cl.time) * (cl.tickrate / 1000.0f);
 	}
 
 	if (cl_timedemo->value)

@@ -75,9 +75,9 @@ typedef struct
 	qboolean attractloop;           /* running cinematics and demos for the local system only */
 	qboolean loadgame;              /* client begins should reuse existing entity */
 
-	unsigned time;                  /* always sv.framenum * 100 msec */
+	unsigned time; /* optech2: sv.framenum * 1000 / sv.tickrate msec */
 	int framenum;
-	int frame_msec;
+	int tickrate; /* optech2: server frames per second (was frame_msec, always 100 ms) */
 
 	char name[MAX_QPATH];           /* map name, or cinematic name */
 	struct cmodel_s *models[MAX_MODELS];
@@ -213,6 +213,7 @@ extern server_static_t svs;                 /* persistant server info */
 extern server_t sv;                         /* local server */
 
 extern cvar_t *sv_paused;
+extern cvar_t *sv_tickrate; /* optech2: server frames per second for new maps */
 extern cvar_t *maxclients;
 extern cvar_t *sv_noreload;                 /* don't reload level state when reentering */
 extern cvar_t *sv_airaccelerate;            /* don't reload level state when reentering */

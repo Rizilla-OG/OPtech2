@@ -50,6 +50,7 @@ cvar_t *sv_airaccelerate;
 cvar_t *sv_noreload; /* don't reload level state when reentering */
 cvar_t *maxclients; /* rename sv_maxclients */
 cvar_t *sv_showclamp;
+cvar_t *sv_tickrate; /* optech2 */
 cvar_t *hostname;
 cvar_t *public_server; /* should heartbeats be sent */
 cvar_t *sv_entfile; /* External entity files. */
@@ -343,7 +344,7 @@ SV_RunGameFrame(void)
 	   compression can get confused when a client
 	   has the "current" frame */
 	sv.framenum++;
-	sv.time = sv.framenum * sv.frame_msec;
+	sv.time = (unsigned)((long long)sv.framenum * 1000 / sv.tickrate); /* optech2: was framenum * 100 */
 
 	/* don't run if paused */
 	if (!sv_paused->value || (maxclients->value > 1))
@@ -426,14 +427,14 @@ SV_Frame(int usec)
 	if (!sv_timedemo->value && (svs.realtime < sv.time))
 	{
 		/* never let the time get too far off */
-		if (sv.time - svs.realtime > 100)
+		if (sv.time - svs.realtime > 1000 / sv.tickrate) /* optech2: was 100 */
 		{
 			if (sv_showclamp->value)
 			{
 				Com_Printf("sv lowclamp\n");
 			}
 
-			svs.realtime = sv.time - 100;
+			svs.realtime = sv.time - 1000 / sv.tickrate;
 		}
 
 		NET_Sleep(sv.time - svs.realtime);
@@ -606,6 +607,9 @@ SV_Init(void)
 	SV_SendInitBuffers();
 	SV_InitOperatorCommands();
 
+	/* optech2: server frames per second, used from the next map on.
+	   Stays 10 until the game code is converted to other tick rates. */
+	sv_tickrate = Cvar_Get("sv_tickrate", "10", CVAR_SERVERINFO);
 	sv_optimize_sp_loadtime = Cvar_Get("sv_optimize_sp_loadtime", "31", 0);
 	sv_optimize_mp_loadtime = Cvar_Get("sv_optimize_mp_loadtime", "7", 0);
 

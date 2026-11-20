@@ -30,3 +30,4 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 - Fixed: two clients started in the same second on one machine got the same qport, and the server treated them as one player. The qport now mixes in the process id.
 - Images (HUD pics, icons) per map raised from 256 to 2048. This moves the configstrings, so the network protocol is now 2025 (was 2024); older OPtech2 builds and saves will not match.
 - Fixed: the server only sent the first 32 player stats; all 64 the game provides now reach the client.
+- `sv_tickrate` (server frames per second, default 10, applies from the next map): the server steps at that rate and protocol 2025 tells clients, which time interpolation by it. The game code still assumes 10, so leave it at 10 until the game is converted.
