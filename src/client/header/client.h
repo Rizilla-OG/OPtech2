@@ -509,6 +509,14 @@ struct model_s *CL_PowerScreenModel(void);
 
 void CL_SetSky(void);
 void CL_PrepRefresh(void);
+
+/* optech2: client game modules (cl_cgame.c) */
+void CL_CGame_Load(void);
+void CL_CGame_Unload(void);
+qboolean CL_CGame_Active(void);
+void CL_CGame_DrawHUD(void);
+void CL_CGame_CenterPrint(const char *text);
+void CL_CGame_ConfigString(int index, const char *text);
 void CL_LoadShadowLight(int idx, const char *s);
 void CL_RegisterSounds(void);
 

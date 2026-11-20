@@ -1784,21 +1784,35 @@ SCR_UpdateScreen(void)
 
 			V_RenderView(separation[i]);
 
-			SCR_DrawStats();
-			SCR_DrawSpeed();
-
-			if (cl.frame.playerstate.stats[STAT_LAYOUTS] & LAYOUTS_LAYOUT)
+			/* optech2: a client game module draws the HUD, layouts,
+			   inventory and center prints itself */
+			if (CL_CGame_Active())
 			{
-				SCR_DrawLayout();
+				CL_CGame_DrawHUD();
+				SCR_DrawSpeed();
 			}
-
-			if (cl.frame.playerstate.stats[STAT_LAYOUTS] & LAYOUTS_INVENTORY)
+			else
 			{
-				CL_DrawInventory();
+				SCR_DrawStats();
+				SCR_DrawSpeed();
+
+				if (cl.frame.playerstate.stats[STAT_LAYOUTS] & LAYOUTS_LAYOUT)
+				{
+					SCR_DrawLayout();
+				}
+
+				if (cl.frame.playerstate.stats[STAT_LAYOUTS] & LAYOUTS_INVENTORY)
+				{
+					CL_DrawInventory();
+				}
 			}
 
 			SCR_DrawNet();
-			SCR_CheckDrawCenterString();
+
+			if (!CL_CGame_Active())
+			{
+				SCR_CheckDrawCenterString();
+			}
 
 			if (scr_timegraph->value)
 			{

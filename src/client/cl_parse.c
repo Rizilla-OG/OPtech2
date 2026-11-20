@@ -1877,6 +1877,8 @@ CL_ParseConfigStringValue(int orig_i, char *s)
 		strcpy(cs, s);
 	}
 
+	CL_CGame_ConfigString(i, cs); /* optech2 */
+
 	if ((i >= CS_LIGHTS) && (i < CS_LIGHTS + MAX_LIGHTSTYLES))
 	{
 		CL_SetLightstyle(i - CS_LIGHTS);
@@ -2574,7 +2576,12 @@ CL_ParseServerMessage(void)
 				break;
 
 			case svc_centerprint:
-				SCR_CenterPrint(MSG_ReadString(&net_message));
+			{
+				const char *text = MSG_ReadString(&net_message);
+
+				SCR_CenterPrint(text);
+				CL_CGame_CenterPrint(text); /* optech2 */
+			}
 				break;
 
 			case svc_stufftext:

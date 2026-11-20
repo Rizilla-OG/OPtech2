@@ -4,6 +4,8 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 
 ## Unreleased
 
+- Client game modules (re-release cgame API 2022): when a map starts, the client loads `GetCGameAPI` from the game library (or from the library named by `cl_cgame`) and hands it the engine's imports (configstrings in re-release numbering, cvars, zone memory, timing, client names, key bindings, pictures, strings). A loaded module draws the HUD, layouts, inventory and center prints; without one the built-in HUD is unchanged. Strings use the console font for now; localization returns the text as is.
+- Client game check: `python3 tests/cgame/cgame_check.py` builds a small test module (`tests/cgame/test_cgame.c`), loads it on base1 and checks every value it reads back from the engine.
 - `cl_perf 1`: performance overlay (top left, averaged over half a second): frame rate and frame time (average and worst), engine server and game time per tick, client and render submission time per frame, entities / lights / particles drawn, the game's and the whole system's CPU load, the load of every CPU core and of the game's busiest threads (by name), GPU load and video memory, GPU edge / hotspot / memory temperature, core and memory clock, power and fan speed (Linux; GPU values need amdgpu). Note: with `busywait 1` the frame limiter spins, so the game shows about one full core.
 - cvar_t has the re-release layout (M2 groundwork for re-release client game modules): `modified` counts changes (engine code still treats non zero as changed), new `integer` field kept equal to the value, YQ2's `default_string` moved after it.
 - Forked from Yamagi Quake II Remaster (511b7b0e).
