@@ -12,3 +12,5 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 - Screenshot regression check: `python3 tests/screenshots/screenshot_check.py` (add `--update` to save new references).
 - Timedemo now also prints frame-time stats (average, median, 95th and 99th percentile, worst) in ms.
 - Benchmark: `python3 tests/benchmark/benchmark.py` plays the stock demos and compares with `tests/benchmark/baseline.json` (`--save-baseline` to replace it).
+- Map loader accepts only Quake 2 (IBSP 38, extended QBSP/XBSP, BSPX) and Quake 3 (IBSP 46) maps. Quake 1, Hexen 2, Half-Life, Daikatana, SiN, Heretic 2, Kingpin and Doom map support removed.
+- Fixed an uninitialized lump count when a map file has an unknown format.

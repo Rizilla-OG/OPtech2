@@ -373,43 +373,6 @@ Mod_Load2QBSP_IBSP_NODES(byte *outbuf, dheader_t *outheader,
 }
 
 static void
-Mod_Load2QBSP_IBSP29_NODES(byte *outbuf, dheader_t *outheader,
-	const byte *inbuf, const lump_t *lumps, size_t rule_size,
-	maptype_t maptype, int outlumppos, int inlumppos)
-{
-	size_t i, count;
-	dqnode_t *out;
-	const dq1node_t *in;
-
-	count = lumps[inlumppos].filelen / rule_size;
-	in = (dq1node_t *)(inbuf + lumps[inlumppos].fileofs);
-	out = (dqnode_t *)(outbuf + outheader->lumps[outlumppos].fileofs);
-
-	for (i = 0; i < count; i++)
-	{
-		int j;
-
-		for (j = 0; j < 3; j++)
-		{
-			out->mins[j] = LittleShort(in->mins[j]);
-			out->maxs[j] = LittleShort(in->maxs[j]);
-		}
-
-		out->planenum = LittleLong(in->planenum);
-		out->firstface = LittleShort(in->firstface) & 0xFFFF;
-		out->numfaces = LittleShort(in->numfaces) & 0xFFFF;
-
-		for (j = 0; j < 2; j++)
-		{
-			out->children[j] = LittleShort(in->children[j]);
-		}
-
-		out++;
-		in++;
-	}
-}
-
-static void
 Mod_Load2QBSP_QBSP_NODES(byte *outbuf, dheader_t *outheader,
 	const byte *inbuf, const lump_t *lumps, size_t rule_size,
 	maptype_t maptype, int outlumppos, int inlumppos)
@@ -620,110 +583,6 @@ Mod_Load2QBSP_IBSP_XTEXINFO(byte *outbuf, dheader_t *outheader,
 }
 
 static void
-Mod_Load2QBSP_IBSP29_TEXINFO(byte *outbuf, dheader_t *outheader,
-	const byte *inbuf, const lump_t *lumps, size_t rule_size,
-	maptype_t maptype, int outlumppos, int inlumppos)
-{
-	const dq1mipheader_t *miptextures;
-	size_t i, count, tex_count, tex_offs;
-	const dq1texinfo_t *in;
-	xtexinfo_t *out;
-
-	count = lumps[inlumppos].filelen / rule_size;
-	in = (dq1texinfo_t *)(inbuf + lumps[inlumppos].fileofs);
-	out = (xtexinfo_t *)(outbuf + outheader->lumps[outlumppos].fileofs);
-	tex_count = lumps[LUMP_BSP29_MIPTEX].filelen;
-	tex_offs = lumps[LUMP_BSP29_MIPTEX].fileofs;
-	miptextures = (dq1mipheader_t *)(inbuf + tex_offs);
-
-	for (i = 0; i < count; i++)
-	{
-		int j;
-
-		for (j = 0; j < 4; j++)
-		{
-			out->vecs[0][j] = LittleFloat(in->vecs[0][j]);
-			out->vecs[1][j] = LittleFloat(in->vecs[1][j]);
-		}
-
-		out->flags = Mod_LoadSurfConvertFlags(LittleLong(in->animated), maptype);
-		out->nexttexinfo = -1;
-		snprintf(out->texture, sizeof(out->texture), "#%d", LittleLong(in->texture_id));
-		if (in->texture_id < tex_count)
-		{
-			int texture_offset;
-
-			texture_offset = LittleLong(miptextures->offset[in->texture_id]);
-			if (texture_offset > 0)
-			{
-				const dq1miptex_t *texture;
-
-				texture = (dq1miptex_t *)(inbuf + tex_offs + texture_offset);
-
-				if (!strncmp(texture->name, "sky", 3))
-				{
-					out->flags = SURF_SKY;
-				}
-				else if ((maptype == map_quake1 || maptype == map_hexen2) &&
-					texture->name[0] == '*')
-				{
-					out->flags = SURF_WARP;
-				}
-				else if ((maptype == map_halflife1) && texture->name[0] == '!')
-				{
-					out->flags = SURF_WARP;
-				}
-			}
-		}
-
-		out++;
-		in++;
-	}
-}
-
-static void
-Mod_Load2QBSP_RBSP_TEXINFO(byte *outbuf, dheader_t *outheader,
-	const byte *inbuf, const lump_t *lumps, size_t rule_size,
-	maptype_t maptype, int outlumppos, int inlumppos)
-{
-	const texrinfo_t *in;
-	xtexinfo_t *out;
-	size_t i, count;
-
-	count = lumps[inlumppos].filelen / rule_size;
-	in = (texrinfo_t *)(inbuf + lumps[inlumppos].fileofs);
-	out = (xtexinfo_t *)(outbuf + outheader->lumps[outlumppos].fileofs);
-
-	for (i = 0; i < count; i++)
-	{
-		int j, inflags;
-
-		for (j = 0; j < 4; j++)
-		{
-			out->vecs[0][j] = LittleFloat(in->vecs[0][j]);
-			out->vecs[1][j] = LittleFloat(in->vecs[1][j]);
-		}
-
-		inflags = LittleLong(in->flags);
-		out->flags = Mod_LoadSurfConvertFlags(inflags, maptype);
-		out->nexttexinfo = LittleLong(in->nexttexinfo);
-		memset(out->material, 0, sizeof(out->material));
-		Mod_LoadMaterialConvertFlags(inflags, maptype, out->material);
-		Q_strlcpy(out->texture, in->texture,
-			Q_min(sizeof(out->texture), sizeof(in->texture)));
-
-		/* Fix backslashes */
-		Q_replacebackslash(out->texture);
-
-		out++;
-		in++;
-	}
-
-	Mod_Load2QBSP_MATERIALS_TEXINFO(
-		(xtexinfo_t *)(outbuf + outheader->lumps[outlumppos].fileofs), count);
-}
-
-static void
 Mod_Load2QBSP_IBSP46_TEXINFO(byte *outbuf, dheader_t *outheader,
 	const byte *inbuf, const lump_t *lumps, size_t rule_size,
 	maptype_t maptype, int outlumppos, int inlumppos)
@@ -761,89 +620,6 @@ Mod_Load2QBSP_IBSP_FACES(byte *outbuf, dheader_t *outheader,
 
 	count = lumps[inlumppos].filelen / rule_size;
 	in = (dface_t *)(inbuf + lumps[inlumppos].fileofs);
-	out = (dqface_t *)(outbuf + outheader->lumps[outlumppos].fileofs);
-
-	for (i = 0; i < count; i++)
-	{
-		out->planenum = LittleShort(in->planenum) & 0xFFFF;
-		out->side = LittleShort(in->side) & 0xFFFF;
-		out->firstedge = LittleLong(in->firstedge) & 0xFFFFFFFF;
-		out->numedges = LittleShort(in->numedges) & 0xFFFF;
-		out->texinfo = LittleShort(in->texinfo);
-		memcpy(out->styles, in->styles, Q_min(sizeof(out->styles), sizeof(in->styles)));
-		out->lightofs = LittleLong(in->lightofs);
-
-		out++;
-		in++;
-	}
-}
-
-static void
-Mod_Load2QBSP_IBSP29_FACES(byte *outbuf, dheader_t *outheader,
-	const byte *inbuf, const lump_t *lumps, size_t rule_size,
-	maptype_t maptype, int outlumppos, int inlumppos)
-{
-	size_t i, count;
-	const q1face_t *in;
-	dqface_t *out;
-
-	count = lumps[inlumppos].filelen / rule_size;
-	in = (q1face_t *)(inbuf + lumps[inlumppos].fileofs);
-	out = (dqface_t *)(outbuf + outheader->lumps[outlumppos].fileofs);
-
-	for (i = 0; i < count; i++)
-	{
-		out->planenum = LittleShort(in->planenum);
-		out->side = LittleShort(in->side);
-		out->firstedge = LittleLong(in->firstedge);
-		out->numedges = LittleShort(in->numedges);
-		out->texinfo = LittleShort(in->texinfo);
-		/* use static light for all styles */
-		memset(out->styles, 0, sizeof(out->styles));
-		out->lightofs = LittleLong(in->lightofs) * 3;
-
-		out++;
-		in++;
-	}
-}
-
-static void
-Mod_Load2QBSP_IBSP29_LIGHTING(byte *outbuf, const dheader_t *outheader,
-	const byte *inbuf, const lump_t *lumps, size_t rule_size,
-	maptype_t maptype, int outlumppos, int inlumppos)
-{
-	size_t i, count;
-	const byte *in;
-	byte *out;
-
-	count = lumps[inlumppos].filelen / rule_size;
-	in = (byte *)(inbuf + lumps[inlumppos].fileofs);
-	out = (byte *)(outbuf + outheader->lumps[outlumppos].fileofs);
-
-	for (i = 0; i < count; i++)
-	{
-		size_t j;
-
-		for (j = 0; j < 3; j++)
-		{
-			*out = *in;
-			out++;
-		}
-		in++;
-	}
-}
-
-static void
-Mod_Load2QBSP_RBSP_FACES(byte *outbuf, dheader_t *outheader,
-	const byte *inbuf, const lump_t *lumps, size_t rule_size,
-	maptype_t maptype, int outlumppos, int inlumppos)
-{
-	size_t i, count;
-	const drface_t *in;
-	dqface_t *out;
-
-	count = lumps[inlumppos].filelen / rule_size;
-	in = (drface_t *)(inbuf + lumps[inlumppos].fileofs);
 	out = (dqface_t *)(outbuf + outheader->lumps[outlumppos].fileofs);
 
 	for (i = 0; i < count; i++)
@@ -900,82 +676,6 @@ Mod_Load2QBSP_IBSP_LEAFS(byte *outbuf, dheader_t *outheader,
 
 	count = lumps[inlumppos].filelen / rule_size;
 	in = (dleaf_t *)(inbuf + lumps[inlumppos].fileofs);
-	out = (dqleaf_t *)(outbuf + outheader->lumps[outlumppos].fileofs);
-
-	for (i = 0; i < count; i++)
-	{
-		int j;
-
-		for (j = 0; j < 3; j++)
-		{
-			out->mins[j] = LittleShort(in->mins[j]);
-			out->maxs[j] = LittleShort(in->maxs[j]);
-		}
-
-		out->contents = Mod_LoadContentConvertFlags(LittleLong(in->contents), maptype);
-		out->cluster = LittleShort(in->cluster);
-		out->area = LittleShort(in->area);
-
-		/* make unsigned long from signed short */
-		out->firstleafface = LittleShort(in->firstleafface) & 0xFFFF;
-		out->numleaffaces = LittleShort(in->numleaffaces) & 0xFFFF;
-		out->firstleafbrush = LittleShort(in->firstleafbrush) & 0xFFFF;
-		out->numleafbrushes = LittleShort(in->numleafbrushes) & 0xFFFF;
-
-		out++;
-		in++;
-	}
-}
-
-static void
-Mod_Load2QBSP_IBSP29_LEAFS(byte *outbuf, dheader_t *outheader,
-	const byte *inbuf, const lump_t *lumps, size_t rule_size,
-	maptype_t maptype, int outlumppos, int inlumppos)
-{
-	size_t i, count;
-	const dq1leaf_t *in;
-	dqleaf_t *out;
-
-	count = lumps[inlumppos].filelen / rule_size;
-	in = (dq1leaf_t *)(inbuf + lumps[inlumppos].fileofs);
-	out = (dqleaf_t *)(outbuf + outheader->lumps[outlumppos].fileofs);
-
-	for (i = 0; i < count; i++)
-	{
-		int j;
-
-		for (j = 0; j < 3; j++)
-		{
-			out->mins[j] = LittleShort(in->mins[j]);
-			out->maxs[j] = LittleShort(in->maxs[j]);
-		}
-
-		out->contents = Mod_LoadContentConvertFlags(LittleLong(in->type), maptype);
-		out->cluster = 0;
-		out->area = 0;
-
-		/* make unsigned long from signed short */
-		out->firstleafface = LittleShort(in->firstleafface) & 0xFFFF;
-		out->numleaffaces = LittleShort(in->numleaffaces) & 0xFFFF;
-		out->firstleafbrush = i;
-		out->numleafbrushes = 1;
-
-		out++;
-		in++;
-	}
-}
-
-static void
-Mod_Load2QBSP_DKBSP_LEAFS(byte *outbuf, dheader_t *outheader,
-	const byte *inbuf, const lump_t *lumps, size_t rule_size,
-	maptype_t maptype, int outlumppos, int inlumppos)
-{
-	size_t i, count;
-	const ddkleaf_t *in;
-	dqleaf_t *out;
-
-	count = lumps[inlumppos].filelen / rule_size;
-	in = (ddkleaf_t *)(inbuf + lumps[inlumppos].fileofs);
 	out = (dqleaf_t *)(outbuf + outheader->lumps[outlumppos].fileofs);
 
 	for (i = 0; i < count; i++)
@@ -1665,72 +1365,6 @@ Mod_Load2QBSP_IBSP_MODELS(byte *outbuf, dheader_t *outheader,
 }
 
 static void
-Mod_Load2QBSP_IBSP29_MODELS(byte *outbuf, dheader_t *outheader,
-	const byte *inbuf, const lump_t *lumps, size_t rule_size,
-	maptype_t maptype, int outlumppos, int inlumppos)
-{
-	size_t i, count;
-	const dq1model_t *in;
-	dmodel_t *out;
-
-	count = lumps[inlumppos].filelen / rule_size;
-	in = (dq1model_t *)(inbuf + lumps[inlumppos].fileofs);
-	out = (dmodel_t *)(outbuf + outheader->lumps[outlumppos].fileofs);
-
-	for (i = 0; i < count; i++)
-	{
-		int j;
-
-		for (j = 0; j < 3; j++)
-		{
-			out->mins[j] = LittleFloat(in->mins[j]);
-			out->maxs[j] = LittleFloat(in->maxs[j]);
-			out->origin[j] = LittleFloat(in->origin[j]);
-		}
-
-		out->headnode = LittleLong(in->headnode[0]);
-		out->firstface = LittleLong(in->firstface);
-		out->numfaces = LittleLong(in->numfaces);
-
-		out++;
-		in++;
-	}
-}
-
-static void
-Mod_Load2QBSP_IBSP29_H2MODELS(byte *outbuf, dheader_t *outheader,
-	const byte *inbuf, const lump_t *lumps, size_t rule_size,
-	maptype_t maptype, int outlumppos, int inlumppos)
-{
-	size_t i, count;
-	const dh2model_t *in;
-	dmodel_t *out;
-
-	count = lumps[inlumppos].filelen / rule_size;
-	in = (dh2model_t *)(inbuf + lumps[inlumppos].fileofs);
-	out = (dmodel_t *)(outbuf + outheader->lumps[outlumppos].fileofs);
-
-	for (i = 0; i < count; i++)
-	{
-		int j;
-
-		for (j = 0; j < 3; j++)
-		{
-			out->mins[j] = LittleFloat(in->mins[j]);
-			out->maxs[j] = LittleFloat(in->maxs[j]);
-			out->origin[j] = LittleFloat(in->origin[j]);
-		}
-
-		out->headnode = LittleLong(in->headnode[0]);
-		out->firstface = LittleLong(in->firstface);
-		out->numfaces = LittleLong(in->numfaces);
-
-		out++;
-		in++;
-	}
-}
-
-static void
 Mod_Load2QBSP_IBSP46_MODELS(byte *outbuf, dheader_t *outheader,
 	const byte *inbuf, const lump_t *lumps, size_t rule_size,
 	maptype_t maptype, int outlumppos, int inlumppos)
@@ -1869,29 +1503,6 @@ Mod_Load2QBSP_IBSP_BRUSHSIDES(byte *outbuf, dheader_t *outheader,
 }
 
 static void
-Mod_Load2QBSP_RBSP_BRUSHSIDES(byte *outbuf, dheader_t *outheader,
-	const byte *inbuf, const lump_t *lumps, size_t rule_size,
-	maptype_t maptype, int outlumppos, int inlumppos)
-{
-	const drbrushside_t *in;
-	dqbrushside_t *out;
-	size_t i, count;
-
-	count = lumps[inlumppos].filelen / rule_size;
-	in = (drbrushside_t *)(inbuf + lumps[inlumppos].fileofs);
-	out = (dqbrushside_t *)(outbuf + outheader->lumps[outlumppos].fileofs);
-
-	for (i = 0; i < count; i++)
-	{
-		out->planenum = LittleShort(in->planenum) & 0xFFFF;
-		out->texinfo = LittleShort(in->texinfo);
-
-		out++;
-		in++;
-	}
-}
-
-static void
 Mod_Load2QBSP_QBSP_BRUSHSIDES(byte *outbuf, dheader_t *outheader,
 	const byte *inbuf, const lump_t *lumps, size_t rule_size,
 	maptype_t maptype, int outlumppos, int inlumppos)
@@ -1938,25 +1549,6 @@ Mod_Load2QBSP_IBSP_AREAS(byte *outbuf, dheader_t *outheader,
 }
 
 static size_t
-Mod_Load2QBSP_IBSP29_AdditionalSize(const lump_t *lumps)
-{
-	size_t result_size;
-
-	/* lights is white only in quake 1, extend to rgb */
-	result_size = (lumps[LUMP_BSP29_LIGHTING].filelen * 3 + 3) & ~3;
-
-	/* set brush one to one to leaf */
-	result_size += (lumps[LUMP_BSP29_LEAFS].filelen * sizeof(int) /
-		sizeof(dq1leaf_t) + 3) & ~3;
-	result_size += (lumps[LUMP_BSP29_LEAFS].filelen * sizeof(dbrush_t) /
-		sizeof(dq1leaf_t) + 3) & ~3;
-	result_size += (lumps[LUMP_BSP29_LEAFS].filelen * sizeof(dqbrushside_t) /
-		sizeof(dq1leaf_t) + 3) & ~3;
-
-	return result_size;
-}
-
-static size_t
 Mod_Load2QBSP_AREAS_AdditionalSize(const lump_t *lumps)
 {
 	size_t result_size;
@@ -1987,35 +1579,6 @@ Mod_Load2QBSP_IBSP46_AdditionalSize(const byte *inbuf, const lump_t *lumps)
 	result_size += leafface_count * sizeof(int);
 
 	return result_size;
-}
-
-static size_t
-Mod_Load2QBSP_IBSP29_SetLumps(size_t ofs, const lump_t *lumps, lump_t *outlumps)
-{
-	/* Lighting, lights is white only in quake 1, extend to rgb */
-	outlumps[LUMP_LIGHTING].fileofs = ofs;
-	outlumps[LUMP_LIGHTING].filelen =
-		(lumps[LUMP_BSP29_LIGHTING].filelen * 3 + 3) & ~3;
-	ofs += outlumps[LUMP_LIGHTING].filelen;
-
-	/* LeafBrushes */
-	outlumps[LUMP_LEAFBRUSHES].fileofs = ofs;
-	outlumps[LUMP_LEAFBRUSHES].filelen = lumps[LUMP_BSP29_LEAFS].filelen *
-		sizeof(int) / sizeof(dq1leaf_t);
-	ofs += outlumps[LUMP_LEAFBRUSHES].filelen;
-
-	/* Brushes */
-	outlumps[LUMP_BRUSHES].fileofs = ofs;
-	outlumps[LUMP_BRUSHES].filelen = lumps[LUMP_BSP29_LEAFS].filelen *
-		sizeof(dbrush_t) / sizeof(dq1leaf_t);
-	ofs += outlumps[LUMP_BRUSHES].filelen;
-
-	/* BrusheSides */
-	outlumps[LUMP_BRUSHSIDES].fileofs = ofs;
-	outlumps[LUMP_BRUSHSIDES].filelen = lumps[LUMP_BSP29_LEAFS].filelen *
-		sizeof(dqbrushside_t) / sizeof(dq1leaf_t);
-	ofs += outlumps[LUMP_BRUSHSIDES].filelen;
-	return ofs;
 }
 
 static size_t
@@ -2067,62 +1630,6 @@ Mod_Load2QBSP_IBSP46_SetLumps(size_t ofs, const byte *inbuf,
 	}
 
 	return ofs;
-}
-
-static void
-Mod_Load2QBSP_IBSP29_Fix(const char *name, maptype_t maptype, const lump_t *lumps,
-	const dheader_t *outheader, const byte *inbuf, byte *outbuf)
-{
-	int num_texinfo, i, num_leafs;
-	dqbrushside_t *out_brushsides;
-	xtexinfo_t *out_texinfo;
-	dbrush_t *out_brushes;
-	int *out_leafbrushes;
-	dqleaf_t *out_leafs;
-
-	/* fix textures path */
-	num_texinfo = outheader->lumps[LUMP_TEXINFO].filelen / sizeof(xtexinfo_t);
-	out_texinfo = (xtexinfo_t *)(outbuf + outheader->lumps[LUMP_TEXINFO].fileofs);
-	num_leafs = outheader->lumps[LUMP_LEAFS].filelen / sizeof(dqleaf_t);
-	out_leafs = (dqleaf_t *)(outbuf + outheader->lumps[LUMP_LEAFS].fileofs);
-	out_brushes = (dbrush_t *)(outbuf + outheader->lumps[LUMP_BRUSHES].fileofs);
-	out_brushsides = (dqbrushside_t *)(outbuf + outheader->lumps[LUMP_BRUSHSIDES].fileofs);
-	out_leafbrushes = (int *)(outbuf + outheader->lumps[LUMP_LEAFBRUSHES].fileofs);
-
-	for (i = 0; i < num_texinfo; i++)
-	{
-		char texturename[80];
-
-		snprintf(texturename, sizeof(texturename), "%s%s", name,
-			out_texinfo[i].texture);
-		Q_strlcpy(out_texinfo[i].texture, texturename, sizeof(out_texinfo[i].texture));
-	}
-
-	/* lights is white only in quake 1, extend to rgb */
-	Mod_Load2QBSP_IBSP29_LIGHTING(outbuf, outheader, inbuf, lumps, sizeof(char), maptype,
-		LUMP_LIGHTING, LUMP_BSP29_LIGHTING);
-
-	/* Convert each Quake 1 leaf to a default leafbrush (one brush per leaf) */
-	for (i = 0; i < num_leafs; i++)
-	{
-		/* Each leaf references its own brush */
-		out_leafbrushes[i] = i;
-	}
-
-	/* Quake 1 leafs does not have plane and texinfo, use zero for now */
-	for (i = 0; i < num_leafs; i++)
-	{
-		out_brushsides[i].planenum = 0;
-		out_brushsides[i].texinfo = 0;
-	}
-
-	/* Brushes: convert each Quake 1 leaf to a default brush */
-	for (i = 0; i < num_leafs; i++)
-	{
-		out_brushes[i].firstside = i; /* Each brush starts at its own brushside */
-		out_brushes[i].numsides = 1;  /* One side per brush (per leaf) */
-		out_brushes[i].contents = out_leafs[i].contents;
-	}
 }
 
 static void
@@ -2580,44 +2087,6 @@ typedef struct
 
 /* Quake 1 based games */
 
-/* Quake 1 */
-static const rule_t idq1bsplumps[HEADER_LUMPS] = {
-	{LUMP_ENTITIES, sizeof(char), Mod_Load2QBSP_IBSP_Copy},
-	{LUMP_PLANES, sizeof(dplane_t), Mod_Load2QBSP_IBSP_PLANES},
-	{-1, 0, NULL}, /* Wall Textures */
-	{LUMP_VERTEXES, sizeof(dvertex_t), Mod_Load2QBSP_IBSP_VERTEXES},
-	{-1, 0, NULL}, /* Visability has different structure */
-	{LUMP_NODES, sizeof(dq1node_t), Mod_Load2QBSP_IBSP29_NODES},
-	{LUMP_TEXINFO, sizeof(dq1texinfo_t), Mod_Load2QBSP_IBSP29_TEXINFO},
-	{LUMP_FACES, sizeof(q1face_t), Mod_Load2QBSP_IBSP29_FACES},
-	{-1, 0, NULL}, /* LIGHTING has different structure */
-	{-1, 0, NULL}, /* clipnode_t */
-	{LUMP_LEAFS, sizeof(dq1leaf_t), Mod_Load2QBSP_IBSP29_LEAFS},
-	{LUMP_LEAFFACES, sizeof(short), Mod_Load2QBSP_IBSP_LEAFFACES},
-	{LUMP_EDGES, sizeof(dedge_t), Mod_Load2QBSP_IBSP_EDGES},
-	{LUMP_SURFEDGES, sizeof(int), Mod_Load2QBSP_IBSP_CopyLong},
-	{LUMP_MODELS, sizeof(dq1model_t), Mod_Load2QBSP_IBSP29_MODELS},
-};
-
-/* Hexen 2 */
-static const rule_t idh2bsplumps[HEADER_LUMPS] = {
-	{LUMP_ENTITIES, sizeof(char), Mod_Load2QBSP_IBSP_Copy},
-	{LUMP_PLANES, sizeof(dplane_t), Mod_Load2QBSP_IBSP_PLANES},
-	{-1, 0, NULL}, /* Wall Textures */
-	{LUMP_VERTEXES, sizeof(dvertex_t), Mod_Load2QBSP_IBSP_VERTEXES},
-	{-1, 0, NULL}, /* Visability has different structure */
-	{LUMP_NODES, sizeof(dq1node_t), Mod_Load2QBSP_IBSP29_NODES},
-	{LUMP_TEXINFO, sizeof(dq1texinfo_t), Mod_Load2QBSP_IBSP29_TEXINFO},
-	{LUMP_FACES, sizeof(q1face_t), Mod_Load2QBSP_IBSP29_FACES},
-	{-1, 0, NULL}, /* LIGHTING has different structure */
-	{-1, 0, NULL}, /* clipnode_t */
-	{LUMP_LEAFS, sizeof(dq1leaf_t), Mod_Load2QBSP_IBSP29_LEAFS},
-	{LUMP_LEAFFACES, sizeof(short), Mod_Load2QBSP_IBSP_LEAFFACES},
-	{LUMP_EDGES, sizeof(dedge_t), Mod_Load2QBSP_IBSP_EDGES},
-	{LUMP_SURFEDGES, sizeof(int), Mod_Load2QBSP_IBSP_CopyLong},
-	{LUMP_MODELS, sizeof(dh2model_t), Mod_Load2QBSP_IBSP29_H2MODELS},
-};
-
 /* Quake 2 based games */
 static const rule_t idq2bsplumps[HEADER_LUMPS] = {
 	{LUMP_ENTITIES, sizeof(char), Mod_Load2QBSP_IBSP_Copy},
@@ -2636,50 +2105,6 @@ static const rule_t idq2bsplumps[HEADER_LUMPS] = {
 	{LUMP_MODELS, sizeof(dmodel_t), Mod_Load2QBSP_IBSP_MODELS},
 	{LUMP_BRUSHES, sizeof(dbrush_t), Mod_Load2QBSP_IBSP_BRUSHES},
 	{LUMP_BRUSHSIDES, sizeof(dbrushside_t), Mod_Load2QBSP_IBSP_BRUSHSIDES},
-	{-1, 0, NULL}, /* LUMP_POP */
-	{LUMP_AREAS, sizeof(darea_t), Mod_Load2QBSP_IBSP_AREAS},
-	{LUMP_AREAPORTALS, sizeof(dareaportal_t), Mod_Load2QBSP_IBSP_Copy},
-};
-
-static const rule_t dkbsplumps[HEADER_LUMPS] = {
-	{LUMP_ENTITIES, sizeof(char), Mod_Load2QBSP_IBSP_Copy},
-	{LUMP_PLANES, sizeof(dplane_t), Mod_Load2QBSP_IBSP_PLANES},
-	{LUMP_VERTEXES, sizeof(dvertex_t), Mod_Load2QBSP_IBSP_VERTEXES},
-	{LUMP_VISIBILITY, sizeof(char), Mod_Load2QBSP_IBSP_Copy},
-	{LUMP_NODES, sizeof(dnode_t), Mod_Load2QBSP_IBSP_NODES},
-	{LUMP_TEXINFO, sizeof(texinfo_t), Mod_Load2QBSP_IBSP_TEXINFO},
-	{LUMP_FACES, sizeof(dface_t), Mod_Load2QBSP_IBSP_FACES},
-	{LUMP_LIGHTING, sizeof(char), Mod_Load2QBSP_IBSP_Copy},
-	{LUMP_LEAFS, sizeof(ddkleaf_t), Mod_Load2QBSP_DKBSP_LEAFS},
-	{LUMP_LEAFFACES, sizeof(short), Mod_Load2QBSP_IBSP_LEAFFACES},
-	{LUMP_LEAFBRUSHES, sizeof(short), Mod_Load2QBSP_IBSP_LEAFBRUSHES},
-	{LUMP_EDGES, sizeof(dedge_t), Mod_Load2QBSP_IBSP_EDGES},
-	{LUMP_SURFEDGES, sizeof(int), Mod_Load2QBSP_IBSP_CopyLong},
-	{LUMP_MODELS, sizeof(dmodel_t), Mod_Load2QBSP_IBSP_MODELS},
-	{LUMP_BRUSHES, sizeof(dbrush_t), Mod_Load2QBSP_IBSP_BRUSHES},
-	{LUMP_BRUSHSIDES, sizeof(dbrushside_t), Mod_Load2QBSP_IBSP_BRUSHSIDES},
-	{-1, 0, NULL}, /* LUMP_POP */
-	{LUMP_AREAS, sizeof(darea_t), Mod_Load2QBSP_IBSP_AREAS},
-	{LUMP_AREAPORTALS, sizeof(dareaportal_t), Mod_Load2QBSP_IBSP_Copy},
-};
-
-static const rule_t rbsplumps[HEADER_LUMPS] = {
-	{LUMP_ENTITIES, sizeof(char), Mod_Load2QBSP_IBSP_Copy},
-	{LUMP_PLANES, sizeof(dplane_t), Mod_Load2QBSP_IBSP_PLANES},
-	{LUMP_VERTEXES, sizeof(dvertex_t), Mod_Load2QBSP_IBSP_VERTEXES},
-	{LUMP_VISIBILITY, sizeof(char), Mod_Load2QBSP_IBSP_Copy},
-	{LUMP_NODES, sizeof(dnode_t), Mod_Load2QBSP_IBSP_NODES},
-	{LUMP_TEXINFO, sizeof(texrinfo_t), Mod_Load2QBSP_RBSP_TEXINFO},
-	{LUMP_FACES, sizeof(drface_t), Mod_Load2QBSP_RBSP_FACES},
-	{LUMP_LIGHTING, sizeof(char), Mod_Load2QBSP_IBSP_Copy},
-	{LUMP_LEAFS, sizeof(dleaf_t), Mod_Load2QBSP_IBSP_LEAFS},
-	{LUMP_LEAFFACES, sizeof(short), Mod_Load2QBSP_IBSP_LEAFFACES},
-	{LUMP_LEAFBRUSHES, sizeof(short), Mod_Load2QBSP_IBSP_LEAFBRUSHES},
-	{LUMP_EDGES, sizeof(dedge_t), Mod_Load2QBSP_IBSP_EDGES},
-	{LUMP_SURFEDGES, sizeof(int), Mod_Load2QBSP_IBSP_CopyLong},
-	{LUMP_MODELS, sizeof(dmodel_t), Mod_Load2QBSP_IBSP_MODELS},
-	{LUMP_BRUSHES, sizeof(dbrush_t), Mod_Load2QBSP_IBSP_BRUSHES},
-	{LUMP_BRUSHSIDES, sizeof(drbrushside_t), Mod_Load2QBSP_RBSP_BRUSHSIDES},
 	{-1, 0, NULL}, /* LUMP_POP */
 	{LUMP_AREAS, sizeof(darea_t), Mod_Load2QBSP_IBSP_AREAS},
 	{LUMP_AREAPORTALS, sizeof(dareaportal_t), Mod_Load2QBSP_IBSP_Copy},
@@ -2774,36 +2199,6 @@ static const char *lump_names[HEADER_LUMPS] = {
 	"AREAPORTALS"
 };
 
-/* DOOM lumps names */
-static const char *const doom_lumps[] = {
-	"THINGS",
-	"LINEDEFS",
-	"SIDEDEFS",
-	"VERTEXES",
-	"SEGS",
-	"SSECTORS",
-	"NODES",
-	"SECTORS",
-	"REJECT",
-	"BLOCKMAP",
-	"BEHAVIOR"
-};
-
-/* Doom map conversion rules mapping nearest Doom lump types to Quake 2 BSP lump types */
-static const rule_t doombsplumps[11] = {
-	{LUMP_ENTITIES, sizeof(char), Mod_Load2QBSP_IBSP_Copy}, /* THINGS -> ENTITIES */
-	{-1, 0, NULL}, /* LINEDEFS */
-	{-1, 0, NULL}, /* SIDEDEFS */
-	{LUMP_VERTEXES, sizeof(short) * 2, Mod_Load2QBSP_IBSP_Copy}, /* VERTEXES (x, y shorts) -> VERTEXES */
-	{-1, 0, NULL}, /* SEGS */
-	{-1, 0, NULL}, /* SSECTORS */
-	{LUMP_NODES, sizeof(short), Mod_Load2QBSP_IBSP_Copy}, /* NODES -> NODES */
-	{LUMP_TEXINFO, sizeof(short), Mod_Load2QBSP_IBSP_Copy}, /* SECTORS -> TEXINFO */
-	{LUMP_VISIBILITY, sizeof(char), Mod_Load2QBSP_IBSP_Copy}, /* REJECT -> VISIBILITY */
-	{-1, 0, NULL}, /* BLOCKMAP */
-	{-1, 0, NULL}  /* BEHAVIOR */
-};
-
 static const char*
 Mod_MaptypeName(maptype_t maptype)
 {
@@ -2884,36 +2279,13 @@ Mod_LoadGetRules(int ident, int version, const byte *inbuf, const lump_t *lumps,
 	/*
 	 * numlumps is count lumps in format,
 	 * numrules is what could checked and converted
+	 *
+	 * optech2: only Quake 2 (IBSP 38, extended QBSP/XBSP) and Quake 3 (IBSP 46)
+	 * maps are accepted; other games' formats were removed.
 	 */
 	if (ident == IDBSPHEADER)
 	{
-		if (version == BSPDKMVERSION)
-		{
-			/* SiN demos used same version ids as Daikatana */
-			if ((lumps[LUMP_TEXINFO].filelen % sizeof(texrinfo_t) == 0) &&
-				(lumps[LUMP_FACES].filelen % sizeof(drface_t) == 0))
-			{
-				*rules = rbsplumps;
-				*numrules = *numlumps = HEADER_LUMPS;
-				return map_sin;
-			}
-			else
-			{
-				if (lumps[LUMP_LEAFS].filelen % sizeof(ddkleaf_t) == 0)
-				{
-					*rules = dkbsplumps;
-				}
-				else
-				{
-					*rules = idq2bsplumps;
-				}
-
-				*numrules = HEADER_LUMPS;
-				*numlumps = HEADER_DKLUMPS;
-				return map_daikatana;
-			}
-		}
-		else if (version == BSPVERSION)
+		if (version == BSPVERSION)
 		{
 			int flags;
 
@@ -2934,80 +2306,7 @@ Mod_LoadGetRules(int ident, int version, const byte *inbuf, const lump_t *lumps,
 				return map_quake2;
 			}
 
-			/* has heretic2 specific flags and no unused flags */
-			if (((flags & HERETIC2_FLAGS) == HERETIC2_FLAGS) &&
-				!(flags & ~HERETIC2_ALLFLAGS))
-			{
-				/* heretic 2 has 24, 25 set as material */
-				return map_heretic2;
-			}
-
-			/* has kingpin specific flags and no unused flags */
-			if (((flags & KINGPIN_FLAGS) == KINGPIN_FLAGS) &&
-				!(flags & ~KINGPIN_ALLFLAGS))
-			{
-				/* kingpin has 19 - 27 set as material */
-				return map_kingpin;
-			}
-
 			return map_quake2rr;
-		}
-		else if (version == BSPHL1VERSION)
-		{
-			*numrules = *numlumps = HEADER_Q1LUMPS;
-			*rules = idq1bsplumps;
-			return map_halflife1;
-		}
-		else if (version == BSPQ1VERSION)
-		{
-			size_t num_nodes, num_models, i;
-			const dq1model_t *in_models;
-			qboolean hexen2map = false;
-
-			*numrules = *numlumps = HEADER_Q1LUMPS;
-
-			if (lumps[LUMP_BSP29_MODELS].filelen % sizeof(dh2model_t) != 0)
-			{
-				/* for sure not hexen map */
-				*rules = idq1bsplumps;
-				return map_quake1;
-			}
-
-			if (lumps[LUMP_BSP29_MODELS].fileofs >= filesize)
-			{
-				/* incorrect lump fileofs */
-				*rules = NULL;
-				return map_quake2rr;
-			}
-
-			/* revalidate one more time */
-			num_nodes = lumps[LUMP_BSP29_NODES].filelen / sizeof(dq1node_t);
-			num_models = lumps[LUMP_BSP29_MODELS].filelen / sizeof(dq1model_t);
-			in_models = (const dq1model_t *)(inbuf + lumps[LUMP_BSP29_MODELS].fileofs);
-
-			for (i = 0; i < num_models; i++)
-			{
-				int headnode;
-
-				/* check to incorrect nodes */
-				headnode = LittleLong(in_models[i].headnode[0]);
-				if (headnode >= num_nodes)
-				{
-					hexen2map = true;
-					break;
-				}
-			}
-
-			if (hexen2map)
-			{
-				*rules = idh2bsplumps;
-				return map_hexen2;
-			}
-			else
-			{
-				*rules = idq1bsplumps;
-				return map_quake1;
-			}
 		}
 		else if (version == BSPQ3VERSION)
 		{
@@ -3030,20 +2329,9 @@ Mod_LoadGetRules(int ident, int version, const byte *inbuf, const lump_t *lumps,
 		*numrules = *numlumps = HEADER_LUMPS;
 		return map_quake2rr;
 	}
-	else if (ident == RBSPHEADER && version == BSPSINVERSION)
-	{
-		*rules = rbsplumps;
-		*numrules = *numlumps = HEADER_LUMPS;
-		return map_sin;
-	}
-	else if (ident == PWADHEADER && version == 0)
-	{
-		*rules = doombsplumps;
-		*numrules = *numlumps = ARRLEN(doom_lumps);
-		return map_doom;
-	}
 
 	*rules = NULL;
+	*numrules = *numlumps = 0; // optech2: unknown format, was left uninitialized
 	return map_quake2rr;
 }
 
@@ -3165,12 +2453,6 @@ Mod_Load2QBSP(const char *name, byte *inbuf, size_t filesize, size_t *out_len,
 	ident = LittleLong(((int *)inbuf)[0]);
 	version = LittleLong(((int *)inbuf)[1]);
 	inlumps = (int*)inbuf + 2; /* skip ident + version */
-	if (ident == BSPQ1VERSION || ident == BSPHL1VERSION)
-	{
-		version = ident;
-		ident = IDBSPHEADER;
-		inlumps = (int*)inbuf + 1; /* version */
-	}
 
 	for (s = 0; s < sizeof(lumpsmem) / sizeof(int); s++)
 	{
@@ -3215,17 +2497,7 @@ Mod_Load2QBSP(const char *name, byte *inbuf, size_t filesize, size_t *out_len,
 		}
 	}
 
-	if ((detected_maptype == map_quake1) ||
-		(detected_maptype == map_hexen2) ||
-		(detected_maptype == map_halflife1))
-	{
-		result_size += Mod_Load2QBSP_IBSP29_AdditionalSize(lumps);
-	}
-
-	if ((detected_maptype == map_quake1) ||
-		(detected_maptype == map_hexen2) ||
-		(detected_maptype == map_halflife1) ||
-		(detected_maptype == map_quake3))
+	if (detected_maptype == map_quake3)
 	{
 		result_size += Mod_Load2QBSP_AREAS_AdditionalSize(lumps);
 	}
@@ -3250,22 +2522,12 @@ Mod_Load2QBSP(const char *name, byte *inbuf, size_t filesize, size_t *out_len,
 
 	ofs = Mod_Load2QBSPSizeByRules(rules, numrules, outheader, lumps);
 
-	if ((detected_maptype == map_quake1) ||
-		(detected_maptype == map_hexen2) ||
-		(detected_maptype == map_halflife1))
-	{
-		ofs = Mod_Load2QBSP_IBSP29_SetLumps(ofs, lumps, outheader->lumps);
-	}
-
 	if (detected_maptype == map_quake3)
 	{
 		ofs = Mod_Load2QBSP_IBSP46_SetLumps(ofs, inbuf, lumps, outheader->lumps);
 	}
 
-	if ((detected_maptype == map_quake1) ||
-		(detected_maptype == map_hexen2) ||
-		(detected_maptype == map_halflife1) ||
-		(detected_maptype == map_quake3))
+	if (detected_maptype == map_quake3)
 	{
 		ofs = Mod_Load2QBSP_AREAS_SetLumps(ofs, lumps, outheader->lumps);
 	}
@@ -3327,10 +2589,7 @@ Mod_Load2QBSP(const char *name, byte *inbuf, size_t filesize, size_t *out_len,
 		Mod_Load2QBSP_TEXINFO_NOBSPX(outbuf, outheader);
 	}
 
-	if ((detected_maptype == map_quake1) ||
-		(detected_maptype == map_hexen2) ||
-		(detected_maptype == map_halflife1) ||
-		(detected_maptype == map_quake3))
+	if (detected_maptype == map_quake3)
 	{
 		Mod_Load2QBSP_AREAS_Fix(name, *maptype, lumps, outheader, inbuf, outbuf);
 	}
@@ -3340,165 +2599,7 @@ Mod_Load2QBSP(const char *name, byte *inbuf, size_t filesize, size_t *out_len,
 		Mod_Load2QBSP_IBSP46_Fix(name, *maptype, lumps, outheader, inbuf, outbuf);
 	}
 
-	if ((detected_maptype == map_quake1) ||
-		(detected_maptype == map_hexen2) ||
-		(detected_maptype == map_halflife1))
-	{
-		Mod_Load2QBSP_IBSP29_Fix(name, *maptype, lumps, outheader, inbuf, outbuf);
-	}
-
 	*out_len = result_size;
 	return outbuf;
 }
 
-/*
- * Combine separate Doom map lumps into a single file structure expected by Mod_Load2QBSP:
- * - IDENT (4 bytes)
- * - VERSION (4 bytes)
- * - Lump list with offset and length for each lump
- * - Lump contents
- */
-int
-Mod_CombineLumps(const char *name, void **buffer)
-{
-	char dir[MAX_QPATH];
-	const char *basename;
-	byte *lumpdata[ARRLEN(doom_lumps)];
-	int lumpsize[ARRLEN(doom_lumps)];
-	qboolean lumpexists[ARRLEN(doom_lumps)];
-	int lumppos[ARRLEN(doom_lumps)];
-	size_t i;
-	int num_found = 0;
-	size_t data_ofs;
-	size_t total_size;
-	byte *outbuf;
-	lump_t *outlumps;
-	qboolean has_essential_lump = false;
-
-	if (!name || !name[0] || !buffer)
-	{
-		return -1;
-	}
-
-	*buffer = NULL;
-
-	COM_StripExtension(name, dir);
-	basename = COM_SkipPath(dir);
-	if (!basename || !basename[0])
-	{
-		return -1;
-	}
-
-	for (i = 0; i < ARRLEN(doom_lumps); i++)
-	{
-		char lumppath[MAX_QPATH];
-		int len;
-
-		lumpdata[i] = NULL;
-		lumpsize[i] = 0;
-		lumpexists[i] = false;
-		lumppos[i] = 0;
-
-		Com_sprintf(lumppath, sizeof(lumppath), "%s/%s.lmp", dir, doom_lumps[i]);
-		len = FS_LoadFile(lumppath, (void **)&lumpdata[i]);
-
-		if (len >= 0)
-		{
-			lumpexists[i] = true;
-			lumpsize[i] = len;
-			num_found++;
-
-			if (!strcmp(doom_lumps[i], "VERTEXES") ||
-				!strcmp(doom_lumps[i], "LINEDEFS") ||
-				!strcmp(doom_lumps[i], "SECTORS") ||
-				!strcmp(doom_lumps[i], "NODES"))
-			{
-				has_essential_lump = true;
-			}
-		}
-	}
-
-	if (num_found == 0 || !has_essential_lump)
-	{
-		for (i = 1; i < ARRLEN(doom_lumps); i++)
-		{
-			if (lumpdata[i])
-			{
-				FS_FreeFile(lumpdata[i]);
-			}
-		}
-		return -1;
-	}
-
-	/*
-	 * Structure:
-	 * 1. ident (4 bytes) + version (4 bytes)
-	 * 2. lump_t array [ARRLEN(doom_lumps)]
-	 * 3. Lump contents
-	 */
-	data_ofs = sizeof(int) * 2 + sizeof(lump_t) * ARRLEN(doom_lumps);
-	data_ofs = (data_ofs + 3) & ~3;
-
-	for (i = 0; i < ARRLEN(doom_lumps); i++)
-	{
-		if (lumpexists[i] && lumpsize[i] > 0)
-		{
-			data_ofs = (data_ofs + 3) & ~3;
-			lumppos[i] = (int)data_ofs;
-			data_ofs += lumpsize[i];
-		}
-		else
-		{
-			lumppos[i] = 0;
-			lumpsize[i] = 0;
-		}
-	}
-
-	data_ofs = (data_ofs + 3) & ~3;
-	total_size = data_ofs;
-
-	outbuf = Z_Malloc(total_size);
-	if (!outbuf)
-	{
-		for (i = 0; i < ARRLEN(doom_lumps); i++)
-		{
-			if (lumpdata[i])
-			{
-				FS_FreeFile(lumpdata[i]);
-			}
-		}
-		return -1;
-	}
-
-	/* Write IDENT and VERSION */
-	((int *)outbuf)[0] = LittleLong(PWADHEADER);
-	((int *)outbuf)[1] = LittleLong(0);
-
-	/* Write lump list: offset and length for each lump */
-	outlumps = (lump_t *)((int *)outbuf + 2);
-	for (i = 0; i < ARRLEN(doom_lumps); i++)
-	{
-		outlumps[i].fileofs = LittleLong(lumppos[i]);
-		outlumps[i].filelen = LittleLong(lumpsize[i]);
-	}
-
-	/* Copy content of each lump */
-	for (i = 0; i < ARRLEN(doom_lumps); i++)
-	{
-		if (lumpexists[i] && lumpsize[i] > 0 && lumpdata[i])
-		{
-			memcpy(outbuf + lumppos[i], lumpdata[i], lumpsize[i]);
-		}
-	}
-
-	for (i = 0; i < ARRLEN(doom_lumps); i++)
-	{
-		if (lumpdata[i])
-		{
-			FS_FreeFile(lumpdata[i]);
-		}
-	}
-
-	*buffer = outbuf;
-	return total_size;
-}
