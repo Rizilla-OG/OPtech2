@@ -647,6 +647,9 @@ CL_DeltaEntity(frame_t *frame, int newnum, const entity_xstate_t *old, uint64_t 
 {
 	centity_t dummy, *ent;
 	entity_xstate_t *state;
+	/* optech2: time this frame is valid for, and one server frame, in msec */
+	int frameServerTime = (int)((long long)frame->serverframe * 1000 / cl.tickrate);
+	int frameMsec = 1000 / cl.tickrate;
 
 	ent = CL_AllocEntity(newnum);
 	if (!ent)
@@ -687,6 +690,13 @@ CL_DeltaEntity(frame_t *frame, int newnum, const entity_xstate_t *old, uint64_t 
 
 		ent->serverframe_created = cl.frame.serverframe;
 
+		/* optech2: no smoothing history yet, use plain per-frame lerp */
+		ent->move_change_time = frameServerTime;
+		ent->move_lerp_msec = frameMsec;
+		ent->anim_prev_frame = state->frame;
+		ent->anim_change_time = frameServerTime;
+		ent->anim_lerp_msec = frameMsec;
+
 		if (state->event == EV_OTHER_TELEPORT)
 		{
 			VectorCopy(state->origin, ent->prev.origin);
@@ -698,10 +708,34 @@ CL_DeltaEntity(frame_t *frame, int newnum, const entity_xstate_t *old, uint64_t 
 			VectorCopy(state->old_origin, ent->lerp_origin);
 		}
 	}
-	else
+	else if (!cl_smoothmovers->value)
 	{
 		/* shuffle the last state to previous */
 		ent->prev = ent->current;
+		ent->move_change_time = ent->anim_change_time = frameServerTime;
+		ent->move_lerp_msec = ent->anim_lerp_msec = frameMsec;
+		ent->anim_prev_frame = ent->current.frame;
+	}
+	else
+	{
+		/* optech2: only shuffle when the entity moved or turned, and spread
+		   the move over the time since its previous move (capped at 100 ms).
+		   Entities that move every frame get plain per-frame lerp. */
+		if (!VectorCompare(state->origin, ent->current.origin) ||
+			!VectorCompare(state->angles, ent->current.angles))
+		{
+			ent->move_lerp_msec = Q_clamp(frameServerTime - ent->move_change_time, frameMsec, 100);
+			ent->move_change_time = frameServerTime;
+			ent->prev = ent->current;
+		}
+
+		/* same for the animation frame, on its own clock */
+		if (state->frame != ent->current.frame)
+		{
+			ent->anim_lerp_msec = Q_clamp(frameServerTime - ent->anim_change_time, frameMsec, 100);
+			ent->anim_change_time = frameServerTime;
+			ent->anim_prev_frame = ent->current.frame;
+		}
 	}
 
 	ent->serverframe = cl.frame.serverframe;

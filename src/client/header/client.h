@@ -90,6 +90,16 @@ typedef struct
 	vec3_t		lerp_origin; /* for trails (variable hz) */
 
 	int			fly_stoptime;
+
+	/* optech2: at tick rates above 10 Hz, monsters move, turn and animate
+	   only every 0.1 s. Each change is spread over the time since the
+	   entity's previous change (at most 100 ms), separately for movement
+	   (origin and angles) and for the animation frame. */
+	int move_change_time; /* server time of the last origin/angles change (msec) */
+	int move_lerp_msec; /* how long that change is spread over */
+	int anim_prev_frame; /* animation frame before the last frame change */
+	int anim_change_time; /* server time of the last frame change (msec) */
+	int anim_lerp_msec; /* how long that frame change is spread over */
 } centity_t;
 
 typedef struct
@@ -326,6 +336,7 @@ extern	cvar_t	*cl_anglespeedkey;
 extern	cvar_t	*cl_shownet;
 extern	cvar_t	*cl_showmiss;
 extern	cvar_t	*cl_showclamp;
+extern cvar_t *cl_smoothmovers; /* optech2 */
 extern	cvar_t	*lookstrafe;
 extern	cvar_t	*joy_layout;
 extern	cvar_t	*gyro_mode;

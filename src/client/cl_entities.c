@@ -35,6 +35,29 @@
  */
 #define LASERLERP_NSKIPS 2
 
+/*
+ * optech2: how far (0..1) an entity is through its last change.
+ * The change happened in the server frame valid at changeTime and is
+ * spread over lerpMsec, starting where plain lerp would start (one
+ * server frame earlier). With lerpMsec of one server frame this is
+ * exactly cl.lerpfrac.
+ */
+static float
+CL_EntityLerpFraction(int changeTime, int lerpMsec)
+{
+	float startTime = changeTime - 1000.0f / cl.tickrate;
+	float fraction;
+
+	if (lerpMsec <= 0)
+	{
+		return 1.0f;
+	}
+
+	fraction = (cl.time - startTime) / lerpMsec;
+
+	return Q_clamp(fraction, 0.0f, 1.0f);
+}
+
 static void
 CL_AddPacketEntities(const frame_t *frame)
 {
@@ -59,6 +82,7 @@ CL_AddPacketEntities(const frame_t *frame)
 	for (pnum = 0; pnum < frame->num_entities; pnum++)
 	{
 		unsigned int effects, renderfx, rr_effects;
+		float moveLerp, animLerp; /* optech2: per-entity lerp fractions */
 		entity_xstate_t *s1;
 		entity_t ent = {0};
 		clientinfo_t *ci;
@@ -140,8 +164,12 @@ CL_AddPacketEntities(const frame_t *frame)
 			renderfx |= RF_SHELL_HALF_DAM;
 		}
 
-		ent.oldframe = cent->prev.frame;
-		ent.backlerp = 1.0f - cl.lerpfrac;
+		/* optech2: each entity has its own lerp fractions, see CL_EntityLerpFraction */
+		moveLerp = CL_EntityLerpFraction(cent->move_change_time, cent->move_lerp_msec);
+		animLerp = CL_EntityLerpFraction(cent->anim_change_time, cent->anim_lerp_msec);
+
+		ent.oldframe = cent->anim_prev_frame;
+		ent.backlerp = 1.0f - animLerp;
 
 		if ((renderfx & RF_BEAM) &&
 			(cl.frame.serverframe - cent->serverframe_created) >= LASERLERP_NSKIPS)
@@ -150,10 +178,10 @@ CL_AddPacketEntities(const frame_t *frame)
 
 			for (i = 0; i < 3; i++)
 			{
-				ent.origin[i] = cent->prev.origin[i] + (cl.lerpfrac *
-						(cent->current.origin[i] - cent->prev.origin[i]));
-				ent.oldorigin[i] = cent->prev.old_origin[i] + (cl.lerpfrac *
-						(cent->current.old_origin[i] - cent->prev.old_origin[i]));
+				ent.origin[i] = cent->prev.origin[i] + (moveLerp *
+														   (cent->current.origin[i] - cent->prev.origin[i]));
+				ent.oldorigin[i] = cent->prev.old_origin[i] + (moveLerp *
+																  (cent->current.old_origin[i] - cent->prev.old_origin[i]));
 			}
 		}
 		else if (renderfx & (RF_BEAM | RF_FRAMELERP))
@@ -170,8 +198,8 @@ CL_AddPacketEntities(const frame_t *frame)
 			/* interpolate origin */
 			for (i = 0; i < 3; i++)
 			{
-				ent.origin[i] = ent.oldorigin[i] = cent->prev.origin[i] + cl.lerpfrac *
-					(cent->current.origin[i] - cent->prev.origin[i]);
+				ent.origin[i] = ent.oldorigin[i] = cent->prev.origin[i] + moveLerp *
+																			  (cent->current.origin[i] - cent->prev.origin[i]);
 			}
 		}
 
@@ -355,7 +383,7 @@ CL_AddPacketEntities(const frame_t *frame)
 
 				a1 = cent->current.angles[i];
 				a2 = cent->prev.angles[i];
-				ent.angles[i] = LerpAngle(a2, a1, cl.lerpfrac);
+				ent.angles[i] = LerpAngle(a2, a1, moveLerp);
 			}
 		}
 

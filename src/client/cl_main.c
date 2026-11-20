@@ -58,6 +58,7 @@ cvar_t *cl_nodownload_list;
 cvar_t *cl_shownet;
 cvar_t *cl_showmiss;
 cvar_t *cl_showclamp;
+cvar_t *cl_smoothmovers; /* optech2 */
 
 cvar_t *cl_paused;
 cvar_t *cl_loadpaused;
@@ -638,6 +639,8 @@ CL_InitLocal(void)
 	cl_shownet = Cvar_Get("cl_shownet", "0", 0);
 	cl_showmiss = Cvar_Get("cl_showmiss", "0", 0);
 	cl_showclamp = Cvar_Get("showclamp", "0", 0);
+	/* optech2: spread 0.1 s moves of monsters over 0.1 s at high tick rates */
+	cl_smoothmovers = Cvar_Get("cl_smoothmovers", "1", CVAR_ARCHIVE);
 	cl_timeout = Cvar_Get("cl_timeout", "120", 0);
 	cl_paused = Cvar_Get("paused", "0", 0);
 	cl_loadpaused = Cvar_Get("cl_loadpaused", "1", CVAR_ARCHIVE);
