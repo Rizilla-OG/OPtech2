@@ -294,11 +294,38 @@ CG_GetWarnAmmoCount(int32_t weapon_id)
 	return 0;
 }
 
-/* no localization files yet: the text itself */
+/* the localized text of a "$key" (localization/loc_<language>.txt), with
+   its "{}" / "{N}" filled from args; other text as it is */
 static const char *
 CG_Localize(const char *base, const char **args, size_t num_args)
 {
-	return base;
+	static char localized[2][1024]; /* two, so a result can be an argument */
+	static int which;
+	const char *localized_args[16];
+	char localized_arg_text[16][256];
+	size_t i;
+
+	if (!base)
+	{
+		return "";
+	}
+
+	if (num_args > 16)
+	{
+		num_args = 16;
+	}
+
+	for (i = 0; i < num_args; i++)
+	{
+		Q_strlcpy(localized_arg_text[i], SV_LocalizationMessage(args[i] ? args[i] : "", NULL),
+			sizeof(localized_arg_text[i]));
+		localized_args[i] = localized_arg_text[i];
+	}
+
+	which ^= 1;
+	CL_LocalizeFormat(SV_LocalizationMessage(base, NULL), localized_args, (int)num_args,
+		localized[which], sizeof(localized[which]));
+	return localized[which];
 }
 
 static int32_t

@@ -9,7 +9,8 @@ base1 and checks what the module reports about the engine's imports:
   - the map name through the re-release configstring numbering,
   - health from the player state, frame valid, server frame, client time,
   - a picture's size, a key binding,
-  - the HUD rect in HUD units at r_hudscale 2 (pixels / scale).
+  - the HUD rect in HUD units at r_hudscale 2 (pixels / scale),
+  - Localize of "$key" texts with arguments (with the re-release data).
 The screenshot (module HUD instead of the built-in one) lands in
 build/cgame-check/ and docs/screenshots/.
 
@@ -32,6 +33,7 @@ MODULE_SOURCE = REPO_DIR / "tests" / "cgame" / "test_cgame.c"
 OUTPUT_DIR = REPO_DIR / "build" / "cgame-check"
 DOC_SHOT = REPO_DIR / "docs" / "screenshots" / "m2_test_cgame_hud.png"
 DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
+RERELEASE_DATA_DIR = DEFAULT_DATA_DIR / "rerelease"  # has localization/ (Q2Game.kpf); used when present
 
 
 def main():
@@ -57,7 +59,8 @@ def main():
         environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
         log_path = OUTPUT_DIR / "client.log"
         with open(log_path, "w") as log_file:
-            subprocess.run(["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(DEFAULT_DATA_DIR),
+            data_dir = RERELEASE_DATA_DIR if (RERELEASE_DATA_DIR / "Q2Game.kpf").exists() else DEFAULT_DATA_DIR
+            subprocess.run(["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(data_dir),
                             "+set", "vid_renderer", "soft", "+set", "r_vsync", "0", "+set", "s_initsound", "0", "+set", "r_hudscale", "2",
                             "+set", "cl_cgame", str(module), "+exec", "c.cfg"],
                            env=environment, stdout=log_file, stderr=subprocess.STDOUT, timeout=60, check=False)
@@ -79,6 +82,11 @@ def main():
     else:
         report(False, "Init ran (no 'cgtest init' line)")
 
+    localized = re.search(r"cgtest localize: '([^']*)' \| '([^']*)'", log)
+    if (RERELEASE_DATA_DIR / "Q2Game.kpf").exists():
+        report(bool(localized) and localized.group(1) == "Primary Objective" and "Tester" in localized.group(2)
+               and "$" not in localized.group(2),
+               f"Localize: {localized.groups() if localized else 'no line'}")
     hud = re.search(r"cgtest hud: map '([^']*)' health (-?\d+) frame_valid (\d) server_frame (\d+) client_time (\d+) "
                     r"scale (\d+) screen (\d+)x(\d+) playernum (-?\d+) pic i_health (\d+)x(\d+) registered (\d) "
                     r"attack key '([^']*)'", log)
@@ -90,8 +98,14 @@ def main():
         report(hud.group(10) == "24" and hud.group(12) == "1", f"picture i_health {hud.group(10)}x{hud.group(11)}")
         report(hud.group(13) != "", f"+attack bound to '{hud.group(13)}'")
         # hud_vrect is in HUD units (pixels / scale), as the re-release passes it
-        report(hud.group(6) == "2" and hud.group(7) == "512" and hud.group(8) == "320",
-               f"scale {hud.group(6)}, HUD rect {hud.group(7)}x{hud.group(8)} (1024x640 / scale)")
+        shot_size = None
+        if (OUTPUT_DIR / "hud.png").exists():
+            png = (OUTPUT_DIR / "hud.png").read_bytes()
+            shot_size = (int.from_bytes(png[16:20], "big"), int.from_bytes(png[20:24], "big"))
+        scale = int(hud.group(6))
+        rect = (int(hud.group(7)), int(hud.group(8)))
+        report(scale == 2 and shot_size is not None and rect == (shot_size[0] // scale, shot_size[1] // scale),
+               f"scale {scale}, HUD rect {rect[0]}x{rect[1]} (screen {shot_size} / scale)")
     else:
         report(False, "DrawHUD ran (no 'cgtest hud' line)")
 

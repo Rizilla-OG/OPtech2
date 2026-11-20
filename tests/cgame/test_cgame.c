@@ -45,6 +45,14 @@ Init(void)
 	Print("cgtest init: tick_rate %u frame_time_ms %u cvar integer %d value %.0f change counted %s\n",
 		cgi.tick_rate, cgi.frame_time_ms, test_cvar->integer, test_cvar->value,
 		test_cvar->modified != modified_before ? "yes" : "no");
+
+	{
+		const char *exit_args[1] = {"Tester"};
+
+		/* "$key" texts come from localization/loc_<language>.txt (re-release data) */
+		Print("cgtest localize: '%s' | '%s'\n", cgi.Localize("$g_pc_primary_objective", NULL, 0),
+			cgi.Localize("$g_exited_level", exit_args, 1));
+	}
 }
 
 static void
