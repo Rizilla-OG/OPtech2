@@ -351,7 +351,7 @@ static const char* vertexCommon3D = MULTILINE_STRING(
 		in vec2 lmTexCoord; // GL4_ATTRIB_LMTEXCOORD
 		in vec4 vertColor;  // GL4_ATTRIB_COLOR
 		in vec3 normal;     // GL4_ATTRIB_NORMAL
-		in uint lightFlags; // GL4_ATTRIB_LIGHTFLAGS
+		in uvec4 lightFlags; // GL4_ATTRIB_LIGHTFLAGS, optech2: was uint, one bit per dyn light
 
 		out vec2 passTexCoord;
 
@@ -455,7 +455,7 @@ static const char* vertexSrc3Dlm = MULTILINE_STRING(
 		out vec2 passLMcoord;
 		out vec3 passWorldCoord;
 		out vec3 passNormal;
-		flat out uint passLightFlags;
+		flat out uvec4 passLightFlags;
 
 		void main()
 		{
@@ -478,7 +478,7 @@ static const char* vertexSrc3DlmFlow = MULTILINE_STRING(
 		out vec2 passLMcoord;
 		out vec3 passWorldCoord;
 		out vec3 passNormal;
-		flat out uint passLightFlags;
+		flat out uvec4 passLightFlags;
 
 		void main()
 		{
@@ -568,7 +568,7 @@ static const char* fragmentSrc3Dlm = MULTILINE_STRING(
 
 		layout (std140) uniform uniLights
 		{
-			DynLight dynLights[32];
+			DynLight dynLights[128]; // optech2: must match MAX_DLIGHTS
 			uint numDynLights;
 			uint _pad1; uint _pad2; uint _pad3; // FFS, AMD!
 		};
@@ -585,7 +585,7 @@ static const char* fragmentSrc3Dlm = MULTILINE_STRING(
 		in vec2 passLMcoord;
 		in vec3 passWorldCoord;
 		in vec3 passNormal;
-		flat in uint passLightFlags;
+		flat in uvec4 passLightFlags;
 
 		void main()
 		{
@@ -600,7 +600,7 @@ static const char* fragmentSrc3Dlm = MULTILINE_STRING(
 			lmTex     += texture(lightmap2, passLMcoord) * lmScales[2];
 			lmTex     += texture(lightmap3, passLMcoord) * lmScales[3];
 
-			if (passLightFlags != 0u)
+			if (any(notEqual(passLightFlags, uvec4(0u))))
 			{
 				// TODO: or is hardcoding 32 better?
 				for (uint i=0u; i<numDynLights; ++i)
@@ -610,7 +610,7 @@ static const char* fragmentSrc3Dlm = MULTILINE_STRING(
 					// and, if it is, sets intensity according to distance between light and pixel on surface
 
 					// dyn light number i does not affect this plane, just skip it
-					if ((passLightFlags & (1u << i)) == 0u)  continue;
+					if ((passLightFlags[i >> 5u] & (1u << (i & 31u))) == 0u)  continue;
 
 					float intens = dynLights[i].lightColor.a;
 
@@ -664,7 +664,7 @@ static const char* fragmentSrc3DlmNoColor = MULTILINE_STRING(
 
 		layout (std140) uniform uniLights
 		{
-			DynLight dynLights[32];
+			DynLight dynLights[128]; // optech2: must match MAX_DLIGHTS
 			uint numDynLights;
 			uint _pad1; uint _pad2; uint _pad3; // FFS, AMD!
 		};
@@ -681,7 +681,7 @@ static const char* fragmentSrc3DlmNoColor = MULTILINE_STRING(
 		in vec2 passLMcoord;
 		in vec3 passWorldCoord;
 		in vec3 passNormal;
-		flat in uint passLightFlags;
+		flat in uvec4 passLightFlags;
 
 		void main()
 		{
@@ -696,7 +696,7 @@ static const char* fragmentSrc3DlmNoColor = MULTILINE_STRING(
 			lmTex     += texture(lightmap2, passLMcoord) * lmScales[2];
 			lmTex     += texture(lightmap3, passLMcoord) * lmScales[3];
 
-			if (passLightFlags != 0u)
+			if (any(notEqual(passLightFlags, uvec4(0u))))
 			{
 				// TODO: or is hardcoding 32 better?
 				for (uint i=0u; i<numDynLights; ++i)
@@ -706,7 +706,7 @@ static const char* fragmentSrc3DlmNoColor = MULTILINE_STRING(
 					// and, if it is, sets intensity according to distance between light and pixel on surface
 
 					// dyn light number i does not affect this plane, just skip it
-					if ((passLightFlags & (1u << i)) == 0u)  continue;
+					if ((passLightFlags[i >> 5u] & (1u << (i & 31u))) == 0u)  continue;
 
 					float intens = dynLights[i].lightColor.a;
 

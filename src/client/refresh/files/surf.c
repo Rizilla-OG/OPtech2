@@ -309,7 +309,7 @@ R_SubdividePolygon(int numverts, float *verts, msurface_t *warpface)
 		poly->verts[i + 1].texCoord[0] = s;
 		poly->verts[i + 1].texCoord[1] = t;
 		VectorCopy(normal, poly->verts[i + 1].normal);
-		poly->verts[i + 1].lightFlags = 0;
+		memset(poly->verts[i + 1].lightFlags, 0, sizeof(poly->verts[i + 1].lightFlags));
 	}
 
 	VectorScale(total, (1.0 / numverts), poly->verts[0].pos);

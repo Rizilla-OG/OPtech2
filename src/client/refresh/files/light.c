@@ -463,7 +463,7 @@ R_AddDynamicLights(const msurface_t *surf, const refdef_t *r_newrefdef,
 		dlight_t *dl;
 		int t, i;
 
-		if (!(surf->dlightbits & (1 << lnum)))
+		if (!DLIGHT_MASK_HAS(surf->dlightbits, lnum))
 		{
 			continue; /* not lit by this light */
 		}
@@ -902,7 +902,7 @@ R_BuildLightMap(const msurface_t *surf, byte *dest, int stride, const refdef_t *
 }
 
 static void
-R_MarkSurfaceLights(dlight_t *light, int bit, const mnode_t *node, int lightframecount,
+R_MarkSurfaceLights(dlight_t *light, int lightIndex, const mnode_t *node, int lightframecount,
 	msurface_t *surfaces)
 {
 	msurface_t	*surf;
@@ -918,7 +918,7 @@ R_MarkSurfaceLights(dlight_t *light, int bit, const mnode_t *node, int lightfram
 
 		if (surf->dlightframe != lightframecount)
 		{
-			surf->dlightbits = 0;
+			memset(surf->dlightbits, 0, sizeof(surf->dlightbits));
 			surf->dlightframe = lightframecount;
 		}
 
@@ -938,7 +938,7 @@ R_MarkSurfaceLights(dlight_t *light, int bit, const mnode_t *node, int lightfram
 			continue;
 		}
 
-		surf->dlightbits |= bit;
+		DLIGHT_MASK_ADD(surf->dlightbits, lightIndex);
 	}
 }
 
@@ -946,12 +946,12 @@ R_MarkSurfaceLights(dlight_t *light, int bit, const mnode_t *node, int lightfram
 =============
 R_MarkLights
 
-bit: 1 << i for light number i, will be or'ed into msurface_t::dlightbits
+lightIndex: light number i, its bit is set in msurface_t::dlightbits
 if surface is affected by this light
 =============
 */
 static void
-R_MarkLights(dlight_t *light, int bit, mnode_t *node, int lightframecount,
+R_MarkLights(dlight_t *light, int lightIndex, mnode_t *node, int lightframecount,
 	msurface_t *surfaces)
 {
 	cplane_t	*splitplane;
@@ -970,23 +970,23 @@ R_MarkLights(dlight_t *light, int bit, mnode_t *node, int lightframecount,
 
 	if (dist > (intensity - DLIGHT_CUTOFF))	// (dist > light->intensity)
 	{
-		R_MarkLights(light, bit, node->children[0], lightframecount,
+		R_MarkLights(light, lightIndex, node->children[0], lightframecount,
 			surfaces);
 		return;
 	}
 
 	if (dist < (-intensity + DLIGHT_CUTOFF))	// (dist < -light->intensity)
 	{
-		R_MarkLights(light, bit, node->children[1], lightframecount,
+		R_MarkLights(light, lightIndex, node->children[1], lightframecount,
 			surfaces);
 		return;
 	}
 
-	R_MarkSurfaceLights(light, bit, node, lightframecount, surfaces);
+	R_MarkSurfaceLights(light, lightIndex, node, lightframecount, surfaces);
 
-	R_MarkLights(light, bit, node->children[0], lightframecount,
+	R_MarkLights(light, lightIndex, node->children[0], lightframecount,
 		surfaces);
-	R_MarkLights(light, bit, node->children[1], lightframecount,
+	R_MarkLights(light, lightIndex, node->children[1], lightframecount,
 		surfaces);
 }
 
@@ -1000,7 +1000,7 @@ void R_PushDlights(refdef_t *r_newrefdef, mnode_t *nodes, int lightframecount,
 
 	for (i = 0; i < r_newrefdef->num_dlights; i++, l++)
 	{
-		R_MarkLights(l, 1 << i, nodes, lightframecount, surfaces);
+		R_MarkLights(l, i, nodes, lightframecount, surfaces);
 	}
 }
 
@@ -1096,6 +1096,6 @@ R_BuildLMPolygonFromSurface(model_t *currentmodel, msurface_t *fa,
 		vert->lmTexCoord[1] = t;
 
 		VectorCopy(normal, vert->normal);
-		vert->lightFlags = 0;
+		memset(vert->lightFlags, 0, sizeof(vert->lightFlags));
 	}
 }

@@ -28,6 +28,9 @@
 #include "header/local.h"
 
 int r_dlightframecount;
+
+// optech2: the Vulkan shaders still hold 32 dynamic lights (MAX_DLIGHTS is now larger)
+#define VK_MAX_DLIGHTS 32
 vec3_t lightspot;
 
 void
@@ -141,18 +144,18 @@ Vk_UpdateDynamicLights(void)
 
 	/* the descriptor exposes UNIFORM_ALLOC_SIZE bytes at the bound offset,
 	   the whole light array has to fit in that window */
-	YQ2_STATIC_ASSERT(sizeof(vkUniDynLight_t) * MAX_DLIGHTS <= UNIFORM_ALLOC_SIZE,
+	YQ2_STATIC_ASSERT(sizeof(vkUniDynLight_t) * VK_MAX_DLIGHTS <= UNIFORM_ALLOC_SIZE,
 		"dynamic light block does not fit a uniform buffer allocation");
 
 	udl = (vkUniDynLight_t *)QVk_GetUniformBuffer(
-		sizeof(vkUniDynLight_t) * MAX_DLIGHTS, &vk_dlightUboOffset,
+		sizeof(vkUniDynLight_t) * VK_MAX_DLIGHTS, &vk_dlightUboOffset,
 		&vk_dlightUboDescriptorSet);
 
 	num_dlights = r_dynamic->value ? r_newrefdef.num_dlights : 0;
 
-	if (num_dlights > MAX_DLIGHTS)
+	if (num_dlights > VK_MAX_DLIGHTS)
 	{
-		num_dlights = MAX_DLIGHTS;
+		num_dlights = VK_MAX_DLIGHTS;
 	}
 
 	vk_dlightCount = num_dlights;
@@ -167,9 +170,9 @@ Vk_UpdateDynamicLights(void)
 
 	/* surfaces only ever reference lights below num_dlights, but leave no
 	   stale values behind for the shader to read */
-	if (i < MAX_DLIGHTS)
+	if (i < VK_MAX_DLIGHTS)
 	{
-		memset(&udl[i], 0, (MAX_DLIGHTS - i) * sizeof(*udl));
+		memset(&udl[i], 0, (VK_MAX_DLIGHTS - i) * sizeof(*udl));
 	}
 }
 

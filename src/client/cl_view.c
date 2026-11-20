@@ -299,14 +299,16 @@ V_TestEntities(void)
 }
 
 /*
- * If cl_testlights is set, create 32 lights models
+ * If cl_testlights is set, create test lights in front of the view.
+ * optech2: cl_testlights 1 = MAX_DLIGHTS lights; a bigger value = that many lights.
  */
 static void
 V_TestLights(void)
 {
 	int i;
+	int testLightCount = (int)cl_testlights->value;
 
-	r_numdlights = MAX_DLIGHTS;
+	r_numdlights = (testLightCount > 1 && testLightCount < MAX_DLIGHTS) ? testLightCount : MAX_DLIGHTS;
 	memset(r_dlights, 0, sizeof(r_dlights));
 
 	for (i = 0; i < r_numdlights; i++)

@@ -64,7 +64,8 @@ GL4_SurfInit(void)
 	qglVertexAttribPointer(GL4_ATTRIB_NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(mvtx_t), offsetof(mvtx_t, normal));
 
 	glEnableVertexAttribArray(GL4_ATTRIB_LIGHTFLAGS);
-	qglVertexAttribIPointer(GL4_ATTRIB_LIGHTFLAGS, 1, GL_UNSIGNED_INT, sizeof(mvtx_t), offsetof(mvtx_t, lightFlags));
+	qglVertexAttribIPointer(GL4_ATTRIB_LIGHTFLAGS, DLIGHT_MASK_WORDS, // optech2: was 1 uint
+		 GL_UNSIGNED_INT, sizeof(mvtx_t), offsetof(mvtx_t, lightFlags));
 
 	glGenBuffers(1, &gl4state.ebo3D);
 
@@ -128,10 +129,10 @@ void GL4_SurfShutdown(void)
 static void
 SetLightFlags(msurface_t *surf)
 {
-	unsigned int lightFlags = 0;
+	unsigned int lightFlags[DLIGHT_MASK_WORDS] = {0};
 	if (surf->dlightframe == r_framecount)
 	{
-		lightFlags = surf->dlightbits;
+		memcpy(lightFlags, surf->dlightbits, sizeof(lightFlags));
 	}
 
 	mvtx_t* verts = surf->polys->verts;
@@ -139,21 +140,19 @@ SetLightFlags(msurface_t *surf)
 	int numVerts = surf->polys->numverts;
 	for (int i=0; i<numVerts; ++i)
 	{
-		verts[i].lightFlags = lightFlags;
+		memcpy(verts[i].lightFlags, lightFlags, sizeof(lightFlags));
 	}
 }
 
 static void
 SetAllLightFlags(msurface_t *surf)
 {
-	unsigned int lightFlags = 0xffffffff;
-
 	mvtx_t* verts = surf->polys->verts;
 
 	int numVerts = surf->polys->numverts;
 	for (int i=0; i<numVerts; ++i)
 	{
-		verts[i].lightFlags = lightFlags;
+		memset(verts[i].lightFlags, 0xff, sizeof(verts[i].lightFlags));
 	}
 }
 

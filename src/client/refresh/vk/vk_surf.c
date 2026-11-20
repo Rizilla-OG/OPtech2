@@ -331,7 +331,7 @@ SetLightFlags(const msurface_t *surf)
 
 	if (r_dynamic->value && surf->dlightframe == r_framecount)
 	{
-		lightFlags = surf->dlightbits;
+		lightFlags = surf->dlightbits[0]; // optech2: Vulkan reads only the first 32 lights
 	}
 
 	for (p = surf->polys; p; p = p->chain)
@@ -340,7 +340,7 @@ SetLightFlags(const msurface_t *surf)
 
 		for (i = 0; i < p->numverts; i++)
 		{
-			p->verts[i].lightFlags = lightFlags;
+			p->verts[i].lightFlags[0] = lightFlags;
 		}
 	}
 }
@@ -361,7 +361,7 @@ SetAllLightFlags(const msurface_t *surf)
 
 		for (i = 0; i < p->numverts; i++)
 		{
-			p->verts[i].lightFlags = lightFlags;
+			p->verts[i].lightFlags[0] = lightFlags;
 		}
 	}
 }
