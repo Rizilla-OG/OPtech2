@@ -989,6 +989,7 @@ void Sys_Remove(const char *path);
 int Sys_Rename(const char *from, const char *to);
 void Sys_RemoveDir(const char *path);
 long long Sys_Microseconds(void);
+unsigned int Sys_ProcessId(void); /* optech2: for seeding per-process values */
 void Sys_Nanosleep(int);
 void *Sys_GetProcAddress(void *handle, const char *sym);
 void Sys_FreeLibrary(void *handle);

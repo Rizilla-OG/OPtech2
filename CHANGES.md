@@ -24,3 +24,6 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 - Mod list: no longer stops at 32 mods.
 - Entities per client frame raised from 256 to 1024, and now enforced: before, a frame with more than 256 visible entities could overwrite older frames the server deltas from. Client entity buffer raised from 1024 to 16384 to hold 16 such frames.
 - Window title and renderer banner show the OPtech2 version (were still showing the upstream 8.71RR16).
+- Multiplayer check: `python3 tests/multiplayer/mp_check.py` runs a dedicated server and two hidden clients on q2dm1 and checks joining, chat both ways, seeing each other and movement (~40 s, no windows).
+- `delay <ms> <command>` console command: runs a command later without holding up the command buffer (a long `wait` chain blocks the commands a server sends while connecting).
+- Fixed: two clients started in the same second on one machine got the same qport, and the server treated them as one player. The qport now mixes in the process id.

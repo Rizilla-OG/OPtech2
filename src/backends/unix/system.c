@@ -239,6 +239,13 @@ Sys_ConsoleOutput(const char *string)
 
 /* ================================================================ */
 
+/* optech2: id of this process */
+unsigned int
+Sys_ProcessId(void)
+{
+	return (unsigned int)getpid();
+}
+
 long long
 Sys_Microseconds(void)
 {

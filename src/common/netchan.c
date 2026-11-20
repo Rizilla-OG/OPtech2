@@ -116,7 +116,9 @@ Netchan_Init(void)
 	   propability that two clients end up with the same qport, but
 	   that needs to fixed somewhere else with some kind of fallback
 	   logic. */
-	port = time(NULL) & 0xffff;
+	/* optech2: mix in the process id, so two clients started in the same
+	   second on one machine (tests, LAN) still get different qports */
+	port = (time(NULL) ^ (Sys_ProcessId() * 2654435761u)) & 0xffff;
 
 	showpackets = Cvar_Get("showpackets", "0", 0);
 	showdrop = Cvar_Get("showdrop", "0", 0);

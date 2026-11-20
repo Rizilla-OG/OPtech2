@@ -72,6 +72,82 @@ Cmd_Wait_f(void)
 	cmd_wait = Sys_Milliseconds();
 }
 
+/* optech2: "delay <ms> <command>" runs one command after a delay without
+ * holding up the command buffer (a long chain of "wait"s blocks everything
+ * queued behind it, including the commands a server sends while connecting).
+ * Used by the automated tests. */
+#define MAX_DELAYED_COMMANDS 128
+
+typedef struct
+{
+	int runAtMilliseconds;
+	char command[256];
+	qboolean inUse;
+} delayedCommand_t;
+
+static delayedCommand_t delayed_commands[MAX_DELAYED_COMMANDS];
+
+static void
+Cmd_Delay_f(void)
+{
+	char command[256] = {0};
+	int delayMilliseconds;
+	int i;
+
+	if (Cmd_Argc() < 3)
+	{
+		Com_Printf("Usage: delay <milliseconds> <command>\n");
+		return;
+	}
+
+	delayMilliseconds = (int)strtol(Cmd_Argv(1), NULL, 10);
+
+	/* the command may be quoted ("say hi") or loose words (say hi) */
+	for (i = 2; i < Cmd_Argc(); i++)
+	{
+		if (i > 2)
+		{
+			Q_strlcat(command, " ", sizeof(command));
+		}
+
+		Q_strlcat(command, Cmd_Argv(i), sizeof(command));
+	}
+
+	for (i = 0; i < MAX_DELAYED_COMMANDS; i++)
+	{
+		if (!delayed_commands[i].inUse)
+		{
+			delayed_commands[i].inUse = true;
+			delayed_commands[i].runAtMilliseconds = Sys_Milliseconds() + delayMilliseconds;
+			Q_strlcpy(delayed_commands[i].command, command, sizeof(delayed_commands[i].command));
+			return;
+		}
+	}
+
+	Com_Printf("delay: more than %d commands waiting, '%s' dropped\n", MAX_DELAYED_COMMANDS, command);
+}
+
+/* optech2: run every delayed command whose time has come */
+static void
+Cmd_RunDelayedCommands(void)
+{
+	int now = Sys_Milliseconds();
+	int i;
+
+	for (i = 0; i < MAX_DELAYED_COMMANDS; i++)
+	{
+		if (delayed_commands[i].inUse && now >= delayed_commands[i].runAtMilliseconds)
+		{
+			char command[256];
+
+			/* free the slot first: the command may schedule another delay */
+			Q_strlcpy(command, delayed_commands[i].command, sizeof(command));
+			delayed_commands[i].inUse = false;
+			Cmd_ExecuteString(command);
+		}
+	}
+}
+
 void
 Cbuf_Init(void)
 {
@@ -171,6 +247,8 @@ Cbuf_Execute(void)
 {
 	int i;
 	char line[1024];
+
+	Cmd_RunDelayedCommands(); /* optech2: not held up by "wait" */
 
 	if(cmd_wait > 0)
 	{
@@ -1183,6 +1261,7 @@ Cmd_Init(void)
 	Cmd_AddCommand("echo", Cmd_Echo_f);
 	Cmd_AddCommand("alias", Cmd_Alias_f);
 	Cmd_AddCommand("wait", Cmd_Wait_f);
+	Cmd_AddCommand("delay", Cmd_Delay_f); /* optech2 */
 }
 
 void
