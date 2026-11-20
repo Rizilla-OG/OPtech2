@@ -488,7 +488,11 @@ SP_target_explosion(edict_t *ent)
 void
 use_target_changelevel(edict_t *self, edict_t *other, edict_t *activator)
 {
-	if (!self || !other  || !activator)
+	/* optech2: activator may be NULL (a target_camera ending a cut scene, as
+	   in Quake II 64's intro); the code below already handles that, as the
+	   re-release does. Returning here left the camera's intermission with no
+	   map ("maps/(null).bsp"). */
+	if (!self || !other)
 	{
 		return;
 	}

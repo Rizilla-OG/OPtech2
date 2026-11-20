@@ -845,6 +845,23 @@ Cmd_RemoveCommand(const char *cmd_name)
 	}
 }
 
+/* optech2: true when an alias of this name is defined */
+qboolean
+Cmd_AliasExists(const char *alias_name)
+{
+	const cmdalias_t *a;
+
+	for (a = cmd_alias; a; a = a->next)
+	{
+		if (!strcmp(alias_name, a->name))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 qboolean
 Cmd_Exists(const char *cmd_name)
 {

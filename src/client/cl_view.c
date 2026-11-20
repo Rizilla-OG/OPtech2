@@ -576,6 +576,9 @@ CL_PrepRefresh(void)
 	/* clear any lines of console text */
 	Con_ClearNotify();
 
+	/* optech2: client game module of the game library, if it has one */
+	CL_CGame_Load();
+
 	SCR_UpdateScreen();
 	cl.refresh_prepped = true;
 	cl.force_refdef = true; /* make sure we have a valid refdef */

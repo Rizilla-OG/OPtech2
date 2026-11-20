@@ -1035,14 +1035,14 @@ CL_Frame(int packetdelta, int renderdelta, int timedelta, qboolean packetframe, 
 		}
 
 		/* update the screen */
-		if (host_speeds->value)
+		if (host_speeds->value || cl_perf->value) /* optech2: also for cl_perf */
 		{
 			time_before_ref = Sys_Microseconds();
 		}
 
 		SCR_UpdateScreen();
 
-		if (host_speeds->value)
+		if (host_speeds->value || cl_perf->value) /* optech2: also for cl_perf */
 		{
 			time_after_ref = Sys_Microseconds();
 		}

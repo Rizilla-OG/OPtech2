@@ -1935,8 +1935,18 @@ FS_AddKPFpack(void)
 	fsPack_t *pack = NULL;
 	fsSearchPath_t *search;
 
-	/* remaster additional files */
-	pack = FS_LoadPK3("Q2Game.kpf");
+	char kpf_path[MAX_OSPATH];
+
+	/* remaster additional files; optech2: from the data dir (-datadir),
+	   not the working directory, so its localization/ is found */
+	Com_sprintf(kpf_path, sizeof(kpf_path), "%s/Q2Game.kpf", datadir);
+	pack = FS_LoadPK3(kpf_path);
+
+	if (!pack)
+	{
+		pack = FS_LoadPK3("Q2Game.kpf");
+	}
+
 	if (pack)
 	{
 		pack->isProtectedPak = true;

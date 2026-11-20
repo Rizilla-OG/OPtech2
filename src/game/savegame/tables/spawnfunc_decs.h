@@ -102,6 +102,8 @@ void SP_misc_insane( edict_t * self ) ;
 void SP_misc_lavaball ( edict_t * self ) ;
 void SP_misc_lightning ( edict_t * self ) ;
 void SP_misc_model ( edict_t * ent ) ;
+void SP_func_eye(edict_t *self); /* optech2 */
+void SP_target_poi(edict_t *self); /* optech2 */
 void SP_misc_nuke ( edict_t * ent ) ;
 void SP_misc_nuke_core ( edict_t * ent ) ;
 void SP_misc_player_mannequin ( edict_t * self ) ;

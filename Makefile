@@ -1117,6 +1117,14 @@ $(BUILDDIR)/baseq2/%.o: %.c
 	${Q}mkdir -p $(@D)
 	${Q}$(CC) -c $(CFLAGS) $(INCLUDE) -o $@ $<
 
+# optech2: the re-release client game code (src/game/rerelease) is C++20
+$(BUILDDIR)/baseq2/%.o: %.cpp
+	@if [ -z $(QUIET) ]; then\
+		echo "===> CXX $<";\
+	fi
+	${Q}mkdir -p $(@D)
+	${Q}$(CXX) -c -std=c++20 -include src/game/rerelease/optech2_prelude.h -w $(filter-out -std=%,$(CFLAGS)) $(INCLUDE) -o $@ $<
+
 $(BINDIR)/baseq2/game.dll : LDFLAGS += -shared
 
 else ifeq ($(YQ2_OSTYPE), Darwin)
@@ -1132,6 +1140,14 @@ $(BUILDDIR)/baseq2/%.o: %.c
 	fi
 	${Q}mkdir -p $(@D)
 	${Q}$(CC) -c $(CFLAGS) $(INCLUDE) -o $@ $<
+
+# optech2: the re-release client game code (src/game/rerelease) is C++20
+$(BUILDDIR)/baseq2/%.o: %.cpp
+	@if [ -z $(QUIET) ]; then\
+		echo "===> CXX $<";\
+	fi
+	${Q}mkdir -p $(@D)
+	${Q}$(CXX) -c -std=c++20 -include src/game/rerelease/optech2_prelude.h -w $(filter-out -std=%,$(CFLAGS)) $(INCLUDE) -o $@ $<
 
 $(BINDIR)/baseq2/game.dylib : CFLAGS += -fPIC
 $(BINDIR)/baseq2/game.dylib : LDFLAGS += -shared
@@ -1150,6 +1166,14 @@ $(BUILDDIR)/baseq2/%.o: %.c
 	${Q}mkdir -p $(@D)
 	${Q}$(CC) -c $(CFLAGS) $(INCLUDE) -o $@ $<
 
+# optech2: the re-release client game code (src/game/rerelease) is C++20
+$(BUILDDIR)/baseq2/%.o: %.cpp
+	@if [ -z $(QUIET) ]; then\
+		echo "===> CXX $<";\
+	fi
+	${Q}mkdir -p $(@D)
+	${Q}$(CXX) -c -std=c++20 -include src/game/rerelease/optech2_prelude.h -w $(filter-out -std=%,$(CFLAGS)) $(INCLUDE) -o $@ $<
+
 $(BINDIR)/baseq2/game.so : CFLAGS += -fPIC -Wno-unused-result
 $(BINDIR)/baseq2/game.so : LDFLAGS += -shared
 endif
@@ -1158,6 +1182,10 @@ endif
 
 # Used by the game
 GAME_OBJS_ = \
+	src/game/rerelease/cg_main.o \
+	src/game/rerelease/cg_screen.o \
+	src/game/rerelease/p_move.o \
+	src/game/rerelease/q_std.o \
 	src/common/shared/flash.o \
 	src/common/shared/rand.o \
 	src/common/shared/shared.o \
@@ -1287,6 +1315,8 @@ CLIENT_OBJS_ := \
 	src/client/cl_particles.o \
 	src/client/cl_prediction.o \
 	src/client/cl_screen.o \
+	src/client/cl_cgame.o \
+	src/client/cl_stats.o \
 	src/client/cl_tempentities.o \
 	src/client/cl_view.o \
 	src/client/curl/download.o \
@@ -1926,15 +1956,15 @@ endif
 ifeq ($(YQ2_OSTYPE), Windows)
 $(BINDIR)/baseq2/game.dll : $(GAME_OBJS)
 	@echo "===> LD $@"
-	${Q}$(CC) $(LDFLAGS) $(GAME_OBJS) $(LDLIBS) -o $@
+	${Q}$(CXX) $(LDFLAGS) $(GAME_OBJS) $(LDLIBS) -static-libstdc++ -static-libgcc -o $@
 else ifeq ($(YQ2_OSTYPE), Darwin)
 $(BINDIR)/baseq2/game.dylib : $(GAME_OBJS)
 	@echo "===> LD $@"
-	${Q}$(CC) $(LDFLAGS) $(GAME_OBJS) $(LDLIBS) -o $@
+	${Q}$(CXX) $(LDFLAGS) $(GAME_OBJS) $(LDLIBS) -o $@
 else
 $(BINDIR)/baseq2/game.so : $(GAME_OBJS)
 	@echo "===> LD $@"
-	${Q}$(CC) $(LDFLAGS) $(GAME_OBJS) $(LDLIBS) -o $@
+	${Q}$(CXX) $(LDFLAGS) $(GAME_OBJS) $(LDLIBS) -o $@
 endif
 
 # ----------

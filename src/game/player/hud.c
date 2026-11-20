@@ -169,6 +169,17 @@ BeginIntermission(const edict_t *targ)
 				client->client->pers.power_cubes = 0;
 			}
 		}
+
+		/* optech2: re-release target_changelevel flags 16 "no end of unit"
+		   + 64 "immediate leave" (Quake II 64's intro, after its camera):
+		   go on at once instead of waiting on the intermission */
+		if ((targ->spawnflags & SPAWNFLAG_CHANGELEVEL_NO_END_OF_UNIT) &&
+			(targ->spawnflags & SPAWNFLAG_CHANGELEVEL_IMMEDIATE_LEAVE) &&
+			!deathmatch->value)
+		{
+			level.exitintermission = 1;
+			return;
+		}
 	}
 	else
 	{

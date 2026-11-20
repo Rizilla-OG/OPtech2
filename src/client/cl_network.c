@@ -295,6 +295,8 @@ CL_Disconnect(void)
 		return;
 	}
 
+	CL_CGame_Unload(); /* optech2 */
+
 	if (cl_timedemo && cl_timedemo->value)
 	{
 		int time;

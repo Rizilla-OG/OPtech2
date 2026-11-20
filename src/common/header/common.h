@@ -507,6 +507,7 @@ void Cmd_AddCommand(const char *cmd_name, xcommand_t function);
 void Cmd_RemoveCommand(const char *cmd_name);
 
 qboolean Cmd_Exists(const char *cmd_name);
+qboolean Cmd_AliasExists(const char *alias_name); /* optech2 */
 
 /* used by the cvar code to check for cvar / command name overlap */
 
@@ -931,6 +932,7 @@ extern cvar_t *developer;
 extern cvar_t *modder;
 extern cvar_t *dedicated;
 extern cvar_t *host_speeds;
+extern cvar_t *cl_perf; /* optech2: performance overlay */
 extern cvar_t *log_stats;
 
 /* External entity files. */
@@ -977,6 +979,9 @@ void CL_Init(void);
 void CL_Drop(void);
 void CL_Shutdown(void);
 void CL_Frame(int packetdelta, int renderdelta, int timedelta, qboolean packetframe, qboolean renderframe);
+/* optech2: performance overlay (cl_perf), fed by the main loop */
+void SCR_StatsAccumulate(long long server_us, long long game_us, long long client_us,
+	long long render_us, long long now);
 void Con_Print(const char *txt);
 void SCR_BeginLoadingPlaque(void);
 

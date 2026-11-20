@@ -1877,6 +1877,8 @@ CL_ParseConfigStringValue(int orig_i, char *s)
 		strcpy(cs, s);
 	}
 
+	CL_CGame_ConfigString(i, cs); /* optech2 */
+
 	if ((i >= CS_LIGHTS) && (i < CS_LIGHTS + MAX_LIGHTSTYLES))
 	{
 		CL_SetLightstyle(i - CS_LIGHTS);
@@ -2344,62 +2346,26 @@ CL_ParseDamage(void)
 	}
 }
 
-static void
-CL_ParseLocPrint(void)
+/*
+ * optech2: fills a localized format ("{}" = next argument, "{N}" = argument
+ * N, as the re-release writes them) into out. Shared by svc_locprint and the
+ * client game module's Localize.
+ */
+void
+CL_LocalizeFormat(const char *format, const char **args, int num_args, char *out, size_t out_size)
 {
-	int num_args, seq_arg = 0, flags, i, formatted_len;
-	char **args, *dest, *message, *formatted;
-	const char *format, *p, *end;
+	int seq_arg = 0;
+	const char *p, *end;
+	char *dest;
 
-	flags = MSG_ReadByte(&net_message);	/* flags */
-	message = strdup(MSG_ReadString(&net_message));
-	num_args = MSG_ReadByte(&net_message);
-
-	if (num_args < 0)
+	if (!out_size)
 	{
-		free(message);
-		Com_Error(ERR_DROP, "%s: Invalid localized print argument count %d\n",
-			__func__, num_args);
-		return;
-	}
-
-	args = calloc(num_args, sizeof(*args));
-	if (!args)
-	{
-		free(message);
-		Com_Error(ERR_DROP, "%s: can't allocate args\n", __func__);
-		return;
-	}
-
-	/* allocate little bit bigger if arg has used several times */
-	formatted_len = 128;
-
-	for (i = 0; i < num_args; i++)
-	{
-		args[i] = strdup(SV_LocalizationMessage(
-			MSG_ReadString(&net_message), NULL));
-		formatted_len += strlen(args[i]);
-	}
-
-	format = SV_LocalizationMessage(message, NULL);
-	formatted_len += strlen(format);
-	formatted = malloc(formatted_len + 1);
-	if (!formatted)
-	{
-		for (i = 0; i < num_args; i++)
-		{
-			free(args[i]);
-		}
-
-		free(args);
-		free(message);
-		Com_Error(ERR_DROP, "%s: can't alloc formated message\n", __func__);
 		return;
 	}
 
 	p = format;
-	dest = formatted;
-	end = formatted + formatted_len;
+	dest = out;
+	end = out + out_size - 1;
 
 	while (*p && dest < end)
 	{
@@ -2451,9 +2417,13 @@ CL_ParseLocPrint(void)
 			else
 			{
 				const char *src = brace_start;
-				while (src <= p && dest < end)
+				while (*src && src <= p && dest < end)
 				{
 					*dest++ = *src++;
+				}
+				if (*p)
+				{
+					p++;
 				}
 			}
 		}
@@ -2463,6 +2433,62 @@ CL_ParseLocPrint(void)
 		}
 	}
 	*dest = '\0';
+}
+
+static void
+CL_ParseLocPrint(void)
+{
+	int num_args, flags, i, formatted_len;
+	char **args, *message, *formatted;
+	const char *format;
+
+	flags = MSG_ReadByte(&net_message); /* flags */
+	message = strdup(MSG_ReadString(&net_message));
+	num_args = MSG_ReadByte(&net_message);
+
+	if (num_args < 0)
+	{
+		free(message);
+		Com_Error(ERR_DROP, "%s: Invalid localized print argument count %d\n",
+			__func__, num_args);
+		return;
+	}
+
+	args = calloc(num_args, sizeof(*args));
+	if (!args)
+	{
+		free(message);
+		Com_Error(ERR_DROP, "%s: can't allocate args\n", __func__);
+		return;
+	}
+
+	/* allocate little bit bigger if arg has used several times */
+	formatted_len = 128;
+
+	for (i = 0; i < num_args; i++)
+	{
+		args[i] = strdup(SV_LocalizationMessage(
+			MSG_ReadString(&net_message), NULL));
+		formatted_len += strlen(args[i]);
+	}
+
+	format = SV_LocalizationMessage(message, NULL);
+	formatted_len += strlen(format);
+	formatted = malloc(formatted_len + 1);
+	if (!formatted)
+	{
+		for (i = 0; i < num_args; i++)
+		{
+			free(args[i]);
+		}
+
+		free(args);
+		free(message);
+		Com_Error(ERR_DROP, "%s: can't alloc formated message\n", __func__);
+		return;
+	}
+
+	CL_LocalizeFormat(format, (const char **)args, num_args, formatted, formatted_len + 1);
 
 	if (flags == PRINT_CHAT)
 	{
@@ -2569,12 +2595,30 @@ CL_ParseServerMessage(void)
 					con.ormask = 128;
 				}
 
-				Com_Printf("%s", MSG_ReadString(&net_message));
+				/* optech2: re-release maps and games send "$key" texts */
+				Com_Printf("%s", SV_LocalizationMessage(MSG_ReadString(&net_message), NULL));
 				con.ormask = 0;
 				break;
 
 			case svc_centerprint:
-				SCR_CenterPrint(MSG_ReadString(&net_message));
+			{
+				/* optech2: localize "$key" texts (re-release map messages) */
+				const char *text = SV_LocalizationMessage(MSG_ReadString(&net_message), NULL);
+
+				/* optech2: a client game module shows center prints itself
+				   and echoes them to the console between separator lines,
+				   like SCR_CenterPrint; clear notify afterwards as that does,
+				   or the separator stays in the top-left corner */
+				if (CL_CGame_Active())
+				{
+					CL_CGame_CenterPrint(text);
+					Con_ClearNotify();
+				}
+				else
+				{
+					SCR_CenterPrint(text);
+				}
+			}
 				break;
 
 			case svc_stufftext:

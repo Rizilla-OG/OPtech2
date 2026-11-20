@@ -86,6 +86,7 @@ All checks use a temporary HOME, so your own config and saves are never touched.
 - `python3 tests/maps/make_stress_map.py`, then `tests/maps/stress_check.py`: ~3800 entities, frame times
 - `python3 tests/models/iqm_check.py`: IQM test model (two bones, bend animation) in a small map
 - `python3 tests/savegame/save_check.py`: save and load, player and every entity compared
+- `python3 tests/cgame/cgame_check.py`: loads a test client game module and checks the engine's imports
 - `python3 tests/tickrate/tick_check.py`, `damage_check.py`: 10 Hz vs 60 Hz behaviour
 
 ## License

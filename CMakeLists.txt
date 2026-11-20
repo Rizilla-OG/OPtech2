@@ -9,7 +9,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # CMake project configuration.
-project(yquake2 C)
+project(yquake2 C CXX) # optech2: C++ for the re-release client game code (src/game/rerelease)
 
 # Cmake module search path.
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/stuff/cmake/modules ${CMAKE_MODULE_PATH})
@@ -62,6 +62,7 @@ endif()
 
 # Compilation time options.
 option(CURL_SUPPORT "cURL support" ON)
+option(AVCODEC_SUPPORT "FFmpeg video playback (.ogv/.mpg/.avi cinematics, as the re-release uses)" ON) # optech2
 option(OPENAL_SUPPORT "OpenAL support" ON)
 option(SYSTEMWIDE_SUPPORT "Enable systemwide installation of game assets" OFF)
 option(SDL3_SUPPORT "Build against SDL 3 instead of SDL2" ON)
@@ -515,6 +516,8 @@ set(Client-Source
 	${CLIENT_SRC_DIR}/cl_particles.c
 	${CLIENT_SRC_DIR}/cl_prediction.c
 	${CLIENT_SRC_DIR}/cl_screen.c
+	${CLIENT_SRC_DIR}/cl_cgame.c
+	${CLIENT_SRC_DIR}/cl_stats.c
 	${CLIENT_SRC_DIR}/cl_tempentities.c
 	${CLIENT_SRC_DIR}/cl_view.c
 	${CLIENT_SRC_DIR}/curl/download.c
@@ -1027,6 +1030,25 @@ else()
 	endif()
 endif()
 
+# optech2: FFmpeg video playback for the client (the Makefile's WITH_AVCODEC)
+if(AVCODEC_SUPPORT)
+	find_package(PkgConfig)
+	if(PkgConfig_FOUND)
+		pkg_check_modules(FFMPEG IMPORTED_TARGET libavformat libavcodec libswscale libswresample libavutil)
+	endif()
+	if(FFMPEG_FOUND)
+		if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+			set(Video-Client-Target yquake2)
+		else()
+			set(Video-Client-Target quake2)
+		endif()
+		target_compile_definitions(${Video-Client-Target} PRIVATE AVMEDIADECODE)
+		target_link_libraries(${Video-Client-Target} PkgConfig::FFMPEG)
+	else()
+		message(STATUS "FFmpeg not found: no .ogv/.mpg/.avi cinematics")
+	endif()
+endif()
+
 # Quake 2 Dedicated Server
 add_executable(q2ded ${Server-Source} ${Server-Header} ${Platform-Specific-Source}
 		${Backends-Generic-Source})
@@ -1071,8 +1093,20 @@ endif()
 
 endif()
 
+# optech2: the re-release client game (HUD) from id's re-release source,
+# built into the game library as C++20; settings in optech2_prelude.h
+set(Game-Rerelease-Source
+	${GAME_SRC_DIR}/rerelease/cg_main.cpp
+	${GAME_SRC_DIR}/rerelease/cg_screen.cpp
+	${GAME_SRC_DIR}/rerelease/p_move.cpp
+	${GAME_SRC_DIR}/rerelease/q_std.cpp
+	)
+set_source_files_properties(${Game-Rerelease-Source} PROPERTIES
+	COMPILE_OPTIONS "-std=c++20;-include;${GAME_SRC_DIR}/rerelease/optech2_prelude.h;-w"
+	)
+
 # Build the game dynamic library
-add_library(game MODULE ${Game-Source} ${Game-Header})
+add_library(game MODULE ${Game-Source} ${Game-Header} ${Game-Rerelease-Source})
 set_target_properties(game PROPERTIES
 		PREFIX ""
 		SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX}

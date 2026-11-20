@@ -334,7 +334,7 @@ static void
 SV_RunGameFrame(void)
 {
 #ifndef DEDICATED_ONLY
-	if (host_speeds->value)
+	if (host_speeds->value || cl_perf->value) /* optech2: also for cl_perf */
 	{
 		time_before_game = Sys_Microseconds();
 	}
@@ -365,7 +365,7 @@ SV_RunGameFrame(void)
 	}
 
 #ifndef DEDICATED_ONLY
-	if (host_speeds->value)
+	if (host_speeds->value || cl_perf->value) /* optech2: also for cl_perf */
 	{
 		time_after_game = Sys_Microseconds();
 	}

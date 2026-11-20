@@ -45,6 +45,7 @@ cvar_t *cl_async;
 cvar_t *cl_timedemo;
 cvar_t *vid_maxfps;
 cvar_t *host_speeds;
+cvar_t *cl_perf; /* optech2: performance overlay (cl_stats.c) */
 cvar_t *log_stats;
 cvar_t *showtrace;
 #endif
@@ -390,6 +391,7 @@ Qcommon_Init(int argc, char **argv)
 	dedicated = Cvar_Get("dedicated", "0", CVAR_NOSET);
 	vid_maxfps = Cvar_Get("vid_maxfps", "300", CVAR_ARCHIVE);
 	host_speeds = Cvar_Get("host_speeds", "0", 0);
+	cl_perf = Cvar_Get("cl_perf", "0", CVAR_ARCHIVE); /* optech2: performance overlay */
 	log_stats = Cvar_Get("log_stats", "0", 0);
 	showtrace = Cvar_Get("showtrace", "0", 0);
 #else
@@ -685,8 +687,10 @@ Qcommon_Frame(int usec)
 
 	Cbuf_Execute();
 
+	/* optech2: frame part times for host_speeds and the cl_perf overlay */
+	qboolean measure_speeds = (host_speeds->value || cl_perf->value);
 
-	if (host_speeds->value)
+	if (measure_speeds)
 	{
 		/* optech2: clear stamps from earlier passes, or a pass that ran no
 		   game or render frame reported the old times again */
@@ -708,7 +712,7 @@ Qcommon_Frame(int usec)
 		servertimedelta %= 1000;
 	}
 
-	if (host_speeds->value)
+	if (measure_speeds)
 	{
 		time_between = Sys_Microseconds();
 	}
@@ -720,8 +724,7 @@ Qcommon_Frame(int usec)
 		clienttimedelta = 0;
 	}
 
-
-	if (host_speeds->value)
+	if (measure_speeds)
 	{
 		long long all, sv, gm, cl, rf;
 		long long time_after;
@@ -736,11 +739,16 @@ Qcommon_Frame(int usec)
 		cl -= rf;
 		/* optech2: milliseconds with two decimals, only for passes that
 		   ran a game or render frame (the loop spins in between) */
-		if ((gm > 0) || (rf > 0))
+		if (host_speeds->value && ((gm > 0) || (rf > 0)))
 		{
 			Com_Printf("all:%6.2f sv:%6.2f gm:%6.2f cl:%6.2f rf:%6.2f\n",
 				all / 1000.0, sv / 1000.0, gm / 1000.0, cl / 1000.0,
 				rf / 1000.0);
+		}
+
+		if (cl_perf->value)
+		{
+			SCR_StatsAccumulate(sv, gm, cl, rf, time_after);
 		}
 	}
 

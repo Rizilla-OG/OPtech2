@@ -505,11 +505,16 @@ typedef struct cvar_s
 	char *string;
 	char *latched_string; /* for CVAR_LATCH vars */
 	int flags;
-	qboolean modified; /* set each time the cvar is changed */
+	/* optech2: counts changes (the re-release modified_count). Engine code
+	   treats non zero as "changed" and resets it; re-release modules compare
+	   it with the count they saw last. */
+	qboolean modified;
 	float value;
 	struct cvar_s *next;
+	/* optech2: (int)value, as the re-release cvar_t has it here */
+	int integer;
 
-	/* Added by YQ2. Must be at the end to preserve ABI. */
+	/* Added by YQ2 (after integer: the re-release layout comes first). */
 	char *default_string;
 } cvar_t;
 

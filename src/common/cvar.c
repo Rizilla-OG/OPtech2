@@ -266,8 +266,9 @@ Cvar_AddToList(const char *var_name, const char *var_value, int flags)
 	var->string = CopyString(var_value);
 	var->default_string = CopyString(var_value);
 	var->flags = flags;
-	var->modified = true;
+	var->modified++; /* optech2: change count */
 	var->value = strtod(var_value, (char **)NULL);
+	var->integer = (int)var->value; /* optech2 */
 
 	pos = &cvar_vars;
 
@@ -418,6 +419,7 @@ Cvar_SetVar(cvar_t *var, const char *value, qboolean force)
 			{
 				var->string = Cvar_CopyString(var->string, value);
 				var->value = (float)strtod(var->string, (char **)NULL);
+				var->integer = (int)var->value; /* optech2 */
 
 				if (!strcmp(var->name, "game"))
 				{
@@ -442,7 +444,7 @@ Cvar_SetVar(cvar_t *var, const char *value, qboolean force)
 		return var;
 	}
 
-	var->modified = true;
+	var->modified++; /* optech2: change count */
 
 	if (var->flags & CVAR_USERINFO)
 	{
@@ -451,6 +453,7 @@ Cvar_SetVar(cvar_t *var, const char *value, qboolean force)
 
 	var->string = Cvar_CopyString(var->string, value);
 	var->value = strtod(var->string, (char **)NULL);
+	var->integer = (int)var->value; /* optech2 */
 
 	return var;
 }
@@ -493,7 +496,7 @@ Cvar_FullSet(const char *var_name, const char *value, int flags)
 		return Cvar_GetNew(var_name, value, flags);
 	}
 
-	var->modified = true;
+	var->modified++; /* optech2: change count */
 
 	if (var->flags & CVAR_USERINFO)
 	{
@@ -509,6 +512,7 @@ Cvar_FullSet(const char *var_name, const char *value, int flags)
 
 	var->string = Cvar_CopyString(var->string, value);
 	var->value = (float)strtod(var->string, (char **)NULL);
+	var->integer = (int)var->value; /* optech2 */
 
 	var->flags = flags;
 
@@ -551,6 +555,7 @@ Cvar_GetLatchedVars(void)
 		var->string = var->latched_string;
 		var->latched_string = NULL;
 		var->value = strtod(var->string, (char **)NULL);
+		var->integer = (int)var->value; /* optech2 */
 
 		if (!strcmp(var->name, "game"))
 		{
