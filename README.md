@@ -4,6 +4,8 @@ OPtech2 ("Open Tech 2") is a Quake II derived engine for building an original ga
 no arbitrary limits for mappers and modders, a multi-threaded renderer, and per-pixel
 lighting with real-time shadows, while staying playable on modest hardware.
 
+Project page: https://rizilla-og.github.io/OPtech2/
+
 It is a fork of [Yamagi Quake II Remaster](https://github.com/yquake2/yquake2remaster)
 (see [README.yamagi.md](README.yamagi.md) for the upstream readme). Stock Quake II maps
 and assets keep loading and serve as test content.

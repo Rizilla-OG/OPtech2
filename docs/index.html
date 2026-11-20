@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OPtech2 – Open Tech 2</title>
+<meta name="description" content="OPtech2 (Open Tech 2) is a Quake II derived engine for building new games: no arbitrary limits for mappers and modders, 60 Hz simulation, thousands of entities, IQM models.">
+<meta property="og:title" content="OPtech2 – Open Tech 2">
+<meta property="og:description" content="A Quake II derived engine for building new games, with the stock limits removed.">
+<meta property="og:image" content="https://rizilla-og.github.io/OPtech2/assets/img/stress-idle.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="hero wrap">
+  <div class="badge">M1 COMPLETE · v0.1.0 PRE-RELEASE</div>
+  <h1>OP<span>tech</span>2</h1>
+  <p class="tagline">Open Tech 2: a Quake II engine for new games</p>
+  <p class="sub">OPtech2 grows the Quake II engine into something to build an original game on: no arbitrary
+    limits for mappers and modders, a multi-threaded renderer and per-pixel lighting with real-time shadows,
+    while staying playable on modest hardware. Stock Quake II maps and assets keep working as test content.</p>
+  <div class="buttons">
+    <a class="btn primary" href="https://github.com/Rizilla-OG/OPtech2/releases/latest">Download M1</a>
+    <a class="btn ghost" href="https://github.com/Rizilla-OG/OPtech2">View on GitHub</a>
+  </div>
+  <figure class="hero-shot">
+    <img src="assets/img/stress-idle.jpg" width="1280" height="720"
+      alt="Soldiers spread across a big room full of items and spinning red pillars">
+  </figure>
+</header>
+
+<section id="progress">
+  <div class="wrap">
+    <h2>Progress</h2>
+    <p class="lead">The work runs in six milestones, each building on the formats the one before it settles.</p>
+    <ol class="roadmap">
+      <li class="milestone done">
+        <span class="id">M0</span><h3>Foundation</h3><span class="status">DONE</span>
+        <p>Forked Yamagi Quake II Remaster, one-command build, screenshot regression check, timedemo benchmark.</p>
+      </li>
+      <li class="milestone done">
+        <span class="id">M1</span><h3>Remove limits</h3><span class="status">DONE</span>
+        <p>60 Hz simulation, bigger worlds, thousands of entities, IQM models, true-color textures, modern sound
+          formats, packet splitting and savegames that survive code changes.</p>
+      </li>
+      <li class="milestone next">
+        <span class="id">M2</span><h3>Modding architecture</h3><span class="status">NEXT</span>
+        <p>Client game module, shared movement code, data-driven definitions, mod stacking, monster navigation,
+          animation system and an in-game editor for entities and lights.</p>
+      </li>
+      <li class="milestone later">
+        <span class="id">M3</span><h3>Multi-threaded renderer</h3><span class="status">PLANNED</span>
+        <p>Frontend / backend split with OpenGL on its own thread, following the Doom 3 BFG design.</p>
+      </li>
+      <li class="milestone later">
+        <span class="id">M4</span><h3>Lighting and shadows</h3><span class="status">PLANNED</span>
+        <p>Materials with normal and specular maps, real-time per-pixel lights and shadow maps, lights imported
+          from the stock maps, a light editor. Lightmaps stay as the low-end option.</p>
+      </li>
+      <li class="milestone later">
+        <span class="id">M5</span><h3>Supporting systems</h3><span class="status">PLANNED</span>
+        <p>Sound occlusion and reverb, large outdoor spaces, hot reload, crash reports, a Blender asset pipeline.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section id="m1">
+  <div class="wrap">
+    <h2>What M1 changed</h2>
+    <div class="features">
+      <div class="feature">
+        <span class="stat">60 Hz</span>
+        <h3>Smooth simulation</h3>
+        <p>The server runs 60 frames a second (stock: 10). Physics, weapons and monster AI run every frame;
+          monster animation keeps its 0.1 s rhythm with client smoothing. Doors, fire rates, rockets and monster
+          speed measure the same at 10 and 60 Hz.</p>
+      </div>
+      <div class="feature">
+        <span class="stat">8192</span>
+        <h3>Thousands of entities</h3>
+        <p>A 3800 entity stress map (300 soldiers, 500 spinning pillars, 3000 items) runs with a server frame
+          under 1 ms idle and about 3 ms in a full fight. Pushers ask the area tree for nearby entities
+          instead of checking all of them.</p>
+      </div>
+      <div class="feature">
+        <span class="stat">past ±4096</span>
+        <h3>Bigger worlds</h3>
+        <p>Positions travel as floats, so maps reach past the old ±4096 unit edge. Extended QBSP maps and
+          decoupled BSPX lightmaps, compiled with ericw-tools.</p>
+      </div>
+      <div class="feature">
+        <span class="stat">IQM</span>
+        <h3>Skeletal models</h3>
+        <p>IQM is the project's model format: one file with mesh, skeleton and named animations, exported
+          straight from Blender.</p>
+      </div>
+      <div class="feature">
+        <span class="stat">PNG · TGA</span>
+        <h3>True-color textures</h3>
+        <p>Any size, no .wal needed: checked with 300x200, 1024x1024 and 4096x4096 textures.</p>
+      </div>
+      <div class="feature">
+        <span class="stat">24-bit</span>
+        <h3>Modern sound files</h3>
+        <p>24 bit, 32 bit and float WAV, any sample rate, minutes long, mono or stereo, on both sound backends.</p>
+      </div>
+      <div class="feature">
+        <span class="stat">By name</span>
+        <h3>Savegames that last</h3>
+        <p>Every saved field is stored with its name, so new builds keep loading old saves after fields are
+          added, removed or reordered.</p>
+      </div>
+      <div class="feature">
+        <span class="stat">1200 B</span>
+        <h3>Network packets</h3>
+        <p>Big updates are split into 1200 byte packets instead of relying on IP fragmentation; tested with
+          25% packet loss. The rate limiter works at any tick rate.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="limits">
+  <div class="wrap">
+    <h2>Limits</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Limit</th><th>Quake II</th><th>OPtech2 M1</th></tr></thead>
+        <tbody>
+          <tr><td>Server frames per second</td><td>10</td><td>60</td></tr>
+          <tr><td>Map coordinates</td><td>±4096</td><td>float (tested to ±6144)</td></tr>
+          <tr><td>Entities</td><td>1024</td><td>8192</td></tr>
+          <tr><td>Models per map</td><td>256</td><td>1024</td></tr>
+          <tr><td>Sounds per map</td><td>256</td><td>1024</td></tr>
+          <tr><td>Images per map</td><td>256</td><td>2048</td></tr>
+          <tr><td>Entities drawn per frame</td><td>128</td><td>4096</td></tr>
+          <tr><td>Dynamic lights</td><td>32</td><td>128</td></tr>
+          <tr><td>Particles</td><td>4096</td><td>16384</td></tr>
+          <tr><td>Sound channels</td><td>32</td><td>128</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="screens">
+  <div class="wrap">
+    <h2>Screenshots</h2>
+    <p class="lead">From the test maps that check each change. Every check is a script in the repository.</p>
+    <div class="gallery">
+      <figure class="wide">
+        <a href="assets/img/stress-fight.jpg"><img src="assets/img/stress-fight.jpg" width="1280" height="720" loading="lazy"
+          alt="Soldiers rushing the player between items and red pillars"></a>
+        <figcaption>Stress map: about 3800 entities at 60 Hz. Here 300 soldiers rush the player; the screen is pale from the
+          hits. Soldiers spawned last still reach the client, because the nearest entities go first when more than
+          1024 are visible.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/limits-east.jpg"><img src="assets/img/limits-east.jpg" width="800" height="600" loading="lazy"
+          alt="The far end wall of a long hall"></a>
+        <figcaption>Limits map: the far end of a 12288 unit hall, past the old ±4096 edge.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/limits-hall.jpg"><img src="assets/img/limits-hall.jpg" width="800" height="600" loading="lazy"
+          alt="Rows of red pillars in a long hall"></a>
+        <figcaption>320 brush models and 300 sounds in one map (stock limit: 256 each).</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/iqm-showcase.jpg"><img src="assets/img/iqm-showcase.jpg" width="800" height="600" loading="lazy"
+          alt="Red and blue test bars, some bent"></a>
+        <figcaption>IQM test model: still frames at the back, looping animations in front.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/iqm-bend.jpg"><img src="assets/img/iqm-bend.jpg" width="800" height="600" loading="lazy"
+          alt="Four test bars: straight, bent 45 degrees, bent 90 degrees, straight"></a>
+        <figcaption>Two-bone IQM bar at bend frames 1, 5 and 10, and idle.</figcaption>
+      </figure>
+      <figure class="wide">
+        <a href="assets/img/bspx-compare.jpg"><img src="assets/img/bspx-compare.jpg" width="1280" height="478" loading="lazy"
+          alt="Two views of a post's shadow: blurry on the left, sharp on the right"></a>
+        <figcaption>Lightmaps: the stock lightmap (left) against a 4 unit decoupled BSPX lightmap (right).</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/dlights.jpg"><img src="assets/img/dlights.jpg" width="1200" height="600" loading="lazy"
+          alt="The same room lit by 32 and by 128 test lights in two renderers, with the difference marked"></a>
+        <figcaption>Dynamic lights: 32 (stock) against 128.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/packet-entities.jpg"><img src="assets/img/packet-entities.jpg" width="1000" height="375" loading="lazy"
+          alt="Rows of items in a room, with all 270 sent at cap 1024 and some dropped at cap 128"></a>
+        <figcaption>Hundreds of entities visible in one network frame.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/truecolor.jpg"><img src="assets/img/truecolor.jpg" width="800" height="600" loading="lazy"
+          alt="A wall with a red, green, blue and yellow texture"></a>
+        <figcaption>A 300x200 PNG texture with no .wal behind it.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/multiplayer.jpg"><img src="assets/img/multiplayer.jpg" width="800" height="600" loading="lazy"
+          alt="Four views from two players in a corridor: away, in view, walked back, seen from the other side"></a>
+        <figcaption>Multiplayer check: two clients on a dedicated server.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/windows-build.jpg"><img src="assets/img/windows-build.jpg" width="640" height="480" loading="lazy"
+          alt="The first room of the first level with the blaster in hand"></a>
+        <figcaption>The Windows build running base1 (here under Wine).</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="get">
+  <div class="wrap">
+    <h2>Get it</h2>
+    <div class="two-col">
+      <div>
+        <h3>Play</h3>
+        <p>Download the <a href="https://github.com/Rizilla-OG/OPtech2/releases/latest">latest release</a> for
+          Windows (64 or 32 bit) or Linux x86_64. You need the Quake II game data (Steam or GOG, the folder
+          holding <code>baseq2</code>).</p>
+        <pre><code>Windows:  quake2.exe -datadir "C:\Path\To\Quake 2"
+Linux:    ./optech2 -datadir "/path/to/Quake 2"</code></pre>
+        <p class="note">The Linux build needs SDL3 and OpenAL. Network protocol and save format changed in M1:
+          OPtech2 does not join stock Quake II servers.</p>
+      </div>
+      <div>
+        <h3>Build</h3>
+        <pre><code>git clone https://github.com/Rizilla-OG/OPtech2
+cd OPtech2
+cmake --workflow --preset default</code></pre>
+        <p class="note">Output lands in <code>build/release/</code>. The README lists the checks: screenshots,
+          benchmark, multiplayer, packet splitting, tick rate, limits, stress, IQM, textures, sound and savegames.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="modding">
+  <div class="wrap">
+    <h2>For mappers and modders</h2>
+    <div class="features">
+      <div class="feature">
+        <h3>Maps</h3>
+        <p>Compile with <a href="https://github.com/ericwa/ericw-tools">ericw-tools</a> 2.0.0-alpha11:
+          <code>qbsp -qbism</code>, <code>light -world_units_per_luxel</code> for sharp lightmaps.
+          <code>tools/get_ericw_tools.py</code> fetches the tested version.</p>
+      </div>
+      <div class="feature">
+        <h3>Models</h3>
+        <p>Export IQM from Blender with the <a href="https://github.com/lsalzman/iqm">IQM exporter</a>. Each
+          animation becomes a frame group; an .iqm next to a stock model replaces it.</p>
+      </div>
+      <div class="feature">
+        <h3>Test maps</h3>
+        <p><code>tools/install_test_content.py</code> builds the IQM showcase, limits and stress maps and a
+          sound demo, and adds them to your game folder.</p>
+      </div>
+      <div class="feature">
+        <h3>Game code</h3>
+        <p>After changing a saved struct, <code>tools/gen_save_fields.py</code> updates the savegame field table.
+          The client game module and data-driven definitions arrive in M2.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <nav>
+      <a href="https://github.com/Rizilla-OG/OPtech2">GitHub</a>
+      <a href="https://github.com/Rizilla-OG/OPtech2/releases">Releases</a>
+      <a href="https://github.com/Rizilla-OG/OPtech2/blob/main/CHANGES.md">Changes</a>
+      <a href="https://github.com/Rizilla-OG/OPtech2/issues">Issues</a>
+    </nav>
+    <p>OPtech2 is based on <a href="https://github.com/yquake2/yquake2remaster">Yamagi Quake II Remaster</a> and
+      released under the GNU GPL version 2. Quake II is a trademark of id Software; the game data is not included.</p>
+  </div>
+</footer>
+
+</body>
+</html>
