@@ -9,7 +9,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # CMake project configuration.
-project(yquake2 C)
+project(yquake2 C CXX) # optech2: C++ for the re-release client game code (src/game/rerelease)
 
 # Cmake module search path.
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/stuff/cmake/modules ${CMAKE_MODULE_PATH})
@@ -1073,8 +1073,20 @@ endif()
 
 endif()
 
+# optech2: the re-release client game (HUD) from id's re-release source,
+# built into the game library as C++20; settings in optech2_prelude.h
+set(Game-Rerelease-Source
+	${GAME_SRC_DIR}/rerelease/cg_main.cpp
+	${GAME_SRC_DIR}/rerelease/cg_screen.cpp
+	${GAME_SRC_DIR}/rerelease/p_move.cpp
+	${GAME_SRC_DIR}/rerelease/q_std.cpp
+	)
+set_source_files_properties(${Game-Rerelease-Source} PROPERTIES
+	COMPILE_OPTIONS "-std=c++20;-include;${GAME_SRC_DIR}/rerelease/optech2_prelude.h;-w"
+	)
+
 # Build the game dynamic library
-add_library(game MODULE ${Game-Source} ${Game-Header})
+add_library(game MODULE ${Game-Source} ${Game-Header} ${Game-Rerelease-Source})
 set_target_properties(game PROPERTIES
 		PREFIX ""
 		SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX}
