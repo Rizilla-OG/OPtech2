@@ -42,5 +42,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 - Fixed: chaingunners (and other strafing monsters) slid sideways 3x too far and fast at 60 Hz. The sidestep cap is 8 units per 0.1 s, now split across server frames (re-release does the same). Rogue turrets turn at their 0.1 s speed too.
 - Weapons at high tick rates (re-release style): the weapon runs every server frame and fires as soon as an idle, ready weapon is told to fire or switch; animation frames and fire rates keep their 0.1 s pace (a weapon that just fired stays busy until its next frame). Press-to-shot delay at 60 Hz: 16-34 ms (was up to 100 ms). Recoil lasts until the next weapon frame.
 - Tick rate check also compares fire rates of 8 weapons (ammo used while firing for 3 s).
+- `g_damagelog 1`: prints every hit (time, attacker, target, damage, means of death), for tests.
+- Damage check: `python3 tests/tickrate/damage_check.py` fires every weapon at a supertank for 3 s at 10 and 60 Hz and compares damage per ammo (~4 min, no windows). Result: identical except rocket/grenade splash within 6%.
 - `playerinfo` cheat command: prints game time, health, ammo and position on one line (for tests).
 - Tick rate check: `python3 tests/tickrate/tick_check.py` runs base1 at 10 and 60 Hz and compares door speed, machine gun fire rate, rocket speed and berserker run speed (~40 s, no windows).

@@ -922,6 +922,13 @@ T_Damage(edict_t *targ, edict_t *inflictor, edict_t *attacker, vec3_t dir,
 
 	CTFCheckHurtCarrier(targ, attacker);
 
+	/* optech2: one line per hit for automated tests (g_damagelog 1) */
+	if (g_damagelog && g_damagelog->value)
+	{
+		gi.dprintf("damagelog time %.3f attacker %s target %s damage %d take %d mod %d\n",
+			level.time, attacker ? attacker->classname : "none", targ->classname, damage, take, mod);
+	}
+
 	/* do the damage */
 	if (take)
 	{

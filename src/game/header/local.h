@@ -761,6 +761,7 @@ extern cvar_t *filterban;
 
 extern cvar_t *sv_gravity;
 extern cvar_t *sv_tickrate; /* optech2: server frames per second, set by the server */
+extern cvar_t *g_damagelog; /* optech2: print every hit, for tests */
 extern cvar_t *sv_maxvelocity;
 
 extern cvar_t *gun_x, *gun_y, *gun_z;

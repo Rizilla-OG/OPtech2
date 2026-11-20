@@ -386,6 +386,7 @@ InitGame(void)
 	sv_maxvelocity = gi.cvar("sv_maxvelocity", "2000", 0);
 	sv_gravity = gi.cvar("sv_gravity", "800", 0);
 	sv_tickrate = gi.cvar("sv_tickrate", "10", CVAR_SERVERINFO | CVAR_LATCH); /* optech2 */
+	g_damagelog = gi.cvar("g_damagelog", "0", 0); /* optech2: 1 = print every hit (tests) */
 	sv_stopspeed = gi.cvar("sv_stopspeed", "100", 0);
 	g_showlogic = gi.cvar("g_showlogic", "0", 0);
 	huntercam = gi.cvar("huntercam", "1", CVAR_SERVERINFO|CVAR_LATCH);
