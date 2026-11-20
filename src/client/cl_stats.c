@@ -32,10 +32,14 @@
 
 #ifdef __linux__
 #include <unistd.h> /* sysconf */
+#include <dirent.h> /* /proc/self/task */
 #endif
 
 #define STATS_WINDOW_US 500000 /* averaging window */
-#define STATS_LINES 7
+#define STATS_LINES 24
+#define STATS_MAX_CORES 256
+#define STATS_MAX_THREADS 128
+#define STATS_SHOWN_THREADS 6 /* busiest game threads listed */
 #define CHAR_SIZE 8 /* console font cell, as in cl_screen.c */
 
 extern cvar_t *cl_perf;
@@ -56,13 +60,31 @@ static struct
 } window;
 
 /* last finished window, as drawn */
-static char stats_lines[STATS_LINES][128];
+static char stats_lines[STATS_LINES][160];
 static int stats_line_count;
 
 #ifdef __linux__
 static char gpu_sysfs_dir[64]; /* /sys/class/drm/cardN/device with gpu_busy_percent, or "" */
 static qboolean gpu_sysfs_checked;
 static long long last_process_ticks, last_system_total, last_system_idle;
+
+/* per core: totals at the last sample; load in percent from the last window */
+static long long last_core_total[STATS_MAX_CORES], last_core_idle[STATS_MAX_CORES];
+static float core_load[STATS_MAX_CORES];
+static int core_count;
+
+/* game threads: ticks at the last sample, by thread id */
+typedef struct
+{
+	int tid;
+	long long ticks;
+	float load; /* percent of one core in the last window */
+	char name[16];
+	qboolean seen; /* still running at the last sample */
+} stats_thread_t;
+
+static stats_thread_t threads[STATS_MAX_THREADS];
+static int thread_count;
 
 /* reads the first number from a small file, -1 on failure */
 static long long
@@ -169,8 +191,156 @@ Stats_CpuLoad(double seconds, double *process_percent, double *system_percent)
 			last_system_idle = idle;
 		}
 
+		/* then one "cpuN" line per core (first the rest of the totals line) */
+		if (!fgets(buffer, sizeof(buffer), f))
+		{
+			buffer[0] = 0;
+		}
+
+		core_count = 0;
+
+		while (core_count < STATS_MAX_CORES && fgets(buffer, sizeof(buffer), f))
+		{
+			int core;
+
+			if (sscanf(buffer, "cpu%d %lld %lld %lld %lld %lld %lld %lld %lld", &core,
+					&user, &nice, &system, &idle_time, &iowait, &irq, &softirq, &steal) != 9 ||
+				core != core_count)
+			{
+				if (strncmp(buffer, "cpu", 3))
+				{
+					break;
+				}
+
+				continue;
+			}
+
+			total = user + nice + system + idle_time + iowait + irq + softirq + steal;
+			idle = idle_time + iowait;
+			core_load[core] = (last_core_total[core] && total > last_core_total[core]) ? 100.0f * (1.0f - (float)(idle - last_core_idle[core]) / (total - last_core_total[core])) : 0;
+			last_core_total[core] = total;
+			last_core_idle[core] = idle;
+			core_count++;
+		}
+
 		fclose(f);
 	}
+}
+
+/* load of each thread of the game process since the last call */
+static void
+Stats_ThreadLoad(double seconds)
+{
+	DIR *dir = opendir("/proc/self/task");
+	struct dirent *entry;
+	int i;
+
+	if (!dir)
+	{
+		return;
+	}
+
+	for (i = 0; i < thread_count; i++)
+	{
+		threads[i].seen = false;
+	}
+
+	while ((entry = readdir(dir)))
+	{
+		char path[64], buffer[512], name[16] = "?";
+		long long utime, stime;
+		const char *open_paren, *close_paren, *p;
+		int tid = atoi(entry->d_name), field;
+		size_t len;
+		FILE *f;
+
+		if (tid <= 0)
+		{
+			continue;
+		}
+
+		snprintf(path, sizeof(path), "/proc/self/task/%d/stat", tid);
+		f = fopen(path, "r");
+
+		if (!f)
+		{
+			continue;
+		}
+
+		len = fread(buffer, 1, sizeof(buffer) - 1, f);
+		fclose(f);
+		buffer[len] = 0;
+
+		open_paren = strchr(buffer, '(');
+		close_paren = strrchr(buffer, ')');
+
+		if (!open_paren || !close_paren || close_paren < open_paren)
+		{
+			continue;
+		}
+
+		Q_strlcpy(name, open_paren + 1, Q_min(sizeof(name), (size_t)(close_paren - open_paren)));
+
+		for (p = close_paren, field = 2; p && field < 14; field++)
+		{
+			p = strchr(p + 1, ' ');
+		}
+
+		if (!p || sscanf(p, " %lld %lld", &utime, &stime) != 2)
+		{
+			continue;
+		}
+
+		for (i = 0; i < thread_count && threads[i].tid != tid; i++)
+		{
+		}
+
+		if (i == thread_count)
+		{
+			if (thread_count == STATS_MAX_THREADS)
+			{
+				continue;
+			}
+
+			thread_count++;
+			threads[i].tid = tid;
+			threads[i].ticks = utime + stime;
+			threads[i].load = 0;
+		}
+		else if (seconds > 0)
+		{
+			threads[i].load = 100.0f * (utime + stime - threads[i].ticks) /
+							  (sysconf(_SC_CLK_TCK) * seconds);
+			threads[i].ticks = utime + stime;
+		}
+
+		Q_strlcpy(threads[i].name, name, sizeof(threads[i].name));
+		threads[i].seen = true;
+	}
+
+	closedir(dir);
+
+	/* forget threads that ended */
+	for (i = 0; i < thread_count;)
+	{
+		if (!threads[i].seen)
+		{
+			threads[i] = threads[--thread_count];
+		}
+		else
+		{
+			i++;
+		}
+	}
+}
+
+static int
+Stats_CompareThreadLoad(const void *a, const void *b)
+{
+	float first = ((const stats_thread_t *)a)->load, second = ((const stats_thread_t *)b)->load;
+
+	return (first < second) ? 1 : (first > second) ? -1
+												   : 0;
 }
 #endif
 
@@ -245,6 +415,56 @@ SCR_StatsAccumulate(long long server_us, long long game_us, long long client_us,
 			snprintf(stats_lines[line++], sizeof(stats_lines[0]),
 				"CPU  game %3.0f%% of a core   system %3.0f%%",
 				process_percent, system_percent);
+
+			/* every core, eight per line */
+			{
+				int core;
+
+				for (core = 0; core < core_count && line < STATS_LINES - 3; core += 8)
+				{
+					char *text = stats_lines[line++];
+					int last = Q_min(core + 8, core_count), c;
+					size_t used;
+
+					snprintf(text, sizeof(stats_lines[0]), "  cores %2d-%-2d", core, last - 1);
+					used = strlen(text);
+
+					for (c = core; c < last; c++)
+					{
+						snprintf(text + used, sizeof(stats_lines[0]) - used, " %3.0f", core_load[c]);
+						used = strlen(text);
+					}
+				}
+			}
+
+			/* the busiest threads of the game process */
+			Stats_ThreadLoad(seconds);
+
+			if (thread_count)
+			{
+				stats_thread_t sorted[STATS_MAX_THREADS];
+				char *text = NULL;
+				int t;
+				size_t used = 0;
+
+				memcpy(sorted, threads, thread_count * sizeof(threads[0]));
+				qsort(sorted, thread_count, sizeof(sorted[0]), Stats_CompareThreadLoad);
+
+				/* three per line, busiest first */
+				for (t = 0; t < thread_count && t < STATS_SHOWN_THREADS && line < STATS_LINES - 1; t++)
+				{
+					if (t % 3 == 0)
+					{
+						text = stats_lines[line++];
+						snprintf(text, sizeof(stats_lines[0]), t ? "              " : "  threads %-3d", thread_count);
+						used = strlen(text);
+					}
+
+					snprintf(text + used, sizeof(stats_lines[0]) - used, " %-15s %3.0f%%",
+						sorted[t].name, sorted[t].load);
+					used = strlen(text);
+				}
+			}
 
 			if (!gpu_sysfs_checked)
 			{
