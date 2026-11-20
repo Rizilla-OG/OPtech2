@@ -14,7 +14,8 @@ and assets keep loading and serve as test content.
 - **M1 Remove limits:** in progress. Done so far: raised client render, particle, light
   and sound limits; 1024 packet entities; bigger configstring and image limits (protocol
   2025); 60 Hz server tick with client smoothing; re-release AI and weapon timing ports;
-  rate limiter fixed for any tick rate; network packet splitting.
+  rate limiter fixed for any tick rate; network packet splitting; an oversized test map
+  (beyond +-4096 units, over 256 models and sounds, extended QBSP with BSPX lightmaps).
 
 Changes are listed in [CHANGES.md](CHANGES.md).
 
@@ -39,6 +40,8 @@ All checks use a temporary HOME, so your own config and saves are never touched.
 - `python3 tests/multiplayer/mp_check.py`: two clients on a dedicated server
 - `python3 tests/multiplayer/net_check.py`: traffic per player at several tick rates
 - `python3 tests/multiplayer/split_check.py`: packet splitting, clean and with loss
+- `python3 tests/maps/make_limits_map.py`, then `tests/maps/limits_check.py`: oversized test map (needs
+  [ericw-tools](https://github.com/ericwa/ericw-tools) 2.x, `--tools` or `$ERICW_TOOLS`)
 - `python3 tests/tickrate/tick_check.py`, `damage_check.py`: 10 Hz vs 60 Hz behaviour
 
 ## License

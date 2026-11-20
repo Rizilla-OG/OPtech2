@@ -546,6 +546,51 @@ CL_Netstats_f(void)
 		chan->stats_fragmented_sent);
 }
 
+/*
+ * optech2: how many model and sound configstrings the client got from the
+ * server and how many it loaded, with the highest index (for limit tests)
+ */
+static void
+CL_Configcounts_f(void)
+{
+	int i, models = 0, models_loaded = 0, sounds = 0, sounds_loaded = 0;
+	int highest_model = 0, highest_sound = 0;
+
+	for (i = 1; i < MAX_MODELS; i++)
+	{
+		if (cl.configstrings[CS_MODELS + i][0])
+		{
+			models++;
+			highest_model = i;
+
+			/* '#' names are player weapon models, kept in their own list */
+			if (cl.model_draw[i] || (cl.configstrings[CS_MODELS + i][0] == '#'))
+			{
+				models_loaded++;
+			}
+		}
+	}
+
+	for (i = 1; i < MAX_SOUNDS; i++)
+	{
+		if (cl.configstrings[CS_SOUNDS + i][0])
+		{
+			sounds++;
+			highest_sound = i;
+
+			if (cl.sound_precache[i])
+			{
+				sounds_loaded++;
+			}
+		}
+	}
+
+	Com_Printf("configcounts models %d loaded %d highest %d sounds %d "
+			   "loaded %d highest %d\n",
+		models, models_loaded, highest_model,
+		sounds, sounds_loaded, highest_sound);
+}
+
 static void
 CL_Userinfo_f(void)
 {
@@ -711,6 +756,7 @@ CL_InitLocal(void)
 
 	Cmd_AddCommand("userinfo", CL_Userinfo_f);
 	Cmd_AddCommand("cl_netstats", CL_Netstats_f);
+	Cmd_AddCommand("cl_configcounts", CL_Configcounts_f);
 	Cmd_AddCommand("snd_restart", CL_Snd_Restart_f);
 
 	Cmd_AddCommand("changing", CL_Changing_f);
