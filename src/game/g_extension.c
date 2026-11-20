@@ -19,11 +19,10 @@
  *
  * =======================================================================
  *
- * optech2: the game's own player movement. The shared movement code
- * (src/common/shared/pmove.c) is compiled in here, with its entry points
- * static, so a game or mod that changes it changes both the server's
- * movement and the client's prediction: the engine asks this library for
- * its movement through OPtech2_GetExtension(OPTECH2_EXT_PMOVE).
+ * optech2: additions this game library offers the engine beyond the game
+ * and client game APIs (src/common/header/optech2_ext.h). For now its own
+ * player movement (src/common/shared/pmove.c, compiled into this library),
+ * so the client predicts with the same code the server moves players with.
  *
  * =======================================================================
  */
@@ -31,26 +30,11 @@
 #include "header/local.h"
 #include "../common/header/optech2_ext.h"
 
-/* the shared movement code, its two entry points kept to this file */
-#define PMOVE_API static
-#include "../common/shared/pmove.c"
-
-void
-G_PmoveEx(pmove_t *pmove, int *origin)
-{
-	PmoveEx(pmove, origin);
-}
-
-void
-G_Pmove(pmove_t *pmove)
-{
-	Pmove(pmove);
-}
-
 static const optech2_pmove_ext_t pmove_extension = {
 	OPTECH2_PMOVE_EXT_VERSION,
 	sizeof(pmove_t),
-	G_PmoveEx};
+	PmoveEx
+};
 
 /*
  * OPtech2 additions the game library offers the engine, by name; NULL for

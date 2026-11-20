@@ -2192,8 +2192,4 @@ void SelectSpawnPoint(const edict_t *ent, vec3_t origin, vec3_t angles);
 #include "../savegame/tables/spawnfunc_decs.h"
 #endif
 
-/* g_pmove.c (optech2: the game's own player movement) */
-void G_PmoveEx(pmove_t *pmove, int *origin);
-void G_Pmove(pmove_t *pmove);
-
 #endif /* GAME_LOCAL_H */

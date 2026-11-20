@@ -3287,9 +3287,9 @@ ClientThink(edict_t *ent, usercmd_t *ucmd)
 
 		pm.airaccelerate = deathmatch->value ? sv_airaccelerate->value : 0;
 
-		/* perform a pmove; optech2: the game's own movement code */
+		/* perform a pmove; optech2: the game's own copy of the movement code */
 		M_SetStandMinMax(ent, pm.mins, pm.maxs);
-		G_PmoveEx(&pm, origin);
+		PmoveEx(&pm, origin);
 
 		/* save results of pmove */
 		client->ps.pmove = pm.s;

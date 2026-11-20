@@ -396,11 +396,10 @@ CL_CGame_FillImports(void)
 	cgame_import.CL_InAutoDemoLoop = CG_InAutoDemoLoop;
 }
 
-/* opens a library and fetches GetCGameAPI; NULL when it has none */
-static GetCGameAPI_t
+/* opens a library as the game library; false when it won't open */
+static qboolean
 CL_CGame_Open(const char *path)
 {
-	GetCGameAPI_t entry;
 	void *library;
 
 	/* with no symbol asked for, only the handle tells whether it opened */
@@ -408,21 +407,41 @@ CL_CGame_Open(const char *path)
 
 	if (!library)
 	{
-		return NULL;
-	}
-
-	entry = (GetCGameAPI_t)Sys_GetProcAddress(library, "GetCGameAPI");
-
-	if (!entry)
-	{
-		Sys_FreeLibrary(library);
-		return NULL;
+		return false;
 	}
 
 	cgame_library = library;
-	return entry;
+	return true;
 }
 
+/* the game library's own player movement for prediction, if it has one */
+static void
+CL_CGame_FindPmove(void)
+{
+	OPtech2_GetExtension_t get_extension =
+		(OPtech2_GetExtension_t)Sys_GetProcAddress(cgame_library, "OPtech2_GetExtension");
+	const optech2_pmove_ext_t *pmove_ext =
+		get_extension ? get_extension(OPTECH2_EXT_PMOVE) : NULL;
+
+	if (pmove_ext && pmove_ext->version == OPTECH2_PMOVE_EXT_VERSION &&
+		pmove_ext->pmove_size == (int)sizeof(pmove_t) && pmove_ext->PmoveEx)
+	{
+		cgame_pmove = pmove_ext;
+		Com_Printf("client game: player movement from the game library\n");
+	}
+	else if (pmove_ext)
+	{
+		Com_Printf("client game: player movement version %d / size %d don't match, using the engine's\n",
+			pmove_ext->version, pmove_ext->pmove_size);
+	}
+}
+
+/*
+ * Opens the game's library on the client side (the game folders' game
+ * library, like the server's, or the one cl_cgame names) and takes what it
+ * offers: its player movement for prediction and its client game module
+ * for the HUD. Either can be missing; with neither the library is closed.
+ */
 void
 CL_CGame_Load(void)
 {
@@ -433,11 +452,11 @@ CL_CGame_Load(void)
 #else
 	const char *game_library_name = "game.so";
 #endif
-	GetCGameAPI_t entry = NULL;
+	GetCGameAPI_t entry;
 	const char *path = NULL;
 	char name[MAX_OSPATH];
 
-	if (cgame)
+	if (cgame_library)
 	{
 		return;
 	}
@@ -449,17 +468,15 @@ CL_CGame_Load(void)
 
 	if (cl_cgame->string[0])
 	{
-		entry = CL_CGame_Open(cl_cgame->string);
-
-		if (!entry)
+		if (!CL_CGame_Open(cl_cgame->string))
 		{
-			Com_Printf("cl_cgame: %s has no client game (GetCGameAPI)\n", cl_cgame->string);
+			Com_Printf("cl_cgame: can't open %s\n", cl_cgame->string);
 		}
 	}
 	else
 	{
 		/* the game library of the game folders, like the server's */
-		while (!entry && (path = FS_NextPath(path)))
+		while ((path = FS_NextPath(path)))
 		{
 			FILE *f;
 
@@ -469,51 +486,47 @@ CL_CGame_Load(void)
 			if (f)
 			{
 				fclose(f);
-				entry = CL_CGame_Open(name);
+				CL_CGame_Open(name);
 				break; /* the first game library found is the game's */
 			}
 		}
 	}
 
-	if (!entry)
+	if (!cgame_library)
 	{
 		return;
 	}
 
-	CL_CGame_FillImports();
-	cgame = entry(&cgame_import);
+	CL_CGame_FindPmove();
 
-	if (!cgame || cgame->apiversion != CGAME_API_VERSION)
+	entry = (GetCGameAPI_t)Sys_GetProcAddress(cgame_library, "GetCGameAPI");
+
+	if (entry)
 	{
-		Com_Printf("client game: API version %d, need %d; using the built-in HUD\n",
-			cgame ? cgame->apiversion : -1, CGAME_API_VERSION);
-		cgame = NULL;
-		Sys_FreeLibrary(cgame_library);
-		cgame_library = NULL;
+		CL_CGame_FillImports();
+		cgame = entry(&cgame_import);
+
+		if (!cgame || cgame->apiversion != CGAME_API_VERSION)
+		{
+			Com_Printf("client game: API version %d, need %d; using the built-in HUD\n",
+				cgame ? cgame->apiversion : -1, CGAME_API_VERSION);
+			cgame = NULL;
+		}
+	}
+
+	if (!cgame)
+	{
+		/* no client game module: keep the library only for its movement */
+		if (!cgame_pmove)
+		{
+			Sys_FreeLibrary(cgame_library);
+			cgame_library = NULL;
+		}
+
 		return;
 	}
 
 	Com_Printf("client game: loaded (cgame API %d)\n", CGAME_API_VERSION);
-
-	/* the game library's own player movement, for prediction */
-	{
-		OPtech2_GetExtension_t get_extension =
-			(OPtech2_GetExtension_t)Sys_GetProcAddress(cgame_library, "OPtech2_GetExtension");
-		const optech2_pmove_ext_t *pmove_ext =
-			get_extension ? get_extension(OPTECH2_EXT_PMOVE) : NULL;
-
-		if (pmove_ext && pmove_ext->version == OPTECH2_PMOVE_EXT_VERSION &&
-			pmove_ext->pmove_size == (int)sizeof(pmove_t) && pmove_ext->PmoveEx)
-		{
-			cgame_pmove = pmove_ext;
-			Com_Printf("client game: player movement from the game library\n");
-		}
-		else if (pmove_ext)
-		{
-			Com_Printf("client game: player movement version %d / size %d don't match, using the engine's\n",
-				pmove_ext->version, pmove_ext->pmove_size);
-		}
-	}
 
 	cgame->Init();
 

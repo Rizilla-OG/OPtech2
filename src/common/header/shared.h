@@ -750,6 +750,10 @@ typedef struct
 	float airaccelerate; /* optech2: in; was an engine global (sv_airaccelerate / CS_AIRACCEL) */
 } pmove_t;
 
+/* player movement (src/common/shared/pmove.c), in the engine and the game */
+void Pmove(pmove_t *pmove);
+void PmoveEx(pmove_t *pmove, int *origin);
+
 /* entity_state_t->effects
  * Effects are things handled on the client side (lights, particles,
  * frame animations)  that happen constantly on the given entity.

@@ -23,20 +23,15 @@
  * engine
  *
  * optech2: shared code, compiled into the engine (client prediction for
- * games without their own) and into the game library (server movement and
- * the game's prediction, see src/game/g_pmove.c), so a mod changes movement
- * in one place. It only uses shared.h: no engine state, no sound.
- * PMOVE_API marks the two entry points; the game library makes them static
- * so the engine's copy (exported with -rdynamic) can't stand in for them.
+ * games without their own) and into the game library (server movement, and
+ * the client's prediction through src/game/g_extension.c), so a mod changes
+ * movement in one place. It only uses shared.h: no engine state, no sound.
+ * Both binaries build with -fvisibility=hidden, so each keeps its own copy.
  *
  * =======================================================================
  */
 
 #include "../header/shared.h"
-
-#ifndef PMOVE_API
-#define PMOVE_API
-#endif
 
 #define STEPSIZE 18
 
@@ -1445,7 +1440,7 @@ Pmove_(void)
 }
 
 /* Old version of pmove */
-PMOVE_API void
+void
 Pmove(pmove_t *pmove)
 {
 	pm = pmove;
@@ -1460,7 +1455,7 @@ Pmove(pmove_t *pmove)
 	VectorCopy(pml.current_origin, pmove->s.origin);
 }
 
-PMOVE_API void
+void
 PmoveEx(pmove_t *pmove, int *origin)
 {
 	pm = pmove;

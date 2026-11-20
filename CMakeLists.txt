@@ -383,7 +383,8 @@ set(Game-Source
 	${GAME_SRC_DIR}/g_light.c
 	${GAME_SRC_DIR}/g_main.c
 	${GAME_SRC_DIR}/g_misc.c
-	${GAME_SRC_DIR}/g_pmove.c
+	${GAME_SRC_DIR}/g_extension.c
+	${COMMON_SRC_DIR}/shared/pmove.c
 	${GAME_SRC_DIR}/g_monster.c
 	${GAME_SRC_DIR}/g_newai.c
 	${GAME_SRC_DIR}/g_newdm.c

@@ -1211,7 +1211,8 @@ GAME_OBJS_ = \
 	src/game/g_light.o \
 	src/game/g_main.o \
 	src/game/g_misc.o \
-	src/game/g_pmove.o \
+	src/game/g_extension.o \
+	src/common/shared/pmove.o \
 	src/game/g_monster.o \
 	src/game/g_newai.o \
 	src/game/g_newdm.o \
