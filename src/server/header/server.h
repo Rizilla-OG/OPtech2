@@ -46,7 +46,11 @@
 #define MAX_SAVE_TOKEN_CHARS 128
 
 /* expected count of entities in packet */
-#define MAX_PACKET_ENTITIES 256
+/* optech2: was 256. Entities one client can see in one frame. Each client
+   keeps UPDATE_BACKUP frames of them in svs.client_entities, so this also sets
+   that buffer's size. The client's MAX_PARSE_ENTITIES must hold UPDATE_BACKUP
+   frames of this many. */
+#define MAX_PACKET_ENTITIES 1024
 
 #define SV_OUTPUTBUF_LENGTH (MAX_MSGLEN - 16)
 #define EDICT_NUM(n) ((edict_t *)((byte *)ge->edicts + ge->edict_size * (n)))

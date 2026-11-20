@@ -726,6 +726,15 @@ SV_BuildClientFrame(client_t *client)
 			}
 		}
 
+		/* optech2: never add more than MAX_PACKET_ENTITIES, or this frame
+		   would overwrite older frames still used as delta sources */
+		if (frame->num_entities >= MAX_PACKET_ENTITIES)
+		{
+			Com_DPrintf("%s: more than %d visible entities, rest not sent\n",
+				__func__, MAX_PACKET_ENTITIES);
+			break;
+		}
+
 		/* add it to the circular client_entities array */
 		state = &svs.client_entities[svs.next_client_entities %
 				svs.num_client_entities];

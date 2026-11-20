@@ -33,7 +33,9 @@
 /* the cl_parse_entities must be large enough to hold UPDATE_BACKUP frames of
    entities, so that when a delta compressed message arives from the server
    it can be un-deltad from the original */
-#define	MAX_PARSE_ENTITIES	1024
+/* optech2: was 1024. UPDATE_BACKUP (16) frames of the server's
+   MAX_PACKET_ENTITIES (1024). Must be a power of two (used as a mask). */
+#define	MAX_PARSE_ENTITIES	16384
 
 #define MAX_SUSTAINS		128 // optech2: was 32
 #define	PARTICLE_GRAVITY 40

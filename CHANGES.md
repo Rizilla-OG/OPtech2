@@ -22,3 +22,4 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 - `cl_testlights N` spawns N test lights (1 still means all of them).
 - Map loader: removed the unused MAX_MAP_* bounds. Submodels are allocated per map (limit is now the model configstrings, MAX_MODELS - 1, with a clear error). A `.ent` override file can be any size (was lump size + 256 KB, larger files overran the map memory). Maps with more than 256 areas now fail with a clear error instead of overflowing the network area bits.
 - Mod list: no longer stops at 32 mods.
+- Entities per client frame raised from 256 to 1024, and now enforced: before, a frame with more than 256 visible entities could overwrite older frames the server deltas from. Client entity buffer raised from 1024 to 16384 to hold 16 such frames.
