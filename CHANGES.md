@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 
 ## Unreleased
 
+- Fixed: with the client game module, a center message left a bar in the top-left corner (the console separator line it echoes, shown as a notify line). The module now handles center messages alone and the notify area is cleared after its echo, as the built-in center print does.
 - Fixed: re-release map messages showed as keys (`$map_shoot_barrels_to_make_them_explo_0`). `Q2Game.kpf` (the re-release's localization and UI files) is now loaded from the data dir instead of the working directory, center and console prints with a `$key` are localized, and the client game module's `Localize` fills in the text and its `{}` / `{N}` arguments (shared with `svc_locprint`).
 - Fixed: the client game module's HUD was missing at HUD scale 2 and up (1440p, 4K): the engine passed the HUD rectangle in pixels, but re-release modules expect HUD units (pixels / scale) and multiply by the scale themselves. The cgame check now runs at scale 2.
 - Fixed: Quake II 64's intro (a camera scene ending in a level change) went to `maps/(null).bsp`: `target_changelevel` ignored being used without an activator, and pressing a key during the camera left the intermission before a next map was set. A key press now only leaves an intermission that has a next map (as in the re-release), a level exit without one stays put, and the intro goes on to q64/outpost.

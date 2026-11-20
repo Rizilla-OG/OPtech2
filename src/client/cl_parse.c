@@ -2605,8 +2605,19 @@ CL_ParseServerMessage(void)
 				/* optech2: localize "$key" texts (re-release map messages) */
 				const char *text = SV_LocalizationMessage(MSG_ReadString(&net_message), NULL);
 
-				SCR_CenterPrint(text);
-				CL_CGame_CenterPrint(text); /* optech2 */
+				/* optech2: a client game module shows center prints itself
+				   and echoes them to the console between separator lines,
+				   like SCR_CenterPrint; clear notify afterwards as that does,
+				   or the separator stays in the top-left corner */
+				if (CL_CGame_Active())
+				{
+					CL_CGame_CenterPrint(text);
+					Con_ClearNotify();
+				}
+				else
+				{
+					SCR_CenterPrint(text);
+				}
 			}
 				break;
 
