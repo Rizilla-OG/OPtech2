@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 
 ## Unreleased
 
+- Fixed: the client game module's HUD was missing at HUD scale 2 and up (1440p, 4K): the engine passed the HUD rectangle in pixels, but re-release modules expect HUD units (pixels / scale) and multiply by the scale themselves. The cgame check now runs at scale 2.
 - Fixed: Quake II 64's intro (a camera scene ending in a level change) went to `maps/(null).bsp`: `target_changelevel` ignored being used without an activator, and pressing a key during the camera left the intermission before a next map was set. A key press now only leaves an intermission that has a next map (as in the re-release), a level exit without one stays put, and the intro goes on to q64/outpost.
 - Game menu lists the episodes of the game data (from its mapdb.json), like the re-release: with the re-release data (`-datadir ".../Quake 2/rerelease"`) that is Quake II, Call of the Machine, The Reckoning, Ground Zero and Quake II 64. Picking one asks for the skill, then starts it with the data's own start command (intro video and first map), or at its first map if the data has none. Data without episodes keeps the easy / medium / hard menu.
 - `func_eye` (Call of the Machine) spawns as a static brush model and `target_poi` (re-release objective marker) is removed, instead of both being reported as unknown.

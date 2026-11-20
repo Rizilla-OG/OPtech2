@@ -567,7 +567,7 @@ CL_CGame_DrawHUD(void)
 {
 	static cg_server_data_t data;
 	cg_player_state_t ps;
-	cg_vrect_t screen;
+	cg_vrect_t screen, safe_margin;
 	int i, scale;
 
 	if (!cgame || !cl.frame.valid)
@@ -587,12 +587,18 @@ CL_CGame_DrawHUD(void)
 	scale = (int)(SCR_GetHUDScale() + 0.5f);
 	scale = scale < 1 ? 1 : scale;
 
-	screen.x = scr_vrect.x;
-	screen.y = scr_vrect.y;
-	screen.width = scr_vrect.width;
-	screen.height = scr_vrect.height;
+	/* optech2: the re-release passes the HUD rect in HUD units (pixels
+	   divided by scale; the module multiplies by scale) and the safe zone as
+	   a pixel margin. Passing pixels drew the HUD off-screen at scale 2 and
+	   up (1440p and 4K). */
+	screen.x = scr_vrect.x / scale;
+	screen.y = scr_vrect.y / scale;
+	screen.width = scr_vrect.width / scale;
+	screen.height = scr_vrect.height / scale;
 
-	cgame->DrawHUD(0, &data, screen, screen, scale, cl.playernum, &ps);
+	memset(&safe_margin, 0, sizeof(safe_margin));
+
+	cgame->DrawHUD(0, &data, screen, safe_margin, scale, cl.playernum, &ps);
 }
 
 void

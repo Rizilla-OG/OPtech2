@@ -8,7 +8,8 @@ base1 and checks what the module reports about the engine's imports:
     counted (the re-release cvar_t layout),
   - the map name through the re-release configstring numbering,
   - health from the player state, frame valid, server frame, client time,
-  - a picture's size, a key binding.
+  - a picture's size, a key binding,
+  - the HUD rect in HUD units at r_hudscale 2 (pixels / scale).
 The screenshot (module HUD instead of the built-in one) lands in
 build/cgame-check/ and docs/screenshots/.
 
@@ -57,7 +58,7 @@ def main():
         log_path = OUTPUT_DIR / "client.log"
         with open(log_path, "w") as log_file:
             subprocess.run(["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(DEFAULT_DATA_DIR),
-                            "+set", "vid_renderer", "soft", "+set", "r_vsync", "0", "+set", "s_initsound", "0",
+                            "+set", "vid_renderer", "soft", "+set", "r_vsync", "0", "+set", "s_initsound", "0", "+set", "r_hudscale", "2",
                             "+set", "cl_cgame", str(module), "+exec", "c.cfg"],
                            env=environment, stdout=log_file, stderr=subprocess.STDOUT, timeout=60, check=False)
         shots = sorted((game_dir / "scrnshot").glob("*.png")) if (game_dir / "scrnshot").exists() else []
@@ -88,6 +89,9 @@ def main():
                f"frame valid, server frame {hud.group(4)}, client time {hud.group(5)} ms")
         report(hud.group(10) == "24" and hud.group(12) == "1", f"picture i_health {hud.group(10)}x{hud.group(11)}")
         report(hud.group(13) != "", f"+attack bound to '{hud.group(13)}'")
+        # hud_vrect is in HUD units (pixels / scale), as the re-release passes it
+        report(hud.group(6) == "2" and hud.group(7) == "512" and hud.group(8) == "320",
+               f"scale {hud.group(6)}, HUD rect {hud.group(7)}x{hud.group(8)} (1024x640 / scale)")
     else:
         report(False, "DrawHUD ran (no 'cgtest hud' line)")
 

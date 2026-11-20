@@ -64,17 +64,18 @@ DrawHUD(int32_t isplit, const cg_server_data_t *data, cg_vrect_t hud_vrect, cg_v
 	draw_calls++;
 
 	snprintf(text, sizeof(text), "TEST CGAME  health %d", ps->stats[STAT_HEALTH]);
-	cgi.SCR_DrawFontString(text, hud_vrect.x + hud_vrect.width / 2, hud_vrect.y + hud_vrect.height - 40 * scale,
-		scale, &red, false, 1 /* centered */);
+	/* hud_vrect is in HUD units: multiply by scale for pixels */
+	cgi.SCR_DrawFontString(text, (hud_vrect.x + hud_vrect.width / 2) * scale,
+		(hud_vrect.y + hud_vrect.height - 40) * scale, scale, &red, false, 1 /* centered */);
 
 	cgi.Draw_GetPicSize(&pic_w, &pic_h, "i_health");
-	cgi.SCR_DrawColorPic(hud_vrect.x + 8 * scale, hud_vrect.y + hud_vrect.height - 40 * scale,
+	cgi.SCR_DrawColorPic((hud_vrect.x + 8) * scale, (hud_vrect.y + hud_vrect.height - 40) * scale,
 		pic_w * scale, pic_h * scale, "i_health", &red);
 
 	if (center_prints)
 	{
-		cgi.SCR_DrawFontString(last_center, hud_vrect.x + hud_vrect.width / 2, hud_vrect.y + hud_vrect.height / 3,
-			scale, &red, false, 1);
+		cgi.SCR_DrawFontString(last_center, (hud_vrect.x + hud_vrect.width / 2) * scale,
+			(hud_vrect.y + hud_vrect.height / 3) * scale, scale, &red, false, 1);
 	}
 
 	/* report once, after some frames */
