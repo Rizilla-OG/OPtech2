@@ -42,7 +42,6 @@
 
 #define MAX_HANDLES 512
 #define MAX_FILENAME 128
-#define MAX_MODS 32
 #define MAX_PAKS 100
 
 #ifdef SYSTEMWIDE
@@ -1127,12 +1126,6 @@ FS_LoadPAKQ2(dpackheader_t *header, FILE *handle, const char *packPath)
 		return NULL;
 	}
 
-	if (numFiles > MAX_FILES_IN_PACK)
-	{
-		Com_Printf("%s: '%s' has " YQ2_COM_PRIdS " > %i files\n",
-				__func__, packPath, numFiles, MAX_FILES_IN_PACK);
-	}
-
 	info = malloc(header->dirlen);
 	if (!info)
 	{
@@ -1713,8 +1706,8 @@ FS_ListMods(void)
 
 		dirchildren = FS_ListFiles(path, 0, 0);
 
-		// iterate over the children of this Raw path (unless we've already got enough mods)
-		for (i = 0; i < dirchildren.num && list.num < MAX_MODS; i++)
+		// iterate over the children of this Raw path
+		for (i = 0; i < dirchildren.num; i++) // optech2: no 32-mod cap, the list grows
 		{
 			const char *modname;
 

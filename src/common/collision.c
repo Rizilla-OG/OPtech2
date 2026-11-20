@@ -93,8 +93,7 @@ typedef struct
 	mapsurface_t *map_surfaces;
 	int	numtexinfo;
 
-	/* TODO: big amount code expect static submodels */
-	cmodel_t map_cmodels[MAX_MAP_MODELS];
+	cmodel_t *map_cmodels; /* optech2: hunk-allocated, was a fixed MAX_MAP_MODELS array */
 	int numcmodels;
 
 	cnode_t *map_nodes; /* extra 6 for box hull */
@@ -122,6 +121,7 @@ typedef struct
 
 /* Just empty model for cinematic */
 static model_t empty_model;
+static cmodel_t empty_submodel; /* optech2: world model handed out when no map is loaded */
 /* Loaded models */
 static model_t models[MAX_MOD_KNOWN];
 static int model_num = 0;
@@ -1305,7 +1305,7 @@ CM_TransformedBoxTrace(const vec3_t start, const vec3_t end,
 }
 
 static void
-CMod_LoadSubmodels(const char *name, cmodel_t *map_cmodels, int *numcmodels, int numnodes,
+CMod_LoadSubmodels(const char *name, cmodel_t **map_cmodels, int *numcmodels, int numnodes,
 	const byte *cmod_base, const lump_t *l)
 {
 	dmodel_t *in;
@@ -1328,15 +1328,18 @@ CMod_LoadSubmodels(const char *name, cmodel_t *map_cmodels, int *numcmodels, int
 		return;
 	}
 
-	if (count > MAX_MAP_MODELS)
+	/* optech2: each submodel takes a model configstring ("*1", "*2", ...)
+	 * after the world model, so the protocol limit is MAX_MODELS - 1 */
+	if (count > MAX_MODELS - 1)
 	{
-		Com_Error(ERR_DROP, "%s: Map %s has too many models", __func__, name);
+		Com_Error(ERR_DROP, "%s: Map %s has %d models, at most %d fit in the model configstrings",
+			__func__, name, count, MAX_MODELS - 1);
 		return;
 	}
 
 	*numcmodels = count;
 
-	out = map_cmodels;
+	out = *map_cmodels = Hunk_Alloc(count * sizeof(*out));
 
 	for (i = 0; i < count; i++, in++, out++)
 	{
@@ -1646,6 +1649,14 @@ CMod_LoadAreas(const char *name, carea_t **map_areas, int *numareas,
 		return;
 	}
 
+	/* optech2: area visibility bits are sent in every frame, sized for MAX_MAP_AREAS */
+	if (count > MAX_MAP_AREAS)
+	{
+		Com_Error(ERR_DROP, "%s: Map %s has %d areas, max is %d",
+			__func__, name, count, MAX_MAP_AREAS);
+		return;
+	}
+
 	out = *map_areas = Hunk_Alloc(count * sizeof(*out));
 	*numareas = count;
 
@@ -1689,69 +1700,89 @@ CMod_LoadAreaPortals(const char *name, const dareaportal_t **map_areaportals, qb
 	memset(*portalopen, 0, count * sizeof(qboolean));
 }
 
+/*
+ * optech2: look for a .ent file that replaces the map's entity lump
+ * (maps/name@crc.ent, then maps/name.ent). Returns its length, or -1 when
+ * there is none. Read before the hunk is sized, so any size fits.
+ */
+static int
+CMod_ReadEntFile(const char *name, const byte *cmod_base, const lump_t *l, char **entFileBuffer)
+{
+	char entname[256];
+	char namewe[MAX_QPATH];
+	size_t nameLen;
+	int crc = 0;
+	int bufLen;
+
+	*entFileBuffer = NULL;
+
+	if (!sv_entfile->value)
+	{
+		return -1;
+	}
+
+	nameLen = strlen(name);
+	if (nameLen < 4 || strcmp(name + nameLen - 4, ".bsp") || nameLen > (MAX_QPATH - 1))
+	{
+		Com_Printf("%s: unsupported map format '%s'\n", __func__, name);
+		return -1;
+	}
+
+	if (l->filelen > 0)
+	{
+		crc = CRC_Block(cmod_base + l->fileofs, l->filelen - 1);
+	}
+
+	memset(namewe, 0, sizeof(namewe));
+	memcpy(namewe, name, nameLen - 4);
+
+	snprintf(entname, sizeof(entname) - 1, "%s@%04x.ent", namewe, crc);
+	bufLen = FS_LoadFile(entname, (void **)entFileBuffer);
+
+	if (*entFileBuffer == NULL)
+	{
+		Com_Printf("No fixes found as '%s'\n", entname);
+
+		snprintf(entname, sizeof(entname) - 1, "%s.ent", namewe);
+		bufLen = FS_LoadFile(entname, (void **)entFileBuffer);
+		if (*entFileBuffer != NULL && bufLen > 1)
+		{
+			Com_Printf("Have used '%s' file without content hash.\n", entname);
+		}
+	}
+
+	if (*entFileBuffer == NULL)
+	{
+		return -1;
+	}
+
+	if (bufLen <= 1)
+	{
+		/* If the .ent file is too small, don't load. */
+		Com_Printf("%s: .ent file %s too small.\n", __func__, entname);
+		FS_FreeFile(*entFileBuffer);
+		*entFileBuffer = NULL;
+		return -1;
+	}
+
+	Com_Printf(".ent file %s loaded.\n", entname);
+	return bufLen;
+}
+
 static void
 CMod_LoadEntityString(const char *name, const char **map_entitystring, int *numentitychars,
-	const byte *cmod_base, const lump_t *l)
+	const byte *cmod_base, const lump_t *l, char *entFileBuffer, int entFileLength)
 {
-	if (sv_entfile->value)
+	if (entFileBuffer)
 	{
-		char *buffer = NULL, entname[256];
-		size_t nameLen;
-		int bufLen = -1;
+		char *entity = Hunk_Alloc(entFileLength);
 
-		nameLen = strlen(name);
-		if (strcmp(name + nameLen - 4, ".bsp") || nameLen > (MAX_QPATH - 1))
-		{
-			Com_Printf("%s: unsupported map format '%s'\n", __func__, name);
-		}
-		else
-		{
-			char namewe[MAX_QPATH];
+		memcpy(entity, entFileBuffer, entFileLength);
+		FS_FreeFile(entFileBuffer);
 
-			int crc = 0;
-
-			if (l->filelen > 0) {
-				crc = CRC_Block(cmod_base + l->fileofs, l->filelen - 1);
-			}
-
-			memset(namewe, 0, sizeof(namewe));
-			memcpy(namewe, name, nameLen - 4);
-
-			snprintf(entname, sizeof(entname) -1, "%s@%04x.ent", namewe, crc);
-
-			bufLen = FS_LoadFile(entname, (void **)&buffer);
-			if (buffer == NULL)
-			{
-				Com_Printf("No fixes found as '%s'\n", entname);
-
-				snprintf(entname, sizeof(entname) -1, "%s.ent", namewe);
-				bufLen = FS_LoadFile(entname, (void **)&buffer);
-				if (buffer != NULL && bufLen > 1)
-				{
-					Com_Printf("Have used '%s' file without content hash.\n", entname);
-				}
-			}
-		}
-
-		if (buffer != NULL && bufLen > 1)
-		{
-			char *entity;
-			*numentitychars = bufLen;
-
-			entity = Hunk_Alloc(bufLen);
-			memcpy(entity, buffer, bufLen);
-			FS_FreeFile(buffer);
-
-			Com_Printf (".ent file %s loaded.\n", entname);
-			*map_entitystring = entity;
-			return;
-		}
-		else if (bufLen != -1)
-		{
-			/* If the .ent file is too small or large, don't load. */
-			Com_Printf("%s: .ent file %s too small.\n", __func__, entname);
-			FS_FreeFile(buffer);
-		}
+		*numentitychars = entFileLength;
+		*map_entitystring = entity;
+		return;
 	}
 
 	*numentitychars = l->filelen;
@@ -1832,6 +1863,8 @@ static void
 CM_LoadCachedMap(const char *name, model_t *mod)
 {
 	size_t length, hunkSize;
+	char *entFileBuffer = NULL; // optech2: .ent override, read before sizing the hunk
+	int entFileLength;
 	byte *cmod_base, *filebuf;
 	maptype_t maptype;
 	dheader_t *header;
@@ -1881,8 +1914,12 @@ CM_LoadCachedMap(const char *name, model_t *mod)
 		sizeof(dareaportal_t), sizeof(qboolean), 0);
 	hunkSize += Mod_CalcLumpHunkSize(&header->lumps[LUMP_VISIBILITY],
 		1, 1, 0);
+	/* optech2: room for the exact .ent override, was a fixed MAX_MAP_ENTSTRING */
+	entFileLength = CMod_ReadEntFile(name, cmod_base, &header->lumps[LUMP_ENTITIES], &entFileBuffer);
 	hunkSize += Mod_CalcLumpHunkSize(&header->lumps[LUMP_ENTITIES],
-		1, 1, MAX_MAP_ENTSTRING);
+		1, 1, (entFileLength > 0) ? entFileLength : 0);
+	hunkSize += Mod_CalcLumpHunkSize(&header->lumps[LUMP_MODELS],
+		sizeof(dmodel_t), sizeof(cmodel_t), 0);
 
 	mod->extradata = Hunk_Begin(hunkSize);
 
@@ -1905,7 +1942,7 @@ CM_LoadCachedMap(const char *name, model_t *mod)
 		mod->cache, &header->lumps[LUMP_BRUSHSIDES]);
 	CMod_LoadNodes(mod->name, &mod->map_nodes, &mod->numnodes,
 		mod->map_planes, mod->cache, &header->lumps[LUMP_NODES]);
-	CMod_LoadSubmodels(mod->name, mod->map_cmodels, &mod->numcmodels, mod->numnodes,
+	CMod_LoadSubmodels(mod->name, &mod->map_cmodels, &mod->numcmodels, mod->numnodes,
 		mod->cache, &header->lumps[LUMP_MODELS]);
 	CMod_LoadAreas(mod->name, &mod->map_areas, &mod->numareas, mod->cache,
 		&header->lumps[LUMP_AREAS]);
@@ -1929,7 +1966,7 @@ CM_LoadCachedMap(const char *name, model_t *mod)
 
 	/* From kmquake2: adding an extra parameter for .ent support. */
 	CMod_LoadEntityString(mod->name, &mod->map_entitystring, &mod->numentitychars,
-		mod->cache, &header->lumps[LUMP_ENTITIES]);
+		mod->cache, &header->lumps[LUMP_ENTITIES], entFileBuffer, entFileLength);
 	mod->extradatasize = Hunk_End();
 	Com_DPrintf("Allocated %d from expected " YQ2_COM_PRIdS " hunk size\n",
 		mod->extradatasize, hunkSize);
@@ -2005,6 +2042,8 @@ CM_LoadMap(const char *name, qboolean clientload, unsigned *checksum)
 		memset(&empty_model, 0, sizeof(empty_model));
 		*checksum = 0;
 		cmod = &empty_model;
+		memset(&empty_submodel, 0, sizeof(empty_submodel));
+		cmod->map_cmodels = &empty_submodel;
 		return &cmod->map_cmodels[0]; /* cinematic servers won't have anything at all */
 	}
 

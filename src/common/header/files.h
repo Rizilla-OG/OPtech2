@@ -117,7 +117,6 @@ typedef struct
 	int dirlen;
 } dpackheader_t;
 
-#define MAX_FILES_IN_PACK 4096
 
 /* PCX files are used for as many images as possible */
 
@@ -942,31 +941,10 @@ typedef struct
 #define BSPXHEADER (('X' << 24) + ('P' << 16) + ('S' << 8) + 'B') /* little-endian "BSPX" */
 #define BSPVERSION 38
 
-/* upper design bounds: leaffaces, leafbrushes, planes, and
- * verts are still bounded by 16 bit short limits,
- * mostly unused for now with use Hunk_Alloc,
- * except MAX_MAP_AREAS */
-#define MAX_MAP_MODELS 1024
-#define MAX_MAP_BRUSHES 8192
-#define MAX_MAP_ENTITIES 2048
-#define MAX_MAP_ENTSTRING 0x40000
-#define MAX_MAP_TEXINFO 8192
-
+/* optech2: the old MAX_MAP_* design bounds are gone, the loaders size
+ * everything from the lumps. Areas stay capped: the area visibility bits
+ * travel in each network frame (client.h, server.h). */
 #define MAX_MAP_AREAS 256
-#define MAX_MAP_AREAPORTALS 1024
-#define MAX_MAP_PLANES 65536
-#define MAX_MAP_NODES 65536
-#define MAX_MAP_BRUSHSIDES 65536
-#define MAX_MAP_LEAFS 65536
-#define MAX_MAP_VERTS 65536
-#define MAX_MAP_FACES 65536
-#define MAX_MAP_LEAFFACES 65536
-#define MAX_MAP_LEAFBRUSHES 65536
-#define MAX_MAP_PORTALS 65536
-#define MAX_MAP_EDGES 128000
-#define MAX_MAP_SURFEDGES 256000
-#define MAX_MAP_LIGHTING 0x200000
-#define MAX_MAP_VISIBILITY 0x100000
 
 /* key / value pair sizes */
 
