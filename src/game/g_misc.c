@@ -4447,12 +4447,48 @@ SP_misc_player_mannequin(edict_t * self)
 	gi.linkentity(self);
 }
 
+/* optech2: misc_model spawnflag 1: loop "count" frames from "frame" */
+#define MISC_MODEL_ANIMATE 1
+
+void
+misc_model_animate(edict_t *self)
+{
+	int first_frame = self->style; /* frame the loop starts at */
+
+	self->s.frame++;
+
+	if (self->s.frame >= first_frame + self->count)
+	{
+		self->s.frame = first_frame;
+	}
+
+	self->nextthink = level.time + self->wait;
+}
+
 /*
- * QUAKED misc_model (1 0 0) (-8 -8 -8) (8 8 8)
+ * QUAKED misc_model (1 0 0) (-8 -8 -8) (8 8 8) ANIMATE
+ *
+ * model   model to show (any format, e.g. models/x/y.iqm)
+ * frame   frame shown (with ANIMATE: first frame of the loop)
+ * ANIMATE (optech2) loop "count" frames from "frame",
+ *         "wait" seconds per frame (default 0.1)
  */
 void SP_misc_model(edict_t *ent)
 {
 	gi.setmodel(ent, ent->model);
+
+	if ((ent->spawnflags & MISC_MODEL_ANIMATE) && (ent->count > 1))
+	{
+		if (ent->wait <= 0)
+		{
+			ent->wait = 0.1f;
+		}
+
+		ent->style = ent->s.frame;
+		ent->think = misc_model_animate;
+		ent->nextthink = level.time + ent->wait;
+	}
+
 	gi.linkentity(ent);
 }
 

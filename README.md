@@ -53,6 +53,17 @@ skeleton and animations. Export it from Blender with the [IQM exporter](https://
 (add-ons up to Blender 5.0). Each animation shows up as a frame group named after it. Materials name
 the skin image. Stock MD2 and the other formats keep loading.
 
+## Test maps to play
+
+```
+python3 tools/install_test_content.py [--extra your_model.iqm]
+build/release/optech2 -datadir "<path to Quake 2>" +map optech2_iqm
+```
+
+`optech2_iqm` shows IQM models still and animated, `optech2_limits` goes past the stock limits,
+`optech2_stress` has ~3800 entities. The script only adds `maps/optech2_*` and `models/optech2/` to your
+game folder.
+
 ## Checks
 
 All checks use a temporary HOME, so your own config and saves are never touched.

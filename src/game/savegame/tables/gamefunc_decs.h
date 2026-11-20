@@ -272,6 +272,7 @@ extern void misc_drip_think (edict_t *);
 extern void misc_easterchick2_think (edict_t *);
 extern void misc_easterchick_think (edict_t *);
 extern void misc_eastertank_think (edict_t *);
+extern void misc_model_animate(edict_t *); /* optech2 */
 extern void misc_hologram_infinity_destroy (edict_t *);
 extern void misc_hologram_infinity_gib (edict_t *);
 extern void misc_hologram_infinity_think (edict_t *);
