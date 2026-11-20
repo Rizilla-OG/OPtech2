@@ -692,11 +692,16 @@ Qcommon_Frame(int usec)
 
 
 	// Run the serverframe.
-	if (packetframe) {
+	/* optech2: step the local server on its own clock, not only on client
+	   packet frames. With vsync on a 144 Hz monitor packet frames came at
+	   ~48 per second, so a 60 Hz server lost frames (game time ran ~6% slow,
+	   monsters stuttered). SV_Frame returns early when no frame is due.
+	   It counts whole milliseconds, so the remainder is carried. */
+	if (servertimedelta >= 1000)
+	{
 		SV_Frame(servertimedelta);
-		servertimedelta = 0;
+		servertimedelta %= 1000;
 	}
-
 
 	if (host_speeds->value)
 	{
@@ -820,7 +825,7 @@ Qcommon_Frame(int usec)
 	// Run the serverframe.
 	if (packetframe) {
 		SV_Frame(servertimedelta);
-		servertimedelta = 0;
+		servertimedelta %= 1000; /* optech2: SV_Frame counts whole milliseconds, keep the rest */
 
 		// Reset deltas if necessary.
 		packetdelta = 0;
