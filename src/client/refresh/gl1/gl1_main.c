@@ -1488,7 +1488,7 @@ RI_Init(void)
 	}
 
 	Com_Printf("Refresh: " REF_VERSION "\n");
-	Com_Printf("Client: " YQ2VERSION "\n\n");
+	Com_Printf("Client: " OPTECH2_VERSION "\n\n");
 
 #ifdef DEBUG
 	Com_Printf("ref_gl1::%s - DEBUG mode enabled\n", __func__);

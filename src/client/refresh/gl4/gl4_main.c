@@ -402,7 +402,7 @@ GL4_Init(void)
 	Swap_Init(); // FIXME: for fucks sake, this doesn't have to be done at runtime!
 
 	Com_Printf("Refresh: " REF_VERSION "\n");
-	Com_Printf("Client: " YQ2VERSION "\n\n");
+	Com_Printf("Client: " OPTECH2_VERSION "\n\n");
 
 	if (sizeof(float) != sizeof(GLfloat))
 	{
