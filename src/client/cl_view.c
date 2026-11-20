@@ -723,6 +723,7 @@ V_RenderView(float stereo_separation)
 		}
 
 		cl.timedemo_frames++;
+		CL_TimedemoRecordFrame(); // optech2: frame-time stats for benchmarks
 	}
 
 	/* an invalid frame will just use the exact previous refdef
@@ -895,3 +896,62 @@ V_Init(void)
 	cl_stats = Cvar_Get("cl_stats", "0", 0);
 }
 
+
+/* optech2: frame-time stats for timedemo benchmarks. Durations are kept in
+   microseconds; frames past the buffer size are ignored. */
+#define TIMEDEMO_MAX_FRAMES 131072
+static int timedemo_frame_us[TIMEDEMO_MAX_FRAMES];
+static int timedemo_recorded_frames;
+
+void
+CL_TimedemoRecordFrame(void)
+{
+	long long now_us = Sys_Microseconds();
+
+	if (cl.timedemo_frames <= 1)
+	{
+		/* first frame of a new timedemo: start fresh */
+		timedemo_recorded_frames = 0;
+	}
+	else if (timedemo_recorded_frames < TIMEDEMO_MAX_FRAMES)
+	{
+		timedemo_frame_us[timedemo_recorded_frames++] = (int)(now_us - cl.timedemo_last_frame_us);
+	}
+
+	cl.timedemo_last_frame_us = now_us;
+}
+
+static int
+CL_TimedemoCompareInts(const void *first, const void *second)
+{
+	return *(const int *)first - *(const int *)second;
+}
+
+void
+CL_TimedemoPrintFrameStats(void)
+{
+	int frame_count = timedemo_recorded_frames;
+	long long total_us = 0;
+	int frame_index;
+
+	if (frame_count < 2)
+	{
+		return;
+	}
+
+	for (frame_index = 0; frame_index < frame_count; frame_index++)
+	{
+		total_us += timedemo_frame_us[frame_index];
+	}
+	qsort(timedemo_frame_us, frame_count, sizeof(int), CL_TimedemoCompareInts);
+
+	/* one line, easy for scripts to parse */
+	Com_Printf("frametime_ms avg %.3f p50 %.3f p95 %.3f p99 %.3f max %.3f frames %d\n",
+		total_us / 1000.0 / frame_count,
+		timedemo_frame_us[frame_count / 2] / 1000.0,
+		timedemo_frame_us[(frame_count * 95) / 100] / 1000.0,
+		timedemo_frame_us[(frame_count * 99) / 100] / 1000.0,
+		timedemo_frame_us[frame_count - 1] / 1000.0,
+		frame_count);
+	timedemo_recorded_frames = 0;
+}

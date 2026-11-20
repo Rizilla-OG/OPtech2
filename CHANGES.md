@@ -10,3 +10,5 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 - Screenshots from the GL3 renderer are captured at the end of the next frame, before the buffer swap. Before, they could come out black or stale.
 - `teleport x y z pitch yaw roll`: the cheat command can now also set the view direction.
 - Screenshot regression check: `python3 tests/screenshots/screenshot_check.py` (add `--update` to save new references).
+- Timedemo now also prints frame-time stats (average, median, 95th and 99th percentile, worst) in ms.
+- Benchmark: `python3 tests/benchmark/benchmark.py` plays the stock demos and compares with `tests/benchmark/baseline.json` (`--save-baseline` to replace it).

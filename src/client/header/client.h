@@ -137,6 +137,7 @@ typedef struct
 
 	int			timedemo_frames;
 	int			timedemo_start;
+	long long	timedemo_last_frame_us;	/* optech2: time of the previous timedemo frame */
 
 	qboolean	refresh_prepped; /* false if on new level or new ref dll */
 	qboolean	sound_prepped; /* ambient sounds can start */
@@ -597,5 +598,9 @@ const char *CL_GetBindByAction(const char *binding);
 
 void CL_PredictMovement(void);
 trace_t CL_PMTrace(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end);
+
+/* optech2: timedemo frame-time stats */
+void CL_TimedemoRecordFrame(void);
+void CL_TimedemoPrintFrameStats(void);
 
 #endif
