@@ -533,9 +533,15 @@ SV_CalcGunOffset(edict_t *ent)
 				delta += 360;
 			}
 
-			/* optech2: oldviewangles is one server frame old; scale the
-			   turn to what it would be over 0.1 s */
+			/* optech2: oldviewangles is one server frame old. Scale the
+			   turn to what it would be over 0.1 s and smooth it over 0.1 s:
+			   mouse input does not arrive evenly per server frame, and the
+			   raw scaled value made the gun jitter while turning. At 10 Hz
+			   this is exactly the stock per-frame delta. */
 			delta *= FRAMETIME / level.ticktime;
+			ent->client->gun_sway[i] += (delta - ent->client->gun_sway[i]) *
+										(level.ticktime / FRAMETIME);
+			delta = ent->client->gun_sway[i];
 
 			if (delta > 45)
 			{

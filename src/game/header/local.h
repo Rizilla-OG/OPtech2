@@ -1551,6 +1551,7 @@ struct gclient_s
 	vec3_t v_angle;                 /* aiming direction */
 	float bobtime;                  /* so off-ground doesn't change it */
 	vec3_t oldviewangles;
+	vec3_t gun_sway; /* optech2: view turn over 0.1 s, smoothed across server frames, for gun sway */
 	vec3_t oldvelocity;
 
 	float next_drown_time;
