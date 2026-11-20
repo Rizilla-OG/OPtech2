@@ -152,6 +152,7 @@ typedef struct
 	int loopstart;
 	int samples;
 	int dataofs; /* chunk starts this many bytes from file start */
+	int is_float; /* optech2: 32 bit IEEE float samples (WAV format 3) */
 } wavinfo_t;
 
 /*

@@ -447,6 +447,50 @@ S_GetStatistics(const byte *data, int sound_length, int width, int channels,
 }
 
 /*
+ * optech2: converts 24 bit, 32 bit and 32 bit float samples to 16 bit.
+ * Frees the loaded file and returns a buffer holding only the samples
+ * (info->dataofs becomes 0, info->width 2).
+ */
+static byte *
+S_ConvertTo16Bit(wavinfo_t *info, byte *data)
+{
+	const byte *in = data + info->dataofs;
+	short *out;
+	int i;
+
+	out = Z_Malloc(info->samples * sizeof(short));
+
+	for (i = 0; i < info->samples; i++)
+	{
+		const byte *sample = in + (size_t)i * info->width;
+
+		if (info->is_float)
+		{
+			float value;
+
+			memcpy(&value, sample, sizeof(value));
+			value = LittleFloat(value);
+			value = Q_clamp(value, -1.0f, 1.0f);
+			out[i] = (short)(value * 32767.0f);
+		}
+		else
+		{
+			/* signed little-endian: keep the top 16 bits */
+			out[i] = (short)(sample[info->width - 2] |
+							 (sample[info->width - 1] << 8));
+		}
+	}
+
+	FS_FreeFile(data);
+
+	info->width = 2;
+	info->dataofs = 0;
+	info->is_float = false;
+
+	return (byte *)out;
+}
+
+/*
  * Loads one sample into memory
  */
 sfxcache_t *
@@ -526,6 +570,13 @@ S_LoadSound(sfx_t *s)
 		Com_Printf("%s has an invalid number of channels\n", s->name);
 		FS_FreeFile(data);
 		return NULL;
+	}
+
+	/* optech2: 24/32 bit and float samples become 16 bit here; the
+	   backends and the volume code handle 8 and 16 bit only */
+	if (info.width > 2)
+	{
+		data = S_ConvertTo16Bit(&info, data);
 	}
 
 	if (S_IsSilencedMuzzleFlash(&info, data, namebuffer))
@@ -1575,15 +1626,17 @@ S_SoundList(void)
 			size = sc->length * sc->width * (sc->stereo + 1);
 			total += size;
 			Com_Printf("%s(%2db) %8i(%d ch) %s %2.1f dB %.1fs:%.1f..%.1f..%.1f..%.1f\n",
-					sc->loopstart != -1 ? "L" : " ",
-					sc->width * 8, size,
-					(sc->stereo + 1), sfx->name,
-					10 * log10((float)sc->volume / (2 << 15)),
-					(float)sc->length / 1000 / (sc->stereo + 1),
-					(float)sc->begin / 1000,
-					(float)sc->attack / 1000,
-					(float)sc->fade / 1000,
-					(float)sc->end / 1000);
+				sc->loopstart != -1 ? "L" : " ",
+				sc->width * 8, size,
+				(sc->stereo + 1), sfx->name,
+				10 * log10((float)sc->volume / (2 << 15)),
+				/* optech2: SDL keeps the length in output
+				   samples, OpenAL in milliseconds */
+				(sound_started == SS_SDL && sound.speed) ? (float)sc->length / sound.speed / (sc->stereo + 1) : (float)sc->length / 1000 / (sc->stereo + 1),
+				(float)sc->begin / 1000,
+				(float)sc->attack / 1000,
+				(float)sc->fade / 1000,
+				(float)sc->end / 1000);
 		}
 		else
 		{

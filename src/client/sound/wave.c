@@ -27,6 +27,11 @@
 #include "../header/client.h"
 #include "header/local.h"
 
+/* optech2: WAV format codes */
+#define WAV_FORMAT_PCM 1
+#define WAV_FORMAT_FLOAT 3
+#define WAV_FORMAT_EXTENSIBLE 0xFFFE
+
 static byte *data_p;
 static byte *iff_end;
 static byte *last_chunk;
@@ -142,11 +147,15 @@ GetWavinfo(char *name, byte *wav, int wavlength)
 	}
 
 	data_p += 8;
-	format = GetLittleShort();
+	format = GetLittleShort() & 0xFFFF;
 
-	if (format != 1)
+	/* optech2: also IEEE float (3) and WAVE_FORMAT_EXTENSIBLE (0xFFFE,
+	   written by most current tools); its real format follows below */
+	if (format != WAV_FORMAT_PCM && format != WAV_FORMAT_FLOAT &&
+		format != WAV_FORMAT_EXTENSIBLE)
 	{
-		Com_Printf("Microsoft PCM format only\n");
+		Com_Printf("%s: WAV format %d not supported (PCM or float only)\n",
+			name, format);
 		return info;
 	}
 
@@ -155,10 +164,29 @@ GetWavinfo(char *name, byte *wav, int wavlength)
 	data_p += 4 + 2;
 	info.width = GetLittleShort() / 8;
 
-	/* wBitPerSample assumes it's not an uncommon value such as < 8 bits */
-	if (info.width <= 0)
+	if (format == WAV_FORMAT_EXTENSIBLE)
 	{
-		Com_Printf("Invalid bits per sample");
+		/* cbSize, valid bits, channel mask, then the sub format GUID,
+		   whose first two bytes are the format code */
+		data_p += 2 + 2 + 4;
+		format = GetLittleShort() & 0xFFFF;
+
+		if (format != WAV_FORMAT_PCM && format != WAV_FORMAT_FLOAT)
+		{
+			Com_Printf("%s: WAV sub format %d not supported (PCM or float only)\n",
+				name, format);
+			info.channels = 0;
+			return info;
+		}
+	}
+
+	info.is_float = (format == WAV_FORMAT_FLOAT);
+
+	/* wBitPerSample assumes it's not an uncommon value such as < 8 bits */
+	if (info.width <= 0 || info.width > 4 || (info.is_float && info.width != 4))
+	{
+		Com_Printf("%s: %d bits per sample not supported\n", name, info.width * 8);
+		info.channels = 0;
 		return info;
 	}
 
