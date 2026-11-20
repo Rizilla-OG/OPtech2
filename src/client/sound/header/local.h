@@ -27,7 +27,7 @@
 #ifndef CL_SOUND_LOCAL_H
 #define CL_SOUND_LOCAL_H
 
-#define MAX_CHANNELS 32
+#define MAX_CHANNELS 128 // optech2: was 32; OpenAL takes what the driver gives
 #define MAX_RAW_SAMPLES 8192
 
 /*

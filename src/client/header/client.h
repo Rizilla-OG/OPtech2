@@ -35,7 +35,7 @@
    it can be un-deltad from the original */
 #define	MAX_PARSE_ENTITIES	1024
 
-#define MAX_SUSTAINS		32
+#define MAX_SUSTAINS		128 // optech2: was 32
 #define	PARTICLE_GRAVITY 40
 #define INSTANT_PARTICLE -10000.0
 

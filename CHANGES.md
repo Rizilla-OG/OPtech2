@@ -17,3 +17,4 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 - Pack files: only Quake 2 PAK and PK3/ZIP (pk2, pkz) are loaded. Quake 1/Half-Life WAD, Anachronox DAT, SiN and Daikatana pack formats removed.
 - Network protocols 25 (Quake 2 test demos) and 51 (Heretic 2 demo) removed. Stock Quake 2 (26, 31, 32, 34), re-release (2022, 2023) and OPtech2 (2024) remain.
 - Renamed to OPtech2 (v0.1.0-dev): executables `optech2` and `optech2ded`, window titles, console banner and crash report. User data now lives in `~/.local/share/OPtech2` (was `YamagiQ2`).
+- Raised client limits: render entities 512 to 4096, particles 4096 to 16384, explosions, beams and lasers 64 to 256, sustained effects 32 to 128, sound channels 32 to 128, queued sounds 128 to 512.

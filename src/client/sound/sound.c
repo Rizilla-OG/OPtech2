@@ -38,7 +38,7 @@
    because we don't want to free anything until we are
    sure we won't need it. */
 #define MAX_SFX (MAX_SOUNDS * 2)
-#define MAX_PLAYSOUNDS 128
+#define MAX_PLAYSOUNDS 512 // optech2: was 128
 
 /* Maximum length (seconds) of audio data to test for silence. */
 #define S_MAX_LEN_TO_TEST_FOR_SILENCE_S (2)
