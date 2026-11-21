@@ -4,7 +4,7 @@
 The libraries under VENDORED_PATHS are bundled unmodified (Recast/Detour,
 Lua, unzip): their warnings are upstream's, not ours. CodeQL can't skip
 them for C/C++ (paths-ignore only works for interpreted languages), so the
-workflows analyse everything and this filters the SARIF before upload.
+CodeQL workflow analyses everything and this filters the SARIF before upload.
 
 Usage:
   filter_sarif.py FILE_OR_FOLDER...   rewrite each .sarif in place
