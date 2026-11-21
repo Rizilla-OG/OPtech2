@@ -1346,6 +1346,8 @@ WriteGame(const char *filename, qboolean autosave)
 	FILE *f;
 	int i;
 
+	Script_SaveState(); /* optech2: scripts' game.state into the save */
+
 	if (!autosave)
 	{
 		SaveClientData();
@@ -1617,6 +1619,8 @@ ReadGame(const char *filename)
 
 	sg_item_remap_active = false;
 	fclose(f);
+
+	Script_LoadingSave(true); /* optech2: the map spawns next, then its saved level */
 }
 
 /* ========================================================== */
@@ -1630,6 +1634,8 @@ WriteLevel(const char *filename)
 {
 	int i;
 	FILE *f;
+
+	Script_SaveState(); /* optech2: scripts' game.state into the save */
 
 	f = Q_fopen(filename, "wb");
 
@@ -1854,7 +1860,8 @@ ReadLevel(const char *filename)
 	/* reload shadow light data from configstrings */
 	G_LoadShadowLights();
 
-	/* optech2: scripts start again; their own state isn't in the save
-	   (level_start isn't fired: the level is resumed, not started) */
+	/* optech2: scripts start again with their game.state tables from the
+	   save (level_start isn't fired: the level is resumed, not started) */
 	Script_Init();
+	Script_LoadingSave(false);
 }

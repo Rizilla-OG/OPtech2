@@ -527,4 +527,5 @@ static const savefield_t savefields_game[] = {
 	{"serverflags", offsetof(game_locals_t, serverflags), sizeof(((game_locals_t *)0)->serverflags), SF_RAW},
 	{"cross_unit_flags", offsetof(game_locals_t, cross_unit_flags), sizeof(((game_locals_t *)0)->cross_unit_flags), SF_RAW},
 	{"autosaved", offsetof(game_locals_t, autosaved), sizeof(((game_locals_t *)0)->autosaved), SF_RAW},
+	{"script_state", offsetof(game_locals_t, script_state), sizeof(((game_locals_t *)0)->script_state), SF_STRING},
 };

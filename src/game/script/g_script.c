@@ -48,6 +48,9 @@
  *   game.position(player)       x, y, z of the player's feet
  *   game.yaw(player)            which way the player looks, in degrees
  *                               (0 = +x, 90 = +y)
+ *   game.state(name)            a table kept across levels and in save
+ *                               games (numbers, strings, booleans and
+ *                               tables of them); one per name
  *   game.spawn(classname, x, y, z)
  *                               spawn an item or monster there; true if it
  *                               spawned
@@ -415,6 +418,25 @@ Script_Use(lua_State *L)
 	return 1;
 }
 
+/* game.state(name): registry.state[name], created empty */
+static int
+Script_State(lua_State *L)
+{
+	const char *name = luaL_checkstring(L, 1);
+
+	lua_getfield(L, LUA_REGISTRYINDEX, "state");
+
+	if (lua_getfield(L, -1, name) != LUA_TTABLE)
+	{
+		lua_pop(L, 1);
+		lua_newtable(L);
+		lua_pushvalue(L, -1);
+		lua_setfield(L, -3, name);
+	}
+
+	return 1;
+}
+
 static int
 Script_Position(lua_State *L)
 {
@@ -480,6 +502,7 @@ Script_OpenGameAPI(lua_State *L)
 		{"use", Script_Use},
 		{"spawn", Script_Spawn},
 		{"position", Script_Position},
+		{"state", Script_State},
 		{"yaw", Script_Yaw},
 		{NULL, NULL}};
 	int i;
@@ -552,12 +575,143 @@ Script_RunFile(const char *folder)
 	gi.FreeFile(buffer);
 }
 
+/*
+ * The game.state tables as text: a Lua table constructor, written by this
+ * function (run in the sandbox, so it can't be changed by scripts) and
+ * read back with no environment, so a save can hold only plain values.
+ * Functions and other values are left out; tables deeper than 32 or seen
+ * twice are written as {}.
+ */
+static const char *script_serializer =
+	"local seen, depth = {}, 0\n"
+	"local function value(v)\n"
+	"  local t = type(v)\n"
+	"  if t == 'string' then return string.format('%q', v) end\n"
+	"  if t == 'boolean' then return tostring(v) end\n"
+	"  if t == 'number' then\n"
+	"    if math.type(v) == 'integer' then return string.format('%d', v) end\n"
+	"    if v ~= v or v == math.huge or v == -math.huge then return nil end\n"
+	"    return string.format('%.17g', v)\n"
+	"  end\n"
+	"  if t ~= 'table' or seen[v] or depth >= 32 then return t == 'table' and '{}' or nil end\n"
+	"  seen[v] = true; depth = depth + 1\n"
+	"  local parts = {}\n"
+	"  for k, x in pairs(v) do\n"
+	"    local key, text = value(k), value(x)\n"
+	"    if key and text and type(k) ~= 'table' then parts[#parts + 1] = '[' .. key .. ']=' .. text end\n"
+	"  end\n"
+	"  depth = depth - 1; seen[v] = nil\n"
+	"  return '{' .. table.concat(parts, ',') .. '}'\n"
+	"end\n"
+	"return value(...)\n";
+
+#define SCRIPT_MAX_STATE (1024 * 1024)
+
+/* the live game.state tables into game.script_state */
+void
+Script_SaveState(void)
+{
+	const char *text;
+	size_t length;
+
+	if (!script_state)
+	{
+		return;
+	}
+
+	if (luaL_loadbufferx(script_state, script_serializer, strlen(script_serializer), "=state", "t") != LUA_OK)
+	{
+		gi.dprintf("scripts: state writer: %s\n", lua_tostring(script_state, -1));
+		lua_pop(script_state, 1);
+		return;
+	}
+
+	lua_getfield(script_state, LUA_REGISTRYINDEX, "state");
+
+	if (!Script_Call(1, "saving game.state"))
+	{
+		lua_pop(script_state, 1);
+		return;
+	}
+
+	text = lua_tolstring(script_state, -1, &length);
+
+	if (!text || length > SCRIPT_MAX_STATE)
+	{
+		gi.dprintf("scripts: game.state is over %d KB; not saved\n", SCRIPT_MAX_STATE / 1024);
+	}
+	else
+	{
+		if (game.script_state)
+		{
+			gi.TagFree(game.script_state);
+		}
+
+		game.script_state = G_CopyString(text, TAG_GAME);
+	}
+
+	lua_pop(script_state, 1);
+}
+
+/* game.script_state back into the registry's state table */
+static void
+Script_RestoreState(void)
+{
+	char *chunk;
+	size_t length;
+
+	lua_newtable(script_state);
+	lua_setfield(script_state, LUA_REGISTRYINDEX, "state");
+
+	if (!game.script_state || !game.script_state[0])
+	{
+		return;
+	}
+
+	length = strlen(game.script_state) + 8;
+	chunk = malloc(length);
+
+	if (!chunk)
+	{
+		return;
+	}
+
+	Com_sprintf(chunk, length, "return %s", game.script_state);
+
+	/* no environment: a table constructor of plain values is all it can be */
+	if (luaL_loadbufferx(script_state, chunk, strlen(chunk), "=saved state", "t") == LUA_OK)
+	{
+		lua_newtable(script_state);
+		lua_setupvalue(script_state, -2, 1); /* _ENV */
+
+		if (Script_Call(0, "loading game.state") && lua_istable(script_state, -1))
+		{
+			lua_setfield(script_state, LUA_REGISTRYINDEX, "state");
+		}
+		else
+		{
+			lua_pop(script_state, 1);
+		}
+	}
+	else
+	{
+		gi.dprintf("scripts: saved game.state unreadable: %s\n", lua_tostring(script_state, -1));
+		lua_pop(script_state, 1);
+	}
+
+	free(chunk);
+}
+
 void
 Script_Init(void)
 {
 	char folders[SCRIPT_MAX_FOLDERS][MAX_QPATH];
 	int count, i;
 
+	/* the running scripts' game.state tables, kept across the restart (when
+	   loading a save, the game library restarted first: nothing's running,
+	   and the save's tables are already in game.script_state) */
+	Script_SaveState();
 	Script_Shutdown();
 
 	script_memory_used = 0;
@@ -571,6 +725,7 @@ Script_Init(void)
 
 	Script_OpenLibraries(script_state);
 	Script_OpenGameAPI(script_state);
+	Script_RestoreState();
 
 	count = G_ModFolders(folders, SCRIPT_MAX_FOLDERS);
 
@@ -734,10 +889,23 @@ Script_MonsterDeath(edict_t *monster, edict_t *attacker)
 		(double)monster->s.origin[2]);
 }
 
+/* set from reading a save's game until its level is read: the map's own
+   spawn in between isn't a level start */
+static qboolean script_loading_save;
+
+void
+Script_LoadingSave(qboolean loading)
+{
+	script_loading_save = loading;
+}
+
 void
 Script_LevelStart(void)
 {
-	Script_Fire("level_start", 0, level.mapname);
+	if (!script_loading_save)
+	{
+		Script_Fire("level_start", 0, level.mapname);
+	}
 }
 
 void

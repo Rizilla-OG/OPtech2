@@ -1,6 +1,7 @@
 -- survival.lua: a tougher start, a capped Quad, and a pickup tally.
 -- An example OpenTech2 gameplay script (see mods/SCRIPTING.md).
--- Runs on every level; its variables start fresh each level and after a load.
+-- Runs on every level; its variables start fresh each level and after a load
+-- (game.state keeps things for the whole game: see mods/SCRIPTING.md).
 
 print("survival loaded on " .. game.map())
 
