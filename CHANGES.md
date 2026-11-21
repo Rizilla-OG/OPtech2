@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 
 ## Unreleased
 
+- `SECURITY.md`: what counts as a security problem in the engine and the game library, and how to report one privately.
 - Fixed: the HUD showed during Quake II 64's camera scenes and level ends; like the re-release, it is hidden in intermissions on Quake II 64 levels and in deathmatch.
 - Website: the M1 download is replaced by the M2 preview (an interim build with the new names).
 - Windows: `game.dll` is linked fully static, so its C++ runtime and winpthread are inside it (it needed `libwinpthread-1.dll` from MinGW). Cross-built and run under Wine: the client game module, movement and effects load from `game.dll`.
