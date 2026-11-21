@@ -4,6 +4,8 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Monster definitions: `defs/<folder>.monsters` changes stock monsters or adds new ones based on them (`health`, `gib_health`, `mass`, `skin`, `scale`, `damage_percent`). A new monster spawns as its base and keeps its own classname. New check: `tests/mod/monster_check.py`.
+- Scripts: combat events `player_damage` and `monster_damage` (return a number to change the damage), `player_death` and `monster_death` (with where it died); `game.spawn(classname, x, y, z)`.
 - Weapon definitions: the item files take weapon numbers, `damage`, `kick`, `pellets`, `spread_h`, `spread_v`, `speed`, `radius_damage`, `damage_radius`, read by the ten stock weapons and hand grenades (stock values when left out; Quad still multiplies). A new weapon made with `"base"` fires like its base with its own numbers. New check: `tests/mod/weapon_defs_check.py`.
 - Save check compares items too: the weapon in hand, the inventory, and the item every item entity holds (new cheat command `iteminfo`). With the health pack bug put back it fails ("18 without an item").
 - Scripts: `game.use(player, item)` uses an item like the `use` command (switches weapons); the survival example starts with the Shotgun in hand.

@@ -1,7 +1,8 @@
-# Item definitions
+# Item and monster definitions
 
-Mods can change items and add new ones with a text file, no compiler needed:
-pickups, ammo, and how hard weapons hit. Monsters come next.
+Mods can change items and monsters and add new ones with text files, no
+compiler needed: pickups, ammo, how hard weapons hit, and how tough monsters
+are.
 
 ## Where the file goes
 
@@ -111,10 +112,43 @@ Mistakes (an unknown field, a word where a number goes, a new item without
 `base`) are printed to the console and skipped; the rest of the file still
 loads.
 
+## Monsters
+
+Monsters go in a second file next to the items, `defs/<folder>.monsters`, in
+the same format:
+
+```
+// a tougher soldier, in its own skin, that hits three times as hard
+{
+"classname" "monster_soldier_elite"
+"base" "monster_soldier"
+"health" "300"
+"skin" "2"
+"damage_percent" "300"
+}
+```
+
+A block for a stock monster (`monster_soldier`, `monster_tank`, ...) changes
+every one of them; a new `classname` with `"base"` spawns as that stock
+monster, with the changes, and can be placed in maps or spawned by scripts
+(`game.spawn`). A base has to be a stock monster.
+
+| Field | Meaning |
+| --- | --- |
+| `health` | Health, replacing the stock value (and its skill scaling). |
+| `gib_health` | How far below 0 health the body gibs (`-40` or `40` both mean 40 below). |
+| `mass` | Weight: how far hits knock it back. |
+| `skin` | Skin number of its model (stock monsters have 0 and 1 for the pain skin; some have more). |
+| `scale` | Drawn size, 0.1 to 10. Only the look: the size it takes up in the world stays. |
+| `damage_percent` | How hard its attacks hit, in percent (`300` = three times, `0` = none). |
+
+Its behaviour, attacks and speed are its base's. Code that checks a monster
+by classname (a few stock special cases) sees the new name.
+
 ## Things to know
 
-- Item files are read once, when the game starts. Restart the game after
-  changing one.
+- Item and monster files are read once, when the game starts. Restart the
+  game after changing one.
 - Saves match items by classname, so a save keeps working when mods add or
   remove items. An item the game no longer has is dropped from the save, with
   a message in the console (a weapon in hand becomes the Blaster). Saves made

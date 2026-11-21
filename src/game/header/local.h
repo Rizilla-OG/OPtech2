@@ -922,6 +922,31 @@ int G_ModFolders(char folders[][MAX_QPATH], int max_folders);
 void G_ModFolderFile(char *out, size_t size, const char *prefix, const char *folder, const char *suffix);
 int Defs_LoadItems(int item_count);
 
+#define MDEF_HEALTH 0x01
+#define MDEF_GIB_HEALTH 0x02
+#define MDEF_MASS 0x04
+#define MDEF_SKIN 0x08
+#define MDEF_SCALE 0x10
+#define MDEF_DAMAGE_PERCENT 0x20
+
+typedef struct
+{
+	char classname[MAX_QPATH];
+	char base[MAX_QPATH]; /* a new monster: spawns as this one */
+	int set; /* MDEF_ bits */
+	int health;
+	int gib_health;
+	int mass;
+	int skin;
+	float scale;
+	int damage_percent;
+} monster_def_t;
+
+void Defs_LoadMonsters(void);
+const monster_def_t *Defs_FindMonster(const char *classname);
+void Defs_ApplyMonster(edict_t *ent, const monster_def_t *def);
+int Defs_MonsterDamage(const edict_t *attacker, int damage);
+
 /* optech2: Lua gameplay scripts (script/g_script.c) */
 void Script_Init(void);
 void Script_Shutdown(void);
@@ -929,6 +954,10 @@ void Script_LevelStart(void);
 void Script_PlayerSpawn(edict_t *player);
 qboolean Script_ItemPickup(edict_t *player, const gitem_t *item);
 void Script_ItemTaken(edict_t *player, const gitem_t *item);
+int Script_PlayerDamage(edict_t *player, edict_t *attacker, int damage);
+int Script_MonsterDamage(edict_t *monster, edict_t *attacker, int damage);
+void Script_PlayerDeath(edict_t *player, edict_t *attacker);
+void Script_MonsterDeath(edict_t *monster, edict_t *attacker);
 void Script_Command(edict_t *ent);
 gitem_t *FindItemByClassname(const char *classname);
 
