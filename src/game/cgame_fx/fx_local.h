@@ -33,6 +33,7 @@ extern const optech2_fx_import_t *fxi;
 #include <limits.h>
 
 #define MAX_CL_ENTNUM SHRT_MAX /* as the engine */
+#define NUMVERTEXNORMALS 162 /* as the engine (common.h) */
 #define MAX_SUSTAINS 128
 #define PARTICLE_GRAVITY 40
 #define INSTANT_PARTICLE -10000.0
@@ -62,6 +63,9 @@ typedef struct
 		vec3_t origin;
 		vec3_t angles;
 	} current;
+	vec3_t lerp_origin; /* trails: where it was drawn the frame before */
+	int trailcount; /* trails: diminishing trails */
+	int fly_stoptime; /* trails: EF_FLIES */
 } centity_t;
 
 centity_t *CL_AllocEntity(int entnum); /* NULL when the engine doesn't know it */
@@ -128,6 +132,9 @@ void CL_SmokeAndFlash(vec3_t origin);
 void CL_AddMuzzleFlash(void);
 void CL_AddMuzzleFlash2(void);
 void CL_AddMuzzleFlash3(void);
+
+/* fx_trails.c */
+qboolean FX_EntityTrails(optech2_fx_entity_t *info);
 
 /* fx_effects.c */
 cparticle_t *CL_AllocParticle(void);

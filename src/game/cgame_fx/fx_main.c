@@ -120,6 +120,7 @@ const optech2_fx_ext_t fx_extension = {
 	FX_Init,
 	FX_ParseTempEntity,
 	FX_ParseMuzzleFlash,
+	FX_EntityTrails,
 	FX_RegisterMedia,
 	FX_AddFrameEffects,
 	FX_ClearEffects};

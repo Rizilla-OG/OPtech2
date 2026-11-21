@@ -221,11 +221,18 @@ FxNoMuzzleFlash(int kind)
 	return false;
 }
 
+static qboolean
+FxNoTrails(optech2_fx_entity_t *ent)
+{
+	return false;
+}
+
 static const optech2_fx_ext_t fx_extension = {
 	OPTECH2_FX_EXT_VERSION,
 	FxInit,
 	FxParseTempEntity,
 	FxNoMuzzleFlash, /* ParseMuzzleFlash: leave them to the engine */
+	FxNoTrails, /* EntityTrails: the engine's */
 	FxNothing, /* RegisterMedia */
 	FxNothing, /* AddFrameEffects */
 	FxNothing /* ClearEffects */

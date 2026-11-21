@@ -50,7 +50,7 @@ typedef struct
  * ones; types it doesn't handle get the engine's built-in effects.
  */
 #define OPTECH2_EXT_FX "optech2_fx"
-#define OPTECH2_FX_EXT_VERSION 3
+#define OPTECH2_FX_EXT_VERSION 4
 
 struct sfx_s;
 struct model_s;
@@ -101,6 +101,20 @@ typedef struct
 	struct image_s *skin; /* NULL: the model's own */
 	int flags; /* RF_* */
 } optech2_entity_t;
+
+/* an entity with effect flags, for its trail and flying light */
+typedef struct
+{
+	int number;
+	unsigned int effects; /* EF_* */
+	int renderfx; /* RF_* */
+	int frame;
+	vec3_t oldorigin; /* where it was drawn the frame before */
+	vec3_t origin; /* in/out: where it is drawn now */
+	vec3_t angles;
+	int trailcount; /* in/out: diminishing trails (gibs, grenades) */
+	int fly_stoptime; /* in/out: EF_FLIES */
+} optech2_fx_entity_t;
 
 /* the client state effects need, for the frame being drawn */
 typedef struct
@@ -172,6 +186,11 @@ typedef struct
 	   return true, or read nothing and return false to leave it to the
 	   engine */
 	qboolean (*ParseMuzzleFlash)(int kind);
+
+	/* an entity with effect flags is drawn this frame: add its trail and
+	   flying light and return true, or return false to leave them to the
+	   engine */
+	qboolean (*EntityTrails)(optech2_fx_entity_t *ent);
 
 	/* register models and sounds; at each level load */
 	void (*RegisterMedia)(void);

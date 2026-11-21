@@ -37,9 +37,11 @@ something unfinished; remove an entry in the commit that fixes it.
 
 ## Effects (M2 step 4)
 
-- Temp entities and muzzle flashes run in the game library; still in the
-  engine: entity trails and effect flags (rocket trail, BFG glow...), entity
-  events.
+- Temp entities, muzzle flashes and entity trails run in the game library;
+  still in the engine: entity events (footsteps, teleport, item respawn) and
+  how an entity's own model is drawn (powerup shells, translucency, rotation,
+  linked weapon models) - the latter means the module drawing entities,
+  Quake 3 style.
 - `fxtest` only sends position + direction; stock types with other data
   can't be sent with it.
 

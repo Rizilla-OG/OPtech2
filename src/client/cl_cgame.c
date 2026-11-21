@@ -650,7 +650,7 @@ CL_CGame_FindFx(OPtech2_GetExtension_t get_extension)
 	}
 
 	if (fx_ext->version != OPTECH2_FX_EXT_VERSION || !fx_ext->Init || !fx_ext->ParseTempEntity ||
-		!fx_ext->ParseMuzzleFlash || !fx_ext->RegisterMedia || !fx_ext->AddFrameEffects ||
+		!fx_ext->ParseMuzzleFlash || !fx_ext->EntityTrails || !fx_ext->RegisterMedia || !fx_ext->AddFrameEffects ||
 		!fx_ext->ClearEffects)
 	{
 		Com_Printf("client game: effects version %d doesn't match, using the engine's\n", fx_ext->version);
@@ -698,6 +698,38 @@ qboolean
 CL_CGame_ParseMuzzleFlash(int kind)
 {
 	return cgame_fx && cgame_fx->ParseMuzzleFlash(kind);
+}
+
+/* an entity's trail and flying light: true when the game library drew them */
+qboolean
+CL_CGame_EntityTrails(centity_t *cent, const entity_xstate_t *s1, unsigned int effects, entity_t *ent)
+{
+	optech2_fx_entity_t info;
+
+	if (!cgame_fx)
+	{
+		return false;
+	}
+
+	info.number = s1->number;
+	info.effects = effects;
+	info.renderfx = s1->renderfx;
+	info.frame = s1->frame;
+	VectorCopy(cent->lerp_origin, info.oldorigin);
+	VectorCopy(ent->origin, info.origin);
+	VectorCopy(ent->angles, info.angles);
+	info.trailcount = cent->trailcount;
+	info.fly_stoptime = cent->fly_stoptime;
+
+	if (!cgame_fx->EntityTrails(&info))
+	{
+		return false;
+	}
+
+	VectorCopy(info.origin, ent->origin);
+	cent->trailcount = info.trailcount;
+	cent->fly_stoptime = info.fly_stoptime;
+	return true;
 }
 
 /* a temp entity of this type arrived: true when the game library drew it */
