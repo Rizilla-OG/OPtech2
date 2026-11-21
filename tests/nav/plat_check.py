@@ -14,7 +14,9 @@ In the game (no window), the player (god mode) on one level, a Berserker
   - up: from the floor it walks onto the lift, rides it up (g_monster_nav 2
     logs it), steps off onto the balcony and hits the player,
   - down: on the balcony it calls the lift up, rides it down and hits the
-    player on the floor.
+    player on the floor,
+  - up, a Tank (medium size, short steps; stops to shoot): rides up and
+    stays up (the lift waits while a monster is on it).
 Stock (g_monster_nav 0) is shown for comparison: func_plat only starts
 for players, so it stays below. Positions are sampled every second.
 
@@ -42,6 +44,7 @@ MONSTER = "monster_berserk"
 FLOOR_SPOT = "256 -400 24 0 90 0"       # on the floor, far enough back to see up onto the balcony
 BALCONY_SPOT = "-256 168 344 0 270 0"   # up on the balcony near its edge (it sees the player below)
 PLAYER_ON_BALCONY = "256 168 344"       # near the edge, seen from the floor
+PLAYER_BACK = "256 470 344"             # then back from it (the Tank would stand and shoot from below)
 SPAWN_MS, END_MS = 4000, 34000
 BALCONY_HEIGHT = 320
 
@@ -64,11 +67,14 @@ def run_server(commands):
     return log
 
 
-def run_game(name, nav, monster_spot, player_spot=None):
+def run_game(name, nav, monster_spot, player_spot=None, monster=None, player_later=None):
+    monster = monster or MONSTER
     lines = ["set g_damagelog 1", f"set g_monster_nav {nav}", "map optech2_plat", 'delay 3000 "god"']
     if player_spot:
         lines.append(f'delay 3200 "cmd teleport {player_spot}"')
-    lines.append(f'delay {SPAWN_MS} "cmd spawnentity {MONSTER} {monster_spot}"')
+    lines.append(f'delay {SPAWN_MS} "cmd spawnentity {monster} {monster_spot}"')
+    if player_later:
+        lines.append(f'delay {SPAWN_MS + 2000} "cmd teleport {player_later}"')
     lines += [f'delay {ms} "cmd listentities monsters"' for ms in range(SPAWN_MS + 1000, END_MS, 1000)]
     lines += [f"delay {END_MS} quit"]
     with tempfile.TemporaryDirectory(prefix="opentech2-plat-") as home:
@@ -85,10 +91,15 @@ def run_game(name, nav, monster_spot, player_spot=None):
         except subprocess.TimeoutExpired as timeout:
             log = (timeout.stdout or b"").decode(errors="replace") + "\nERROR: the game didn't quit\n"
     (OUTPUT_DIR / f"{name}.log").write_text(log)
-    hits = [float(t) for t in re.findall(rf"damagelog time ([\d.]+) attacker {MONSTER} target player", log)]
+    hits = [float(t) for t in re.findall(rf"damagelog time ([\d.]+) attacker {monster} target player", log)]
     route = [tuple(float(v) for v in match) for match in
-             re.findall(rf"^{MONSTER}: (-?[\d.]+) (-?[\d.]+) (-?[\d.]+)", log, re.M)]
+             re.findall(rf"^{monster}: (-?[\d.]+) (-?[\d.]+) (-?[\d.]+)", log, re.M)]
     return hits, route, log
+
+
+def tail(route):
+    """the last 5 samples: where it ended up"""
+    return route[-5:]
 
 
 def paths(log):
@@ -139,10 +150,13 @@ def main():
     report("rides a lift down" in down_log and any(z < 100 for _, _, z in route),
            f"down: it called the lift and rode it to the floor: {route_text(route)}")
     report(bool(hits), f"and hit the player ({len(hits)} hits{first_hit(hits)})")
+    hits, route, tank_log = run_game("up-tank", 2, FLOOR_SPOT, PLAYER_ON_BALCONY, "monster_tank", PLAYER_BACK)
+    report("monster_tank rides a lift up" in tank_log and any(z > BALCONY_HEIGHT for _, _, z in tail(route)),
+           f"up, a Tank (medium; slow steps, it stops to shoot): rode up and stayed up: {route_text(route)}")
     hits, route, stock_log = run_game("up-stock", 0, FLOOR_SPOT, PLAYER_ON_BALCONY)
     print(f"info  stock chase (g_monster_nav 0), up: {len(hits)} hits; route {route_text(route)}")
 
-    errors = [line for line in (log + up_log + down_log + stock_log).splitlines()
+    errors = [line for line in (log + up_log + down_log + tank_log + stock_log).splitlines()
               if "ERROR" in line or "crashed" in line or "nav: " in line]
     report(not errors, "no errors or crashes" + (f" ({errors[0].strip()})" if errors else ""))
     passed = all(results)

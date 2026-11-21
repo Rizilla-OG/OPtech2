@@ -1511,6 +1511,15 @@ Distance(const float *a, const float *b)
 	return sqrtf(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
 }
 
+/* optech2: how far apart across (z left out) */
+static float
+DistanceAcross(const float *a, const float *b)
+{
+	const float dx = a[0] - b[0], dy = a[1] - b[1];
+
+	return sqrtf(dx * dx + dy * dy);
+}
+
 extern "C" int
 Nav_GetPathToGoalSized(const optech2_path_request_t *request, optech2_path_info_t *info, float agent_radius,
 	float agent_height)
@@ -1616,7 +1625,12 @@ Nav_GetPathToGoalSized(const optech2_path_request_t *request, optech2_path_info_
 	   is flagged: its end, the corner after, is never passed over */
 	next = 1;
 
-	while (next < corner_count - 1 && Distance(request->start, corners[next]) <= request->move_dist &&
+	/* (a link's start is passed within 8 units across, too: a slow
+	   monster's step is shorter than its feet are off the mesh) */
+	while (next < corner_count - 1 &&
+		(Distance(request->start, corners[next]) <= request->move_dist ||
+			((corner_flags[next] & DT_STRAIGHTPATH_OFFMESH_CONNECTION) &&
+				DistanceAcross(request->start, corners[next]) <= 8.0f)) &&
 		!(corner_flags[next - 1] & DT_STRAIGHTPATH_OFFMESH_CONNECTION))
 	{
 		next++;

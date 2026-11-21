@@ -561,6 +561,27 @@ Think_AccelMove(edict_t *ent)
 }
 
 /* ->moveinfo.endfunc = plat_hit_top; */
+/* optech2: at the top, a lift goes back down unless a monster is still
+   standing on it (players hold it with the trigger): then 1 s later */
+void
+plat_top_wait(edict_t *ent)
+{
+	int i;
+
+	for (i = game.maxclients + 1; i < globals.num_edicts; i++)
+	{
+		const edict_t *rider = &g_edicts[i];
+
+		if (rider->inuse && (rider->svflags & SVF_MONSTER) && (rider->health > 0) && (rider->groundentity == ent))
+		{
+			ent->nextthink = level.time + 1;
+			return;
+		}
+	}
+
+	plat_go_down(ent);
+}
+
 void
 plat_hit_top(edict_t *ent)
 {
@@ -582,7 +603,7 @@ plat_hit_top(edict_t *ent)
 
 	ent->moveinfo.state = STATE_TOP;
 
-	ent->think = plat_go_down;
+	ent->think = plat_top_wait; /* optech2: was plat_go_down */
 	ent->nextthink = level.time + 3;
 }
 

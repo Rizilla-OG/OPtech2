@@ -322,6 +322,7 @@ static const fnlist_entry_t fnentries_think[] =
 		{"plat2_go_down", (byte *)plat2_go_down},
 		{"plat2_go_up", (byte *)plat2_go_up},
 		{"plat_go_down", (byte *)plat_go_down},
+		{"plat_top_wait", (byte *)plat_top_wait}, /* optech2 */
 		{"prox_open", (byte *)prox_open},
 		{"prox_seek", (byte *)prox_seek},
 		{"proximity_mine_explode", (byte *)proximity_mine_explode},

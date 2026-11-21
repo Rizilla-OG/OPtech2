@@ -297,6 +297,7 @@ extern void pistol_bolt_think (edict_t *);
 extern void plat2_go_down (edict_t *);
 extern void plat2_go_up (edict_t *);
 extern void plat_go_down (edict_t *);
+extern void plat_top_wait(edict_t *); /* optech2 */
 extern void prox_open (edict_t *);
 extern void prox_seek (edict_t *);
 extern void proximity_mine_explode (edict_t *);
