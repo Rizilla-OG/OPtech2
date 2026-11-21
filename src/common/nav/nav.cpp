@@ -56,20 +56,36 @@ unsigned CM_MapChecksum(void);
 /* what monsters walk on and around (shared.h's CONTENTS_*) */
 static const int NAV_SOLID = 1 /* SOLID */ | 2 /* WINDOW */ | 0x10000 /* PLAYERCLIP */ | 0x20000 /* MONSTERCLIP */;
 
-/* build settings: a player-sized monster (32 x 32 x 56, steps of 18,
-   slopes up to the player's 0.7 normal) on a grid of 8 x 2 units */
+/* build settings: steps of 18 and slopes up to the player's 0.7 normal, on
+   a grid of 8 x 2 units; one mesh per monster size (NAV_AGENTS) */
 static const float NAV_CELL_SIZE = 8.0f;
 static const float NAV_CELL_HEIGHT = 2.0f;
-static const float NAV_AGENT_HEIGHT = 56.0f;
-static const float NAV_AGENT_RADIUS = 16.0f;
 static const float NAV_AGENT_CLIMB = 18.0f;
 static const float NAV_MAX_SLOPE = 45.57f; /* acos(0.7) */
 static const int NAV_TILE_CELLS = 64;      /* 512 units */
-static const int NAV_FILE_VERSION = 1;
+static const float NAV_CLEARANCE = 8.0f;   /* kept from walls beyond a monster's half width */
+static const int NAV_FILE_VERSION = 3;
 static const unsigned short NAV_FLAG_WALK = 1;
 
-static dtNavMesh *nav_mesh;
-static dtNavMeshQuery *nav_query;
+/* monster sizes: half its width and its height. A monster uses the
+   smallest one it fits (Nav_AgentFor) */
+struct NavAgent
+{
+	const char *name;
+	float radius;
+	float height;
+};
+
+static const NavAgent NAV_AGENTS[] = {
+	{"small", 16.0f, 56.0f},  /* the player, soldiers, infantry, berserker */
+	{"medium", 32.0f, 88.0f}, /* tank, gladiator, mutant, medic */
+	{"large", 64.0f, 112.0f}, /* supertank, boss */
+};
+
+static const int NAV_AGENT_COUNT = (int)(sizeof(NAV_AGENTS) / sizeof(NAV_AGENTS[0]));
+
+static dtNavMesh *nav_meshes[NAV_AGENT_COUNT];
+static dtNavMeshQuery *nav_queries[NAV_AGENT_COUNT];
 static char nav_mapname[64];
 static int nav_build_msec;
 static bool nav_from_cache;
@@ -151,7 +167,7 @@ protected:
 };
 
 static rcConfig
-NavConfig(const NavGeometry &geometry)
+NavConfig(const NavGeometry &geometry, int agent)
 {
 	rcConfig config;
 
@@ -159,9 +175,11 @@ NavConfig(const NavGeometry &geometry)
 	config.cs = NAV_CELL_SIZE;
 	config.ch = NAV_CELL_HEIGHT;
 	config.walkableSlopeAngle = NAV_MAX_SLOPE;
-	config.walkableHeight = (int)ceilf(NAV_AGENT_HEIGHT / NAV_CELL_HEIGHT);
+	config.walkableHeight = (int)ceilf(NAV_AGENTS[agent].height / NAV_CELL_HEIGHT);
 	config.walkableClimb = (int)floorf(NAV_AGENT_CLIMB / NAV_CELL_HEIGHT);
-	config.walkableRadius = (int)ceilf(NAV_AGENT_RADIUS / NAV_CELL_SIZE);
+	/* the mesh keeps the monster's half width and a little more from walls,
+	   so a monster on a path corner doesn't scrape the wall and get stuck */
+	config.walkableRadius = (int)ceilf((NAV_AGENTS[agent].radius + NAV_CLEARANCE) / NAV_CELL_SIZE);
 	config.maxEdgeLen = (int)(96.0f / NAV_CELL_SIZE);
 	config.maxSimplificationError = 1.3f;
 	config.minRegionArea = 8 * 8;
@@ -181,7 +199,8 @@ NavConfig(const NavGeometry &geometry)
 /* one tile's navigation data (Detour's format), or nullptr if it has no
    floor */
 static unsigned char *
-BuildTile(NavContext &context, const NavGeometry &geometry, rcConfig config, int tile_x, int tile_y, int *size)
+BuildTile(NavContext &context, const NavGeometry &geometry, rcConfig config, int agent, int tile_x, int tile_y,
+	int *size)
 {
 	const float tile_world = NAV_TILE_CELLS * NAV_CELL_SIZE;
 	const float border = config.borderSize * config.cs;
@@ -293,8 +312,8 @@ BuildTile(NavContext &context, const NavGeometry &geometry, rcConfig config, int
 		params.detailVertsCount = detail->nverts;
 		params.detailTris = detail->tris;
 		params.detailTriCount = detail->ntris;
-		params.walkableHeight = NAV_AGENT_HEIGHT;
-		params.walkableRadius = NAV_AGENT_RADIUS;
+		params.walkableHeight = NAV_AGENTS[agent].height;
+		params.walkableRadius = NAV_AGENTS[agent].radius;
 		params.walkableClimb = NAV_AGENT_CLIMB;
 		params.tileX = tile_x;
 		params.tileY = tile_y;
@@ -348,19 +367,10 @@ Log2(unsigned v)
 }
 
 static dtNavMesh *
-BuildMesh(void)
+BuildMesh(const NavGeometry &geometry, int agent)
 {
-	NavGeometry geometry;
 	NavContext context;
-
-	CM_ForEachSolidTriangle(NAV_SOLID, CollectTriangle, &geometry);
-
-	if (geometry.triangles.empty())
-	{
-		return nullptr;
-	}
-
-	const rcConfig config = NavConfig(geometry);
+	const rcConfig config = NavConfig(geometry, agent);
 	const float tile_world = NAV_TILE_CELLS * NAV_CELL_SIZE;
 	const int tiles_x = (int)ceilf((geometry.bmax[0] - geometry.bmin[0]) / tile_world);
 	const int tiles_y = (int)ceilf((geometry.bmax[2] - geometry.bmin[2]) / tile_world);
@@ -387,7 +397,7 @@ BuildMesh(void)
 		for (int x = 0; x < tiles_x; x++)
 		{
 			int size;
-			unsigned char *data = BuildTile(context, geometry, config, x, y, &size);
+			unsigned char *data = BuildTile(context, geometry, config, agent, x, y, &size);
 
 			if (data && dtStatusFailed(mesh->addTile(data, size, DT_TILE_FREE_DATA, 0, nullptr)))
 			{
@@ -401,14 +411,14 @@ BuildMesh(void)
 
 /* ---- the cache file ---- */
 
+/* the file: this header, then for each size its mesh's params, its tile
+   count and its tiles (size, data) */
 struct NavFileHeader
 {
 	char magic[4];
 	int version;
 	unsigned checksum;
-	float settings[6]; /* cell size and height, agent height, radius, climb, slope */
-	int tile_count;
-	dtNavMeshParams params;
+	float settings[5 + NAV_AGENT_COUNT * 2]; /* cell size and height, climb, slope, clearance; each size's radius, height */
 };
 
 static void
@@ -422,14 +432,50 @@ NavSettings(float *settings)
 {
 	settings[0] = NAV_CELL_SIZE;
 	settings[1] = NAV_CELL_HEIGHT;
-	settings[2] = NAV_AGENT_HEIGHT;
-	settings[3] = NAV_AGENT_RADIUS;
-	settings[4] = NAV_AGENT_CLIMB;
-	settings[5] = NAV_MAX_SLOPE;
+	settings[2] = NAV_AGENT_CLIMB;
+	settings[3] = NAV_MAX_SLOPE;
+	settings[4] = NAV_CLEARANCE;
+
+	for (int a = 0; a < NAV_AGENT_COUNT; a++)
+	{
+		settings[5 + a * 2] = NAV_AGENTS[a].radius;
+		settings[6 + a * 2] = NAV_AGENTS[a].height;
+	}
 }
 
 static void
-SaveCache(const dtNavMesh *mesh)
+SaveMesh(FILE *file, const dtNavMesh *mesh)
+{
+	int tile_count = 0;
+
+	fwrite(mesh->getParams(), sizeof(dtNavMeshParams), 1, file);
+
+	for (int i = 0; i < mesh->getMaxTiles(); i++)
+	{
+		const dtMeshTile *tile = mesh->getTile(i);
+
+		if (tile && tile->header && tile->dataSize)
+		{
+			tile_count++;
+		}
+	}
+
+	fwrite(&tile_count, sizeof(tile_count), 1, file);
+
+	for (int i = 0; i < mesh->getMaxTiles(); i++)
+	{
+		const dtMeshTile *tile = mesh->getTile(i);
+
+		if (tile && tile->header && tile->dataSize)
+		{
+			fwrite(&tile->dataSize, sizeof(tile->dataSize), 1, file);
+			fwrite(tile->data, tile->dataSize, 1, file);
+		}
+	}
+}
+
+static void
+SaveCache(void)
 {
 	char path[1024];
 	NavFileHeader header;
@@ -449,64 +495,37 @@ SaveCache(const dtNavMesh *mesh)
 	header.version = NAV_FILE_VERSION;
 	header.checksum = CM_MapChecksum();
 	NavSettings(header.settings);
-	memcpy(&header.params, mesh->getParams(), sizeof(header.params));
-
-	for (int i = 0; i < mesh->getMaxTiles(); i++)
-	{
-		const dtMeshTile *tile = mesh->getTile(i);
-
-		if (tile && tile->header && tile->dataSize)
-		{
-			header.tile_count++;
-		}
-	}
-
 	fwrite(&header, sizeof(header), 1, file);
 
-	for (int i = 0; i < mesh->getMaxTiles(); i++)
+	for (int a = 0; a < NAV_AGENT_COUNT; a++)
 	{
-		const dtMeshTile *tile = mesh->getTile(i);
-
-		if (tile && tile->header && tile->dataSize)
-		{
-			fwrite(&tile->dataSize, sizeof(tile->dataSize), 1, file);
-			fwrite(tile->data, tile->dataSize, 1, file);
-		}
+		SaveMesh(file, nav_meshes[a]);
 	}
 
 	fclose(file);
 }
 
+/* one size's mesh from the file, or nullptr if the file is damaged */
 static dtNavMesh *
-LoadCache(void)
+LoadMesh(FILE *file)
 {
-	char path[1024];
-	NavFileHeader header;
-	float settings[6];
-	dtNavMesh *mesh = nullptr;
-	FILE *file;
+	dtNavMeshParams params;
+	dtNavMesh *mesh;
+	int tile_count;
 
-	NavCachePath(path, sizeof(path));
-	file = fopen(path, "rb");
-
-	if (!file)
+	if (fread(&params, sizeof(params), 1, file) != 1 || fread(&tile_count, sizeof(tile_count), 1, file) != 1 ||
+		tile_count < 0 || !(mesh = dtAllocNavMesh()))
 	{
 		return nullptr;
 	}
 
-	NavSettings(settings);
-
-	if (fread(&header, sizeof(header), 1, file) != 1 || memcmp(header.magic, "OTNV", 4) ||
-		header.version != NAV_FILE_VERSION || header.checksum != CM_MapChecksum() ||
-		memcmp(header.settings, settings, sizeof(settings)) || header.tile_count < 0 ||
-		!(mesh = dtAllocNavMesh()) || dtStatusFailed(mesh->init(&header.params)))
+	if (dtStatusFailed(mesh->init(&params)))
 	{
-		fclose(file);
 		dtFreeNavMesh(mesh);
 		return nullptr;
 	}
 
-	for (int i = 0; i < header.tile_count; i++)
+	for (int i = 0; i < tile_count; i++)
 	{
 		int size = 0;
 		unsigned char *data;
@@ -514,31 +533,79 @@ LoadCache(void)
 		if (fread(&size, sizeof(size), 1, file) != 1 || size <= 0 || size > 64 * 1024 * 1024 ||
 			!(data = (unsigned char *)dtAlloc(size, DT_ALLOC_PERM)))
 		{
-			break;
+			dtFreeNavMesh(mesh);
+			return nullptr;
 		}
 
 		if (fread(data, size, 1, file) != 1 ||
 			dtStatusFailed(mesh->addTile(data, size, DT_TILE_FREE_DATA, 0, nullptr)))
 		{
 			dtFree(data);
-			fclose(file);
 			dtFreeNavMesh(mesh);
-			return nullptr; /* damaged: build it again */
+			return nullptr;
+		}
+	}
+
+	return mesh;
+}
+
+/* every size's mesh from the cache; false (and nothing loaded) if it's
+   missing, damaged, for another map version or other settings */
+static bool
+LoadCache(void)
+{
+	char path[1024];
+	NavFileHeader header;
+	float settings[5 + NAV_AGENT_COUNT * 2];
+	FILE *file;
+
+	NavCachePath(path, sizeof(path));
+	file = fopen(path, "rb");
+
+	if (!file)
+	{
+		return false;
+	}
+
+	NavSettings(settings);
+
+	if (fread(&header, sizeof(header), 1, file) != 1 || memcmp(header.magic, "OTNV", 4) ||
+		header.version != NAV_FILE_VERSION || header.checksum != CM_MapChecksum() ||
+		memcmp(header.settings, settings, sizeof(settings)))
+	{
+		fclose(file);
+		return false;
+	}
+
+	for (int a = 0; a < NAV_AGENT_COUNT; a++)
+	{
+		nav_meshes[a] = LoadMesh(file);
+
+		if (!nav_meshes[a])
+		{
+			for (int b = 0; b < a; b++)
+			{
+				dtFreeNavMesh(nav_meshes[b]);
+				nav_meshes[b] = nullptr;
+			}
+
+			fclose(file);
+			return false; /* damaged: build them again */
 		}
 	}
 
 	fclose(file);
-	return mesh;
+	return true;
 }
 
 /* ---- the C interface ---- */
 
 static int
-NavPolygonCount(void)
+NavPolygonCount(int agent)
 {
 	int count = 0;
 
-	const dtNavMesh *mesh = nav_mesh; /* the const getTile is the public one */
+	const dtNavMesh *mesh = nav_meshes[agent]; /* the const getTile is the public one */
 
 	for (int i = 0; mesh && i < mesh->getMaxTiles(); i++)
 	{
@@ -556,11 +623,49 @@ NavPolygonCount(void)
 extern "C" void
 Nav_Free(void)
 {
-	dtFreeNavMeshQuery(nav_query);
-	dtFreeNavMesh(nav_mesh);
-	nav_query = nullptr;
-	nav_mesh = nullptr;
+	for (int a = 0; a < NAV_AGENT_COUNT; a++)
+	{
+		dtFreeNavMeshQuery(nav_queries[a]);
+		dtFreeNavMesh(nav_meshes[a]);
+		nav_queries[a] = nullptr;
+		nav_meshes[a] = nullptr;
+	}
+
 	nav_mapname[0] = '\0';
+}
+
+/* "Navigation: base1, 1211 polygons, built in 117 ms (medium 900, large 500)" */
+static void
+NavPrintInfo(void)
+{
+	char sizes[128] = "";
+
+	for (int a = 1; a < NAV_AGENT_COUNT; a++)
+	{
+		const size_t used = strlen(sizes);
+
+		snprintf(sizes + used, sizeof(sizes) - used, "%s%s %d", a > 1 ? ", " : "", NAV_AGENTS[a].name,
+			NavPolygonCount(a));
+	}
+
+	Com_Printf("Navigation: %s, %d polygons, %s in %d ms (%s)\n", nav_mapname, NavPolygonCount(0),
+		nav_from_cache ? "loaded" : "built", nav_build_msec, sizes);
+}
+
+/* the size a monster of this half width and height uses: the smallest it
+   fits, else the largest */
+static int
+NavAgentFor(float radius, float height)
+{
+	for (int a = 0; a < NAV_AGENT_COUNT; a++)
+	{
+		if (radius <= NAV_AGENTS[a].radius + 0.5f && height <= NAV_AGENTS[a].height + 0.5f)
+		{
+			return a;
+		}
+	}
+
+	return NAV_AGENT_COUNT - 1;
 }
 
 extern "C" void
@@ -570,42 +675,54 @@ Nav_LoadMap(const char *mapname)
 
 	Nav_Free();
 	snprintf(nav_mapname, sizeof(nav_mapname), "%s", mapname);
-	nav_mesh = LoadCache();
-	nav_from_cache = (nav_mesh != nullptr);
+	nav_from_cache = LoadCache();
 
-	if (!nav_mesh)
+	if (!nav_from_cache)
 	{
-		nav_mesh = BuildMesh();
+		NavGeometry geometry;
+		bool complete = true;
 
-		if (nav_mesh)
+		CM_ForEachSolidTriangle(NAV_SOLID, CollectTriangle, &geometry);
+
+		for (int a = 0; a < NAV_AGENT_COUNT && !geometry.triangles.empty(); a++)
 		{
-			SaveCache(nav_mesh);
+			nav_meshes[a] = BuildMesh(geometry, a);
+			complete = complete && nav_meshes[a];
+		}
+
+		if (complete && nav_meshes[0])
+		{
+			SaveCache();
 		}
 	}
 
 	nav_build_msec = Sys_Milliseconds() - start;
 
-	if (!nav_mesh)
+	if (!nav_meshes[0])
 	{
 		Com_Printf("Navigation: no walkable floor in %s\n", mapname);
-		return;
-	}
-
-	nav_query = dtAllocNavMeshQuery();
-
-	if (!nav_query || dtStatusFailed(nav_query->init(nav_mesh, 4096)))
-	{
 		Nav_Free();
 		return;
 	}
 
-	Com_Printf("Navigation: %s, %d polygons, %s in %d ms\n", mapname, NavPolygonCount(),
-		nav_from_cache ? "loaded" : "built", nav_build_msec);
+	for (int a = 0; a < NAV_AGENT_COUNT; a++)
+	{
+		nav_queries[a] = nav_meshes[a] ? dtAllocNavMeshQuery() : nullptr;
+
+		if (nav_queries[a] && dtStatusFailed(nav_queries[a]->init(nav_meshes[a], 4096)))
+		{
+			dtFreeNavMeshQuery(nav_queries[a]);
+			nav_queries[a] = nullptr;
+		}
+	}
+
+	NavPrintInfo();
 }
 
-extern "C" int
-Nav_FindPath(const float *start, const float *goal, float (*points)[3], int max_points, int *complete)
+static int
+NavFindPath(int agent, const float *start, const float *goal, float (*points)[3], int max_points, int *complete)
 {
+	dtNavMeshQuery *nav_query = nav_queries[agent];
 	static const float extents[3] = {32.0f, 64.0f, 32.0f}; /* Recast axes: up is y */
 	static const int MAX_POLYS = 512;
 	dtPolyRef path[MAX_POLYS], start_ref, goal_ref;
@@ -664,20 +781,28 @@ Nav_FindPath(const float *start, const float *goal, float (*points)[3], int max_
 }
 
 extern "C" int
-Nav_ForEachEdge(const float *center, float radius, void (*edge)(const float *a, const float *b, void *user),
-	void *user)
+Nav_FindPath(const float *start, const float *goal, float (*points)[3], int max_points, int *complete)
+{
+	return NavFindPath(0, start, goal, points, max_points, complete);
+}
+
+extern "C" int
+Nav_ForEachEdge(int agent, const float *center, float radius,
+	void (*edge)(const float *a, const float *b, void *user), void *user)
 {
 	float center_r[3];
 	int edges = 0;
 
-	if (!nav_mesh)
+	agent = agent < 0 ? 0 : (agent >= NAV_AGENT_COUNT ? NAV_AGENT_COUNT - 1 : agent);
+
+	if (!nav_meshes[agent])
 	{
 		return 0;
 	}
 
 	ToRecast(center, center_r);
 
-	const dtNavMesh *mesh = nav_mesh;
+	const dtNavMesh *mesh = nav_meshes[agent];
 
 	for (int t = 0; t < mesh->getMaxTiles(); t++)
 	{
@@ -769,8 +894,10 @@ Distance(const float *a, const float *b)
 }
 
 extern "C" int
-Nav_GetPathToGoal(const optech2_path_request_t *request, optech2_path_info_t *info)
+Nav_GetPathToGoalSized(const optech2_path_request_t *request, optech2_path_info_t *info, float agent_radius,
+	float agent_height)
 {
+	dtNavMeshQuery *nav_query = nav_queries[NavAgentFor(agent_radius, agent_height)];
 	static const int MAX_POLYS = 512;
 	static const int MAX_CORNERS = 128;
 	dtPolyRef path[MAX_POLYS], start_ref = 0, goal_ref = 0;
@@ -893,22 +1020,28 @@ Nav_GetPathToGoal(const optech2_path_request_t *request, optech2_path_info_t *in
 	return 1;
 }
 
+extern "C" int
+Nav_GetPathToGoal(const optech2_path_request_t *request, optech2_path_info_t *info)
+{
+	return Nav_GetPathToGoalSized(request, info, 0, 0); /* the re-release's: player-sized */
+}
+
 /* ---- console commands ---- */
 
 static void
 Nav_Info_f(void)
 {
-	if (!nav_mesh)
+	if (!nav_meshes[0])
 	{
 		Com_Printf("Navigation: none (no map, or no walkable floor)\n");
 		return;
 	}
 
-	Com_Printf("Navigation: %s, %d polygons, %s in %d ms\n", nav_mapname, NavPolygonCount(),
-		nav_from_cache ? "loaded" : "built", nav_build_msec);
+	NavPrintInfo();
 }
 
-/* "nav_path x1 y1 z1 x2 y2 z2": a path between two points, for testing */
+/* "nav_path x1 y1 z1 x2 y2 z2 [small|medium|large]": a path between two
+   points for a monster of that size (default small), for testing */
 static void
 Nav_Path_f(void)
 {
@@ -916,10 +1049,20 @@ Nav_Path_f(void)
 	float length = 0;
 	int count, complete;
 
-	if (Cmd_Argc() != 7)
+	int agent = 0;
+
+	if (Cmd_Argc() != 7 && Cmd_Argc() != 8)
 	{
-		Com_Printf("usage: nav_path x1 y1 z1 x2 y2 z2\n");
+		Com_Printf("usage: nav_path x1 y1 z1 x2 y2 z2 [small|medium|large]\n");
 		return;
+	}
+
+	for (int a = 0; Cmd_Argc() == 8 && a < NAV_AGENT_COUNT; a++)
+	{
+		if (!strcmp(Cmd_Argv(7), NAV_AGENTS[a].name))
+		{
+			agent = a;
+		}
 	}
 
 	for (int i = 0; i < 3; i++)
@@ -928,7 +1071,7 @@ Nav_Path_f(void)
 		goal[i] = (float)atof(Cmd_Argv(4 + i));
 	}
 
-	count = Nav_FindPath(start, goal, points, 64, &complete);
+	count = NavFindPath(agent, start, goal, points, 64, &complete);
 
 	if (count > 1)
 	{

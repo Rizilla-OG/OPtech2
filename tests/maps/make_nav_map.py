@@ -2,9 +2,10 @@
 """Writes the navigation test map (optech2_nav.map) and compiles it with ericw-tools.
 
 A closed 1024 x 1024 room split by a low wall across its middle (y = 0),
-32 units high, with a 192-unit gap at the +x end: monsters see over it but
-can't climb it (steps are 18 units at most), so from the south half to the
-north half the only way is around the wall's end. The player starts in the
+32 units high, with a 192-unit gap at the +x end and a 64-unit slot near the
+-x end: monsters see over it but can't climb it (steps are 18 units at
+most), so from the south half to the north half the ways are the slot (for
+player-sized monsters only) and the gap (for all). The player starts in the
 south half.
 tests/nav/nav_check.py asks for paths across it; the monster test (M2:
 "a monster paths around an obstacle") uses it too.
@@ -26,6 +27,7 @@ ROOM_HALF_SIZE = 512
 ROOM_HEIGHT = 256
 WALL_THICKNESS = 32
 GAP = 192  # the opening at the +x end of the middle wall
+SLOT = (-480, -416)  # a 64-unit opening near the -x end: player-sized monsters only
 MIDDLE_WALL_HEIGHT = 32  # seen over (eyes are higher), not climbed (steps are 18 at most)
 
 
@@ -40,7 +42,8 @@ def build_map_text():
         box((-size - wall, -size, 0), (-size, size, height), limits_map.WALL_TEXTURE),
         box((size, -size, 0), (size + wall, size, height), limits_map.WALL_TEXTURE),
         # the obstacle: the middle wall, open at the +x end
-        box((-size, -wall // 2, 0), (size - GAP, wall // 2, MIDDLE_WALL_HEIGHT), limits_map.PILLAR_TEXTURE),
+        box((-size, -wall // 2, 0), (SLOT[0], wall // 2, MIDDLE_WALL_HEIGHT), limits_map.PILLAR_TEXTURE),
+        box((SLOT[1], -wall // 2, 0), (size - GAP, wall // 2, MIDDLE_WALL_HEIGHT), limits_map.PILLAR_TEXTURE),
     ]
     entity = limits_map.entity
     entities = [

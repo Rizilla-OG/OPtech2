@@ -504,6 +504,7 @@ PF_LocalizationMessage(const char *message, int *sound_index)
 static const optech2_server_import_t sv_optech2_import = {
 	OPTECH2_SERVER_EXT_VERSION,
 	Nav_GetPathToGoal,
+	Nav_GetPathToGoalSized,
 };
 
 static const optech2_server_ext_t *sv_optech2_ext;

@@ -2,10 +2,11 @@
 """Navigation check for OpenTech2 (M2: monster navigation, phases 1 and 2).
 
 On the dedicated server (no window):
-  - optech2_nav (tests/maps/make_nav_map.py): a room split by a wall with a
-    gap at one end. A path from the south half to the north half must go
-    around the wall's end: complete, longer than the straight line, and
-    every corner on the floor. A path along the open south half is close
+  - optech2_nav (tests/maps/make_nav_map.py): a room split by a low wall
+    with a narrow slot near one end and a wide gap at the other. A path from
+    the south half to the north half for a player-sized monster goes through
+    the slot; for a medium (tank) or large (supertank) one, through the gap:
+    complete, longer than the straight line, every corner on the floor. A path along the open south half is close
     to the straight line. A point outside the map gives no path (one just
     off the mesh, like a player against a wall, snaps to the nearest floor
     within 32 units).
@@ -13,7 +14,7 @@ On the dedicated server (no window):
     (same polygon count, much faster), and a path across the map is found.
   - our game library asks the engine for paths (GetPathToGoal through the
     optech2_server extension, the "navtest" cheat command): from the player
-    start to the north half it's on its way (in progress) toward the gap,
+    start to the north half it's on its way (in progress) toward the slot,
     to a point beside the player it has reached the goal.
 
 Usage:
@@ -111,18 +112,29 @@ def main():
 
     with tempfile.TemporaryDirectory(prefix="opentech2-nav-") as home:
         log = run_server(home, ["map optech2_nav", path_command(SOUTH, NORTH), path_command(SOUTH, SOUTH_EAST),
-                                path_command(SOUTH, OUTSIDE)], "test-map")
+                                path_command(SOUTH, OUTSIDE), path_command(SOUTH, NORTH) + " medium",
+                                path_command(SOUTH, NORTH) + " large"], "test-map")
         built = re.search(r"Navigation: optech2_nav, (\d+) polygons, built in (\d+) ms", log)
         report(bool(built), "test map: mesh built" + (f", {built.group(1)} polygons in {built.group(2)} ms"
                                                        if built else " (see the log)"))
         found = paths(log)
-        if len(found) == 3:
+        sizes = re.search(r"Navigation: optech2_nav, \d+ polygons, built in \d+ ms \(medium (\d+), large (\d+)\)", log)
+        report(bool(sizes) and int(sizes.group(1)) > 0 and int(sizes.group(2)) > 0,
+               "meshes for medium and large monsters too" +
+               (f": {sizes.group(1)} and {sizes.group(2)} polygons" if sizes else ""))
+        if len(found) == 5:
             status, count, length, corners = found[0]
             straight = math.dist(SOUTH[:2], NORTH[:2])
-            around = any(corner[0] > 512 - 192 - 32 for corner in corners)  # a corner at the wall's open end
-            report(status == "found" and length > straight * 1.5 and around,
-                   f"around the wall: {status}, {count} corners, {length:.0f} units "
-                   f"(straight line {straight:.0f}; via the gap: {around})")
+            via_slot = any(-480 <= corner[0] <= -416 for corner in corners)  # a corner in the slot
+            report(status == "found" and length > straight * 1.05 and via_slot,
+                   f"player-sized, across the wall: {status}, {count} corners, {length:.0f} units "
+                   f"(straight line {straight:.0f}; through the slot: {via_slot})")
+            for index, size in ((3, "medium"), (4, "large")):
+                status, count, length, corners = found[index]
+                via_gap = any(corner[0] > 512 - 192 - 16 for corner in corners)
+                report(status == "found" and via_gap and length > found[0][2],
+                       f"{size}, across the wall: {status}, {length:.0f} units, through the wide gap: {via_gap} "
+                       f"(too big for the slot)")
             report(all(abs(corner[2]) < 4 for corner in corners), "every corner on the floor (z near 0)")
             status, count, length, corners = found[1]
             straight = math.dist(SOUTH[:2], SOUTH_EAST[:2])
@@ -130,7 +142,7 @@ def main():
                    f"open floor: {status}, {length:.0f} units (straight line {straight:.0f})")
             report(found[2][0] == "none", f"a point outside the map: {found[2][0]}")
         else:
-            report(False, f"three paths answered ({len(found)})")
+            report(False, f"five paths answered ({len(found)})")
 
         first = run_server(home, ["map base1", "nav_path 128 -320 24 -1248 1585 -24"], "base1-build")
         second = run_server(home, ["map base1"], "base1-cache")
@@ -154,9 +166,9 @@ def main():
         answers = navtests(client)
         if len(answers) == 2:
             code, points, length, first = answers[0]
-            report(code == 4 and points >= 3 and first[0] > 0,
+            report(code == 4 and points >= 3 and -480 <= first[0] <= -400,
                    f"GetPathToGoal across the wall: code {code} (4 = in progress), {points} points, {length:.0f} units, "
-                   f"first move toward x {first[0]:.0f} (the gap is at x > 128)")
+                   f"first move toward x {first[0]:.0f} (the slot is at x -480 to -416)")
             code = answers[1][0]
             report(code == 0, f"GetPathToGoal to a point beside the player: code {code} (0 = reached the goal)")
         else:

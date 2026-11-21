@@ -146,7 +146,8 @@ V_ShowNav(void)
 
 	if (cl_shownav->value && budget > 0)
 	{
-		Nav_ForEachEdge(cl.refdef.vieworg, 1024, V_ShowNavEdge, &budget);
+		/* cl_shownav 1, 2, 3: the small, medium, large monsters' mesh */
+		Nav_ForEachEdge((int)cl_shownav->value - 1, cl.refdef.vieworg, 1024, V_ShowNavEdge, &budget);
 	}
 }
 

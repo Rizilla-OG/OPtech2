@@ -213,7 +213,7 @@ typedef struct
  * table; a game library without it just doesn't get them.
  */
 #define OPTECH2_EXT_SERVER "optech2_server"
-#define OPTECH2_SERVER_EXT_VERSION 1
+#define OPTECH2_SERVER_EXT_VERSION 2
 
 typedef struct
 {
@@ -222,6 +222,12 @@ typedef struct
 	/* the re-release's GetPathToGoal: a walking path on the map's navigation
 	   mesh (optech2_path.h); true unless the return code is an error */
 	int (*GetPathToGoal)(const optech2_path_request_t *request, optech2_path_info_t *info);
+
+	/* the same for a monster of this half width (16 for the player) and
+	   height: the engine keeps a mesh for each of a few sizes and uses the
+	   smallest the monster fits */
+	int (*GetPathToGoalSized)(const optech2_path_request_t *request, optech2_path_info_t *info, float agent_radius,
+		float agent_height);
 } optech2_server_import_t;
 
 typedef struct
