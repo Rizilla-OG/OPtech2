@@ -26,8 +26,7 @@ something unfinished; remove an entry in the commit that fixes it.
 - **Scripting API is small**: three events and player functions. Grow it with
   the data-driven definitions (entities, damage, think, spawn).
 - **Monster navigation, phase 4**: off-mesh links for lifts, jumps, ladders and teleporters (and the
-  re-release `.nav` files' links for stock maps). The mesh is built for a
-  player-sized monster only: big monsters (tank, supertank) need their own.
+  re-release `.nav` files' links for stock maps).
 - **`damage` check: the HyperBlaster at 60 Hz** lands 27-28 of 31 bolts on the
   supertank (18.1-18.7 damage per cell, 10 Hz: 20.6), just over the 10%
   limit. Also with the build from before the navigation work, so not a

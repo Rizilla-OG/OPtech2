@@ -43,16 +43,20 @@ extern "C"
 	int Nav_FindPath(const float *start, const float *goal, float (*points)[3], int max_points, int *complete);
 
 	/* the re-release's GetPathToGoal (optech2_path.h): fills info; true if
-	   the return code isn't an error */
+	   the return code isn't an error. For a player-sized monster; ..Sized
+	   picks the mesh for a monster of that half width and height. */
 	int Nav_GetPathToGoal(const optech2_path_request_t *request, optech2_path_info_t *info);
+	int Nav_GetPathToGoalSized(const optech2_path_request_t *request, optech2_path_info_t *info, float agent_radius,
+		float agent_height);
 
 	/* calls segment for every segment of the paths asked to be drawn
 	   (draw_time) that haven't expired */
 	void Nav_ForEachDebugSegment(void (*segment)(const float *a, const float *b, void *user), void *user);
 
-	/* calls edge for every polygon edge of the mesh within radius of center
-	   (for drawing it); returns the number of edges */
-	int Nav_ForEachEdge(const float *center, float radius,
+	/* calls edge for every polygon edge of a size's mesh (0 small, 1 medium,
+	   2 large) within radius of center (for drawing it); returns the number
+	   of edges */
+	int Nav_ForEachEdge(int agent, const float *center, float radius,
 		void (*edge)(const float *a, const float *b, void *user), void *user);
 
 #ifdef __cplusplus

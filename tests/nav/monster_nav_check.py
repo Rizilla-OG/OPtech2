@@ -3,7 +3,7 @@
 around an obstacle to reach the player").
 
 On optech2_nav (tests/maps/make_nav_map.py), a room split by a low wall
-(seen over, not climbed) with a gap at its +x end, the player stands in the
+(seen over, not climbed) with a slot near one end and a gap at the other, the player stands in the
 south half (god mode) and a Berserker (melee only) is spawned in the north
 half, where it sees the player across the wall and charges. Run twice:
   - g_monster_nav 1: the Berserker follows the navigation mesh around the
@@ -111,10 +111,10 @@ def main():
         return " > ".join(f"({x:.0f},{y:.0f})" for x, y in route[::3][:8])
 
     report(bool(nav_route), f"the {MONSTER} spawned behind the wall: {route_text(nav_route[:1])}")
-    went_around = any(x > GAP_X - 40 for x, _ in nav_route)
+    went_around = any(x > GAP_X - 40 or -500 < x < -400 for x, _ in nav_route)  # the gap, or the slot
     reached_south = any(y < -40 for _, y in nav_route)
     report(went_around and reached_south,
-           f"with paths it went around the wall's end (x > {GAP_X - 40}) into the player's half: "
+           f"with paths it went through an opening (the slot or the gap) into the player's half: "
            f"{route_text(nav_route)}")
     if nav_hits:
         first = nav_hits[0] - (NOISE_MS / 1000)

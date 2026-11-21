@@ -879,7 +879,8 @@ SV_CloseEnough(const edict_t *ent, const edict_t *goal, float dist)
 
 /*
  * optech2: a step along the engine's navigation path to goal (walking
- * monsters only, when the engine offers paths and g_monster_nav is on).
+ * monsters only, when the engine offers paths and g_monster_nav is on), on
+ * the mesh for the monster's size.
  * The path is asked for again every 0.25 s (staggered between monsters),
  * when its next corner is reached, or when a step fails. False when there's
  * no path to follow: the stock chase takes over.
@@ -889,7 +890,7 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 {
 	vec3_t to_point;
 
-	if (!gi_optech2 || !gi_optech2->GetPathToGoal || !g_monster_nav || !g_monster_nav->value ||
+	if (!gi_optech2 || !gi_optech2->GetPathToGoalSized || !g_monster_nav || !g_monster_nav->value ||
 		(ent->flags & (FL_FLY | FL_SWIM)) || !ent->groundentity)
 	{
 		return false;
@@ -920,7 +921,8 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 		request.path_flags = OPTECH2_PATH_WALK;
 		request.move_dist = dist;
 
-		gi_optech2->GetPathToGoal(&request, &info);
+		/* the mesh for its size: half its width, its height */
+		gi_optech2->GetPathToGoalSized(&request, &info, Q_max(Q_max(-ent->mins[0], ent->maxs[0]), Q_max(-ent->mins[1], ent->maxs[1])), ent->maxs[2] - ent->mins[2]);
 		ent->monsterinfo.nav_has_point = (info.return_code == OPTECH2_PATH_IN_PROGRESS);
 
 		if (ent->monsterinfo.nav_has_point)
