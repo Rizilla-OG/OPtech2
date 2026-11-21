@@ -717,6 +717,182 @@ Nav_ForEachEdge(const float *center, float radius, void (*edge)(const float *a, 
 	return edges;
 }
 
+/* ---- the re-release's GetPathToGoal ---- */
+
+/* paths asked to be drawn, until their time is up */
+static const int NAV_DEBUG_PATHS = 32;
+static const int NAV_DEBUG_POINTS = 64;
+
+struct NavDebugPath
+{
+	int expires; /* Sys_Milliseconds */
+	int count;
+	float points[NAV_DEBUG_POINTS][3];
+};
+
+static NavDebugPath nav_debug_paths[NAV_DEBUG_PATHS];
+static int nav_debug_next;
+
+static void
+NavKeepDebugPath(const float (*points)[3], int count, float seconds)
+{
+	NavDebugPath &path = nav_debug_paths[nav_debug_next];
+
+	nav_debug_next = (nav_debug_next + 1) % NAV_DEBUG_PATHS;
+	path.count = count < NAV_DEBUG_POINTS ? count : NAV_DEBUG_POINTS;
+	path.expires = Sys_Milliseconds() + (int)(seconds * 1000.0f);
+	memcpy(path.points, points, sizeof(path.points[0]) * path.count);
+}
+
+extern "C" void
+Nav_ForEachDebugSegment(void (*segment)(const float *a, const float *b, void *user), void *user)
+{
+	const int now = Sys_Milliseconds();
+
+	for (int i = 0; i < NAV_DEBUG_PATHS; i++)
+	{
+		const NavDebugPath &path = nav_debug_paths[i];
+
+		for (int p = 1; path.expires > now && p < path.count; p++)
+		{
+			segment(path.points[p - 1], path.points[p], user);
+		}
+	}
+}
+
+static float
+Distance(const float *a, const float *b)
+{
+	const float d[3] = {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
+
+	return sqrtf(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+}
+
+extern "C" int
+Nav_GetPathToGoal(const optech2_path_request_t *request, optech2_path_info_t *info)
+{
+	static const int MAX_POLYS = 512;
+	static const int MAX_CORNERS = 128;
+	dtPolyRef path[MAX_POLYS], start_ref = 0, goal_ref = 0;
+	float start_r[3], goal_r[3], start_on[3], goal_on[3], extents[3];
+	float corners_r[MAX_CORNERS * 3], corners[MAX_CORNERS][3];
+	unsigned char corner_flags[MAX_CORNERS];
+	dtPolyRef corner_refs[MAX_CORNERS];
+	int path_count = 0, corner_count = 0, next;
+	dtQueryFilter filter;
+	float length = 0;
+
+	memset(info, 0, sizeof(*info));
+	info->link_type = OPTECH2_PATH_LINK_WALK;
+
+	if (!(request->path_flags & (OPTECH2_PATH_WALK | OPTECH2_PATH_WATER)))
+	{
+		info->return_code = OPTECH2_PATH_MISSING_WALK_OR_SWIM_FLAG;
+		return 0;
+	}
+
+	if (!nav_query)
+	{
+		info->return_code = OPTECH2_PATH_NO_NAV_AVAILABLE;
+		return 0;
+	}
+
+	/* how far from the floor the start and goal may be: request, else defaults */
+	extents[0] = extents[2] = request->radius > 0 ? request->radius : 32.0f;
+	extents[1] = request->max_height > 0 ? request->max_height : 64.0f; /* Recast: y is up */
+	filter.setIncludeFlags(NAV_FLAG_WALK);
+	ToRecast(request->start, start_r);
+	ToRecast(request->goal, goal_r);
+
+	if (dtStatusFailed(nav_query->findNearestPoly(start_r, extents, &filter, &start_ref, start_on)) || !start_ref)
+	{
+		info->return_code = OPTECH2_PATH_NO_START_NODE;
+		return 0;
+	}
+
+	if (dtStatusFailed(nav_query->findNearestPoly(goal_r, extents, &filter, &goal_ref, goal_on)) || !goal_ref)
+	{
+		info->return_code = OPTECH2_PATH_NO_GOAL_NODE;
+		return 0;
+	}
+
+	if (dtStatusFailed(nav_query->findPath(start_ref, goal_ref, start_on, goal_on, &filter, path, &path_count,
+		MAX_POLYS)) || path_count == 0)
+	{
+		info->return_code = OPTECH2_PATH_NO_PATH_FOUND;
+		return 0;
+	}
+
+	const bool complete = (path[path_count - 1] == goal_ref);
+
+	if (!complete)
+	{
+		nav_query->closestPointOnPoly(path[path_count - 1], goal_r, goal_on, nullptr);
+	}
+
+	if (dtStatusFailed(nav_query->findStraightPath(start_on, goal_on, path, path_count, corners_r, corner_flags,
+		corner_refs, &corner_count, MAX_CORNERS)) || corner_count == 0)
+	{
+		info->return_code = OPTECH2_PATH_NO_PATH_FOUND;
+		return 0;
+	}
+
+	for (int i = 0; i < corner_count; i++)
+	{
+		ToQuake(&corners_r[i * 3], corners[i]);
+
+		if (i > 0)
+		{
+			length += Distance(corners[i - 1], corners[i]);
+		}
+	}
+
+	info->point_count = corner_count;
+	info->path_dist_sqr = length * length;
+
+	if (request->points && request->point_count > 0)
+	{
+		const int copy = corner_count < request->point_count ? corner_count : (int)request->point_count;
+
+		memcpy(request->points, corners, sizeof(corners[0]) * copy);
+	}
+
+	if (request->draw_time > 0)
+	{
+		NavKeepDebugPath(corners, corner_count, request->draw_time);
+	}
+
+	/* corners[0] is where the start meets the floor: move toward the first
+	   corner farther than move_dist, and the one after it */
+	next = 1;
+
+	while (next < corner_count - 1 && Distance(request->start, corners[next]) <= request->move_dist)
+	{
+		next++;
+	}
+
+	if (next >= corner_count)
+	{
+		next = corner_count - 1;
+	}
+
+	memcpy(info->first_move_point, corners[next], sizeof(info->first_move_point));
+	memcpy(info->second_move_point, corners[next + 1 < corner_count ? next + 1 : next],
+		sizeof(info->second_move_point));
+
+	/* at the end: the goal, or as close as the mesh gets */
+	if (Distance(request->start, corners[corner_count - 1]) <= (request->move_dist > 16.0f ? request->move_dist : 16.0f))
+	{
+		info->return_code = complete ? OPTECH2_PATH_REACHED_GOAL : OPTECH2_PATH_REACHED_PATH_END;
+	}
+	else
+	{
+		info->return_code = OPTECH2_PATH_IN_PROGRESS;
+	}
+
+	return 1;
+}
+
 /* ---- console commands ---- */
 
 static void
@@ -753,6 +929,11 @@ Nav_Path_f(void)
 	}
 
 	count = Nav_FindPath(start, goal, points, 64, &complete);
+
+	if (count > 1)
+	{
+		NavKeepDebugPath(points, count, 5.0f); /* cl_shownav or not: drawn for 5 s */
+	}
 
 	for (int i = 1; i < count; i++)
 	{

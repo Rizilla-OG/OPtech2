@@ -112,12 +112,39 @@ V_ShowNavEdge(const float *a, const float *b, void *user)
 	}
 }
 
+/* a path asked to be drawn (a request's draw_time, nav_path): magenta (it
+   stands out from both the floor and the green mesh), every 4 units, in
+   two rows */
+static void
+V_ShowNavPathSegment(const float *a, const float *b, void *user)
+{
+	vec3_t point;
+	float length, step;
+	int *budget = user;
+
+	length = sqrtf((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]) + (b[2] - a[2]) * (b[2] - a[2]));
+
+	for (step = 0; step <= length && *budget > 1; step += 4, (*budget) -= 2)
+	{
+		float fraction = (length > 0) ? step / length : 0;
+
+		point[0] = a[0] + (b[0] - a[0]) * fraction;
+		point[1] = a[1] + (b[1] - a[1]) * fraction;
+		point[2] = a[2] + (b[2] - a[2]) * fraction + 6;
+		V_AddParticle(point, 0xffff30ff, 1.0f);
+		point[2] += 4;
+		V_AddParticle(point, 0xffff30ff, 1.0f);
+	}
+}
+
 static void
 V_ShowNav(void)
 {
 	int budget = MAX_PARTICLES - r_numparticles - 256; /* leave room for the game's own */
 
-	if (budget > 0)
+	Nav_ForEachDebugSegment(V_ShowNavPathSegment, &budget);
+
+	if (cl_shownav->value && budget > 0)
 	{
 		Nav_ForEachEdge(cl.refdef.vieworg, 1024, V_ShowNavEdge, &budget);
 	}
@@ -800,10 +827,7 @@ V_RenderView(float stereo_separation)
 			V_TestParticles();
 		}
 
-		if (cl_shownav->value)
-		{
-			V_ShowNav();
-		}
+		V_ShowNav(); /* optech2: paths asked to be drawn; the mesh with cl_shownav */
 
 		if (cl_testentities->value)
 		{

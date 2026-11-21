@@ -24,6 +24,8 @@
 #ifndef CO_NAV_H
 #define CO_NAV_H
 
+#include "optech2_path.h"
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -39,6 +41,14 @@ extern "C"
 	   0 if there's no mesh or no path. *complete is false when the goal isn't
 	   reachable and the path ends at the nearest reachable point. */
 	int Nav_FindPath(const float *start, const float *goal, float (*points)[3], int max_points, int *complete);
+
+	/* the re-release's GetPathToGoal (optech2_path.h): fills info; true if
+	   the return code isn't an error */
+	int Nav_GetPathToGoal(const optech2_path_request_t *request, optech2_path_info_t *info);
+
+	/* calls segment for every segment of the paths asked to be drawn
+	   (draw_time) that haven't expired */
+	void Nav_ForEachDebugSegment(void (*segment)(const float *a, const float *b, void *user), void *user);
 
 	/* calls edge for every polygon edge of the mesh within radius of center
 	   (for drawing it); returns the number of edges */

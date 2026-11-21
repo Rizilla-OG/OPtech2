@@ -1899,6 +1899,64 @@ Cmd_ItemInfo_f(edict_t *ent)
 }
 
 /*
+ * optech2: "navtest x y z" asks the engine for a walking path from the
+ * player to x y z (GetPathToGoal), prints the answer and draws the path for
+ * 5 s (cheat, for testing navigation).
+ */
+static void
+Cmd_NavTest_f(edict_t *ent)
+{
+	optech2_path_request_t request;
+	optech2_path_info_t info;
+	float points[32][3];
+	int i;
+
+	if (!ent || !ent->client)
+	{
+		return;
+	}
+
+	if (!sv_cheats->value)
+	{
+		gi.cprintf(ent, PRINT_HIGH, "You must run the server with '+set cheats 1' to enable this command.\n");
+		return;
+	}
+
+	if (gi.argc() != 4)
+	{
+		gi.cprintf(ent, PRINT_HIGH, "usage: navtest x y z\n");
+		return;
+	}
+
+	if (!gi_optech2 || !gi_optech2->GetPathToGoal)
+	{
+		gi.cprintf(ent, PRINT_HIGH, "navtest: this engine has no navigation\n");
+		return;
+	}
+
+	memset(&request, 0, sizeof(request));
+	VectorCopy(ent->s.origin, request.start);
+	request.start[2] += ent->mins[2]; /* the feet */
+
+	for (i = 0; i < 3; i++)
+	{
+		request.goal[i] = (float)atof(gi.argv(1 + i));
+	}
+
+	request.path_flags = OPTECH2_PATH_WALK;
+	request.move_dist = 16;
+	request.draw_time = 5;
+	request.points = points;
+	request.point_count = 32;
+
+	gi_optech2->GetPathToGoal(&request, &info);
+	gi.cprintf(ent, PRINT_HIGH, "navtest code %d points %d length %.0f first %.0f %.0f %.0f second %.0f %.0f %.0f\n",
+		info.return_code, info.point_count, sqrtf(info.path_dist_sqr), info.first_move_point[0],
+		info.first_move_point[1], info.first_move_point[2], info.second_move_point[0], info.second_move_point[1],
+		info.second_move_point[2]);
+}
+
+/*
  * optech2: "fxtest [type]" sends a temporary entity of that type (default
  * 200; mods' own types only, TE_MOD_FIRST..255) 128 units in front of the
  * player, with the direction back at them, for testing a game library's own
@@ -2583,6 +2641,10 @@ ClientCommand(edict_t *ent)
 	else if (Q_stricmp(cmd, "iteminfo") == 0) /* optech2 */
 	{
 		Cmd_ItemInfo_f(ent);
+	}
+	else if (Q_stricmp(cmd, "navtest") == 0) /* optech2 */
+	{
+		Cmd_NavTest_f(ent);
 	}
 	else if (Q_stricmp(cmd, "fxtest") == 0) /* optech2 */
 	{

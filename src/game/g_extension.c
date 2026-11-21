@@ -39,6 +39,21 @@ static const optech2_pmove_ext_t pmove_extension = {
 	PmoveEx
 };
 
+/* the engine's services (paths, ...): set when the game library is loaded
+   by an engine that has them, NULL otherwise */
+const optech2_server_import_t *gi_optech2;
+
+static void
+Server_SetImport(const optech2_server_import_t *import)
+{
+	gi_optech2 = (import && import->version == OPTECH2_SERVER_EXT_VERSION) ? import : NULL;
+}
+
+static const optech2_server_ext_t server_extension = {
+	OPTECH2_SERVER_EXT_VERSION,
+	Server_SetImport,
+};
+
 /*
  * OPtech2 additions the game library offers the engine, by name; NULL for
  * names it doesn't know. Exported next to GetGameAPI and GetCGameAPI.
@@ -54,6 +69,11 @@ OPtech2_GetExtension(const char *name)
 	if (name && !strcmp(name, OPTECH2_EXT_FX))
 	{
 		return (void *)&fx_extension;
+	}
+
+	if (name && !strcmp(name, OPTECH2_EXT_SERVER))
+	{
+		return (void *)&server_extension;
 	}
 
 	return NULL;

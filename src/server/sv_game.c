@@ -26,6 +26,8 @@
 
 #include <stddef.h> /* optech2: offsetof */
 #include "header/server.h"
+#include "../common/header/optech2_ext.h" /* optech2 */
+#include "../common/header/nav.h" /* optech2 */
 #include <limits.h>
 
 #ifndef DEDICATED_ONLY
@@ -498,6 +500,30 @@ PF_LocalizationMessage(const char *message, int *sound_index)
 	return localmessage;
 }
 
+/* optech2: engine services for our game library (optech2_ext.h) */
+static const optech2_server_import_t sv_optech2_import = {
+	OPTECH2_SERVER_EXT_VERSION,
+	Nav_GetPathToGoal,
+};
+
+static const optech2_server_ext_t *sv_optech2_ext;
+
+static void
+SV_ConnectGameExtensions(void)
+{
+	OPtech2_GetExtension_t get_extension = (OPtech2_GetExtension_t)Sys_GetGameProc("OPtech2_GetExtension");
+	const optech2_server_ext_t *ext = get_extension ? get_extension(OPTECH2_EXT_SERVER) : NULL;
+
+	sv_optech2_ext = NULL;
+
+	if (ext && ext->version == OPTECH2_SERVER_EXT_VERSION && ext->SetImport)
+	{
+		sv_optech2_ext = ext;
+		ext->SetImport(&sv_optech2_import);
+		Com_DPrintf("game library: optech2_server extension connected\n");
+	}
+}
+
 /*
  * Called when either the entire server is being killed, or
  * it is changing to a different game directory.
@@ -511,6 +537,13 @@ SV_ShutdownGameProgs(void)
 	}
 
 	ge->Shutdown();
+
+	if (sv_optech2_ext)
+	{
+		sv_optech2_ext->SetImport(NULL); /* optech2 */
+		sv_optech2_ext = NULL;
+	}
+
 	Sys_UnloadGame();
 	ge = NULL;
 }
@@ -685,6 +718,8 @@ SV_InitGameProgs(void)
 		Com_Error(ERR_DROP, "failed to load game DLL");
 		return;
 	}
+
+	SV_ConnectGameExtensions(); /* optech2 */
 
 	if (ge->apiversion != GAME_API_VERSION &&
 		ge->apiversion != GAME_API_R97_VERSION)

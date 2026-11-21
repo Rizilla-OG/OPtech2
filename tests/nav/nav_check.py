@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Navigation mesh check for OpenTech2 (M2: monster navigation, phase 1).
+"""Navigation check for OpenTech2 (M2: monster navigation, phases 1 and 2).
 
 On the dedicated server (no window):
   - optech2_nav (tests/maps/make_nav_map.py): a room split by a wall with a
@@ -11,6 +11,10 @@ On the dedicated server (no window):
     within 32 units).
   - base1: the mesh is built, then loaded from its cache on the next start
     (same polygon count, much faster), and a path across the map is found.
+  - our game library asks the engine for paths (GetPathToGoal through the
+    optech2_server extension, the "navtest" cheat command): from the player
+    start to the north half it's on its way (in progress) toward the gap,
+    to a point beside the player it has reached the goal.
 
 Usage:
   nav_check.py
@@ -29,6 +33,7 @@ from pathlib import Path
 
 REPO_DIR = Path(__file__).resolve().parent.parent.parent
 SERVER_BINARY = REPO_DIR / "build" / "release" / "OpenTech2-server"
+CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 MAP_FILE = REPO_DIR / "build" / "maps" / "optech2_nav.bsp"
 OUTPUT_DIR = REPO_DIR / "build" / "nav-check"
 DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
@@ -50,6 +55,33 @@ def run_server(home, commands, log_name):
     log = result.stdout + result.stderr
     (OUTPUT_DIR / f"{log_name}.log").write_text(log)
     return log
+
+
+def run_client(home, commands, log_name):
+    """The game (no window) on the test map, running console commands."""
+    user_dir = Path(home) / ".opentech2" / "baseq2"
+    (user_dir / "maps").mkdir(parents=True, exist_ok=True)
+    shutil.copy(MAP_FILE, user_dir / "maps" / MAP_FILE.name)
+    (user_dir / "navclient.cfg").write_text("\n".join(commands) + "\n")
+    environment = dict(os.environ, HOME=str(home), SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
+    try:
+        result = subprocess.run([str(CLIENT_BINARY), "-datadir", str(DATA_DIR), "+set", "vid_renderer", "soft",
+                                 "+set", "r_vsync", "0", "+set", "s_initsound", "0", "+set", "cheats", "1",
+                                 "+set", "developer", "1", "+exec", "navclient.cfg"],
+                                env=environment, stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                                timeout=60, check=False)
+        log = result.stdout + result.stderr
+    except subprocess.TimeoutExpired as timeout:
+        log = (timeout.stdout or b"").decode(errors="replace") + "\nERROR: the game didn't quit\n"
+    (OUTPUT_DIR / f"{log_name}.log").write_text(log)
+    return log
+
+
+def navtests(log):
+    """[(code, points, length, first move point)] for every navtest answer."""
+    return [(int(code), int(points), float(length), (float(x), float(y), float(z)))
+            for code, points, length, x, y, z in
+            re.findall(r"navtest code (\d+) points (\d+) length (\d+) first (-?\d+) (-?\d+) (-?\d+)", log)]
 
 
 def paths(log):
@@ -115,7 +147,22 @@ def main():
         report((Path(home) / ".opentech2" / "baseq2" / "navigation" / "base1.otnav").exists(),
                "cache file in the game folder: navigation/base1.otnav")
 
-    errors = [line for line in log.splitlines() if "ERROR" in line or "nav: " in line]
+        client = run_client(home, ["map optech2_nav", 'delay 3000 "cmd navtest -256 320 0"',
+                                   'delay 3200 "cmd navtest -252 -317 0"', "delay 3500 quit"], "game-library")
+        report("optech2_server extension connected" in client,
+               "the game library takes the engine's optech2_server extension")
+        answers = navtests(client)
+        if len(answers) == 2:
+            code, points, length, first = answers[0]
+            report(code == 4 and points >= 3 and first[0] > 0,
+                   f"GetPathToGoal across the wall: code {code} (4 = in progress), {points} points, {length:.0f} units, "
+                   f"first move toward x {first[0]:.0f} (the gap is at x > 128)")
+            code = answers[1][0]
+            report(code == 0, f"GetPathToGoal to a point beside the player: code {code} (0 = reached the goal)")
+        else:
+            report(False, f"two navtest answers ({len(answers)})")
+
+    errors = [line for line in (log + client).splitlines() if "ERROR" in line or "nav: " in line]
     report(not errors, "no errors" + (f" ({errors[0]})" if errors else ""))
     passed = all(results)
     print(f"\nNavigation check {'passed' if passed else 'FAILED'}. Logs in {OUTPUT_DIR}")

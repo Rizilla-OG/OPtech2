@@ -27,6 +27,7 @@
 #define COMMON_OPTECH2_EXT_H
 
 #include "shared.h"
+#include "optech2_path.h"
 
 typedef void *(*OPtech2_GetExtension_t)(const char *name);
 
@@ -205,5 +206,28 @@ typedef struct
 	/* forget all effects (level change, disconnect) */
 	void (*ClearEffects)(void);
 } optech2_fx_ext_t;
+
+/*
+ * Server: engine services for the game library. When the game library is
+ * loaded, the server asks it for this extension and hands it the import
+ * table; a game library without it just doesn't get them.
+ */
+#define OPTECH2_EXT_SERVER "optech2_server"
+#define OPTECH2_SERVER_EXT_VERSION 1
+
+typedef struct
+{
+	int version; /* OPTECH2_SERVER_EXT_VERSION */
+
+	/* the re-release's GetPathToGoal: a walking path on the map's navigation
+	   mesh (optech2_path.h); true unless the return code is an error */
+	int (*GetPathToGoal)(const optech2_path_request_t *request, optech2_path_info_t *info);
+} optech2_server_import_t;
+
+typedef struct
+{
+	int version; /* OPTECH2_SERVER_EXT_VERSION */
+	void (*SetImport)(const optech2_server_import_t *import); /* NULL when the game unloads */
+} optech2_server_ext_t;
 
 #endif
