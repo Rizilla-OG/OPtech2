@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 
 ## Unreleased
 
+- Windows: `game.dll` is linked fully static, so its C++ runtime and winpthread are inside it (it needed `libwinpthread-1.dll` from MinGW). Cross-built and run under Wine: the client game module, movement and effects load from `game.dll`.
 - Test mod (`mods/testmod/`): the Test Gun, a new weapon with its own effect (temp entity 201, a double helix drawn by the mod's client code), built from the game source with no engine change. `tests/mod/mod_check.py` builds it, checks no engine source is touched, and plays it (also in `run_all.py`).
 - Fixed: with the client game module, names of items past the re-release HUD's 256 (mission pack, Quake II 64 and mod items) showed another item's name. Stats the layout shows as text are now converted to the re-release configstring numbering, and strings without a slot there are parked in spare general slots.
 - Entity events (footsteps with material sounds, item respawn, teleport, falling) run in the game library too (`src/game/cgame_fx/fx_events.c`, effects extension version 5: `EntityEvent`). All client effects the server triggers now come from the game library when it has the extension; the engine's copies remain as the fallback.
