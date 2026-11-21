@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- CI: the build workflows (Linux x86_64 and aarch64, Windows MinGW and MSVC, macOS) and CodeQL run on pushes to `main` (they were set to a `master` branch, so pushes built nothing). Coverity only runs when started by hand.
 - Yamagi's changelog renamed `CHANGELOG.old`; OpenTech2's own changes are in this file.
 - `SECURITY.md`: what counts as a security problem in the engine and the game library, and how to report one privately.
 - Fixed: the HUD showed during Quake II 64's camera scenes and level ends; like the re-release, it is hidden in intermissions on Quake II 64 levels and in deathmatch.
