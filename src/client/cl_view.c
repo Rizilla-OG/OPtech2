@@ -25,6 +25,7 @@
  */
 
 #include "header/client.h"
+#include "../common/header/nav.h" /* optech2: cl_shownav */
 #include "input/header/input.h"
 
 /* development tools for weapons */
@@ -40,6 +41,7 @@ cvar_t *crosshair_color_r;
 cvar_t *crosshair_color_g;
 cvar_t *crosshair_color_b;
 cvar_t *cl_testparticles;
+cvar_t *cl_shownav; /* optech2: draw the navigation mesh (src/common/nav) */
 cvar_t *cl_testentities;
 cvar_t *cl_testlights;
 cvar_t *cl_testblend;
@@ -85,6 +87,40 @@ V_AddEntity(const entity_t *ent)
 	}
 
 	r_entities[r_numentities++] = *ent;
+}
+
+/* optech2: the navigation mesh's edges near the view as dots, every 12
+   units, 2 units above the floor. Only where the server runs in this
+   process (single player, listen server): the mesh is the server's. */
+static void
+V_ShowNavEdge(const float *a, const float *b, void *user)
+{
+	vec3_t point;
+	float length, step;
+	int *budget = user;
+
+	length = sqrtf((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]) + (b[2] - a[2]) * (b[2] - a[2]));
+
+	for (step = 0; step <= length && *budget > 0; step += 12, (*budget)--)
+	{
+		float fraction = (length > 0) ? step / length : 0;
+
+		point[0] = a[0] + (b[0] - a[0]) * fraction;
+		point[1] = a[1] + (b[1] - a[1]) * fraction;
+		point[2] = a[2] + (b[2] - a[2]) * fraction + 2;
+		V_AddParticle(point, 0xff30ff30, 1.0f);
+	}
+}
+
+static void
+V_ShowNav(void)
+{
+	int budget = MAX_PARTICLES - r_numparticles - 256; /* leave room for the game's own */
+
+	if (budget > 0)
+	{
+		Nav_ForEachEdge(cl.refdef.vieworg, 1024, V_ShowNavEdge, &budget);
+	}
 }
 
 void
@@ -764,6 +800,11 @@ V_RenderView(float stereo_separation)
 			V_TestParticles();
 		}
 
+		if (cl_shownav->value)
+		{
+			V_ShowNav();
+		}
+
 		if (cl_testentities->value)
 		{
 			V_TestEntities();
@@ -907,6 +948,7 @@ V_Init(void)
 	crosshair_color_b = Cvar_Get("crosshair_color_b", "1", CVAR_ARCHIVE);
 	cl_testblend = Cvar_Get("cl_testblend", "0", 0);
 	cl_testparticles = Cvar_Get("cl_testparticles", "0", 0);
+	cl_shownav = Cvar_Get("cl_shownav", "0", 0);
 	cl_testentities = Cvar_Get("cl_testentities", "0", 0);
 	cl_testlights = Cvar_Get("cl_testlights", "0", 0);
 
