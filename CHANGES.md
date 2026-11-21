@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Fix: loading a save made since items are matched by name left health packs without their item ("Health" has no classname, and the save's table wrote an empty name), and touching one crashed. The table writes `*` and the pickup name for such items, saves with the empty names load correctly, and touching an item-less entity no longer crashes.
 - Scripts: new `item_taken` event, after a player really took an item. `item_pickup` is asked on every touch (also for items the player can't take), so counting there over-counted; the survival example counted 10 pickups a second standing on full ammo.
 - Example script mod `mods/survival`: a tougher start, a Quad limit per level and a pickup bonus in one Lua file; `tests/mod/script_check.py` plays it.
 - Saves match items by name: game and level saves end with a table of item classnames, and loading maps the saved item numbers to the current ones (inventories, the weapon in hand, items lying in the level). A save keeps loading when mods add or remove items; an item the game no longer has is dropped with a message, and a dropped weapon in hand becomes the Blaster. Saves without the table load as before.

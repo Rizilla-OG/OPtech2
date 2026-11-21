@@ -101,19 +101,25 @@ PICKUPS = [
     'delay 6600 "lua print(\'shells before box\', game.count(1, \'Shells\'))"',
     f'delay 6700 "spawnentity ammo_shells_big {START}"',
     'delay 7300 "lua print(\'box\', game.count(1, \'Shells\'), game.count(1, \'Shell Box\'))"',
+    # a health pack left lying (full health): "Health" has no classname,
+    # which the save's item table has to handle
+    'delay 7350 "lua game.set_health(1, 100)"',
+    f'delay 7360 "spawnentity item_health {START}"',
     'delay 7400 "save itemtest"',
     'delay 8400 quit',
 ]
 
 LOAD = [
     "load itemtest",
+    'delay 2500 "lua game.set_health(1, 50)"',
+    'delay 2900 "lua print(\'healed\', game.health(1))"',
     'delay 3000 "lua print(\'loaded\', game.weapon(1), game.count(1, \'Boomstick\'), game.count(1, \'Bullets\'), '
     'game.count(1, \'Shells\'))"',
     'delay 3300 quit',
 ]
 # without moda there's no Boomstick to count
 LOAD_WITHOUT = [LOAD[0], 'delay 3000 "lua print(\'loaded\', \'[\' .. game.weapon(1) .. \']\', game.count(1, \'Bullets\'))"',
-                LOAD[2]]
+                LOAD[-1]]
 
 
 def play(name, with_mods, home=None, fs_mods="moda,modb", console=None):
@@ -191,6 +197,11 @@ def main():
                 after and loaded.group(3) == fired.group(1)),
            "loaded with modz's item added below moda (numbers shifted): Boomstick in hand, same bullets" +
            (f" ({loaded.group(1)}, bullets {loaded.group(3)})" if loaded else ""))
+
+    healed = re.search(r"^healed\s+(\d+)$", shifted, re.M)
+    report(bool(healed and int(healed.group(1)) > 50) and "crashed" not in shifted,
+           "a health pack saved lying on the floor still works after loading" +
+           (f" (50 -> {healed.group(1)} health)" if healed else ""))
 
     without = play("load-without", True, home=save_home, fs_mods="modz,modb", console=LOAD_WITHOUT)
     loaded = re.search(r"^loaded\s+\[([^]]*)\]\s+(\d+)$", without, re.M)
