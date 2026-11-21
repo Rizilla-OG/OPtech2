@@ -12,6 +12,7 @@ entities. stress_check.py loads it and measures frame times.
 Usage:
   make_stress_map.py              write + compile into build/maps/
   make_stress_map.py --map-only   only write the .map
+  make_stress_map.py --soldiers 1000 --name optech2_stress1k   a bigger fight (website clip)
 """
 
 import argparse
@@ -56,7 +57,7 @@ def origin_brush(x, y, z):
     return brush.replace(" 0 0 0 1 1 0 0 0", f" 0 0 0 1 1 {CONTENTS_ORIGIN} 0 0")
 
 
-def build_map_text():
+def build_map_text(soldier_count=SOLDIER_COUNT):
     size, height, wall = ROOM_HALF_SIZE, ROOM_HEIGHT, WALL_THICKNESS
     box = limits_map.box_brush
     world_brushes = [
@@ -95,7 +96,7 @@ def build_map_text():
                                [box((x - 8, y - 8, 0), (x + 8, y + 8, 128), limits_map.PILLAR_TEXTURE),
                                 origin_brush(x, y, 64)]))
 
-    for index, (x, y, z) in enumerate(grid_spots(SOLDIER_COUNT, size, 300, 24)):
+    for index, (x, y, z) in enumerate(grid_spots(soldier_count, size, 300, 24)):
         entities.append(entity({"classname": "monster_soldier_light", "origin": f"{x + 52} {y + 52} {z}",
                                 "angle": str((index * 37) % 360)}))
 
@@ -111,19 +112,21 @@ def main():
     parser.add_argument("--datadir", type=Path, default=limits_map.DEFAULT_DATA_DIR, help="folder holding the stock baseq2/")
     parser.add_argument("--tools", type=Path, default=limits_map.DEFAULT_TOOLS_DIR, help="ericw-tools folder")
     parser.add_argument("--map-only", action="store_true", help="write the .map, don't compile")
+    parser.add_argument("--soldiers", type=int, default=SOLDIER_COUNT, help="light soldiers to place (default %(default)s)")
+    parser.add_argument("--name", default=MAP_NAME, help="map name (default %(default)s)")
     arguments = parser.parse_args()
 
     limits_map.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    limits_map.MAP_NAME = MAP_NAME  # tool logs are named after the map
-    map_path = limits_map.OUTPUT_DIR / f"{MAP_NAME}.map"
-    map_path.write_text(build_map_text())
+    limits_map.MAP_NAME = arguments.name  # tool logs are named after the map
+    map_path = limits_map.OUTPUT_DIR / f"{arguments.name}.map"
+    map_path.write_text(build_map_text(arguments.soldiers))
     print(f"wrote {map_path}")
     if arguments.map_only:
         return 0
     if not any((arguments.tools / name).exists() for name in ("qbsp", "qbsp.exe")):
         sys.exit(f"ericw-tools not found in {arguments.tools}: run python3 tools/get_ericw_tools.py")
 
-    bsp_path = limits_map.OUTPUT_DIR / f"{MAP_NAME}.bsp"
+    bsp_path = limits_map.OUTPUT_DIR / f"{arguments.name}.bsp"
     game_paths = ["-basedir", str(arguments.datadir / "baseq2"), "-gamedir", str(arguments.datadir / "baseq2")]
     limits_map.run_tool(arguments.tools, ["qbsp", "-qbism", "-subdivide", "240", *game_paths, str(map_path), str(bsp_path)])
     limits_map.run_tool(arguments.tools, ["vis", *game_paths, str(bsp_path)])

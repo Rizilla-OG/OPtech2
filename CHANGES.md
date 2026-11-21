@@ -4,6 +4,9 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Website: a looping clip of 1,000 soldiers on the stress map at the top, questions and requirements, a table of new commands, credits, a site icon, a Quake II 64 link preview image and live build badges (also in the README).
+- `CONTRIBUTING.md`: building, the checks, code style, `CHANGES.md` entries and pull requests.
+- `tests/maps/make_stress_map.py --soldiers N --name NAME` builds bigger fights (the website clip uses 1000).
 - CI fixes from the first builds on `main`: the C++ HUD code builds with MSVC (its spelling of the C++20, forced-include and warning options), and the macOS app bundle launches `OpenTech2` instead of `quake2`.
 - CI: the build workflows (Linux x86_64 and aarch64, Windows MinGW and MSVC, macOS) and CodeQL run on pushes to `main` (they were set to a `master` branch, so pushes built nothing). Coverity only runs when started by hand.
 - Yamagi's changelog renamed `CHANGELOG.old`; OpenTech2's own changes are in this file.

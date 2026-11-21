@@ -1,5 +1,9 @@
 # OpenTech2
 
+[![Linux](https://github.com/Rizilla-OG/OPtech2/actions/workflows/linux_x86_64.yml/badge.svg)](https://github.com/Rizilla-OG/OPtech2/actions/workflows/linux_x86_64.yml)
+[![Windows](https://github.com/Rizilla-OG/OPtech2/actions/workflows/win_mingw.yml/badge.svg)](https://github.com/Rizilla-OG/OPtech2/actions/workflows/win_mingw.yml)
+[![macOS](https://github.com/Rizilla-OG/OPtech2/actions/workflows/macos.yml/badge.svg)](https://github.com/Rizilla-OG/OPtech2/actions/workflows/macos.yml)
+
 OpenTech2 is a Quake II derived engine for building an original game:
 no arbitrary limits for mappers and modders, a multi-threaded renderer, and per-pixel
 lighting with real-time shadows, while staying playable on modest hardware.
