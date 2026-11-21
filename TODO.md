@@ -25,8 +25,9 @@ something unfinished; remove an entry in the commit that fixes it.
   AI. A new monster's base must be a stock one.
 - **Scripting API is small**: three events and player functions. Grow it with
   the data-driven definitions (entities, damage, think, spawn).
-- **Monster navigation, phase 4**: off-mesh links for lifts, jumps, ladders and teleporters (and the
-  re-release `.nav` files' links for stock maps).
+- **Monster navigation, phase 4**: lifts, jumps, ladders and teleporters (and the re-release `.nav`
+  files' links for stock maps). Ledge drops are done; every walking monster may drop 256 (no
+  per-monster drop height yet).
 - **`damage` check: the HyperBlaster at 60 Hz** lands 27-28 of 31 bolts on the
   supertank (18.1-18.7 damage per cell, 10 Hz: 20.6), just over the 10%
   limit. Also with the build from before the navigation work, so not a

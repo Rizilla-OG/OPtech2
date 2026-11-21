@@ -51,7 +51,8 @@
 #define OPTECH2_PATH_NO_PATH_FOUND 11
 #define OPTECH2_PATH_MISSING_WALK_OR_SWIM_FLAG 12
 
-/* PathLinkType: how to get from the first move point to the next */
+/* PathLinkType: how to get to the first move point (WALK_OFF_LEDGE: it's
+   below a ledge the mover is at, step off it) */
 #define OPTECH2_PATH_LINK_WALK 0
 #define OPTECH2_PATH_LINK_WALK_OFF_LEDGE 1
 #define OPTECH2_PATH_LINK_LONG_JUMP 2
@@ -85,7 +86,7 @@ typedef struct
 	float path_dist_sqr; /* the path's length, squared */
 	float first_move_point[3];
 	float second_move_point[3];
-	int32_t link_type; /* OPTECH2_PATH_LINK_ */
+	int32_t link_type; /* OPTECH2_PATH_LINK_: how to get to first_move_point */
 	int32_t return_code; /* OPTECH2_PATH_ */
 } optech2_path_info_t;
 

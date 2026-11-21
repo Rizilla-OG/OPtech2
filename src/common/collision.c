@@ -2556,3 +2556,22 @@ CM_MapChecksum(void)
 {
 	return cmod->checksum;
 }
+
+/* optech2: a box trace through the world only (no doors or lifts), in plain
+   floats, for navigation (nav.cpp can't use trace_t). Returns the fraction
+   moved, -1 if the box starts in a brush; endpos gets where it stopped. */
+float
+CM_NavTrace(const float *start, const float *end, const float *mins, const float *maxs, int contents_mask,
+	float *endpos)
+{
+	trace_t trace;
+
+	trace = CM_BoxTrace(start, end, mins, maxs, 0, contents_mask);
+
+	if (endpos)
+	{
+		VectorCopy(trace.endpos, endpos);
+	}
+
+	return trace.startsolid ? -1.0f : trace.fraction;
+}
