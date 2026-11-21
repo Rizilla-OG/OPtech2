@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- README: status (M1 done, M2 so far), downloads, re-release episodes, monster navigation commands, and the checks list matches `run_all.py`.
 - CI: removed the Microsoft code analysis (PREfast) step from the Windows MSVC build: the action is unmaintained and uses workflow commands GitHub is turning off. CodeQL and cppcheck still scan the code.
 - Code scanning, re-release client game code (`src/game/rerelease`): fixed its 137 alerts. Real ones: the ammo and powerup counts in the stats were read and written through a misaligned `uint16_t` pointer (undefined behaviour; now `memcpy`). The rest change nothing at run time: default member initializers on the API structs (`pmove_t`, `sv_entity_t`, `touch_list_t`, `shadow_light_data_t`) and the HUD's own, initialized locals, `const` references, narrower scopes, renamed shadowing variables, C++ casts, dead stores and a dead spectator branch removed in `p_move.cpp`, slerp multiplies in double. cppcheck now runs with `--check-level=exhaustive` (it noted it was cutting its analysis short).
 - CI: tag builds no longer attach `.tar.gz` files to the release (the release zips are made by hand while in alpha/beta); `RELEASE_TARBALLS` in `win_mingw.yml` turns it back on. Other tag builds now keep their artifacts.
