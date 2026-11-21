@@ -184,4 +184,8 @@ table.commands td:nth-child(2) { white-space: normal; font-family: inherit; colo
 .badges img { display: block; }
 .hero-shot figcaption p { margin: 0 0 6px; }
 .hero-shot figcaption p:last-child { margin-bottom: 0; }
-.hero-shot figcaption .specs { font-size: .82rem; opacity: .85; }
+.hero-shot figcaption .specs { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 8px 0 0; font-size: .82rem; }
+.hero-shot figcaption .specs dt { font-weight: 600; color: var(--text); }
+.hero-shot figcaption .specs dd { margin: 0; min-width: 0; }
+.hero-shot figcaption .specs code { font-size: .78rem; }
+@media (max-width: 560px) { .hero-shot figcaption .specs { grid-template-columns: 1fr; } .hero-shot figcaption .specs dd { margin-bottom: 4px; } }
