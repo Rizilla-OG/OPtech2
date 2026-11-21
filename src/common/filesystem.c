@@ -135,6 +135,8 @@ qboolean file_from_protected_pak;
 cvar_t *fs_basedir;
 cvar_t *fs_cddir;
 cvar_t *fs_gamedirvar;
+cvar_t *fs_mods; /* optech2: mod folders stacked under the game folder */
+static char fs_basegamedir[MAX_OSPATH]; /* optech2: where baseq2 writes (the user's folder) */
 cvar_t *fs_debug;
 
 fsHandle_t *FS_GetFileByHandle(fileHandle_t f);
@@ -2136,6 +2138,9 @@ FS_BuildGenericSearchPath(void)
 	// distinguish generic and specialized directories.
 	fs_baseSearchPaths = fs_searchPaths;
 
+	// optech2: the writable baseq2 folder, for going back to baseq2 later
+	Q_strlcpy(fs_basegamedir, fs_gamedir, sizeof(fs_basegamedir));
+
 	// We need to create the game directory.
 	Sys_Mkdir(fs_gamedir);
 
@@ -2155,6 +2160,102 @@ FS_BuildGenericSearchPath(void)
 extern qboolean menu_startdemoloop;
 
 #endif
+
+/*
+ * optech2: a folder name for the search path, not a path ("hires", not
+ * "../hires" or "/home/x/hires").
+ */
+static qboolean
+FS_IsSingleFolderName(const char *dir)
+{
+	return dir[0] != '\0' && strcmp(dir, ".") && !strstr(dir, "..") && !strstr(dir, "/") && !strstr(dir, "\\") &&
+		   !strstr(dir, ":");
+}
+
+#define FS_MAX_MOD_LAYERS 16
+
+/*
+ * optech2: adds the folders listed in fs_mods ("hires testmod": space,
+ * comma or semicolon separated, lowest first) above baseq2 and below the
+ * game folder, in every raw path. A later folder's files override an
+ * earlier one's; the game library comes from the highest folder that has
+ * one. Folders that are baseq2, the game folder or listed twice are skipped.
+ */
+static void
+FS_AddModLayers(const char *gamedir)
+{
+	char list[MAX_OSPATH];
+	char added[FS_MAX_MOD_LAYERS][MAX_QPATH];
+	char path[MAX_OSPATH];
+	char *folder, *cursor;
+	int added_count = 0, i;
+	fsRawPath_t *search;
+
+	if (!fs_mods || fs_mods->string[0] == '\0')
+	{
+		return;
+	}
+
+	Q_strlcpy(list, fs_mods->string, sizeof(list));
+	cursor = list;
+
+	while (*cursor)
+	{
+		qboolean duplicate = false;
+
+		/* next name, ended by a space, comma or semicolon (strtok_r isn't on MSVC) */
+		cursor += strspn(cursor, " ,;");
+
+		if (*cursor == '\0')
+		{
+			break;
+		}
+
+		folder = cursor;
+		cursor += strcspn(cursor, " ,;");
+
+		if (*cursor)
+		{
+			*cursor++ = '\0';
+		}
+
+		if (!FS_IsSingleFolderName(folder) || strlen(folder) >= MAX_QPATH)
+		{
+			Com_Printf("fs_mods: skipping \"%s\", it should be a folder name, not a path\n", folder);
+			continue;
+		}
+
+		for (i = 0; i < added_count; i++)
+		{
+			if (!Q_stricmp(added[i], folder))
+			{
+				duplicate = true;
+			}
+		}
+
+		if (duplicate || !Q_stricmp(folder, BASEDIRNAME) || !Q_stricmp(folder, gamedir))
+		{
+			continue;
+		}
+
+		if (added_count == FS_MAX_MOD_LAYERS)
+		{
+			Com_Printf("fs_mods: more than %d folders, skipping \"%s\" and the rest\n", FS_MAX_MOD_LAYERS, folder);
+			break;
+		}
+
+		Q_strlcpy(added[added_count++], folder, sizeof(added[0]));
+
+		for (search = fs_rawPath; search != NULL; search = search->next)
+		{
+			Com_sprintf(path, sizeof(path), "%s/%s", search->path, folder);
+			/* create = false: only read from a mod folder; writes go to the game folder */
+			FS_AddDirToSearchPath(path, false);
+		}
+
+		Com_Printf("Mod folder %d: %s\n", added_count, folder);
+	}
+}
 
 void
 FS_BuildGameSpecificSearchPath(const char *dir)
@@ -2208,16 +2309,20 @@ FS_BuildGameSpecificSearchPath(const char *dir)
 		Cbuf_AddText("vid_restart\nsnd_restart\n");
 	}
 
+	// optech2: the fs_mods folders go between baseq2 and the game folder
+	FS_AddModLayers(dir);
+
 	// The game was reset to baseq2. Nothing to do here.
 	if (Q_stricmp(dir, BASEDIRNAME) == 0)
 	{
 		Cvar_FullSet("gamedir", "", CVAR_SERVERINFO | CVAR_NOSET);
 		Cvar_FullSet("game", "", CVAR_LATCH | CVAR_SERVERINFO);
 
-		// fs_gamedir must be reset to the last
-		// dir of the generic search path.
-		Com_sprintf(path, sizeof(path), "%s/%s", fs_rawPath->path, BASEDIRNAME);
-		Q_strlcpy(fs_gamedir, path, sizeof(fs_gamedir));
+		// optech2: back to the baseq2 folder the generic search path
+		// wrote to (the user's folder). fs_rawPath's first entry is the
+		// data dir, not the user's folder, and the mod folders added
+		// above changed fs_gamedir.
+		Q_strlcpy(fs_gamedir, fs_basegamedir, sizeof(fs_gamedir));
 	}
 	else
 	{
@@ -2394,6 +2499,7 @@ FS_InitFilesystem(void)
 	fs_basedir = Cvar_Get("basedir", ".", CVAR_NOSET);
 	fs_cddir = Cvar_Get("cddir", "", CVAR_NOSET);
 	fs_gamedirvar = Cvar_Get("game", "", CVAR_LATCH | CVAR_SERVERINFO);
+	fs_mods = Cvar_Get("fs_mods", "", CVAR_LATCH | CVAR_SERVERINFO); /* optech2 */
 	fs_debug = Cvar_Get("fs_debug", "0", 0);
 
 	// Deprecation warning, can be removed at a later time.
@@ -2418,7 +2524,7 @@ FS_InitFilesystem(void)
 	FS_AddKPFpack();
 	FS_BuildGenericSearchPath();
 
-	if (fs_gamedirvar->string[0] != '\0')
+	if (fs_gamedirvar->string[0] != '\0' || fs_mods->string[0] != '\0') /* optech2: or stacked mods */
 	{
 		FS_BuildGameSpecificSearchPath(fs_gamedirvar->string);
 	}
