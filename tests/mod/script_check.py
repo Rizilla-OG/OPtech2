@@ -12,6 +12,8 @@ Makes three mod folders in a temporary home, each with its own script
   - the sandbox: no io, os, debug, dofile, loadfile or require; load() takes
     no binary chunks; an endless loop and a huge allocation are stopped.
 The stock game (no scripts) is unchanged: base1 loads with no script lines.
+game.state keeps a script's table across a level change and through a
+save loaded in a fresh game; functions in it are left out.
 The example mod in mods/survival runs too: players spawn with 75 health, a
 Shotgun and 10 shells.
 
@@ -107,6 +109,55 @@ def play(name, with_mods):
     return log
 
 
+STATE_SCRIPT = """
+local state = game.state("counter")
+game.on("level_start", function(map)
+    state.levels = (state.levels or 0) + 1
+    state.maps = state.maps or {}
+    state.maps[#state.maps + 1] = map
+    state.label = "it's \\"quoted\\"\\n"
+    state.handler = function() end
+    print("levels so far", state.levels)
+end)
+
+-- called from the console after loading
+function report_state()
+    local s = game.state("counter")
+    print("loaded state", s.levels, table.concat(s.maps or {}, ","),
+        s.label == "it's \\"quoted\\"\\n", type(s.handler))
+end
+"""
+
+
+def play_state():
+    """game.state across a level change, a save and a fresh game's load."""
+    logs = []
+    with tempfile.TemporaryDirectory(prefix="opentech2-script-") as home:
+        user_dir = Path(home) / ".opentech2"
+        (user_dir / "baseq2").mkdir(parents=True)
+        (user_dir / "moda" / "scripts").mkdir(parents=True)
+        (user_dir / "moda" / "scripts" / "moda.lua").write_text(STATE_SCRIPT)
+        sessions = [
+            ["map base1", 'delay 3000 "gamemap base2"', 'delay 9000 "save statetest"', "delay 10000 quit"],
+            ["load statetest", 'delay 4000 "lua report_state()"', "delay 4500 quit"],
+        ]
+        for index, console in enumerate(sessions):
+            (user_dir / "baseq2" / "state.cfg").write_text("\n".join(console) + "\n")
+            environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
+            try:
+                result = subprocess.run(["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(DATA_DIR), "+set",
+                                         "fs_mods", "moda", "+set", "vid_renderer", "soft", "+set", "r_vsync", "0",
+                                         "+set", "s_initsound", "0", "+set", "cheats", "1", "+exec", "state.cfg"],
+                                        env=environment, stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                                        timeout=90, check=False)
+                log = result.stdout + result.stderr
+            except subprocess.TimeoutExpired as timeout:
+                log = (timeout.stdout or b"").decode(errors="replace") + "\nERROR: the game didn't quit\n"
+            logs.append(log.replace(home, "~"))
+            (OUTPUT_DIR / f"state-{index + 1}.log").write_text(logs[-1])
+    return logs
+
+
 def play_example():
     """mods/survival, copied into a temporary home, on base1."""
     with tempfile.TemporaryDirectory(prefix="opentech2-script-") as home:
@@ -170,6 +221,15 @@ def main():
     report(bool(position) and abs(float(position.group(1)) - 128) < 1 and abs(float(position.group(2)) + 320) < 1,
            "game.position and game.yaw: " + (" ".join(position.groups()) if position else "nothing printed"))
 
+    first, second = play_state()
+    report(re.search(r"^levels so far\s+2$", first, re.M) is not None,
+           "game.state kept across a level change (base1, then base2: 2 levels)")
+    loaded = re.search(r"^loaded state\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$", second, re.M)
+    report(bool(loaded) and loaded.groups() == ("2", "base1,base2", "true", "nil"),
+           "game.state loaded from a save in a fresh game: " +
+           (f"levels {loaded.group(1)}, maps {loaded.group(2)}, quoted text intact {loaded.group(3)}, "
+            f"function left out ({loaded.group(4)})" if loaded else "nothing printed"))
+
     example = play_example()
     found = re.search(r"^example\s+(\d+)\s+(\S+)\s+(\d+)$", example, re.M)
     report("Script loaded: scripts/survival.lua" in example and "script error" not in example and
@@ -181,7 +241,7 @@ def main():
     report("Script loaded" not in stock and "script error" not in stock and "Couldn't" not in stock.split("map base1")[-1]
            if "map base1" in stock else "Script loaded" not in stock, "the stock game runs no scripts")
 
-    errors = [line for line in (log + example + stock).splitlines() if "ERROR" in line or "crashed" in line]
+    errors = [line for line in (log + example + stock + first + second).splitlines() if "ERROR" in line or "crashed" in line]
     report(not errors, "no errors or crashes" + (f" ({errors[0].strip()})" if errors else ""))
 
     passed = all(results)

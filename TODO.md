@@ -19,8 +19,6 @@ something unfinished; remove an entry in the commit that fixes it.
 - **`tests/run_all.py` isn't on CI yet**: add `run_all.py --headless` to the
   Linux workflow (needs the game data, so probably a self-hosted runner).
 
-- **Lua scripts' own variables aren't in save games**: scripts start again on
-  load. Save a table per script (serialize plain values) with the level.
 - **Definitions are numbers only**: weapons take numbers for the ten stock
   weapons and hand grenades (not fire rate, not the mission pack weapons);
   monsters take health, mass, skin, scale and damage, not speed, attacks or

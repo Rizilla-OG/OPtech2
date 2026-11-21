@@ -402,6 +402,8 @@ typedef struct
 	int cross_unit_flags;
 
 	qboolean autosaved;
+
+	char *script_state; /* optech2: Lua scripts' game.state tables, as text (script/g_script.c) */
 } game_locals_t;
 
 /* this structure is cleared as each map is entered
@@ -949,8 +951,10 @@ int Defs_MonsterDamage(const edict_t *attacker, int damage);
 
 /* optech2: Lua gameplay scripts (script/g_script.c) */
 void Script_Init(void);
+void Script_SaveState(void);
 void Script_Shutdown(void);
 void Script_LevelStart(void);
+void Script_LoadingSave(qboolean loading);
 void Script_PlayerSpawn(edict_t *player);
 qboolean Script_ItemPickup(edict_t *player, const gitem_t *item);
 void Script_ItemTaken(edict_t *player, const gitem_t *item);

@@ -28,9 +28,9 @@ Scripts run in the same order the folders are stacked, lowest first:
 `baseq2`, then each `fs_mods` folder, then the `game` folder. A script can also
 come from a pack file (`.pak`, `.pk3`) in its folder.
 
-Scripts start again on every level and after loading a save. Their own
-variables aren't saved in save games yet, so keep anything that must last in
-the game's own state (a player's items and health).
+Scripts start again on every level and after loading a save, so their local
+variables start fresh. Anything that must last goes in a `game.state` table
+(see below).
 
 ## A first script
 
@@ -68,6 +68,24 @@ game.on("player_damage", function(player, damage, attacker)
     end
 end)
 ```
+
+## Keeping things: game.state
+
+`game.state(name)` returns a table that lasts for the whole game: across
+level changes, and in save games. Use your mod's name, so mods don't share by
+accident:
+
+```lua
+local state = game.state("mymod")
+
+game.on("monster_death", function(monster, player, x, y, z)
+    state.kills = (state.kills or 0) + 1   -- counts over the whole game
+end)
+```
+
+It keeps numbers, strings, booleans and tables of them, up to 1 MB in all.
+Functions and other values are left out. A new game starts with empty
+tables.
 
 ## Events
 
@@ -108,6 +126,7 @@ Players are numbers, from 1 to `maxclients`.
 | `game.use(player, item)` | Uses an item the player has, like the `use` command: a weapon is switched to, a powerup activated. Returns `true` if it was used. |
 | `game.position(player)` | Where the player's feet are: three numbers, `x, y, z`. |
 | `game.yaw(player)` | Which way the player looks, in degrees (0 is +x, 90 is +y). |
+| `game.state(name)` | A table that lasts across levels and in save games (see above). |
 | `game.spawn(classname, x, y, z)` | Spawns an item or monster there, e.g. a drop where a monster died. Returns `true` if it spawned. |
 
 `print(...)` writes to the server console. With `+set cheats 1`, the console

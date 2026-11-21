@@ -4,6 +4,8 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Scripts: `game.state(name)` gives a table that lasts across level changes and in save games (stored as text in the game save, read back with no code allowed; numbers, strings, booleans and tables, up to 1 MB).
+- Fix: loading a save fired `level_start` for the map's own spawn before the saved level replaced it; it no longer does.
 - Scripts: `game.position(player)` and `game.yaw(player)`, to spawn things in front of a player.
 - Monster definitions: `defs/<folder>.monsters` changes stock monsters or adds new ones based on them (`health`, `gib_health`, `mass`, `skin`, `scale`, `damage_percent`). A new monster spawns as its base and keeps its own classname. New check: `tests/mod/monster_check.py`.
 - Scripts: combat events `player_damage` and `monster_damage` (return a number to change the damage), `player_death` and `monster_death` (with where it died); `game.spawn(classname, x, y, z)`.
