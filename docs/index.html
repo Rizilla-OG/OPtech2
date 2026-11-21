@@ -155,8 +155,9 @@
       <figure class="wide">
         <a href="assets/img/perf-overlay.jpg"><img src="assets/img/perf-overlay.jpg" width="1600" height="900" loading="lazy"
           alt="Performance numbers in the top-left corner over a firing chaingun"></a>
-        <figcaption><code>cl_perf 1</code>: frame, server, client and render times, load of every CPU core,
-          the busiest threads, and GPU load, memory, temperatures and clocks.</figcaption>
+        <figcaption><code>cl_perf 1</code>: frame, server, client and render times (all systems), the load of
+          every CPU core and the busiest threads (Linux), and GPU load, memory, temperatures and clocks (Linux with
+          an AMD card).</figcaption>
       </figure>
       <figure class="wide">
         <a href="assets/img/effects-compare.jpg"><img src="assets/img/effects-compare.jpg" width="972" height="488" loading="lazy"
@@ -405,9 +406,9 @@ cmake --workflow --preset default</code></pre>
       <table class="commands">
         <thead><tr><th>Type this</th><th>What it does</th></tr></thead>
         <tbody>
-          <tr><td><code>cl_perf 1</code></td><td>Performance overlay: frame, server and render times, the load of
-            every CPU core and the busiest threads, GPU load, memory, temperatures and clocks. Bind it to a key:
-            <code>bind F11 "toggle cl_perf"</code>.</td></tr>
+          <tr><td><code>cl_perf 1</code></td><td>Performance overlay: frame, server and render times on every
+            system; on Linux also the load of every CPU core and the busiest threads, and with an AMD graphics card
+            its load, memory, temperatures and clocks. Bind it to a key: <code>bind F11 "toggle cl_perf"</code>.</td></tr>
           <tr><td><code>-datadir ".../Quake 2/rerelease"</code></td><td>On the command line: plays the
             re-release data, with all five episodes in the Game menu.</td></tr>
           <tr><td><code>cl_predict_movers 0</code> / <code>1</code></td><td>Turns smooth lift riding off and on, to
