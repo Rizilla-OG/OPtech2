@@ -1,7 +1,8 @@
 # OpenTech2 test mod
 
 A small mod that proves the engine can be modded without changing it: it
-adds a new weapon, the **Test Gun**, with its own visual effect.
+adds a new weapon, the **Test Gun**, with its own visual effect, puts a
+"TEST MOD" label on the HUD, and makes the player jump about twice as high.
 
 - `src/game/testmod/testmod_weapon.c`: the weapon (server side). Hitscan, no
   ammo, 20 damage, blaster models. Each shot sends a temporary entity type the
@@ -11,10 +12,14 @@ adds a new weapon, the **Test Gun**, with its own visual effect.
   from the gun to the hit point, with a light and a burst at the impact.
 - `testmod.patch`: the few changes to stock game files: the item entry in
   `g_items.c`, the mod's effects hooked into the game library's temp entity
-  code, and the two files added to the build.
+  code, the HUD label in the status bar layout (`g_spawn.c`), a higher jump in
+  the movement code (`src/common/shared/pmove.c`, which the game library
+  compiles its own copy of; the client predicts with it, so the jump stays
+  smooth), and the two new files added to the build.
 
-Nothing under `src/client`, `src/server`, `src/common` or the renderers is
-changed: the engine binary stays the same.
+Nothing under `src/client`, `src/server` or the renderers is changed, and of
+`src/common` only the shared movement code the game library compiles: the
+engine binary stays the same.
 
 ## Build and play
 
