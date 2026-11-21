@@ -55,11 +55,11 @@ def run(name, arguments, commands):
                                   env=environment, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                   stderr=subprocess.STDOUT, text=True)
         try:
-            output, _ = server.communicate(timeout=20)
+            output, _ = server.communicate(timeout=30)
         except subprocess.TimeoutExpired:
-            # the dedicated server can hang in quit after a map (also in the stock build; see TODO.md)
             server.kill()
             output, _ = server.communicate()
+            output += "\nERROR: the server didn't quit\n"
         log = output.replace(home, "~")
     (OUTPUT_DIR / f"{name}.log").write_text(log)
     return log
