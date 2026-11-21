@@ -59,15 +59,102 @@ CG_Error(const char *message)
 	Com_Error(ERR_DROP, "client game: %s", message);
 }
 
+/* optech2: stats that hold a configstring index (the layout's stat_string)
+   go to the module in the re-release numbering. Strings it has no slot
+   for (item names past its 256 items: mission pack, Quake II 64 and mod
+   items) are parked in the last re-release general strings. */
+#define CG_MAX_GENERAL 512 /* MAX_GENERAL of the re-release API (MAX_CLIENTS * 2) */
+#define CG_PARKED_STRINGS 8
+static int cg_parked_index[CG_PARKED_STRINGS]; /* re-release index of each parked string */
+static int cg_parked_from[CG_PARKED_STRINGS]; /* our configstring index it shows */
+static int cg_parked_count;
+
+static int
+CG_RRGeneralEnd(void)
+{
+	return P_ConvertConfigStringTo(CS_GENERAL, PROTOCOL_RR22_VERSION) + CG_MAX_GENERAL;
+}
+
+/* our configstring index as the module will ask for it */
+static int
+CG_ConfigStringIndexForModule(int ours)
+{
+	int rr, i;
+
+	if (ours < 0 || ours >= MAX_CONFIGSTRINGS)
+	{
+		return ours;
+	}
+
+	rr = P_ConvertConfigStringTo(ours, PROTOCOL_RR22_VERSION);
+
+	if (rr >= 0 && P_ConvertConfigStringFrom(rr, PROTOCOL_RR22_VERSION) == ours)
+	{
+		return rr; /* has a re-release slot */
+	}
+
+	for (i = 0; i < cg_parked_count; i++)
+	{
+		if (cg_parked_from[i] == ours)
+		{
+			return cg_parked_index[i];
+		}
+	}
+
+	if (cg_parked_count == CG_PARKED_STRINGS)
+	{
+		return ours;
+	}
+
+	cg_parked_from[cg_parked_count] = ours;
+	cg_parked_index[cg_parked_count] = CG_RRGeneralEnd() - 1 - cg_parked_count;
+	return cg_parked_index[cg_parked_count++];
+}
+
+/* stats the status bar or layout shows as text ("stat_string N",
+   "loc_stat_string N"...): a bit per stat */
+static void
+CG_FindStringStats(const char *layout, qboolean *string_stats)
+{
+	const char *p = layout;
+
+	while (p && (p = strstr(p, "stat_string")))
+	{
+		int stat;
+
+		p += strlen("stat_string");
+
+		while (*p && *p != ' ')
+		{
+			p++; /* "_multiline" and the like */
+		}
+
+		stat = atoi(p);
+
+		if (stat >= 0 && stat < CG_MAX_STATS)
+		{
+			string_stats[stat] = true;
+		}
+	}
+}
+
 /* the module uses the re-release configstring numbering */
 static const char *
 CG_GetConfigString(int num)
 {
-	int ours;
+	int ours, i;
 
 	if (num < 0)
 	{
 		return "";
+	}
+
+	for (i = 0; i < cg_parked_count; i++)
+	{
+		if (cg_parked_index[i] == num)
+		{
+			return cl.configstrings[cg_parked_from[i]];
+		}
 	}
 
 	ours = P_ConvertConfigStringFrom(num, PROTOCOL_RR22_VERSION);
@@ -971,9 +1058,17 @@ CL_CGame_PlayerState(cg_player_state_t *out)
 	out->fov = ps->fov;
 	out->rdflags = (uint8_t)ps->rdflags;
 
-	for (i = 0; i < CG_MAX_STATS && i < MAX_XSTATS; i++)
 	{
-		out->stats[i] = ps->stats[i];
+		qboolean string_stats[CG_MAX_STATS] = {false};
+
+		CG_FindStringStats(cl.configstrings[CS_STATUSBAR], string_stats);
+		CG_FindStringStats(cl.layout, string_stats);
+
+		for (i = 0; i < CG_MAX_STATS && i < MAX_XSTATS; i++)
+		{
+			/* optech2: text stats in the module's configstring numbering */
+			out->stats[i] = string_stats[i] ? (int16_t)CG_ConfigStringIndexForModule(ps->stats[i]) : ps->stats[i];
+		}
 	}
 }
 

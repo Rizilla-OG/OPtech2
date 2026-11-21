@@ -4,6 +4,8 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 
 ## Unreleased
 
+- Test mod (`mods/testmod/`): the Test Gun, a new weapon with its own effect (temp entity 201, a double helix drawn by the mod's client code), built from the game source with no engine change. `tests/mod/mod_check.py` builds it, checks no engine source is touched, and plays it (also in `run_all.py`).
+- Fixed: with the client game module, names of items past the re-release HUD's 256 (mission pack, Quake II 64 and mod items) showed another item's name. Stats the layout shows as text are now converted to the re-release configstring numbering, and strings without a slot there are parked in spare general slots.
 - Entity events (footsteps with material sounds, item respawn, teleport, falling) run in the game library too (`src/game/cgame_fx/fx_events.c`, effects extension version 5: `EntityEvent`). All client effects the server triggers now come from the game library when it has the extension; the engine's copies remain as the fallback.
 - Entity trails and flying lights (rocket, grenade, gib, blaster, BFG, flies, flags, tracker, ionripper, plasma) run in the game library too (`src/game/cgame_fx/fx_trails.c`); the engine's block became `CL_EntityTrails`, and effects extension version 4 adds `EntityTrails`, called for each drawn entity with effect flags.
 - Muzzle flashes (players' `svc_muzzleflash`, monsters' `svc_muzzleflash2` / `3`: light, sound, smoke) run in the game library too (`src/game/cgame_fx/fx_muzzleflash.c`); effects extension version 3 adds `ParseMuzzleFlash` and gives entity angles with positions (`EntityState`).

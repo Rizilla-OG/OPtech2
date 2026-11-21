@@ -62,6 +62,7 @@ CHECKS = [
     Check("textures", "maps/texture_check.py", kind="window", slow=True),
     Check("iqm-models", "models/iqm_check.py"),
     Check("sound", "sound/sound_check.py", kind="sound"),
+    Check("test-mod", "mod/mod_check.py", kind="window", slow=True),
 ]
 
 

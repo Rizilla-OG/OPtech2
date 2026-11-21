@@ -1,0 +1,92 @@
+diff -ru a/CMakeLists.txt b/CMakeLists.txt
+--- a/CMakeLists.txt	2026-11-20 20:31:14.580592748 -0500
++++ b/CMakeLists.txt	2026-11-20 20:31:14.592939658 -0500
+@@ -388,6 +388,8 @@
+ 	${GAME_SRC_DIR}/cgame_fx/fx_muzzleflash.c
+ 	${GAME_SRC_DIR}/cgame_fx/fx_trails.c
+ 	${GAME_SRC_DIR}/cgame_fx/fx_events.c
++	${GAME_SRC_DIR}/testmod/testmod_weapon.c
++	${GAME_SRC_DIR}/testmod/testmod_fx.c
+ 	${GAME_SRC_DIR}/cgame_fx/fx_effects.c
+ 	${GAME_SRC_DIR}/cgame_fx/fx_tempentities.c
+ 	${COMMON_SRC_DIR}/shared/pmove.c
+diff -ru a/Makefile b/Makefile
+--- a/Makefile	2026-11-20 20:31:14.583576339 -0500
++++ b/Makefile	2026-11-20 20:31:14.593062371 -0500
+@@ -1214,6 +1214,8 @@
+ 	src/game/cgame_fx/fx_muzzleflash.o \
+ 	src/game/cgame_fx/fx_trails.o \
+ 	src/game/cgame_fx/fx_events.o \
++	src/game/testmod/testmod_weapon.o \
++	src/game/testmod/testmod_fx.o \
+ 	src/game/cgame_fx/fx_effects.o \
+ 	src/game/cgame_fx/fx_tempentities.o \
+ 	src/common/shared/pmove.o \
+diff -ru a/src/game/cgame_fx/fx_tempentities.c b/src/game/cgame_fx/fx_tempentities.c
+--- a/src/game/cgame_fx/fx_tempentities.c	2026-11-20 20:31:14.577750961 -0500
++++ b/src/game/cgame_fx/fx_tempentities.c	2026-11-20 20:31:14.592839566 -0500
+@@ -682,6 +682,8 @@
+ 	0xff00001b,
+ };
+ 
++qboolean TestMod_ParseTempEntity(int type); /* testmod */
++
+ qboolean
+ CL_ParseTEnt(int type)
+ {
+@@ -692,6 +694,12 @@
+ 	int ent;
+ 	int magnitude;
+ 
++	/* testmod: the mod's own effects first */
++	if (TestMod_ParseTempEntity(type))
++	{
++		return true;
++	}
++
+ 	switch (type)
+ 	{
+ 		case TE_BLOOD: /* bullet hitting flesh */
+diff -ru a/src/game/g_items.c b/src/game/g_items.c
+--- a/src/game/g_items.c	2026-11-20 20:31:14.574332672 -0500
++++ b/src/game/g_items.c	2026-11-20 20:31:14.592686153 -0500
+@@ -26,6 +26,7 @@
+  */
+ 
+ #include "header/local.h"
++#include "testmod/testmod.h" /* testmod */
+ 
+ #define HEALTH_IGNORE_MAX 1
+ #define HEALTH_TIMED 2
+@@ -4547,6 +4548,31 @@
+ 	},
+ 
+ 	/* end of list marker */
++	/*
++	 * testmod: QUAKED weapon_testgun (.3 .3 1) (-16 -16 -16) (16 16 16)
++	 * The Test Gun: hitscan, no ammo, its own beam effect.
++	 */
++	{
++		"weapon_testgun",
++		Pickup_Weapon,
++		Use_Weapon,
++		Drop_Weapon,
++		Weapon_TestGun,
++		"misc/w_pkup.wav",
++		"models/weapons/g_blast/tris.md2", EF_ROTATE,
++		"models/weapons/v_blast/tris.md2",
++		"w_blaster",
++		"Test Gun",
++		0,
++		0,
++		NULL,
++		IT_WEAPON | IT_STAY_COOP,
++		WEAP_BLASTER,
++		NULL,
++		0,
++		"weapons/railgf1a.wav"
++	},
++
+ 	{NULL}
+ };
+ 
