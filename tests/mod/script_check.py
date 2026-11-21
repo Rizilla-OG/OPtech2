@@ -43,6 +43,7 @@ game.on("player_spawn", function(player)
     print("moda player_spawn " .. game.name(player))
 end)
 game.on("item_pickup", function(player, item) print("moda sees pickup " .. item) end)
+game.on("item_taken", function(player, item) print("moda took " .. item) end)
 """,
     "modb": """
 print("modb loaded")
@@ -156,6 +157,9 @@ def main():
            "moda sees pickup Health" in log,
            "the shard stayed on the floor, the stimpack was taken" +
            (f" (health {after.group(1)}, shards {after.group(2)})" if after else ""))
+    report(len(re.findall(r"^moda took Health$", log, re.M)) == 1 and "moda took Armor Shard" not in log and
+           log.count("moda sees pickup Armor Shard") > 1,
+           "item_taken: once for the stimpack, never for the refused shard (asked on every touch)")
     report(re.search(r"^sandbox(\s+nil){6}$", log, re.M) is not None, "no io, os, debug, dofile, loadfile, require")
     report(re.search(r"^binary\s+nil\s+.*binary chunk", log, re.M) is not None, "load() refuses binary chunks")
     report("script ran too long" in log, "an endless loop is stopped")

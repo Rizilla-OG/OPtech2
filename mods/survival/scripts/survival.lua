@@ -26,12 +26,17 @@ game.on("player_spawn", function(player)
     game.centerprint(player, "Survive, " .. game.name(player) .. "!")
 end)
 
+-- asked on every touch (also for items the player can't take): only decide here
 game.on("item_pickup", function(player, item)
     -- a Quad limit per level
+    if item == "Quad Damage" and (quads[player] or 0) >= quad_limit then
+        return false            -- refused: it stays on the floor
+    end
+end)
+
+-- after an item was really taken: count here
+game.on("item_taken", function(player, item)
     if item == "Quad Damage" then
-        if (quads[player] or 0) >= quad_limit then
-            return false        -- refused: it stays on the floor
-        end
         quads[player] = (quads[player] or 0) + 1
     end
 

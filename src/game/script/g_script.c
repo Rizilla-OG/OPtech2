@@ -49,8 +49,10 @@
  *   player_spawn(player)        a player (re)spawned
  *   item_pickup(player, item)   before a pickup (item is its pickup name,
  *                               e.g. "Health"); return false to refuse it.
- *                               A refused item is touched again every
- *                               frame the player stands on it.
+ *                               Asked on every touch, also for items
+ *                               the player can't take (full ammo):
+ *                               don't count pickups here.
+ *   item_taken(player, item)    after the player took an item
  *
  * print() goes to the server console.
  */
@@ -66,7 +68,7 @@
 #define SCRIPT_HOOK_STEP 10000
 #define SCRIPT_MAX_FOLDERS 20
 
-static const char *script_events[] = {"level_start", "player_spawn", "item_pickup"};
+static const char *script_events[] = {"level_start", "player_spawn", "item_pickup", "item_taken"};
 #define SCRIPT_EVENT_COUNT (int)(sizeof(script_events) / sizeof(script_events[0]))
 
 static lua_State *script_state;
@@ -559,6 +561,12 @@ qboolean
 Script_ItemPickup(edict_t *player, const gitem_t *item)
 {
 	return Script_Fire("item_pickup", (int)(player - g_edicts), item->pickup_name);
+}
+
+void
+Script_ItemTaken(edict_t *player, const gitem_t *item)
+{
+	Script_Fire("item_taken", (int)(player - g_edicts), item->pickup_name);
 }
 
 /* "lua <code>": run a line of Lua (cheat, for testing scripts) */
