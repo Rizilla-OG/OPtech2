@@ -86,7 +86,8 @@ its list.
 
 Each mod folder can run a gameplay script in sandboxed Lua 5.4, `scripts/<folder>.lua`: see
 [mods/SCRIPTING.md](mods/SCRIPTING.md). Items can be changed or added in a text file,
-`defs/<folder>.items`: see [mods/DEFINITIONS.md](mods/DEFINITIONS.md). For a mod with its own game library (new weapons, effects,
+`defs/<folder>.items`: see [mods/DEFINITIONS.md](mods/DEFINITIONS.md). [mods/survival](mods/survival/README.md)
+is a small example script mod. For a mod with its own game library (new weapons, effects,
 HUD, movement), see [mods/testmod](mods/testmod/README.md).
 
 ## Checks

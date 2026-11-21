@@ -4,6 +4,9 @@ OpenTech2 runs gameplay scripts written in [Lua 5.4](https://www.lua.org/manual/
 Scripts need no compiler and no game library of their own, and several mods'
 scripts run together.
 
+For a complete example, see [survival](survival/README.md): a tougher start,
+a Quad limit and a pickup bonus in one short script.
+
 This is the first version of the scripting API. It will grow with the
 data-driven definitions (items, weapons and monsters in text files).
 

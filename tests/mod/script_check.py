@@ -12,6 +12,8 @@ Makes three mod folders in a temporary home, each with its own script
   - the sandbox: no io, os, debug, dofile, loadfile or require; load() takes
     no binary chunks; an endless loop and a huge allocation are stopped.
 The stock game (no scripts) is unchanged: base1 loads with no script lines.
+The example mod in mods/survival runs too: players spawn with 75 health, a
+Shotgun and 10 shells.
 
 Usage:
   script_check.py
@@ -103,6 +105,31 @@ def play(name, with_mods):
     return log
 
 
+def play_example():
+    """mods/survival, copied into a temporary home, on base1."""
+    with tempfile.TemporaryDirectory(prefix="opentech2-script-") as home:
+        user_dir = Path(home) / ".opentech2"
+        (user_dir / "baseq2").mkdir(parents=True)
+        shutil.copytree(REPO_DIR / "mods" / "survival", user_dir / "survival")
+        (user_dir / "baseq2" / "example.cfg").write_text("\n".join([
+            "map base1",
+            'delay 3000 "lua print(\'example\', game.health(1), game.count(1, \'Shotgun\'), game.count(1, \'Shells\'))"',
+            "delay 3300 quit"]) + "\n")
+        environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
+        try:
+            result = subprocess.run(["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(DATA_DIR), "+set", "fs_mods",
+                                     "survival", "+set", "vid_renderer", "soft", "+set", "r_vsync", "0", "+set",
+                                     "s_initsound", "0", "+set", "cheats", "1", "+exec", "example.cfg"],
+                                    env=environment, stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                                    timeout=90, check=False)
+            log = result.stdout + result.stderr
+        except subprocess.TimeoutExpired as timeout:
+            log = (timeout.stdout or b"").decode(errors="replace") + "\nERROR: the game didn't quit\n"
+    log = log.replace(home, "~")
+    (OUTPUT_DIR / "example.log").write_text(log)
+    return log
+
+
 def main():
     if OUTPUT_DIR.exists():
         shutil.rmtree(OUTPUT_DIR)
@@ -135,11 +162,18 @@ def main():
     report("not enough memory" in log, "a 200 MB allocation is refused")
     report(re.search(r"^still running\s+base1$", log, re.M) is not None, "the game carries on after all that")
 
+    example = play_example()
+    found = re.search(r"^example\s+(\d+)\s+(\S+)\s+(\d+)$", example, re.M)
+    report("Script loaded: scripts/survival.lua" in example and "script error" not in example and
+           bool(found and found.groups() == ("75", "1", "10")),
+           "the example mod (mods/survival) runs: " +
+           (f"health {found.group(1)}, shotguns {found.group(2)}, {found.group(3)} shells" if found else "no result"))
+
     stock = play("stock", False)
     report("Script loaded" not in stock and "script error" not in stock and "Couldn't" not in stock.split("map base1")[-1]
            if "map base1" in stock else "Script loaded" not in stock, "the stock game runs no scripts")
 
-    errors = [line for line in (log + stock).splitlines() if "ERROR" in line or "crashed" in line]
+    errors = [line for line in (log + example + stock).splitlines() if "ERROR" in line or "crashed" in line]
     report(not errors, "no errors or crashes" + (f" ({errors[0].strip()})" if errors else ""))
 
     passed = all(results)

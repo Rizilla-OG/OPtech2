@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Example script mod `mods/survival`: a tougher start, a Quad limit per level and a pickup bonus in one Lua file; `tests/mod/script_check.py` plays it.
 - Saves match items by name: game and level saves end with a table of item classnames, and loading maps the saved item numbers to the current ones (inventories, the weapon in hand, items lying in the level). A save keeps loading when mods add or remove items; an item the game no longer has is dropped with a message, and a dropped weapon in hand becomes the Blaster. Saves without the table load as before.
 - Item definitions: `"gives"` makes an ammo pickup add to another item (a bigger shells box that gives Shells).
 - Scripts: `game.weapon(player)`.
