@@ -3,7 +3,7 @@ run-name: testbuild_linux_aarch64
 on:
   push:
     branches:
-      - 'master'
+      - 'main'
   pull_request:
     types:
       - edited

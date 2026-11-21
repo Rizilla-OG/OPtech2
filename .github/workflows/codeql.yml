@@ -3,7 +3,7 @@ run-name: CodeQL
 on:
   push:
     branches:
-      - 'master'
+      - 'main'
   pull_request:
     types:
       - edited

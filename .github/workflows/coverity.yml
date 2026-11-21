@@ -1,9 +1,8 @@
 name: Coverity for Linux (aarch64)
 run-name: Coverity_linux_aarch64
 on:
-  push:
-    branches:
-      - 'master'
+  # optech2: started by hand only; it needs a Coverity Scan token (COVERITY_SCAN_TOKEN) this repository doesn't have
+  workflow_dispatch:
 concurrency:
   # Cancel concurrent workflows for the same PR or commit hash.
   group: ${{github.workflow}}-${{github.event_name == 'pull_request' && github.head_ref || github.sha}}
