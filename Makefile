@@ -541,11 +541,9 @@ cleanall:
 # The client
 ifeq ($(YQ2_OSTYPE), Windows)
 client:
-	@echo "===> Building yquake2.exe"
+	@echo "===> Building OpenTech2.exe" # optech2: own executable names
 	${Q}mkdir -p $(BINDIR)
-	$(MAKE) $(BINDIR)/yquake2.exe
-	@echo "===> Building quake2.exe Wrapper"
-	$(MAKE) $(BINDIR)/quake2.exe
+	$(MAKE) $(BINDIR)/OpenTech2.exe
 
 $(BUILDDIR)/client/%.o: %.c
 	@if [ -z $(QUIET) ]; then\
@@ -554,27 +552,27 @@ $(BUILDDIR)/client/%.o: %.c
 	${Q}mkdir -p $(@D)
 	${Q}$(CC) -c $(CFLAGS) $(SDLCFLAGS) $(ZIPCFLAGS) $(INCLUDE) -o $@ $<
 
-$(BINDIR)/yquake2.exe : LDFLAGS += -mwindows
+$(BINDIR)/OpenTech2.exe : LDFLAGS += -mwindows
 
 ifeq ($(WITH_CURL),yes)
-$(BINDIR)/yquake2.exe : CFLAGS += -DUSE_CURL
+$(BINDIR)/OpenTech2.exe : CFLAGS += -DUSE_CURL
 endif
 
 ifeq ($(WITH_AVCODEC),yes)
-$(BINDIR)/yquake2.exe : CFLAGS += -DAVMEDIADECODE
-$(BINDIR)/yquake2.exe : LDLIBS += -lavformat -lavcodec -lswscale -lswresample -lavutil
+$(BINDIR)/OpenTech2.exe : CFLAGS += -DAVMEDIADECODE
+$(BINDIR)/OpenTech2.exe : LDLIBS += -lavformat -lavcodec -lswscale -lswresample -lavutil
 endif
 
 ifeq ($(WITH_OPENAL),yes)
-$(BINDIR)/yquake2.exe : CFLAGS += -DUSE_OPENAL -DDEFAULT_OPENAL_DRIVER='"openal32.dll"'
+$(BINDIR)/OpenTech2.exe : CFLAGS += -DUSE_OPENAL -DDEFAULT_OPENAL_DRIVER='"openal32.dll"'
 endif
 
 else # not Windows
 
 client:
-	@echo "===> Building quake2"
+	@echo "===> Building OpenTech2"
 	${Q}mkdir -p $(BINDIR)
-	$(MAKE) $(BINDIR)/quake2
+	$(MAKE) $(BINDIR)/OpenTech2
 
 ifeq ($(YQ2_OSTYPE), Darwin)
 $(BUILDDIR)/client/%.o : %.c
@@ -592,62 +590,62 @@ $(BUILDDIR)/client/%.o: %.c
 	${Q}$(CC) -c $(CFLAGS) $(SDLCFLAGS) $(ZIPCFLAGS) $(INCLUDE) -o $@ $<
 endif
 
-$(BINDIR)/quake2 : CFLAGS += -Wno-unused-result
+$(BINDIR)/OpenTech2 : CFLAGS += -Wno-unused-result
 
 ifeq ($(WITH_CURL),yes)
-$(BINDIR)/quake2 : CFLAGS += -DUSE_CURL
+$(BINDIR)/OpenTech2 : CFLAGS += -DUSE_CURL
 endif
 
 ifeq ($(WITH_AVCODEC),yes)
-$(BINDIR)/quake2 : CFLAGS += -DAVMEDIADECODE
-$(BINDIR)/quake2 : LDLIBS += -lavformat -lavcodec -lswscale -lswresample -lavutil
+$(BINDIR)/OpenTech2 : CFLAGS += -DAVMEDIADECODE
+$(BINDIR)/OpenTech2 : LDLIBS += -lavformat -lavcodec -lswscale -lswresample -lavutil
 endif
 
 ifeq ($(WITH_OPENAL),yes)
 ifeq ($(YQ2_OSTYPE), OpenBSD)
-$(BINDIR)/quake2 : CFLAGS += -DUSE_OPENAL -DDEFAULT_OPENAL_DRIVER='"libopenal.so"'
+$(BINDIR)/OpenTech2 : CFLAGS += -DUSE_OPENAL -DDEFAULT_OPENAL_DRIVER='"libopenal.so"'
 else ifeq ($(YQ2_OSTYPE), Darwin)
 OPENAL_PATH ?= $(shell brew --prefix openal-soft)
-$(BINDIR)/quake2 : CFLAGS += -DUSE_OPENAL -DDEFAULT_OPENAL_DRIVER='"libopenal.dylib"' -I$(OPENAL_PATH)/include
-$(BINDIR)/quake2 : LDFLAGS += -L$(OPENAL_PATH)/lib -rpath $(OPENAL_PATH)/lib
+$(BINDIR)/OpenTech2 : CFLAGS += -DUSE_OPENAL -DDEFAULT_OPENAL_DRIVER='"libopenal.dylib"' -I$(OPENAL_PATH)/include
+$(BINDIR)/OpenTech2 : LDFLAGS += -L$(OPENAL_PATH)/lib -rpath $(OPENAL_PATH)/lib
 else
-$(BINDIR)/quake2 : CFLAGS += -DUSE_OPENAL -DDEFAULT_OPENAL_DRIVER='"libopenal.so.1"'
+$(BINDIR)/OpenTech2 : CFLAGS += -DUSE_OPENAL -DDEFAULT_OPENAL_DRIVER='"libopenal.so.1"'
 endif
 endif
 
 ifeq ($(WITH_EXECINFO),yes)
 ifeq ($(YQ2_OSTYPE), Linux)
-$(BINDIR)/quake2 : CFLAGS += -DHAVE_EXECINFO
+$(BINDIR)/OpenTech2 : CFLAGS += -DHAVE_EXECINFO
 else ifeq ($(YQ2_OSTYPE), Darwin)
-$(BINDIR)/quake2 : CFLAGS += -DHAVE_EXECINFO
+$(BINDIR)/OpenTech2 : CFLAGS += -DHAVE_EXECINFO
 else ifeq ($(YQ2_OSTYPE), SunOS)
-$(BINDIR)/quake2 : CFLAGS += -DHAVE_EXECINFO
+$(BINDIR)/OpenTech2 : CFLAGS += -DHAVE_EXECINFO
 else ifeq ($(YQ2_OSTYPE), FreeBSD)
-$(BINDIR)/quake2 : CFLAGS += -DHAVE_EXECINFO
-$(BINDIR)/quake2 : LDLIBS += -lexecinfo
+$(BINDIR)/OpenTech2 : CFLAGS += -DHAVE_EXECINFO
+$(BINDIR)/OpenTech2 : LDLIBS += -lexecinfo
 else ifeq ($(YQ2_OSTYPE), NetBSD)
-$(BINDIR)/quake2 : CFLAGS += -DHAVE_EXECINFO
-$(BINDIR)/quake2 : LDLIBS += -lexecinfo
+$(BINDIR)/OpenTech2 : CFLAGS += -DHAVE_EXECINFO
+$(BINDIR)/OpenTech2 : LDLIBS += -lexecinfo
 else ifeq ($(YQ2_OSTYPE), OpenBSD)
-$(BINDIR)/quake2 : CFLAGS += -DHAVE_EXECINFO
-$(BINDIR)/quake2 : LDLIBS += -lexecinfo
+$(BINDIR)/OpenTech2 : CFLAGS += -DHAVE_EXECINFO
+$(BINDIR)/OpenTech2 : LDLIBS += -lexecinfo
 else ifeq ($(YQ2_OSTYPE), Haiku)
-$(BINDIR)/quake2 : CFLAGS += -DHAVE_EXECINFO
-$(BINDIR)/quake2 : LDLIBS += -lexecinfo
+$(BINDIR)/OpenTech2 : CFLAGS += -DHAVE_EXECINFO
+$(BINDIR)/OpenTech2 : LDLIBS += -lexecinfo
 endif
 endif
 
 ifeq ($(WITH_RPATH),yes)
 ifeq ($(YQ2_OSTYPE), Darwin)
-$(BINDIR)/quake2 : LDFLAGS += -Wl,-rpath,'@executable_path/lib'
+$(BINDIR)/OpenTech2 : LDFLAGS += -Wl,-rpath,'@executable_path/lib'
 else
-$(BINDIR)/quake2 : LDFLAGS += -Wl,-z,origin,-rpath='$$ORIGIN/lib'
+$(BINDIR)/OpenTech2 : LDFLAGS += -Wl,-z,origin,-rpath='$$ORIGIN/lib'
 endif
 endif
 endif
 
 ifeq ($(WITH_XDG),yes)
-$(BINDIR)/quake2 : CFLAGS += -DUSE_XDG
+$(BINDIR)/OpenTech2 : CFLAGS += -DUSE_XDG
 endif
 
 # ----------
@@ -655,9 +653,9 @@ endif
 # The server
 ifeq ($(YQ2_OSTYPE), Windows)
 server:
-	@echo "===> Building q2ded"
+	@echo "===> Building OpenTech2-server"
 	${Q}mkdir -p $(BINDIR)
-	$(MAKE) $(BINDIR)/q2ded.exe
+	$(MAKE) $(BINDIR)/OpenTech2-server.exe
 
 $(BUILDDIR)/server/%.o: %.c
 	@if [ -z $(QUIET) ]; then\
@@ -666,14 +664,14 @@ $(BUILDDIR)/server/%.o: %.c
 	${Q}mkdir -p $(@D)
 	${Q}$(CC) -c $(CFLAGS) $(ZIPCFLAGS) $(INCLUDE) -o $@ $<
 
-$(BINDIR)/q2ded.exe : CFLAGS += -DDEDICATED_ONLY
+$(BINDIR)/OpenTech2-server.exe : CFLAGS += -DDEDICATED_ONLY
 
 else # not Windows
 
 server:
-	@echo "===> Building q2ded"
+	@echo "===> Building OpenTech2-server"
 	${Q}mkdir -p $(BINDIR)
-	$(MAKE) $(BINDIR)/q2ded
+	$(MAKE) $(BINDIR)/OpenTech2-server
 
 $(BUILDDIR)/server/%.o: %.c
 	@if [ -z $(QUIET) ]; then\
@@ -682,14 +680,14 @@ $(BUILDDIR)/server/%.o: %.c
 	${Q}mkdir -p $(@D)
 	${Q}$(CC) -c $(CFLAGS) $(ZIPCFLAGS) $(INCLUDE) -o $@ $<
 
-$(BINDIR)/q2ded : CFLAGS += -DDEDICATED_ONLY -Wno-unused-result
+$(BINDIR)/OpenTech2-server : CFLAGS += -DDEDICATED_ONLY -Wno-unused-result
 
 ifeq ($(YQ2_OSTYPE), FreeBSD)
-$(BINDIR)/q2ded : LDLIBS += -lexecinfo
+$(BINDIR)/OpenTech2-server : LDLIBS += -lexecinfo
 endif
 
 ifeq ($(WITH_XDG),yes)
-$(BINDIR)/q2ded : CFLAGS += -DUSE_XDG
+$(BINDIR)/OpenTech2-server : CFLAGS += -DUSE_XDG
 endif
 
 endif
@@ -1211,6 +1209,8 @@ GAME_OBJS_ = \
 	src/game/g_light.o \
 	src/game/g_main.o \
 	src/game/g_misc.o \
+	src/game/g_extension.o \
+	src/common/shared/pmove.o \
 	src/game/g_monster.o \
 	src/game/g_newai.o \
 	src/game/g_newdm.o \
@@ -1363,7 +1363,7 @@ CLIENT_OBJS_ := \
 	src/common/movemsg.o \
 	src/common/frame.o \
 	src/common/netchan.o \
-	src/common/pmove.o \
+	src/common/shared/pmove.o \
 	src/common/protocol.o \
 	src/common/szone.o \
 	src/common/zone.o \
@@ -1384,8 +1384,8 @@ CLIENT_OBJS_ := \
 	src/server/sv_world.o
 
 ifeq ($(WITH_SYSTEM_MINIZIP),yes)
-$(BINDIR)/quake2 : CFLAGS += -DUSE_SYSTEM_MINIZIP
-$(BINDIR)/quake2 : LDLIBS += -lminizip -lz
+$(BINDIR)/OpenTech2 : CFLAGS += -DUSE_SYSTEM_MINIZIP
+$(BINDIR)/OpenTech2 : LDLIBS += -lminizip -lz
 else
 CLIENT_OBJS_ += \
 	src/common/unzip/ioapi.o \
@@ -1685,7 +1685,7 @@ SERVER_OBJS_ := \
 	src/common/models/sprites.o \
 	src/common/movemsg.o \
 	src/common/netchan.o \
-	src/common/pmove.o \
+	src/common/shared/pmove.o \
 	src/common/protocol.o \
 	src/common/szone.o \
 	src/common/zone.o \
@@ -1705,8 +1705,8 @@ SERVER_OBJS_ := \
 	src/server/sv_world.o
 
 ifeq ($(WITH_SYSTEM_MINIZIP),yes)
-$(BINDIR)/q2ded : CFLAGS += -DUSE_SYSTEM_MINIZIP
-$(BINDIR)/q2ded : LDLIBS += -lminizip
+$(BINDIR)/OpenTech2-server : CFLAGS += -DUSE_SYSTEM_MINIZIP
+$(BINDIR)/OpenTech2-server : LDLIBS += -lminizip
 else
 SERVER_OBJS_ += \
 	src/common/unzip/ioapi.o \
@@ -1797,24 +1797,22 @@ VIEWER_DEPS= $(VIEWER_OBJS:.o=.d)
 
 # quake2
 ifeq ($(YQ2_OSTYPE), Windows)
-$(BINDIR)/yquake2.exe : $(CLIENT_OBJS) icon
+$(BINDIR)/OpenTech2.exe : $(CLIENT_OBJS) icon
 	@echo "===> LD $@"
 	${Q}$(CC) $(LDFLAGS) $(BUILDROOT)/icon/icon.res $(CLIENT_OBJS) $(LDLIBS) $(SDLLDFLAGS) -o $@
-$(BINDIR)/quake2.exe : src/win-wrapper/wrapper.c icon
-	$(Q)$(CC) -Wall -mwindows $(BUILDROOT)/icon/icon.res src/win-wrapper/wrapper.c -o $@
 else
-$(BINDIR)/quake2 : $(CLIENT_OBJS)
+$(BINDIR)/OpenTech2 : $(CLIENT_OBJS)
 	@echo "===> LD $@"
 	${Q}$(CC) $(LDFLAGS) $(CLIENT_OBJS) $(LDLIBS) $(SDLLDFLAGS) -o $@
 endif
 
 # q2ded
 ifeq ($(YQ2_OSTYPE), Windows)
-$(BINDIR)/q2ded.exe : $(SERVER_OBJS) icon
+$(BINDIR)/OpenTech2-server.exe : $(SERVER_OBJS) icon
 	@echo "===> LD $@"
 	${Q}$(CC) $(LDFLAGS) $(BUILDROOT)/icon/icon.res $(SERVER_OBJS) $(LDLIBS) -o $@
 else
-$(BINDIR)/q2ded : $(SERVER_OBJS)
+$(BINDIR)/OpenTech2-server : $(SERVER_OBJS)
 	@echo "===> LD $@"
 	${Q}$(CC) $(LDFLAGS) $(SERVER_OBJS) $(LDLIBS) -o $@
 endif

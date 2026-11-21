@@ -1,5 +1,5 @@
 /*
- * OPtech2 test client game module (re-release cgame API 2022), used by
+ * OpenTech2 test client game module (re-release cgame API 2022), used by
  * tests/cgame/cgame_check.py. It calls the engine's imports and prints what
  * it gets, so the check can compare, and draws a small HUD of its own:
  * a line of text and the health icon tinted red.

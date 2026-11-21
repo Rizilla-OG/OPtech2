@@ -353,9 +353,9 @@ int RI_InitContext(void* win)
 	char title[64] = {0};
 
 #ifdef YQ2_GL1_GLES
-	snprintf(title, sizeof(title), "OPtech2 v%s - OpenGL ES 1.0", OPTECH2_VERSION);
+	snprintf(title, sizeof(title), "OpenTech2 v%s - OpenGL ES 1.0", OPTECH2_VERSION);
 #else
-	snprintf(title, sizeof(title), "OPtech2 v%s - OpenGL 1.4", OPTECH2_VERSION);
+	snprintf(title, sizeof(title), "OpenTech2 v%s - OpenGL 1.4", OPTECH2_VERSION);
 #endif
 	SDL_SetWindowTitle(window, title);
 

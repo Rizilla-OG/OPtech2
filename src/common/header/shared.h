@@ -746,7 +746,13 @@ typedef struct
 	/* callbacks to test the world */
 	trace_t (*trace)(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end);
 	int (*pointcontents)(const vec3_t point);
+
+	float airaccelerate; /* optech2: in; was an engine global (sv_airaccelerate / CS_AIRACCEL) */
 } pmove_t;
+
+/* player movement (src/common/shared/pmove.c), in the engine and the game */
+void Pmove(pmove_t *pmove);
+void PmoveEx(pmove_t *pmove, int *origin);
 
 /* entity_state_t->effects
  * Effects are things handled on the client side (lights, particles,

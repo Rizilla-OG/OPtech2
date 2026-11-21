@@ -439,7 +439,7 @@ Qcommon_Init(int argc, char **argv)
 	}
 #endif
 
-	Com_Printf("==== OPtech2 Initialized ====\n\n");
+	Com_Printf("==== OpenTech2 Initialized ====\n\n");
 	Com_Printf("*************************************\n\n");
 
 	// Call the main loop

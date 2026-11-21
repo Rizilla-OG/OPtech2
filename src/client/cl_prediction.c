@@ -25,7 +25,9 @@
  * =======================================================================
  */
 
+#include <math.h>
 #include "header/client.h"
+#include "sound/header/local.h" /* optech2: underwater sound */
 
 void
 CL_CheckPredictionError(void)
@@ -76,6 +78,70 @@ CL_CheckPredictionError(void)
 			cl.prediction_error[i] = delta[i] * 0.125f;
 		}
 	}
+}
+
+/*
+ * optech2: lifts and other moving brush models in prediction. The server
+ * runs a player's commands, then moves the lifts and pushes whoever stands
+ * on them; the client replays the commands the server hasn't run yet against
+ * the lift where the last frame left it, one tick behind (the snapping on
+ * lifts). So while replaying, each moving brush model is moved on by its
+ * speed for the time replayed so far, and the player is carried along with
+ * the one under their feet. cl_predict_movers 0 turns this off.
+ */
+extern cvar_t *cl_predict_movers;
+static float predicted_time; /* seconds of commands replayed so far */
+
+/* a brush model's speed in units per second from its last move */
+static qboolean
+CL_MoverVelocity(const entity_xstate_t *ent, vec3_t velocity)
+{
+	const centity_t *cent;
+
+	if (!cl_predict_movers || !cl_predict_movers->value || ent->solid != 31)
+	{
+		return false;
+	}
+
+	cent = &cl_entities[ent->number];
+
+	if (cent->serverframe != cl.frame.serverframe)
+	{
+		return false;
+	}
+
+	/* prev is the state before the entity's last move, move_lerp_msec the
+	   time between them (cl_parse.c); only a lift that moved in this very
+	   frame is still moving */
+	if (cent->move_change_time != (int)((long long)cl.frame.serverframe * 1000 / cl.tickrate) ||
+		cent->move_lerp_msec <= 0)
+	{
+		return false;
+	}
+
+	VectorSubtract(cent->current.origin, cent->prev.origin, velocity);
+
+	if (VectorCompare(velocity, vec3_origin))
+	{
+		return false;
+	}
+
+	VectorScale(velocity, 1000.0f / cent->move_lerp_msec, velocity);
+	return true;
+}
+
+/* the entity a prediction trace returned, if it is a frame entity */
+static const entity_xstate_t *
+CL_PredictionTraceEntity(const struct edict_s *traced)
+{
+	const entity_xstate_t *ent = (const entity_xstate_t *)traced;
+
+	if (ent < cl_parse_entities || ent >= cl_parse_entities + MAX_PARSE_ENTITIES)
+	{
+		return NULL; /* nothing or the world */
+	}
+
+	return ent;
 }
 
 static void
@@ -143,9 +209,21 @@ CL_ClipMoveToEntities(vec3_t start, vec3_t mins, vec3_t maxs,
 			return;
 		}
 
-		trace = CM_TransformedBoxTrace(start, end,
+		{
+			vec3_t origin, velocity;
+
+			/* optech2: a moving lift where it is after the replayed time */
+			VectorCopy(ent->origin, origin);
+
+			if (predicted_time > 0 && CL_MoverVelocity(ent, velocity))
+			{
+				VectorMA(origin, predicted_time, velocity, origin);
+			}
+
+			trace = CM_TransformedBoxTrace(start, end,
 				mins, maxs, headnode, MASK_PLAYERSOLID,
-				ent->origin, angles);
+				origin, angles);
+		}
 
 		if (trace.allsolid || trace.startsolid ||
 			(trace.fraction < tr->fraction))
@@ -221,12 +299,47 @@ CL_PMpointcontents(const vec3_t point)
 }
 
 /*
+ * optech2: underwater sound filter from the view position, each frame. It
+ * was switched from inside player movement, which is game code now (and
+ * did not run in demos or with prediction off).
+ */
+void
+CL_UpdateUnderwaterSound(const vec3_t vieworg)
+{
+	static qboolean underwater;
+	qboolean now_underwater;
+
+	now_underwater = (cls.state == ca_active) &&
+					 ((CL_PMpointcontents(vieworg) & MASK_WATER) != 0);
+
+	if (now_underwater && !underwater)
+	{
+		underwater = true;
+		snd_is_underwater = true;
+
+#ifdef USE_OPENAL
+		AL_Underwater();
+#endif
+	}
+	else if (!now_underwater && underwater)
+	{
+		underwater = false;
+		snd_is_underwater = false;
+
+#ifdef USE_OPENAL
+		AL_Overwater();
+#endif
+	}
+}
+
+/*
  * Sets cl.predicted_origin and cl.predicted_angles
  */
 void
 CL_PredictMovement(void)
 {
 	int ack, current, origin[3];
+	vec3_t carried; /* optech2: lift carry not yet a whole 1/8 unit */
 	pmove_t pm;
 	int step;
 	vec3_t tmp;
@@ -274,13 +387,16 @@ CL_PredictMovement(void)
 	memset (&pm, 0, sizeof(pm));
 	pm.trace = CL_PMTrace;
 	pm.pointcontents = CL_PMpointcontents;
-	pm_airaccelerate = atof(cl.configstrings[CS_AIRACCEL]);
+	pm.airaccelerate = atof(cl.configstrings[CS_AIRACCEL]);
 	pm.s = cl.frame.playerstate.pmove;
 
 	/* TODO: mins/maxs should be updated on current frame number */
 	VectorCopy(cl.baseclientinfo.maxs, pm.maxs);
 	VectorCopy(cl.baseclientinfo.mins, pm.mins);
 	VectorCopy(cl.frame.origin, origin);
+
+	predicted_time = 0;
+	VectorClear(carried);
 
 	/* run frames */
 	while (++ack <= current)
@@ -298,11 +414,38 @@ CL_PredictMovement(void)
 		}
 
 		pm.cmd = *cmd;
-		PmoveEx(&pm, origin);
+		CL_CGame_PmoveEx(&pm, origin); /* optech2: the game's movement */
+
+		/* optech2: the server will push the player along with the lift
+		   under their feet after this command */
+		{
+			const entity_xstate_t *ground = CL_PredictionTraceEntity(pm.groundentity);
+			vec3_t velocity;
+			int i;
+
+			if (ground && CL_MoverVelocity(ground, velocity))
+			{
+				/* in 1/8 units; the fraction carries over to the next
+				   command, so many short commands don't lose it */
+				for (i = 0; i < 3; i++)
+				{
+					int whole;
+
+					carried[i] += velocity[i] * cmd->msec * 0.001f * 8;
+					whole = (int)carried[i];
+					carried[i] -= whole;
+					origin[i] += whole;
+				}
+			}
+
+			predicted_time += cmd->msec * 0.001f;
+		}
 
 		/* save for debug checking */
 		VectorCopy(origin, cl.predicted_origins[frame]);
 	}
+
+	predicted_time = 0; /* optech2: other traces see lifts where the frame has them */
 
 	// step is used for movement prediction on stairs
 	// (so moving up/down stairs is smooth)

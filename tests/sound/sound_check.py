@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sound format check for OPtech2: writes WAV files in formats beyond what
+"""Sound format check for OpenTech2: writes WAV files in formats beyond what
 stock Quake II shipped (stock: 8/16 bit mono, 11-44 kHz, a few seconds),
 plays each with the "play" command and reads "soundlist" back, for both
 sound backends (OpenAL and SDL). For each file it checks that it loaded and
@@ -26,7 +26,7 @@ import tempfile
 from pathlib import Path
 
 REPO_DIR = Path(__file__).resolve().parent.parent.parent
-CLIENT_BINARY = REPO_DIR / "build" / "release" / "optech2"
+CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 OUTPUT_DIR = REPO_DIR / "build" / "sound-check"
 DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
 GAME_TIMEOUT_SECONDS = 60
@@ -77,7 +77,7 @@ def write_wav(path, value_format, bits, rate, channels, seconds):
 def run(backend, data_dir):
     log_path = OUTPUT_DIR / f"{backend}.log"
     with tempfile.TemporaryDirectory(prefix="optech2-sound-") as home:
-        game_dir = Path(home) / ".optech2" / "baseq2"
+        game_dir = Path(home) / ".opentech2" / "baseq2"
         for name, (value_format, bits, rate, channels, seconds) in TEST_SOUNDS.items():
             write_wav(game_dir / "sound" / "optech2" / f"{name}.wav", value_format, bits, rate, channels, seconds)
         script = [f'delay {2000 + index * 200} "play optech2/{name}.wav"' for index, name in enumerate(TEST_SOUNDS)]

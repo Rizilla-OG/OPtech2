@@ -419,7 +419,7 @@ int GL4_InitContext(void* win)
 
 	// Window title - set here so we can display renderer name in it.
 	char title[64] = {0};
-	snprintf(title, sizeof(title), "OPtech2 v%s - OpenGL 4.6 (%d.%d mode)",
+	snprintf(title, sizeof(title), "OpenTech2 v%s - OpenGL 4.6 (%d.%d mode)",
 		OPTECH2_VERSION, GLVersion.major, GLVersion.minor);
 	SDL_SetWindowTitle(window, title);
 

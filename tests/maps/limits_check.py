@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""M1 limits check for OPtech2: loads the limits test map (built by
+"""M1 limits check for OpenTech2: loads the limits test map (built by
 make_limits_map.py) in a hidden single-player client and checks:
   1. the map loads as extended QBSP with no errors,
   2. more than 256 models and more than 256 sounds reach the client and load,
@@ -27,7 +27,7 @@ from pathlib import Path
 
 CHECK_DIR = Path(__file__).resolve().parent
 REPO_DIR = CHECK_DIR.parent.parent
-CLIENT_BINARY = REPO_DIR / "build" / "release" / "optech2"
+CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 MAP_FILE = REPO_DIR / "build" / "maps" / "optech2_limits.bsp"
 OUTPUT_DIR = REPO_DIR / "build" / "limits-check"
 DOC_SHOT_DIR = REPO_DIR / "docs" / "screenshots"
@@ -110,7 +110,7 @@ def average_brightness(png_path):
 def run_session(data_dir, renderer):
     log_path = OUTPUT_DIR / "client.log"
     with tempfile.TemporaryDirectory(prefix="optech2-limits-") as home:
-        game_dir = Path(home) / ".optech2" / "baseq2"
+        game_dir = Path(home) / ".opentech2" / "baseq2"
         (game_dir / "maps").mkdir(parents=True)
         shutil.copy(MAP_FILE, game_dir / "maps" / MAP_FILE.name)
         (game_dir / "limits.cfg").write_text("\n".join(script_lines()) + "\n")

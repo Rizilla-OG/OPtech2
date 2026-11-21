@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""True-color texture check for OPtech2: a room textured only with PNG and TGA
+"""True-color texture check for OpenTech2: a room textured only with PNG and TGA
 images (no .wal files at all), at sizes the stock game never uses:
   north wall  optech2/npot_300x200  PNG, 300 x 200 (not a power of two):
               red / green / blue / yellow quarters
@@ -37,7 +37,7 @@ import make_limits_map as map_tools  # noqa: E402
 
 from PIL import Image, ImageDraw  # noqa: E402
 
-CLIENT_BINARY = REPO_DIR / "build" / "release" / "optech2"
+CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 OUTPUT_DIR = REPO_DIR / "build" / "texture-check"
 DOC_SHOT_DIR = REPO_DIR / "docs" / "screenshots"
 MAP_NAME = "optech2_textures"
@@ -99,7 +99,7 @@ def build_map(work_dir, data_dir, tools_dir, texture_root):
         box((-size - wall, -size, 0), (-size, size, height), NPOT),
         box((size, -size, 0), (size + wall, size, height), BIG),
     ]
-    entities = [map_tools.entity({"classname": "worldspawn", "message": "OPtech2 texture test"}, world),
+    entities = [map_tools.entity({"classname": "worldspawn", "message": "OpenTech2 texture test"}, world),
                 map_tools.entity({"classname": "info_player_start", "origin": "0 0 24", "angle": "90"})]
     for x in (-256, 256):
         for y in (-256, 256):
@@ -144,7 +144,7 @@ def matching_share(image, colors):
 
 def run(name, renderer, retexturing, data_dir, bsp_path):
     with tempfile.TemporaryDirectory(prefix="optech2-textures-") as home:
-        game_dir = Path(home) / ".optech2" / "baseq2"
+        game_dir = Path(home) / ".opentech2" / "baseq2"
         (game_dir / "maps").mkdir(parents=True)
         write_textures(game_dir)
         shutil.copy(bsp_path, game_dir / "maps")

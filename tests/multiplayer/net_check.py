@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Network traffic check for OPtech2: how much data goes to and from players?
+"""Network traffic check for OpenTech2: how much data goes to and from players?
 
 Runs a dedicated co-op server on base1 with two hidden clients (alice, bob)
 at each tick rate, with sv_netstats 1, through three phases:
@@ -30,8 +30,8 @@ from pathlib import Path
 
 CHECK_DIR = Path(__file__).resolve().parent
 REPO_DIR = CHECK_DIR.parent.parent
-CLIENT_BINARY = REPO_DIR / "build" / "release" / "optech2"
-SERVER_BINARY = REPO_DIR / "build" / "release" / "optech2ded"
+CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
+SERVER_BINARY = REPO_DIR / "build" / "release" / "OpenTech2-server"
 OUTPUT_DIR = REPO_DIR / "build" / "net-check"
 DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
 
@@ -87,7 +87,7 @@ def run_session(tick_rate, data_dir, rate_limit):
         temp_root = Path(temp_folder)
         homes = {name: temp_root / name for name in ("server", "alice", "bob")}
         for home in homes.values():
-            (home / ".optech2" / "baseq2").mkdir(parents=True)
+            (home / ".opentech2" / "baseq2").mkdir(parents=True)
 
         server, server_log = start(
             [str(SERVER_BINARY), "-datadir", str(data_dir), "+set", "port", str(SERVER_PORT), "+set", "public", "0",
@@ -98,7 +98,7 @@ def run_session(tick_rate, data_dir, rate_limit):
 
         clients = []
         for name, spot, spawns in (("alice", ALICE_SPOT, True), ("bob", BOB_SPOT, False)):
-            game_dir = homes[name] / ".optech2" / "baseq2"
+            game_dir = homes[name] / ".opentech2" / "baseq2"
             (game_dir / "net.cfg").write_text("\n".join(client_script(name, spot, spawns)) + "\n")
             process, log_file = start(
                 [str(CLIENT_BINARY), "-datadir", str(data_dir), *CLIENT_SETTINGS, "+set", "rate", str(rate_limit),

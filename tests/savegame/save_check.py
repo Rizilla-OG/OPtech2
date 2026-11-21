@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Savegame check for OPtech2.
+"""Savegame check for OpenTech2.
 
 Plays a scripted single-player session on base1 (weapons and ammo given,
 health changed, soldiers spawned, player moved), takes a snapshot (player
@@ -36,7 +36,7 @@ import tempfile
 from pathlib import Path
 
 REPO_DIR = Path(__file__).resolve().parent.parent.parent
-CLIENT_BINARY = REPO_DIR / "build" / "release" / "optech2"
+CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 OUTPUT_DIR = REPO_DIR / "build" / "save-check"
 DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
 GAME_TIMEOUT_SECONDS = 90
@@ -74,7 +74,7 @@ def parse_snapshot(log, label):
 
 
 def run_game(home, lines, log_name, data_dir):
-    game_dir = Path(home) / ".optech2" / "baseq2"
+    game_dir = Path(home) / ".opentech2" / "baseq2"
     game_dir.mkdir(parents=True, exist_ok=True)
     (game_dir / "check.cfg").write_text("\n".join(lines) + "\n")
     environment = dict(os.environ, HOME=str(home), SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
@@ -163,7 +163,7 @@ def main():
     report(table_check.returncode == 0, table_check.stdout.strip() or table_check.stderr.strip())
 
     with tempfile.TemporaryDirectory(prefix="optech2-save-") as home:
-        save_dir = Path(home) / ".optech2" / "baseq2" / "save"
+        save_dir = Path(home) / ".opentech2" / "baseq2" / "save"
         if arguments.load_from:
             snapshot = json.loads((arguments.load_from / "snapshot.json").read_text())
             shutil.copytree(arguments.load_from / "save", save_dir)

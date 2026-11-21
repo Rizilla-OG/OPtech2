@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Packet splitting check for OPtech2.
+"""Packet splitting check for OpenTech2.
 
 Starts a dedicated server (co-op, base1, 60 Hz) and one hidden client that
 talks to it over UDP on 127.0.0.1 (real network path, not loopback). The
@@ -38,8 +38,8 @@ from pathlib import Path
 
 CHECK_DIR = Path(__file__).resolve().parent
 REPO_DIR = CHECK_DIR.parent.parent
-CLIENT_BINARY = REPO_DIR / "build" / "release" / "optech2"
-SERVER_BINARY = REPO_DIR / "build" / "release" / "optech2ded"
+CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
+SERVER_BINARY = REPO_DIR / "build" / "release" / "OpenTech2-server"
 OUTPUT_DIR = REPO_DIR / "build" / "split-check"
 DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
 
@@ -101,7 +101,7 @@ def run_session(label, loss_percent, data_dir):
         temp_root = Path(temp_folder)
         server_home, client_home = temp_root / "server", temp_root / "client"
         for home in (server_home, client_home):
-            (home / ".optech2" / "baseq2").mkdir(parents=True)
+            (home / ".opentech2" / "baseq2").mkdir(parents=True)
 
         server, server_log = start(
             [str(SERVER_BINARY), "-datadir", str(data_dir), "+set", "port", str(SERVER_PORT), "+set", "public", "0",
@@ -112,7 +112,7 @@ def run_session(label, loss_percent, data_dir):
         time.sleep(3)
 
         for file_name, lines in client_files().items():
-            (client_home / ".optech2" / "baseq2" / file_name).write_text("\n".join(lines) + "\n")
+            (client_home / ".opentech2" / "baseq2" / file_name).write_text("\n".join(lines) + "\n")
         client, client_log = start(
             [str(CLIENT_BINARY), "-datadir", str(data_dir), *CLIENT_SETTINGS, "+set", "showdrop", "1",
              "+set", "name", "alice", "+exec", "split.cfg"],

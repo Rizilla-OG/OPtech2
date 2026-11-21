@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""IQM model check for OPtech2: builds the test model (make_iqm_test.py) and a
+"""IQM model check for OpenTech2: builds the test model (make_iqm_test.py) and a
 small room with four misc_model copies of it, then loads the room in the game
 and takes a screenshot:
   left to right: "bend" frame 1 (straight), frame 5 (45 degrees),
@@ -31,7 +31,7 @@ sys.dont_write_bytecode = True
 import make_iqm_test  # noqa: E402
 import make_limits_map as map_tools  # noqa: E402
 
-CLIENT_BINARY = REPO_DIR / "build" / "release" / "optech2"
+CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 OUTPUT_DIR = REPO_DIR / "build" / "iqm-check"
 DOC_SHOT_DIR = REPO_DIR / "docs" / "screenshots"
 MAP_NAME = "optech2_iqmtest"
@@ -53,7 +53,7 @@ def build_map(work_dir, data_dir, tools_dir):
         box((-size - wall, -size, 0), (-size, size, height), map_tools.WALL_TEXTURE),
         box((size, -size, 0), (size + wall, size, height), map_tools.WALL_TEXTURE),
     ]
-    entities = [map_tools.entity({"classname": "worldspawn", "message": "OPtech2 IQM test"}, world)]
+    entities = [map_tools.entity({"classname": "worldspawn", "message": "OpenTech2 IQM test"}, world)]
     entities.append(map_tools.entity({"classname": "info_player_start", "origin": "0 -260 24", "angle": "90"}))
     for x, frame in MODEL_COPIES:
         entities.append(map_tools.entity({"classname": "misc_model", "model": make_iqm_test.MODEL_PATH,
@@ -99,7 +99,7 @@ def main():
         print(f"{'ok' if passed else 'FAIL':<6}{text}")
 
     with tempfile.TemporaryDirectory(prefix="optech2-iqm-") as home:
-        game_dir = Path(home) / ".optech2" / "baseq2"
+        game_dir = Path(home) / ".opentech2" / "baseq2"
         (game_dir / "maps").mkdir(parents=True)
         make_iqm_test.write_iqm(game_dir / make_iqm_test.MODEL_PATH)
         make_iqm_test.write_skin(game_dir / make_iqm_test.SKIN_PATH)

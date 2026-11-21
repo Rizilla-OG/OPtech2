@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Damage check for OPtech2: do weapons deal the same damage at 10 and 60 Hz?
+"""Damage check for OpenTech2: do weapons deal the same damage at 10 and 60 Hz?
 
 For each weapon, one hidden single-player session on base1: a supertank
 (1500 health) is spawned 200 units in front of the player, who fires for 3 s.
@@ -24,7 +24,7 @@ from pathlib import Path
 
 CHECK_DIR = Path(__file__).resolve().parent
 REPO_DIR = CHECK_DIR.parent.parent
-CLIENT_BINARY = REPO_DIR / "build" / "release" / "optech2"
+CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 OUTPUT_DIR = REPO_DIR / "build" / "damage-check"
 DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
 
@@ -52,7 +52,7 @@ def run_session(tick_rate, weapon_name, ammo_name, data_dir, log_path):
         'delay 12800 "cmd playerinfo"', 'delay 13000 "quit"',
     ]
     with tempfile.TemporaryDirectory(prefix="optech2-damage-") as home:
-        game_dir = Path(home) / ".optech2" / "baseq2"
+        game_dir = Path(home) / ".opentech2" / "baseq2"
         game_dir.mkdir(parents=True)
         (game_dir / "damage.cfg").write_text("\n".join(script) + "\n")
         environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")

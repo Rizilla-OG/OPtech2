@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tick rate check for OPtech2: does the game behave the same at 10 and 60 Hz?
+"""Tick rate check for OpenTech2: does the game behave the same at 10 and 60 Hz?
 
 Runs one scripted single-player session on base1 at each tick rate, with a
 hidden client, and measures:
@@ -32,7 +32,7 @@ from pathlib import Path
 
 CHECK_DIR = Path(__file__).resolve().parent
 REPO_DIR = CHECK_DIR.parent.parent
-CLIENT_BINARY = REPO_DIR / "build" / "release" / "optech2"
+CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 OUTPUT_DIR = REPO_DIR / "build" / "tick-check"
 DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
 GAME_TIMEOUT_SECONDS = 180
@@ -100,7 +100,7 @@ def run_session(tick_rate, data_dir):
     """Run the scripted session at one tick rate; return the log text."""
     log_path = OUTPUT_DIR / f"{tick_rate}hz.log"
     with tempfile.TemporaryDirectory(prefix="optech2-tick-") as home:
-        game_dir = Path(home) / ".optech2" / "baseq2"
+        game_dir = Path(home) / ".opentech2" / "baseq2"
         game_dir.mkdir(parents=True)
         (game_dir / "tick.cfg").write_text("\n".join(script_lines()) + "\n")
         environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")

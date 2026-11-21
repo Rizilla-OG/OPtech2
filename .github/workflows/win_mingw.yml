@@ -56,36 +56,36 @@ jobs:
         shell: bash
         run: |
           # Create release directory tree
-          mkdir -p publish/quake2-${{matrix.winapi}}-${{github.sha}}/misc/docs
+          mkdir -p publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/misc/docs
           # Copy release assets
-          cp -r release/* publish/quake2-${{matrix.winapi}}-${{github.sha}}/
+          cp -r release/* publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/
           # Copy misc assets
-          cp -r stuff/yq2.cfg publish/quake2-${{matrix.winapi}}-${{github.sha}}/misc/yq2.cfg
-          cp -r stuff/models publish/quake2-${{matrix.winapi}}-${{github.sha}}/misc
-          cp -r stuff/mapfixes publish/quake2-${{matrix.winapi}}-${{github.sha}}/misc
-          cp LICENSE publish/quake2-${{matrix.winapi}}-${{github.sha}}/misc/docs/LICENSE.txt
-          cp README.md publish/quake2-${{matrix.winapi}}-${{github.sha}}/misc/docs/README.txt
-          cp doc/010_index.md publish/quake2-${{matrix.winapi}}-${{github.sha}}/misc/docs/010_index.txt
-          cp doc/020_installation.md publish/quake2-${{matrix.winapi}}-${{github.sha}}/misc/docs/020_installation.txt
-          cp doc/030_configuration.md publish/quake2-${{matrix.winapi}}-${{github.sha}}/misc/docs/030_configuration.txt
-          cp doc/040_cvarlist.md publish/quake2-${{matrix.winapi}}-${{github.sha}}/misc/docs/040_cvarlist.txt
-          cp doc/050_commands.md publish/quake2-${{matrix.winapi}}-${{github.sha}}/misc/docs/050_commands.txt
-          cp doc/060_multiplayer.md publish/quake2-${{matrix.winapi}}-${{github.sha}}/misc/docs/060_multiplayer.txt
-          cp doc/070_packaging.md publish/quake2-${{matrix.winapi}}-${{github.sha}}/misc/docs/070_packaging.txt
-          cp doc/080_contributing.md publish/quake2-${{matrix.winapi}}-${{github.sha}}/misc/docs/080_contributing.txt
-          cp doc/090_filelists.md publish/quake2-${{matrix.winapi}}-${{github.sha}}/misc/docs/090_filelists.md
+          cp -r stuff/yq2.cfg publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/misc/yq2.cfg
+          cp -r stuff/models publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/misc
+          cp -r stuff/mapfixes publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/misc
+          cp LICENSE publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/misc/docs/LICENSE.txt
+          cp README.md publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/misc/docs/README.txt
+          cp doc/010_index.md publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/misc/docs/010_index.txt
+          cp doc/020_installation.md publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/misc/docs/020_installation.txt
+          cp doc/030_configuration.md publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/misc/docs/030_configuration.txt
+          cp doc/040_cvarlist.md publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/misc/docs/040_cvarlist.txt
+          cp doc/050_commands.md publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/misc/docs/050_commands.txt
+          cp doc/060_multiplayer.md publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/misc/docs/060_multiplayer.txt
+          cp doc/070_packaging.md publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/misc/docs/070_packaging.txt
+          cp doc/080_contributing.md publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/misc/docs/080_contributing.txt
+          cp doc/090_filelists.md publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/misc/docs/090_filelists.md
           # SDL3
-          cp buildenv/dep/SDL3/${{matrix.family}}-w64-mingw32/bin/SDL3.dll publish/quake2-${{matrix.winapi}}-${{github.sha}}/
+          cp buildenv/dep/SDL3/${{matrix.family}}-w64-mingw32/bin/SDL3.dll publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/
           # openal-soft
-          cp buildenv/dep/openal-soft/bin/${{matrix.winapi}}/soft_oal.dll publish/quake2-${{matrix.winapi}}-${{github.sha}}/openal32.dll
+          cp buildenv/dep/openal-soft/bin/${{matrix.winapi}}/soft_oal.dll publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/openal32.dll
           # curl (releases use a custom build curl.dll)
           curl -o libcurl-4.dll -L "https://github.com/dhewm/dhewm3-libs/raw/refs/heads/master/${{matrix.family}}-w64-mingw32/bin/libcurl-4.dll"
-          cp libcurl-4.dll publish/quake2-${{matrix.winapi}}-${{github.sha}}/curl.dll
+          cp libcurl-4.dll publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/curl.dll
       - name: Upload testbuild package
         uses: actions/upload-artifact@v7
         if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
         with:
-          name: quake2-${{matrix.winapi}}-${{github.sha}}
+          name: OpenTech2-${{matrix.winapi}}-${{github.sha}}
           path: publish/
           if-no-files-found: error
       - name: Create testbuild package
@@ -93,12 +93,12 @@ jobs:
         shell: bash
         run: |
           # create archive
-          mkdir yquake2remaster-${{matrix.winapi}}-${{github.ref_name}}
-          cp -rv publish/quake2-${{matrix.winapi}}-${{github.sha}}/* yquake2remaster-${{matrix.winapi}}-${{github.ref_name}}
-          tar -czf yquake2remaster-${{matrix.winapi}}-${{github.ref_name}}.tar.gz yquake2remaster-${{matrix.winapi}}-${{github.ref_name}}
+          mkdir OpenTech2-${{matrix.winapi}}-${{github.ref_name}}
+          cp -rv publish/OpenTech2-${{matrix.winapi}}-${{github.sha}}/* OpenTech2-${{matrix.winapi}}-${{github.ref_name}}
+          tar -czf OpenTech2-${{matrix.winapi}}-${{github.ref_name}}.tar.gz OpenTech2-${{matrix.winapi}}-${{github.ref_name}}
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v3
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         with:
           files: |
-            yquake2remaster-${{matrix.winapi}}-${{github.ref_name}}.tar.gz
+            OpenTech2-${{matrix.winapi}}-${{github.ref_name}}.tar.gz

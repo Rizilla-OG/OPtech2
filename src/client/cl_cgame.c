@@ -31,6 +31,7 @@
 
 #include "header/client.h"
 #include "header/cgame_rerelease.h"
+#include "../common/header/optech2_ext.h"
 
 /* module allocations live in their own zone tags, apart from the server's game */
 #define CGAME_TAG_OFFSET 1000
@@ -38,6 +39,7 @@
 static cvar_t *cl_cgame; /* library to load instead of the game folder's game library */
 static void *cgame_library;
 static cgame_export_t *cgame;
+static const optech2_pmove_ext_t *cgame_pmove; /* the game library's player movement, or NULL */
 static cgame_import_t cgame_import;
 
 /* ------------------------------------------------------------------ */
@@ -394,11 +396,10 @@ CL_CGame_FillImports(void)
 	cgame_import.CL_InAutoDemoLoop = CG_InAutoDemoLoop;
 }
 
-/* opens a library and fetches GetCGameAPI; NULL when it has none */
-static GetCGameAPI_t
+/* opens a library as the game library; false when it won't open */
+static qboolean
 CL_CGame_Open(const char *path)
 {
-	GetCGameAPI_t entry;
 	void *library;
 
 	/* with no symbol asked for, only the handle tells whether it opened */
@@ -406,21 +407,41 @@ CL_CGame_Open(const char *path)
 
 	if (!library)
 	{
-		return NULL;
-	}
-
-	entry = (GetCGameAPI_t)Sys_GetProcAddress(library, "GetCGameAPI");
-
-	if (!entry)
-	{
-		Sys_FreeLibrary(library);
-		return NULL;
+		return false;
 	}
 
 	cgame_library = library;
-	return entry;
+	return true;
 }
 
+/* the game library's own player movement for prediction, if it has one */
+static void
+CL_CGame_FindPmove(void)
+{
+	OPtech2_GetExtension_t get_extension =
+		(OPtech2_GetExtension_t)Sys_GetProcAddress(cgame_library, "OPtech2_GetExtension");
+	const optech2_pmove_ext_t *pmove_ext =
+		get_extension ? get_extension(OPTECH2_EXT_PMOVE) : NULL;
+
+	if (pmove_ext && pmove_ext->version == OPTECH2_PMOVE_EXT_VERSION &&
+		pmove_ext->pmove_size == (int)sizeof(pmove_t) && pmove_ext->PmoveEx)
+	{
+		cgame_pmove = pmove_ext;
+		Com_Printf("client game: player movement from the game library\n");
+	}
+	else if (pmove_ext)
+	{
+		Com_Printf("client game: player movement version %d / size %d don't match, using the engine's\n",
+			pmove_ext->version, pmove_ext->pmove_size);
+	}
+}
+
+/*
+ * Opens the game's library on the client side (the game folders' game
+ * library, like the server's, or the one cl_cgame names) and takes what it
+ * offers: its player movement for prediction and its client game module
+ * for the HUD. Either can be missing; with neither the library is closed.
+ */
 void
 CL_CGame_Load(void)
 {
@@ -431,11 +452,11 @@ CL_CGame_Load(void)
 #else
 	const char *game_library_name = "game.so";
 #endif
-	GetCGameAPI_t entry = NULL;
+	GetCGameAPI_t entry;
 	const char *path = NULL;
 	char name[MAX_OSPATH];
 
-	if (cgame)
+	if (cgame_library)
 	{
 		return;
 	}
@@ -447,17 +468,15 @@ CL_CGame_Load(void)
 
 	if (cl_cgame->string[0])
 	{
-		entry = CL_CGame_Open(cl_cgame->string);
-
-		if (!entry)
+		if (!CL_CGame_Open(cl_cgame->string))
 		{
-			Com_Printf("cl_cgame: %s has no client game (GetCGameAPI)\n", cl_cgame->string);
+			Com_Printf("cl_cgame: can't open %s\n", cl_cgame->string);
 		}
 	}
 	else
 	{
 		/* the game library of the game folders, like the server's */
-		while (!entry && (path = FS_NextPath(path)))
+		while ((path = FS_NextPath(path)))
 		{
 			FILE *f;
 
@@ -467,31 +486,48 @@ CL_CGame_Load(void)
 			if (f)
 			{
 				fclose(f);
-				entry = CL_CGame_Open(name);
+				CL_CGame_Open(name);
 				break; /* the first game library found is the game's */
 			}
 		}
 	}
 
-	if (!entry)
+	if (!cgame_library)
 	{
 		return;
 	}
 
-	CL_CGame_FillImports();
-	cgame = entry(&cgame_import);
+	CL_CGame_FindPmove();
 
-	if (!cgame || cgame->apiversion != CGAME_API_VERSION)
+	entry = (GetCGameAPI_t)Sys_GetProcAddress(cgame_library, "GetCGameAPI");
+
+	if (entry)
 	{
-		Com_Printf("client game: API version %d, need %d; using the built-in HUD\n",
-			cgame ? cgame->apiversion : -1, CGAME_API_VERSION);
-		cgame = NULL;
-		Sys_FreeLibrary(cgame_library);
-		cgame_library = NULL;
+		CL_CGame_FillImports();
+		cgame = entry(&cgame_import);
+
+		if (!cgame || cgame->apiversion != CGAME_API_VERSION)
+		{
+			Com_Printf("client game: API version %d, need %d; using the built-in HUD\n",
+				cgame ? cgame->apiversion : -1, CGAME_API_VERSION);
+			cgame = NULL;
+		}
+	}
+
+	if (!cgame)
+	{
+		/* no client game module: keep the library only for its movement */
+		if (!cgame_pmove)
+		{
+			Sys_FreeLibrary(cgame_library);
+			cgame_library = NULL;
+		}
+
 		return;
 	}
 
 	Com_Printf("client game: loaded (cgame API %d)\n", CGAME_API_VERSION);
+
 	cgame->Init();
 
 	if (cgame->TouchPics)
@@ -503,6 +539,8 @@ CL_CGame_Load(void)
 void
 CL_CGame_Unload(void)
 {
+	cgame_pmove = NULL;
+
 	if (cgame)
 	{
 		cgame->Shutdown();
@@ -520,6 +558,21 @@ qboolean
 CL_CGame_Active(void)
 {
 	return cgame != NULL;
+}
+
+/* player movement for prediction: the game library's when it has its own,
+   else the engine's copy of the shared code */
+void
+CL_CGame_PmoveEx(pmove_t *pmove, int *origin)
+{
+	if (cgame_pmove)
+	{
+		cgame_pmove->PmoveEx(pmove, origin);
+	}
+	else
+	{
+		PmoveEx(pmove, origin);
+	}
 }
 
 /* ------------------------------------------------------------------ */
@@ -631,10 +684,32 @@ CL_CGame_DrawHUD(void)
 void
 CL_CGame_CenterPrint(const char *text)
 {
-	if (cgame && cgame->ParseCenterPrint)
+	static int last_center_time = -100000;
+	int on_screen_msec;
+	qboolean replace;
+
+	if (!cgame || !cgame->ParseCenterPrint)
 	{
-		cgame->ParseCenterPrint(text, 0, false);
+		return;
 	}
+
+	/* optech2: the re-release HUD queues center prints, each typed out and
+	   shown for scr_centertime before the next. Messages that come faster
+	   (a map's "5... 4... 3..." countdown) fell seconds behind the game.
+	   A message that arrives while the previous one may still be up
+	   replaces it at once, as center prints always did in Quake II. Two
+	   sent together (within 0.2 s: "Pump online." + "Valve opened.") still
+	   queue, so the first isn't lost. */
+	{
+		int since_last = cls.realtime - last_center_time;
+
+		on_screen_msec = (int)(Cvar_VariableValue("scr_centertime") * 1000) + 1000; /* + typing */
+		replace = (since_last >= 200) && (since_last < on_screen_msec);
+	}
+
+	last_center_time = cls.realtime;
+
+	cgame->ParseCenterPrint(text, 0, replace);
 }
 
 /* a configstring changed (our numbering); the module gets its own */

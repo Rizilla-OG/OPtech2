@@ -455,10 +455,10 @@ int GL3_InitContext(void* win)
 	// Window title - set here so we can display renderer name in it.
 	char title[64] = {0};
 #ifdef YQ2_GL3_GLES3
-	snprintf(title, sizeof(title), "OPtech2 v%s - OpenGL ES 3.0 (%d.%d mode)",
+	snprintf(title, sizeof(title), "OpenTech2 v%s - OpenGL ES 3.0 (%d.%d mode)",
 		OPTECH2_VERSION, GLVersion.major, GLVersion.minor);
 #else
-	snprintf(title, sizeof(title), "OPtech2 v%s - OpenGL 3.2 (%d.%d mode)",
+	snprintf(title, sizeof(title), "OpenTech2 v%s - OpenGL 3.2 (%d.%d mode)",
 		OPTECH2_VERSION, GLVersion.major, GLVersion.minor);
 #endif
 	SDL_SetWindowTitle(window, title);

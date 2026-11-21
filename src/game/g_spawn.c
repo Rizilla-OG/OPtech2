@@ -1834,6 +1834,18 @@ SP_worldspawn(edict_t *ent)
 	/* 11 SLOW PULSE NOT FADE TO BLACK */
 	gi.configstring(CS_LIGHTS + 11, "abcdefghijklmnopqrrqponmlkjihgfedcba");
 
+	/* optech2: the re-release's Quake II 64 styles; its target_lights
+	   add 10 to their style (target_light_think divided by an empty one) */
+
+	/* 12 N64's 2 (fast strobe) */
+	gi.configstring(CS_LIGHTS + 12, "zzazazzzzazzazazaaazazzza");
+
+	/* 13 N64's 3 (half of strong pulse) */
+	gi.configstring(CS_LIGHTS + 13, "abcdefghijklmnopqrstuvwxyz");
+
+	/* 14 N64's 4 (fast strobe) */
+	gi.configstring(CS_LIGHTS + 14, "abcdefghijklmnopqrstuvwxyzyxwvutsrqponmlkjihgfedcba");
+
 	/* styles 32-62 are assigned by the light program for switchable lights */
 
 	/* 63 testing */

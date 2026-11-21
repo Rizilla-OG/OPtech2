@@ -57,7 +57,7 @@ jobs:
     - name: Create testbuild package
       run: |
         # Create release directory tree
-        export PKGDIR="yquake2-win32-$(git rev-parse --short HEAD)"
+        export PKGDIR="OpenTech2-win32-$(git rev-parse --short HEAD)"
         echo "pkgname=$PKGDIR" >> $GITHUB_ENV
         mkdir -p publish/$PKGDIR/misc/docs
         mkdir -p publish/$PKGDIR/baseq2
@@ -145,7 +145,7 @@ jobs:
     - name: Create testbuild package
       run: |
         # Create release directory tree
-        export PKGDIR="yquake2-win64-$(git rev-parse --short HEAD)"
+        export PKGDIR="OpenTech2-win64-$(git rev-parse --short HEAD)"
         echo "pkgname=$PKGDIR" >> $GITHUB_ENV
         mkdir -p publish/$PKGDIR/misc/docs
         mkdir -p publish/$PKGDIR/baseq2

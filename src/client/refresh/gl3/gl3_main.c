@@ -40,9 +40,9 @@
 #include "../files/DG_dynarr.h"
 
 #ifdef YQ2_GL3_GLES3
-  #define REF_VERSION "OPtech2 OpenGL ES3 Refresher"
+#define REF_VERSION "OpenTech2 OpenGL ES3 Refresher"
 #else
-  #define REF_VERSION "OPtech2 OpenGL3 Refresher"
+#define REF_VERSION "OpenTech2 OpenGL3 Refresher"
 #endif
 
 refimport_t ri;
