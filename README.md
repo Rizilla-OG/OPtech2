@@ -85,7 +85,8 @@ on top of them all, and saves and settings still go to the game folder. Players 
 its list.
 
 Each mod folder can run a gameplay script in sandboxed Lua 5.4, `scripts/<folder>.lua`: see
-[mods/SCRIPTING.md](mods/SCRIPTING.md). For a mod with its own game library (new weapons, effects,
+[mods/SCRIPTING.md](mods/SCRIPTING.md). Items can be changed or added in a text file,
+`defs/<folder>.items`: see [mods/DEFINITIONS.md](mods/DEFINITIONS.md). For a mod with its own game library (new weapons, effects,
 HUD, movement), see [mods/testmod](mods/testmod/README.md).
 
 ## Checks
@@ -106,6 +107,7 @@ All checks use a temporary HOME, so your own config and saves are never touched.
 - `python3 tests/mod/mod_check.py`: the test mod against the stock game (weapon, effect, HUD, movement)
 - `python3 tests/mod/stack_check.py`: stacked mod folders, override order, joining players
 - `python3 tests/mod/script_check.py`: Lua scripts from three mods, events, sandbox limits
+- `python3 tests/mod/defs_check.py`: item definitions from two mods, a new weapon, mistakes reported
 - `python3 tests/run_all.py`: all of the above
 
 ## License

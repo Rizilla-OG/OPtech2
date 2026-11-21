@@ -385,6 +385,7 @@ set(Game-Source
 	${GAME_SRC_DIR}/g_misc.c
 	${GAME_SRC_DIR}/g_extension.c
 	${GAME_SRC_DIR}/cgame_fx/fx_main.c
+	${GAME_SRC_DIR}/g_defs.c
 	${GAME_SRC_DIR}/script/g_script.c
 	${GAME_SRC_DIR}/lua/lapi.c
 	${GAME_SRC_DIR}/lua/lauxlib.c

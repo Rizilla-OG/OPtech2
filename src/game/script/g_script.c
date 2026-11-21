@@ -409,65 +409,15 @@ Script_Call(int argument_count, const char *what)
 	return true;
 }
 
-/* folder names in search order, lowest first: baseq2, fs_mods, game */
-static int
-Script_Folders(char folders[SCRIPT_MAX_FOLDERS][MAX_QPATH])
-{
-	char list[MAX_OSPATH];
-	const char *game_folder;
-	char *cursor, *folder;
-	int count = 0;
-
-	Q_strlcpy(folders[count++], "baseq2", MAX_QPATH);
-	Q_strlcpy(list, gi.cvar("fs_mods", "", 0)->string, sizeof(list));
-	cursor = list;
-
-	while (*cursor && count < SCRIPT_MAX_FOLDERS - 1)
-	{
-		cursor += strspn(cursor, " ,;");
-
-		if (!*cursor)
-		{
-			break;
-		}
-
-		folder = cursor;
-		cursor += strcspn(cursor, " ,;");
-
-		if (*cursor)
-		{
-			*cursor++ = '\0';
-		}
-
-		Q_strlcpy(folders[count++], folder, MAX_QPATH);
-	}
-
-	game_folder = gi.cvar("game", "", 0)->string;
-
-	if (game_folder[0])
-	{
-		Q_strlcpy(folders[count++], game_folder, MAX_QPATH);
-	}
-
-	return count;
-}
-
 static void
 Script_RunFile(const char *folder)
 {
 	char name[MAX_QPATH + 16];
 	char chunk_name[MAX_QPATH + 20];
 	void *buffer;
-	int length, i;
+	int length;
 
-	/* folder names repeated in the stack run once (the engine skips them too) */
-	Com_sprintf(name, sizeof(name), "scripts/%s.lua", folder);
-
-	for (i = 0; name[i]; i++)
-	{
-		name[i] = tolower((unsigned char)name[i]);
-	}
-
+	G_ModFolderFile(name, sizeof(name), "scripts/", folder, ".lua");
 	length = gi.LoadFile(name, &buffer);
 
 	if (length <= 0 || !buffer)
@@ -499,7 +449,7 @@ void
 Script_Init(void)
 {
 	char folders[SCRIPT_MAX_FOLDERS][MAX_QPATH];
-	int count, i, j;
+	int count, i;
 
 	Script_Shutdown();
 
@@ -515,24 +465,11 @@ Script_Init(void)
 	Script_OpenLibraries(script_state);
 	Script_OpenGameAPI(script_state);
 
-	count = Script_Folders(folders);
+	count = G_ModFolders(folders, SCRIPT_MAX_FOLDERS);
 
 	for (i = 0; i < count; i++)
 	{
-		qboolean repeated = false;
-
-		for (j = 0; j < i; j++)
-		{
-			if (!Q_stricmp(folders[i], folders[j]))
-			{
-				repeated = true;
-			}
-		}
-
-		if (!repeated)
-		{
-			Script_RunFile(folders[i]);
-		}
+		Script_RunFile(folders[i]);
 	}
 }
 
