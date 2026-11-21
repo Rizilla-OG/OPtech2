@@ -721,7 +721,14 @@ SV_Map(qboolean attractloop, const char *levelstring, qboolean loadgame, qboolea
 		}
 
 		SV_SpawnServer(level, spawnpoint, ss_game, attractloop, loadgame, isautosave);
-		Cbuf_CopyToDefer();
+
+		/* the rest of the command buffer waits for the local player to
+		   enter the level (SV_Begin_f). optech2: a dedicated server has
+		   none, so "+map base1 +quit" never quit; run it right away there. */
+		if (!dedicated || !dedicated->value)
+		{
+			Cbuf_CopyToDefer();
+		}
 	}
 
 	SV_BroadcastCommand("reconnect\n");
