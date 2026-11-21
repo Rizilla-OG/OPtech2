@@ -8,8 +8,12 @@ and plays base1 with "+set fs_mods moda,modb":
   - a new item: moda's "Boomstick" is a copy of the shotgun that fires
     bullets. It spawns in the map by its classname, picking it up gives
     the Boomstick and bullets, and firing it uses a bullet,
+  - "gives": moda's "Shell Box" (a copy of ammo_shells) adds 30 Shells,
   - mistakes (unknown field, a new item without "base", a word where a
-    number goes) are printed and the rest still loads.
+    number goes) are printed and the rest still loads,
+  - saves match items by name: a save made with moda loads with another
+    folder's item added before moda's (item numbers shifted), keeping the
+    Boomstick in hand; without moda it loads too, the Boomstick dropped.
 The stock game (no definition files) keeps 10 shells per box.
 
 Usage:
@@ -48,6 +52,15 @@ DEFINITIONS = {
 "quantity" "1"
 }
 
+// a bigger box that adds to the stock Shells
+{
+"classname" "ammo_shells_big"
+"base" "ammo_shells"
+"pickup_name" "Shell Box"
+"gives" "Shells"
+"quantity" "30"
+}
+
 // mistakes, reported and skipped
 {
 "classname" "ammo_bullets"
@@ -57,6 +70,14 @@ DEFINITIONS = {
 {
 "classname" "item_nothing_like_it"
 "pickup_name" "Nothing"
+}
+""",
+    "modz": """
+// an extra item, so moda's items get other numbers when modz is below it
+{
+"classname" "item_extra_quad"
+"base" "item_quad"
+"pickup_name" "Extra Quad"
 }
 """,
     "modb": """
@@ -77,21 +98,36 @@ PICKUPS = [
     'delay 5400 "+attack"',
     'delay 5500 "-attack"',
     'delay 6500 "lua print(\'fired\', game.count(1, \'Bullets\'))"',
-    'delay 6700 quit',
+    'delay 6600 "lua print(\'shells before box\', game.count(1, \'Shells\'))"',
+    f'delay 6700 "spawnentity ammo_shells_big {START}"',
+    'delay 7300 "lua print(\'box\', game.count(1, \'Shells\'), game.count(1, \'Shell Box\'))"',
+    'delay 7400 "save itemtest"',
+    'delay 8400 quit',
 ]
 
+LOAD = [
+    "load itemtest",
+    'delay 3000 "lua print(\'loaded\', game.weapon(1), game.count(1, \'Boomstick\'), game.count(1, \'Bullets\'), '
+    'game.count(1, \'Shells\'))"',
+    'delay 3300 quit',
+]
+# without moda there's no Boomstick to count
+LOAD_WITHOUT = [LOAD[0], 'delay 3000 "lua print(\'loaded\', \'[\' .. game.weapon(1) .. \']\', game.count(1, \'Bullets\'))"',
+                LOAD[2]]
 
-def play(name, with_mods):
-    with tempfile.TemporaryDirectory(prefix="opentech2-defs-") as home:
+
+def play(name, with_mods, home=None, fs_mods="moda,modb", console=None):
+    with tempfile.TemporaryDirectory(prefix="opentech2-defs-") as temporary_home:
+        home = home or temporary_home
         user_dir = Path(home) / ".opentech2"
-        (user_dir / "baseq2").mkdir(parents=True)
+        (user_dir / "baseq2").mkdir(parents=True, exist_ok=True)
         arguments = []
-        console = PICKUPS
+        console = console or PICKUPS
         if with_mods:
             for folder, text in DEFINITIONS.items():
-                (user_dir / folder / "defs").mkdir(parents=True)
+                (user_dir / folder / "defs").mkdir(parents=True, exist_ok=True)
                 (user_dir / folder / "defs" / f"{folder}.items").write_text(text)
-            arguments = ["+set", "fs_mods", "moda,modb"]
+            arguments = ["+set", "fs_mods", fs_mods]
         else:
             console = PICKUPS[:4] + ['delay 4300 "lua print(\'after\', game.count(1, \'Shells\'))"', 'delay 4500 quit']
         (user_dir / "baseq2" / "defstest.cfg").write_text("\n".join(console) + "\n")
@@ -120,9 +156,10 @@ def main():
         results.append(passed)
         print(f"{'ok' if passed else 'FAIL':<6}{text}")
 
-    log = play("mods", True)
-    report("Item definitions: defs/moda.items (1 new)" in log and "Item definitions: defs/modb.items (0 new)" in log,
-           "both folders' item files read, moda adds one item")
+    save_home = tempfile.mkdtemp(prefix="opentech2-defs-save-")
+    log = play("mods", True, home=save_home)
+    report("Item definitions: defs/moda.items (2 new)" in log and "Item definitions: defs/modb.items (0 new)" in log,
+           "both folders' item files read, moda adds two items")
     before = re.search(r"^before\s+(\d+)\s+(\d+)$", log, re.M)
     after = re.search(r"^after\s+(\d+)\s+(\d+)\s+(\d+)$", log, re.M)
     if before and after:
@@ -140,13 +177,37 @@ def main():
     report("unknown field \"colour\"" in log and "needs a whole number, not \"lots\"" in log and
            "item_nothing_like_it: a new item needs \"base\"" in log, "mistakes are reported")
 
+    box = re.search(r"^shells before box\s+(\d+)$", log, re.M)
+    box_after = re.search(r"^box\s+(\d+)\s+(\d+)$", log, re.M)
+    report(bool(box and box_after and int(box_after.group(1)) - int(box.group(1)) == 30 and box_after.group(2) == "0"),
+           "\"gives\": the Shell Box added 30 Shells and has no count of its own" +
+           (f" ({box.group(1)} -> {box_after.group(1)} shells)" if box and box_after else ""))
+    report("mismatch" not in log and re.search(r"Saving game|save.*itemtest|itemtest", log) is not None,
+           "saved the game")
+
+    shifted = play("load-shifted", True, home=save_home, fs_mods="modz,moda,modb", console=LOAD)
+    loaded = re.search(r"^loaded\s+(\S+)\s+(\d+)\s+(\d+)\s+(\d+)$", shifted, re.M)
+    report(bool(loaded and loaded.group(1) == "Boomstick" and loaded.group(2) == "1" and
+                after and loaded.group(3) == fired.group(1)),
+           "loaded with modz's item added below moda (numbers shifted): Boomstick in hand, same bullets" +
+           (f" ({loaded.group(1)}, bullets {loaded.group(3)})" if loaded else ""))
+
+    without = play("load-without", True, home=save_home, fs_mods="modz,modb", console=LOAD_WITHOUT)
+    loaded = re.search(r"^loaded\s+\[([^]]*)\]\s+(\d+)$", without, re.M)
+    report("the save has an item this game doesn't, weapon_boomstick; dropped" in without and
+           bool(loaded and fired and loaded.group(2) == fired.group(1) and loaded.group(1) == "Blaster"),
+           "loaded without moda: the Boomstick is dropped with a message, Blaster in hand, bullets kept" +
+           (f" (in hand: {loaded.group(1) or 'nothing'}, bullets {loaded.group(2)})" if loaded else ""))
+    shutil.rmtree(save_home, ignore_errors=True)
+
     stock = play("stock", False)
     after_stock = re.search(r"^after\s+(\d+)$", stock, re.M)
     report(bool(after_stock and after_stock.group(1) == "10") and "Item definitions" not in stock,
            "stock game, no definition files: a shells box gives 10" +
            (f" ({after_stock.group(1)})" if after_stock else ""))
 
-    errors = [line for line in (log + stock).splitlines() if "ERROR" in line or "crashed" in line]
+    errors = [line for line in (log + shifted + without + stock).splitlines()
+              if "ERROR" in line or "crashed" in line or "mismatch" in line]
     report(not errors, "no errors or crashes" + (f" ({errors[0].strip()})" if errors else ""))
 
     passed = all(results)

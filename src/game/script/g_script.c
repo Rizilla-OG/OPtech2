@@ -41,6 +41,7 @@
  *   game.give(player, item, n)  add n (default 1) of an item by its
  *                               pickup name, e.g. "Shells"
  *   game.count(player, item)    how many of an item the player has
+ *   game.weapon(player)         pickup name of the weapon in hand ("" if none)
  * Players are numbers, 1 to maxclients.
  *
  * Events:
@@ -358,6 +359,15 @@ Script_Count(lua_State *L)
 	return 1;
 }
 
+static int
+Script_Weapon(lua_State *L)
+{
+	const gitem_t *weapon = Script_CheckPlayer(L, 1)->client->pers.weapon;
+
+	lua_pushstring(L, (weapon && weapon->pickup_name) ? weapon->pickup_name : "");
+	return 1;
+}
+
 static void
 Script_OpenGameAPI(lua_State *L)
 {
@@ -374,6 +384,7 @@ Script_OpenGameAPI(lua_State *L)
 		{"set_health", Script_SetHealth},
 		{"give", Script_Give},
 		{"count", Script_Count},
+		{"weapon", Script_Weapon},
 		{NULL, NULL}};
 	int i;
 

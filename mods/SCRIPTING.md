@@ -78,6 +78,7 @@ Players are numbers, from 1 to `maxclients`.
 | `game.set_health(player, n)` | Sets the health of a living player (1 to 10000). |
 | `game.give(player, item, n)` | Adds `n` (default 1) of an item, by its pickup name: `"Shells"`, `"Health"`, `"Armor Shard"`. |
 | `game.count(player, item)` | How many of an item the player has. |
+| `game.weapon(player)` | The pickup name of the weapon in the player's hand (`""` if none). |
 
 `print(...)` writes to the server console. With `+set cheats 1`, the console
 command `lua <code>` runs one line of Lua, handy for trying things out:
