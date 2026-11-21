@@ -41,7 +41,9 @@
  * classname. Fields: pickup_name, pickup_sound, world_model, view_model,
  * icon, count_width, quantity, ammo, gives (ammo pickups add to this item,
  * by pickup name), flags (names, see item_flag_names), rotate (0/1),
- * precaches.
+ * precaches; for weapons: damage, kick, pellets, speed, spread_h,
+ * spread_v, radius_damage, damage_radius (weapon_field_names; which ones a
+ * weapon uses depends on how it fires).
  *
  * Items are read once, when the game library starts, so item numbers stay
  * the same for a whole game. Saves store items by number: change the item
@@ -49,6 +51,7 @@
  */
 
 #include <ctype.h>
+#include <stddef.h>
 #include "header/local.h"
 
 #define DEFS_MAX_FOLDERS 20
@@ -258,6 +261,59 @@ Defs_ParseFlags(const char *where, const char *text)
 	return flags;
 }
 
+static const struct
+{
+	const char *name;
+	int bit;
+	size_t offset;
+} weapon_field_names[] = {
+	{"damage", WDEF_DAMAGE, offsetof(weapon_def_t, damage)},
+	{"kick", WDEF_KICK, offsetof(weapon_def_t, kick)},
+	{"pellets", WDEF_PELLETS, offsetof(weapon_def_t, pellets)},
+	{"speed", WDEF_SPEED, offsetof(weapon_def_t, speed)},
+	{"spread_h", WDEF_SPREAD_H, offsetof(weapon_def_t, spread_h)},
+	{"spread_v", WDEF_SPREAD_V, offsetof(weapon_def_t, spread_v)},
+	{"radius_damage", WDEF_RADIUS_DAMAGE, offsetof(weapon_def_t, radius_damage)},
+	{"damage_radius", WDEF_DAMAGE_RADIUS, offsetof(weapon_def_t, damage_radius)},
+};
+
+/* a weapon number (damage, speed, ...); false if the key isn't one */
+static qboolean
+Defs_SetWeaponField(gitem_t *item, const char *where, const char *key, const char *value)
+{
+	size_t i;
+	int number;
+
+	for (i = 0; i < ARRLEN(weapon_field_names); i++)
+	{
+		if (!Q_stricmp(key, weapon_field_names[i].name))
+		{
+			break;
+		}
+	}
+
+	if (i == ARRLEN(weapon_field_names))
+	{
+		return false;
+	}
+
+	if (!Defs_ParseInteger(value, &number) || number < 0 || number > 100000)
+	{
+		gi.dprintf("%s: \"%s\" needs a whole number from 0 to 100000, not \"%s\"\n", where, key, value);
+		return true;
+	}
+
+	if (!(item->flags & IT_WEAPON))
+	{
+		gi.dprintf("%s: \"%s\" is for weapons; this item isn't one\n", where, key);
+		return true;
+	}
+
+	*(int *)((byte *)&item->weapon + weapon_field_names[i].offset) = number;
+	item->weapon.set |= weapon_field_names[i].bit;
+	return true;
+}
+
 /* one field of an item; false if the key isn't an item field */
 static qboolean
 Defs_SetItemField(gitem_t *item, const char *where, const char *key, const char *value)
@@ -287,6 +343,10 @@ Defs_SetItemField(gitem_t *item, const char *where, const char *key, const char 
 	else if (!Q_stricmp(key, "ammo"))
 	{
 		item->ammo = value[0] ? Defs_String(value) : NULL;
+	}
+	else if (Defs_SetWeaponField(item, where, key, value))
+	{
+		/* a weapon number */
 	}
 	else if (!Q_stricmp(key, "gives"))
 	{

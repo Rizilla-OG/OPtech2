@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Weapon definitions: the item files take weapon numbers, `damage`, `kick`, `pellets`, `spread_h`, `spread_v`, `speed`, `radius_damage`, `damage_radius`, read by the ten stock weapons and hand grenades (stock values when left out; Quad still multiplies). A new weapon made with `"base"` fires like its base with its own numbers. New check: `tests/mod/weapon_defs_check.py`.
 - Save check compares items too: the weapon in hand, the inventory, and the item every item entity holds (new cheat command `iteminfo`). With the health pack bug put back it fails ("18 without an item").
 - Scripts: `game.use(player, item)` uses an item like the `use` command (switches weapons); the survival example starts with the Shotgun in hand.
 - Fix: loading a save made since items are matched by name left health packs without their item ("Health" has no classname, and the save's table wrote an empty name), and touching one crashed. The table writes `*` and the pickup name for such items, saves with the empty names load correctly, and touching an item-less entity no longer crashes.

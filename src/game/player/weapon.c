@@ -26,6 +26,50 @@
  */
 
 #include "../header/local.h"
+
+/*
+ * optech2: a weapon's number from its item definition ("damage", "speed",
+ * ...), or the stock value when the definition doesn't set it.
+ */
+static int
+WDef(const edict_t *ent, int field, int stock)
+{
+	const weapon_def_t *def;
+
+	if (!ent || !ent->client || !ent->client->pers.weapon)
+	{
+		return stock;
+	}
+
+	def = &ent->client->pers.weapon->weapon;
+
+	if (!(def->set & field))
+	{
+		return stock;
+	}
+
+	switch (field)
+	{
+		case WDEF_DAMAGE:
+			return def->damage;
+		case WDEF_KICK:
+			return def->kick;
+		case WDEF_PELLETS:
+			return def->pellets;
+		case WDEF_SPEED:
+			return def->speed;
+		case WDEF_SPREAD_H:
+			return def->spread_h;
+		case WDEF_SPREAD_V:
+			return def->spread_v;
+		case WDEF_RADIUS_DAMAGE:
+			return def->radius_damage;
+		case WDEF_DAMAGE_RADIUS:
+			return def->damage_radius;
+		default:
+			return stock;
+	}
+}
 #include "../monster/misc/player.h"
 #include <limits.h>
 
@@ -1248,7 +1292,8 @@ weapon_grenade_fire(edict_t *ent, qboolean held)
 		return;
 	}
 
-	radius = damage + 40;
+	damage = WDef(ent, WDEF_DAMAGE, damage); /* optech2: item definition */
+	radius = WDef(ent, WDEF_DAMAGE_RADIUS, damage + 40);
 
 	if (is_quad)
 	{
@@ -1571,7 +1616,8 @@ weapon_grenadelauncher_fire(edict_t *ent)
 			break;
 	}
 
-	radius = damage + 40;
+	damage = WDef(ent, WDEF_DAMAGE, damage); /* optech2: item definition */
+	radius = WDef(ent, WDEF_DAMAGE_RADIUS, damage + 40);
 
 	if (is_quad)
 	{
@@ -1600,7 +1646,7 @@ weapon_grenadelauncher_fire(edict_t *ent)
 			fire_prox(ent, start, forward, damage_multiplier, 600);
 			break;
 		default:
-			fire_grenade(ent, start, forward, damage, 600, 2.5, radius, false);
+			fire_grenade(ent, start, forward, damage, WDef(ent, WDEF_SPEED, 600), 2.5, radius, false);
 			break;
 	}
 
@@ -1698,9 +1744,9 @@ Weapon_RocketLauncher_Fire(edict_t *ent)
 		return;
 	}
 
-	damage = 100 + (int)(random() * 20.0);
-	radius_damage = 120;
-	damage_radius = 120;
+	damage = WDef(ent, WDEF_DAMAGE, 100) + (int)(random() * 20.0); /* optech2: item definition */
+	radius_damage = WDef(ent, WDEF_RADIUS_DAMAGE, 120);
+	damage_radius = WDef(ent, WDEF_DAMAGE_RADIUS, 120);
 
 	if (is_quad)
 	{
@@ -1722,7 +1768,7 @@ Weapon_RocketLauncher_Fire(edict_t *ent)
 
 	VectorSet(offset, 8, 8, ent->viewheight - 8);
 	P_ProjectSource(ent, offset, forward, right, start);
-	fire_rocket(ent, start, forward, damage, 650, damage_radius, radius_damage);
+	fire_rocket(ent, start, forward, damage, WDef(ent, WDEF_SPEED, 650), damage_radius, radius_damage);
 
 	/* send muzzle flash */
 	gi.WriteByte(svc_muzzleflash);
@@ -1817,7 +1863,7 @@ Blaster_Fire(edict_t *ent, vec3_t g_offset, int damage,
 	VectorScale(forward, -2, ent->client->kick_origin);
 	ent->client->kick_angles[0] = -1;
 
-	fire_blaster(ent, start, forward, damage, 1000, effect, hyper);
+	fire_blaster(ent, start, forward, damage, WDef(ent, WDEF_SPEED, 1000), effect, hyper);
 
 	/* send muzzle flash */
 	gi.WriteByte(svc_muzzleflash);
@@ -1871,6 +1917,7 @@ Weapon_Blaster_Fire(edict_t *ent)
 		damage = 10;
 	}
 
+	damage = WDef(ent, WDEF_DAMAGE, damage); /* optech2: item definition */
 	Blaster_Fire(ent, vec3_origin, damage, false, EF_BLASTER);
 	ent->client->ps.gunframe++;
 }
@@ -2013,6 +2060,7 @@ Weapon_HyperBlaster_Fire(edict_t *ent)
 				damage = 20;
 			}
 
+			damage = WDef(ent, WDEF_DAMAGE, damage); /* optech2: item definition */
 			Blaster_Fire(ent, offset, damage, true, effect);
 
 			G_RemoveAmmo(ent);
@@ -2113,6 +2161,9 @@ Machinegun_Fire(edict_t *ent)
 		return;
 	}
 
+	damage = WDef(ent, WDEF_DAMAGE, damage); /* optech2: item definition */
+	kick = WDef(ent, WDEF_KICK, kick);
+
 	if (is_quad)
 	{
 		damage *= damage_multiplier;
@@ -2152,8 +2203,8 @@ Machinegun_Fire(edict_t *ent)
 	AngleVectors(angles, forward, right, NULL);
 	VectorSet(offset, 0, 8, ent->viewheight - 8);
 	P_ProjectSource(ent, offset, forward, right, start);
-	fire_bullet(ent, start, forward, damage, kick, DEFAULT_BULLET_HSPREAD,
-			DEFAULT_BULLET_VSPREAD, MOD_MACHINEGUN);
+	fire_bullet(ent, start, forward, damage, kick, WDef(ent, WDEF_SPREAD_H, DEFAULT_BULLET_HSPREAD),
+		WDef(ent, WDEF_SPREAD_V, DEFAULT_BULLET_VSPREAD), MOD_MACHINEGUN);
 
 	gi.WriteByte(svc_muzzleflash);
 
@@ -2308,6 +2359,9 @@ Chaingun_Fire(edict_t *ent)
 		return;
 	}
 
+	damage = WDef(ent, WDEF_DAMAGE, damage); /* optech2: item definition */
+	kick = WDef(ent, WDEF_KICK, kick);
+
 	if (is_quad)
 	{
 		damage *= damage_multiplier;
@@ -2341,8 +2395,8 @@ Chaingun_Fire(edict_t *ent)
 				forward, right, start);
 
 		fire_bullet(ent, start, forward, damage, kick,
-				DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD,
-				MOD_CHAINGUN);
+			WDef(ent, WDEF_SPREAD_H, DEFAULT_BULLET_HSPREAD), WDef(ent, WDEF_SPREAD_V, DEFAULT_BULLET_VSPREAD),
+			MOD_CHAINGUN);
 	}
 
 	/* send muzzle flash */
@@ -2439,6 +2493,9 @@ weapon_shotgun_fire(edict_t *ent)
 	VectorSet(offset, 0, 8, ent->viewheight - 8);
 	P_ProjectSource(ent, offset, forward, right, start);
 
+	damage = WDef(ent, WDEF_DAMAGE, damage); /* optech2: item definition */
+	kick = WDef(ent, WDEF_KICK, kick);
+
 	if (is_quad)
 	{
 		damage *= damage_multiplier;
@@ -2448,14 +2505,14 @@ weapon_shotgun_fire(edict_t *ent)
 	if (deathmatch->value)
 	{
 		fire_shotgun(ent, start, forward, damage, kick,
-				500, 500, DEFAULT_DEATHMATCH_SHOTGUN_COUNT,
-				MOD_SHOTGUN);
+			WDef(ent, WDEF_SPREAD_H, 500), WDef(ent, WDEF_SPREAD_V, 500), WDef(ent, WDEF_PELLETS, DEFAULT_DEATHMATCH_SHOTGUN_COUNT),
+			MOD_SHOTGUN);
 	}
 	else
 	{
 		fire_shotgun(ent, start, forward, damage, kick,
-				500, 500, DEFAULT_SHOTGUN_COUNT,
-				MOD_SHOTGUN);
+			WDef(ent, WDEF_SPREAD_H, 500), WDef(ent, WDEF_SPREAD_V, 500), WDef(ent, WDEF_PELLETS, DEFAULT_SHOTGUN_COUNT),
+			MOD_SHOTGUN);
 	}
 
 	/* send muzzle flash */
@@ -2538,6 +2595,9 @@ weapon_supershotgun_fire(edict_t *ent)
 	VectorSet(offset, 0, 8, ent->viewheight - 8);
 	P_ProjectSource(ent, offset, forward, right, start);
 
+	damage = WDef(ent, WDEF_DAMAGE, damage); /* optech2: item definition */
+	kick = WDef(ent, WDEF_KICK, kick);
+
 	if (is_quad)
 	{
 		damage *= damage_multiplier;
@@ -2571,8 +2631,8 @@ weapon_supershotgun_fire(edict_t *ent)
 	}
 
 	fire_shotgun(ent, start, forward, damage, kick,
-			DEFAULT_SHOTGUN_HSPREAD, DEFAULT_SHOTGUN_VSPREAD,
-			DEFAULT_SSHOTGUN_COUNT / 2, MOD_SSHOTGUN);
+		WDef(ent, WDEF_SPREAD_H, DEFAULT_SHOTGUN_HSPREAD), WDef(ent, WDEF_SPREAD_V, DEFAULT_SHOTGUN_VSPREAD),
+		WDef(ent, WDEF_PELLETS, DEFAULT_SSHOTGUN_COUNT) / 2, MOD_SSHOTGUN);
 
 	if ((ent->client->use) && (ent->client->oldplayer))
 	{
@@ -2597,8 +2657,8 @@ weapon_supershotgun_fire(edict_t *ent)
 	}
 
 	fire_shotgun(ent, start, forward, damage, kick,
-			DEFAULT_SHOTGUN_HSPREAD, DEFAULT_SHOTGUN_VSPREAD,
-			DEFAULT_SSHOTGUN_COUNT / 2, MOD_SSHOTGUN);
+		WDef(ent, WDEF_SPREAD_H, DEFAULT_SHOTGUN_HSPREAD), WDef(ent, WDEF_SPREAD_V, DEFAULT_SHOTGUN_VSPREAD),
+		WDef(ent, WDEF_PELLETS, DEFAULT_SSHOTGUN_COUNT) / 2, MOD_SSHOTGUN);
 
 	/* send muzzle flash */
 	gi.WriteByte(svc_muzzleflash);
@@ -2683,6 +2743,9 @@ weapon_railgun_fire(edict_t *ent)
 		damage = 150;
 		kick = 250;
 	}
+
+	damage = WDef(ent, WDEF_DAMAGE, damage); /* optech2: item definition */
+	kick = WDef(ent, WDEF_KICK, kick);
 
 	if (is_quad)
 	{
@@ -2785,6 +2848,9 @@ weapon_bfg_fire(edict_t *ent)
 		damage = 500;
 	}
 
+	damage = WDef(ent, WDEF_DAMAGE, damage); /* optech2: item definition */
+	damage_radius = WDef(ent, WDEF_DAMAGE_RADIUS, (int)damage_radius);
+
 	if (ent->client->ps.gunframe == 9)
 	{
 		if ((ent->client->use) && (ent->client->oldplayer))
@@ -2859,7 +2925,7 @@ weapon_bfg_fire(edict_t *ent)
 
 	VectorSet(offset, 8, 8, ent->viewheight - 8);
 	P_ProjectSource(ent, offset, forward, right, start);
-	fire_bfg(ent, start, forward, damage, 400, damage_radius);
+	fire_bfg(ent, start, forward, damage, WDef(ent, WDEF_SPEED, 400), damage_radius);
 
 	ent->client->ps.gunframe++;
 

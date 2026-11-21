@@ -320,6 +320,30 @@ typedef enum
 	WEAP_TOTAL
 } weapmodel_t;
 
+/* optech2: a weapon's numbers from its item definition (g_defs.c); a
+   field is used only when its WDEF_ bit is in "set", else the stock value */
+#define WDEF_DAMAGE 0x01
+#define WDEF_KICK 0x02
+#define WDEF_PELLETS 0x04
+#define WDEF_SPEED 0x08
+#define WDEF_SPREAD_H 0x10
+#define WDEF_SPREAD_V 0x20
+#define WDEF_RADIUS_DAMAGE 0x40
+#define WDEF_DAMAGE_RADIUS 0x80
+
+typedef struct
+{
+	int set;
+	int damage;
+	int kick;
+	int pellets;
+	int speed;
+	int spread_h;
+	int spread_v;
+	int radius_damage;
+	int damage_radius;
+} weapon_def_t;
+
 typedef struct gitem_s
 {
 	const char *classname; /* spawning name */
@@ -349,6 +373,7 @@ typedef struct gitem_s
 	const char *precaches;            /* string of all models, sounds, and images this item will use */
 
 	const char *gives; /* optech2: ammo pickups add to this item instead (its pickup name) */
+	weapon_def_t weapon; /* optech2: weapon numbers from the item definition */
 } gitem_t;
 
 /* this structure is left intact through an entire game
