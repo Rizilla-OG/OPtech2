@@ -33,9 +33,17 @@
     <video src="assets/video/stress1k.mp4" poster="assets/img/stress1k-poster.jpg" width="1280" height="720"
       autoplay muted loop playsinline preload="metadata"
       aria-label="A thousand soldiers rush the player across a huge room, with performance numbers in the corner"></video>
-    <figcaption>1,000 soldiers attacking at once on the stress map, recorded in the engine (damage flash turned
-      off). The overlay is <code>cl_perf</code>: about 56 frames per second here, with the game code using some
-      14 ms of each 16.7 ms tick at 60 Hz, near the limit.</figcaption>
+    <figcaption>
+      <p>1,000 soldiers attacking at once on the stress map, recorded straight from the engine. The overlay is
+        <code>cl_perf</code>: about 56 frames per second here, with the game code using some 14 ms of each
+        16.7 ms tick at 60 Hz, close to the limit.</p>
+      <p>The red-white damage flash is turned off for this clip (<code>r_polyblend 0</code>). With hundreds of
+        soldiers hitting the player every second, the flash whites out the whole screen and you can't see the
+        fight; the player is in god mode, so nothing else changes.</p>
+      <p class="specs">Recorded on: AMD Ryzen 9 5900X (12 cores, 24 threads), AMD Radeon RX 6750 XT, 64 GB RAM,
+        Linux (CachyOS, Mesa 26.2). Game settings: OpenGL 3 renderer, 1280×720 window, vsync off, 60 Hz server
+        tick.</p>
+    </figcaption>
   </figure>
 </header>
 

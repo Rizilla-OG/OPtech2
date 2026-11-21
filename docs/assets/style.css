@@ -182,3 +182,6 @@ table.commands td:nth-child(2) { white-space: normal; font-family: inherit; colo
 
 .badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
 .badges img { display: block; }
+.hero-shot figcaption p { margin: 0 0 6px; }
+.hero-shot figcaption p:last-child { margin-bottom: 0; }
+.hero-shot figcaption .specs { font-size: .82rem; opacity: .85; }
