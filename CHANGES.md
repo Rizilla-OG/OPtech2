@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Gameplay scripts in Lua 5.4.8 (bundled in `src/game/lua`, unmodified): each folder in the mod stack runs `scripts/<folder>.lua`, lowest first, so several mods' scripts run together. Events: `level_start`, `player_spawn`, `item_pickup` (return `false` to refuse); functions for printing, cvars and player health and items (`mods/SCRIPTING.md`). Sandboxed: no io, os, package or debug, no file loading, text chunks only, an instruction limit per call and 64 MB of memory. Errors are printed and the game carries on. Cheat command `lua <code>`. New check: `tests/mod/script_check.py`.
 - Players joining a server get its `fs_mods` (sent just before the game folder; the local player on a listen server already shares it). Other clients just receive an unused cvar.
 - Changing the game folder with sound off (`s_initsound 0`) no longer crashes in the music code's restart.
 - Dedicated server: commands after `+map` (like `+quit`, or settings) run right away instead of waiting for the first player to join; `+map base1 +quit` used to never exit.

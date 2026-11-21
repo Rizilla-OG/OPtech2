@@ -458,6 +458,13 @@ cmake --workflow --preset default</code></pre>
           <code>mods/testmod</code> for a complete example. After changing a saved struct,
           <code>tools/gen_save_fields.py</code> updates the savegame field table.</p>
       </div>
+      <div class="feature">
+        <h3>Scripts</h3>
+        <p>Gameplay scripts in sandboxed Lua 5.4, no compiler needed: each mod folder runs
+          <code>scripts/&lt;folder&gt;.lua</code>, so several mods' scripts run together. Hook level start, player
+          spawns and item pickups. See <code>mods/SCRIPTING.md</code>; with cheats on, <code>lua &lt;code&gt;</code>
+          runs a line in the console.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -481,7 +488,8 @@ cmake --workflow --preset default</code></pre>
         <p><a href="https://github.com/ericwa/ericw-tools">ericw-tools</a> compile the maps;
           <a href="https://github.com/lsalzman/iqm">IQM</a> by Lee Salzman is the model format;
           <a href="https://www.libsdl.org/">SDL</a>, <a href="https://openal-soft.org/">OpenAL Soft</a>,
-          <a href="https://curl.se/">curl</a> and <a href="https://ffmpeg.org/">FFmpeg</a> do the platform work.</p>
+          <a href="https://curl.se/">curl</a> and <a href="https://ffmpeg.org/">FFmpeg</a> do the platform work;
+          <a href="https://www.lua.org/">Lua</a> by PUC-Rio runs the scripts.</p>
       </div>
       <div class="feature">
         <h3>Get involved</h3>

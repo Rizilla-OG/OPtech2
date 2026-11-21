@@ -1365,6 +1365,10 @@ SpawnEntities(const char *mapname, char *entities, const char *spawnpoint)
 
 	/* setup server-side shadow lights */
 	setup_shadow_lights();
+
+	/* optech2: gameplay scripts start fresh each level */
+	Script_Init();
+	Script_LevelStart();
 }
 
 /* =================================================================== */

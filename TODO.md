@@ -19,6 +19,10 @@ something unfinished; remove an entry in the commit that fixes it.
 - **`tests/run_all.py` isn't on CI yet**: add `run_all.py --headless` to the
   Linux workflow (needs the game data, so probably a self-hosted runner).
 
+- **Lua scripts' own variables aren't in save games**: scripts start again on
+  load. Save a table per script (serialize plain values) with the level.
+- **Scripting API is small**: three events and player functions. Grow it with
+  the data-driven definitions (entities, damage, think, spawn).
 - **Two checks are timing-sensitive under load**: `lift` (standing miss
   percentile) and `tickrate` (chaingun ammo at 60 Hz) failed once while the
   machine was busy, and pass when run alone. Make them robust to load.

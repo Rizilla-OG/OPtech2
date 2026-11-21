@@ -8,6 +8,7 @@ if ! command -v git-clang-format >/dev/null 2>&1; then
 fi
 # The save field table is generated (tools/gen_save_fields.py): checked, never reformatted.
 # src/game/rerelease/ holds id's re-release files as released: never reformatted either.
+# src/game/lua/ is Lua 5.4 as released by Lua.org: never reformatted.
 if git diff --cached --name-only -- 'src/game/header/*.h' 'src/common/header/shared.h' | grep -q . &&
 	command -v python3 >/dev/null 2>&1; then
 	if ! python3 -B tools/gen_save_fields.py --check >/dev/null; then
@@ -15,7 +16,7 @@ if git diff --cached --name-only -- 'src/game/header/*.h' 'src/common/header/sha
 		exit 1
 	fi
 fi
-files=$(git diff --cached --name-only --diff-filter=ACM -- 'src/*.c' 'src/*.h' ':!src/client/refresh/*/*_shaders.c' ':!src/game/savegame/tables/savefields.h' ':!src/game/rerelease/*')
+files=$(git diff --cached --name-only --diff-filter=ACM -- 'src/*.c' 'src/*.h' ':!src/client/refresh/*/*_shaders.c' ':!src/game/savegame/tables/savefields.h' ':!src/game/rerelease/*' ':!src/game/lua/*')
 [ -z "$files" ] && exit 0
 git clang-format --staged --quiet -- $files >/dev/null
 echo "$files" | while IFS= read -r f; do
