@@ -16,11 +16,11 @@ game.on("level_start", function(map)
 end)
 
 game.on("player_spawn", function(player)
-    -- start weaker but armed (the Shotgun goes in the inventory; the
-    -- player switches to it)
+    -- start weaker but armed
     game.set_health(player, 75)
     game.give(player, "Shotgun")
     game.give(player, "Shells", start_shells)
+    game.use(player, "Shotgun")
 
     pickups[player] = 0
     game.centerprint(player, "Survive, " .. game.name(player) .. "!")

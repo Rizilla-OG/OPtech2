@@ -4,6 +4,8 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Save check compares items too: the weapon in hand, the inventory, and the item every item entity holds (new cheat command `iteminfo`). With the health pack bug put back it fails ("18 without an item").
+- Scripts: `game.use(player, item)` uses an item like the `use` command (switches weapons); the survival example starts with the Shotgun in hand.
 - Fix: loading a save made since items are matched by name left health packs without their item ("Health" has no classname, and the save's table wrote an empty name), and touching one crashed. The table writes `*` and the pickup name for such items, saves with the empty names load correctly, and touching an item-less entity no longer crashes.
 - Scripts: new `item_taken` event, after a player really took an item. `item_pickup` is asked on every touch (also for items the player can't take), so counting there over-counted; the survival example counted 10 pickups a second standing on full ammo.
 - Example script mod `mods/survival`: a tougher start, a Quad limit per level and a pickup bonus in one Lua file; `tests/mod/script_check.py` plays it.

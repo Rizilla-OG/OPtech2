@@ -88,6 +88,7 @@ Players are numbers, from 1 to `maxclients`.
 | `game.give(player, item, n)` | Adds `n` (default 1) of an item, by its pickup name: `"Shells"`, `"Health"`, `"Armor Shard"`. |
 | `game.count(player, item)` | How many of an item the player has. |
 | `game.weapon(player)` | The pickup name of the weapon in the player's hand (`""` if none). |
+| `game.use(player, item)` | Uses an item the player has, like the `use` command: a weapon is switched to, a powerup activated. Returns `true` if it was used. |
 
 `print(...)` writes to the server console. With `+set cheats 1`, the console
 command `lua <code>` runs one line of Lua, handy for trying things out:
