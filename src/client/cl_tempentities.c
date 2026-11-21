@@ -688,6 +688,13 @@ CL_ParseTEnt(void)
 
 	type = MSG_ReadByte(&net_message);
 
+	/* optech2: the game library's effects first (its own types, or its
+	   versions of stock ones) */
+	if (CL_CGame_ParseTempEntity(type))
+	{
+		return;
+	}
+
 	switch (type)
 	{
 		case TE_BLOOD: /* bullet hitting flesh */

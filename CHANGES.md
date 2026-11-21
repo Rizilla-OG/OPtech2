@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 
 ## Unreleased
 
+- Effects extension (M2 step 4, part 1): a game library can draw temp entities itself through `OPtech2_GetExtension("optech2_fx")` (`src/common/header/optech2_ext.h`): the engine hands it message reading, particles, dynamic lights, sounds and a world trace; temp entities go to the library first, so it can add its own types and replace stock ones, and the rest keep the engine's effects. New cheat command `fxtest [type]` sends a temp entity in front of the player; the client game check now draws its own type 200 through the extension.
 - `give all` no longer gives the CTF runes and flags, as in the re-release: the Strength rune made every shot play its quad-like sound.
 - Fixed: with the client game module, quick center messages fell behind the game (Quake II 64's "5... 4... 3..." countdown ended seconds after the explosion): the re-release HUD queues each message for `scr_centertime`. A message that arrives while the previous one may still be up now replaces it at once, as in stock Quake II; messages sent together (within 0.2 s, e.g. "Transfer pump online." + "Valve opened." in Quake II 64) still queue so none is lost, and a lone message still types out.
 - Fixed: Quake II 64's second level (q64/complex) crashed on load (division by zero): its lights use the re-release's extra light styles 12-14, which weren't defined. Added them, and a light whose style is empty no longer crashes.

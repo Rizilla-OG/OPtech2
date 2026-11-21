@@ -35,6 +35,12 @@ something unfinished; remove an entry in the commit that fixes it.
   the weapon wheel aren't wired; re-release mods (q2arpg) need the re-release
   `pmove_t` for `cgame->Pmove`.
 
+## Effects (M2 step 4)
+
+- Move the stock effects (temp entities, muzzle flashes, trails, entity
+  effect flags) into the game library through the effects extension; the
+  extension has no model/entity drawing yet (explosions, beams need it).
+
 ## Prediction
 
 - Jumping on a moving lift still misses a tick around takeoff and landing

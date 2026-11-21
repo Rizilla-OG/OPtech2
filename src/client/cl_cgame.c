@@ -40,6 +40,7 @@ static cvar_t *cl_cgame; /* library to load instead of the game folder's game li
 static void *cgame_library;
 static cgame_export_t *cgame;
 static const optech2_pmove_ext_t *cgame_pmove; /* the game library's player movement, or NULL */
+static const optech2_fx_ext_t *cgame_fx; /* the game library's effects, or NULL */
 static cgame_import_t cgame_import;
 
 /* ------------------------------------------------------------------ */
@@ -414,6 +415,139 @@ CL_CGame_Open(const char *path)
 	return true;
 }
 
+/* ------------------------------------------------------------------ */
+/* effects extension: calls the game library's effect code can make */
+
+extern cparticle_t *active_particles, *free_particles;
+
+/* the extension's structs must be the engine's, byte for byte */
+_Static_assert(sizeof(optech2_particle_t) == sizeof(cparticle_t), "optech2_particle_t layout");
+_Static_assert(offsetof(optech2_particle_t, alphavel) == offsetof(cparticle_t, alphavel), "optech2_particle_t layout");
+_Static_assert(sizeof(optech2_dlight_t) == sizeof(cdlight_t), "optech2_dlight_t layout");
+_Static_assert(offsetof(optech2_dlight_t, minlight) == offsetof(cdlight_t, minlight), "optech2_dlight_t layout");
+
+static int
+FX_ReadByte(void)
+{
+	return MSG_ReadByte(&net_message);
+}
+static int
+FX_ReadShort(void)
+{
+	return MSG_ReadShort(&net_message);
+}
+static int
+FX_ReadLong(void)
+{
+	return MSG_ReadLong(&net_message);
+}
+static float
+FX_ReadFloat(void)
+{
+	return MSG_ReadFloat(&net_message);
+}
+static void
+FX_ReadPos(vec3_t pos)
+{
+	MSG_ReadPos(&net_message, pos, cls.serverProtocol);
+}
+static void
+FX_ReadDir(vec3_t dir)
+{
+	MSG_ReadDir(&net_message, dir);
+}
+static int
+FX_Time(void)
+{
+	return cl.time;
+}
+static int
+FX_Rand(void)
+{
+	return randk() & 0x7fff;
+}
+
+static optech2_particle_t *
+FX_AllocParticle(void)
+{
+	cparticle_t *p;
+
+	if (!free_particles)
+	{
+		return NULL;
+	}
+
+	p = free_particles;
+	free_particles = p->next;
+	p->next = active_particles;
+	active_particles = p;
+
+	return (optech2_particle_t *)p;
+}
+
+static optech2_dlight_t *
+FX_AllocDlight(int key)
+{
+	return (optech2_dlight_t *)CL_AllocDlight(key);
+}
+
+static void
+FX_StartSound(const vec3_t origin, int entnum, int channel, struct sfx_s *sfx,
+	float volume, float attenuation, float timeofs)
+{
+	vec3_t where;
+
+	if (origin)
+	{
+		VectorCopy(origin, where);
+	}
+
+	S_StartSound(origin ? where : NULL, entnum, channel, sfx, volume, attenuation, timeofs);
+}
+
+static trace_t
+FX_Trace(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int contentmask)
+{
+	return CM_BoxTrace(start, end, mins ? mins : vec3_origin, maxs ? maxs : vec3_origin, 0, contentmask);
+}
+
+static const optech2_fx_import_t fx_import = {
+	OPTECH2_FX_EXT_VERSION,
+	FX_ReadByte, FX_ReadShort, FX_ReadLong, FX_ReadFloat, FX_ReadPos, FX_ReadDir,
+	FX_Time, FX_Rand,
+	FX_AllocParticle, FX_AllocDlight,
+	S_RegisterSound, FX_StartSound,
+	FX_Trace};
+
+/* the game library's effects, if it has them */
+static void
+CL_CGame_FindFx(OPtech2_GetExtension_t get_extension)
+{
+	const optech2_fx_ext_t *fx_ext = get_extension ? get_extension(OPTECH2_EXT_FX) : NULL;
+
+	if (!fx_ext)
+	{
+		return;
+	}
+
+	if (fx_ext->version != OPTECH2_FX_EXT_VERSION || !fx_ext->Init || !fx_ext->ParseTempEntity)
+	{
+		Com_Printf("client game: effects version %d doesn't match, using the engine's\n", fx_ext->version);
+		return;
+	}
+
+	cgame_fx = fx_ext;
+	cgame_fx->Init(&fx_import);
+	Com_Printf("client game: effects from the game library\n");
+}
+
+/* a temp entity of this type arrived: true when the game library drew it */
+qboolean
+CL_CGame_ParseTempEntity(int type)
+{
+	return cgame_fx && cgame_fx->ParseTempEntity(type);
+}
+
 /* the game library's own player movement for prediction, if it has one */
 static void
 CL_CGame_FindPmove(void)
@@ -422,6 +556,8 @@ CL_CGame_FindPmove(void)
 		(OPtech2_GetExtension_t)Sys_GetProcAddress(cgame_library, "OPtech2_GetExtension");
 	const optech2_pmove_ext_t *pmove_ext =
 		get_extension ? get_extension(OPTECH2_EXT_PMOVE) : NULL;
+
+	CL_CGame_FindFx(get_extension);
 
 	if (pmove_ext && pmove_ext->version == OPTECH2_PMOVE_EXT_VERSION &&
 		pmove_ext->pmove_size == (int)sizeof(pmove_t) && pmove_ext->PmoveEx)
@@ -516,8 +652,8 @@ CL_CGame_Load(void)
 
 	if (!cgame)
 	{
-		/* no client game module: keep the library only for its movement */
-		if (!cgame_pmove)
+		/* no client game module: keep the library for its movement / effects */
+		if (!cgame_pmove && !cgame_fx)
 		{
 			Sys_FreeLibrary(cgame_library);
 			cgame_library = NULL;
@@ -540,6 +676,7 @@ void
 CL_CGame_Unload(void)
 {
 	cgame_pmove = NULL;
+	cgame_fx = NULL;
 
 	if (cgame)
 	{

@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "src/client/header/cgame_rerelease.h"
+#include "src/common/header/optech2_ext.h"
 
 #define STAT_HEALTH 1 /* the re-release and stock games both keep health here */
 
@@ -136,6 +137,94 @@ ClearCenterprint(int32_t isplit)
 static void
 NotifyMessage(int32_t isplit, const char *msg, bool is_chat)
 {
+}
+
+/* ------------------------------------------------------------------ */
+/* effects extension: draws temp entity type 200 (sent by "fxtest") */
+
+#define TEST_EFFECT_TYPE 200
+
+static const optech2_fx_import_t *fxi;
+static int effects_drawn;
+
+static void
+FxInit(const optech2_fx_import_t *import)
+{
+	fxi = import;
+}
+
+static qboolean
+FxParseTempEntity(int type)
+{
+	vec3_t origin, dir;
+	optech2_dlight_t *light;
+	int i, particles = 0;
+
+	if (type != TEST_EFFECT_TYPE)
+	{
+		return false; /* stock effects stay with the engine */
+	}
+
+	fxi->ReadPos(origin);
+	fxi->ReadDir(dir);
+
+	/* a ring of green particles flying outwards */
+	for (i = 0; i < 64; i++)
+	{
+		optech2_particle_t *p = fxi->AllocParticle();
+		float angle = i * (6.2831853f / 64);
+
+		if (!p)
+		{
+			break;
+		}
+
+		p->time = (float)fxi->Time();
+		p->color = 0xff00ff00;
+		p->org[0] = origin[0];
+		p->org[1] = origin[1];
+		p->org[2] = origin[2];
+		p->vel[0] = __builtin_cosf(angle) * 120;
+		p->vel[1] = __builtin_sinf(angle) * 120;
+		p->vel[2] = 40;
+		p->accel[0] = p->accel[1] = 0;
+		p->accel[2] = -40;
+		p->alpha = 1.0f;
+		p->alphavel = -0.8f;
+		particles++;
+	}
+
+	light = fxi->AllocDlight(0);
+	light->origin[0] = origin[0];
+	light->origin[1] = origin[1];
+	light->origin[2] = origin[2];
+	light->radius = 300;
+	light->color[0] = 0.2f;
+	light->color[1] = 1.0f;
+	light->color[2] = 0.2f;
+	light->die = (float)fxi->Time() + 500;
+
+	effects_drawn++;
+	Print("cgtest fx: type %d at %.0f %.0f %.0f dir %.2f %.2f %.2f, %d particles\n", type,
+		origin[0], origin[1], origin[2], dir[0], dir[1], dir[2], particles);
+	return true;
+}
+
+static const optech2_fx_ext_t fx_extension = {
+	OPTECH2_FX_EXT_VERSION,
+	FxInit,
+	FxParseTempEntity
+};
+
+void *
+OPtech2_GetExtension(const char *name)
+{
+	if (name && !strcmp(name, OPTECH2_EXT_FX))
+	{
+		return (void *)&fx_extension;
+	}
+
+	return NULL;
 }
 
 cgame_export_t *
