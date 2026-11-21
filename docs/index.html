@@ -78,7 +78,8 @@
         <span class="id">M2</span><h3>Modding architecture</h3><span class="status">IN PROGRESS</span>
         <p>Client game module, shared movement code, data-driven definitions, mod stacking, monster navigation,
           animation system and an in-game editor for entities and lights. Done so far: the client game module
-          with its HUD and effects, player movement as game code, and a first mod made without engine changes.</p>
+          with its HUD and effects, player movement as game code, stacked mod folders, Lua scripts, item, weapon and
+          monster definitions, and monster navigation.</p>
       </li>
       <li class="milestone later">
         <span class="id">M3</span><h3>Multi-threaded renderer</h3><span class="status">PLANNED</span>
@@ -101,9 +102,10 @@
 <section id="m2">
   <div class="wrap">
     <h2>M2 so far</h2>
-    <p class="lead">M2 moves what a mod might change out of the engine and into game code. The first pieces
-      are in the M2 preview: the HUD, player movement and every effect the server triggers now come from the
-      game library, and the re-release's episodes are playable from the menu.</p>
+    <p class="lead">M2 moves what a mod might change out of the engine and into game code or data files. In the
+      M2 preview: the HUD, player movement and every effect the server triggers come from the game library, mods
+      stack and bring their own scripts and definitions, monsters find their way to you, and the re-release's
+      episodes are playable from the menu.</p>
     <div class="features">
       <div class="feature">
         <h3>Re-release episodes</h3>
@@ -127,6 +129,12 @@
         <p>The test mod in <code>mods/testmod</code> adds the Test Gun, a new weapon with its own effect, puts its
           own label on the HUD and makes you jump twice as high, all by changing game code only. The engine binary
           stays the same.</p>
+      </div>
+      <div class="feature">
+        <h3>Monsters find their way</h3>
+        <p>Every map gets a navigation mesh when it loads (Recast/Detour, built in under a second and cached), in
+          three sizes so a Tank isn't sent through a gap only a soldier fits. Walking monsters follow it around
+          walls and step off ledges to reach you, where stock monsters gave up.</p>
       </div>
     </div>
     <div class="gallery" style="margin-top:16px">
@@ -152,6 +160,24 @@
           alt="The Test Gun firing a purple and green spiral beam"></a>
         <figcaption>The Test Gun from the test mod: its spiral beam is a new effect the engine knows nothing
           about, drawn by the mod's own client code.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/nav-live-path.jpg"><img src="assets/img/nav-live-path.jpg" width="1600" height="900" loading="lazy"
+          alt="A magenta dotted path runs from the player to a slot in a low wall, where a Berserker stands"></a>
+        <figcaption><code>g_monster_nav 3</code>: a Berserker's path, live, through the slot in the wall it
+          can't climb.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/nav-ledge.jpg"><img src="assets/img/nav-ledge.jpg" width="1600" height="900" loading="lazy"
+          alt="A Berserker on top of a crate ledge, walking toward its edge"></a>
+        <figcaption>Ledge drops: a Berserker heads for the edge of a 128-unit ledge to drop down to the
+          player. On a 320-unit ledge, too high to drop, it stays up.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/nav-mesh-base1.jpg"><img src="assets/img/nav-mesh-base1.jpg" width="1280" height="800" loading="lazy"
+          alt="Green dotted lines outline the walkable floor in the first level of Quake II"></a>
+        <figcaption><code>cl_shownav 1</code>: the navigation mesh in base1, the walkable floor kept clear of
+          walls by a monster's width.</figcaption>
       </figure>
       <figure class="wide">
         <a href="assets/img/perf-overlay.jpg"><img src="assets/img/perf-overlay.jpg" width="1600" height="900" loading="lazy"
@@ -410,6 +436,13 @@ cmake --workflow --preset default</code></pre>
           <tr><td><code>+set fs_mods hires,testmod</code></td><td>Stack mod folders on top of the game, lowest
             first: files in a later folder replace the same files in an earlier one, and <code>+set game</code> goes on
             top of them all. Saves and settings still go to the game folder. Players joining a server get its list.</td></tr>
+          <tr><td><code>cl_shownav 1</code></td><td>Draws the navigation mesh around you in single player
+            (<code>2</code> and <code>3</code>: the meshes for medium and large monsters), with ledge drops as lines going
+            down.</td></tr>
+          <tr><td><code>g_monster_nav 3</code></td><td>Draws every monster's path as it follows it (single player).
+            <code>2</code> logs each ledge drop a monster takes; <code>0</code> turns paths off for the stock chase.</td></tr>
+          <tr><td><code>nav_path x1 y1 z1 x2 y2 z2</code></td><td>Prints and draws a path between two points;
+            add <code>medium</code> or <code>large</code> for bigger monsters. <code>nav_info</code> shows the mesh.</td></tr>
           <tr><td><code>cl_perf 1</code></td><td>Performance overlay: frame, server and render times on every
             system; on Linux also the load of every CPU core and the busiest threads, and with an AMD graphics card
             its load, memory, temperatures and clocks. Bind it to a key: <code>bind F11 "toggle cl_perf"</code>.</td></tr>
