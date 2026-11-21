@@ -1,6 +1,6 @@
 diff -ru a/CMakeLists.txt b/CMakeLists.txt
---- a/CMakeLists.txt	2026-11-20 20:31:14.580592748 -0500
-+++ b/CMakeLists.txt	2026-11-20 20:31:14.592939658 -0500
+--- a/CMakeLists.txt	2026-11-20 22:20:53.555565348 -0500
++++ b/CMakeLists.txt	2026-11-20 22:20:53.566116491 -0500
 @@ -388,6 +388,8 @@
  	${GAME_SRC_DIR}/cgame_fx/fx_muzzleflash.c
  	${GAME_SRC_DIR}/cgame_fx/fx_trails.c
@@ -11,8 +11,8 @@ diff -ru a/CMakeLists.txt b/CMakeLists.txt
  	${GAME_SRC_DIR}/cgame_fx/fx_tempentities.c
  	${COMMON_SRC_DIR}/shared/pmove.c
 diff -ru a/Makefile b/Makefile
---- a/Makefile	2026-11-20 20:31:14.583576339 -0500
-+++ b/Makefile	2026-11-20 20:31:14.593062371 -0500
+--- a/Makefile	2026-11-20 22:20:53.558576899 -0500
++++ b/Makefile	2026-11-20 22:20:53.566240024 -0500
 @@ -1214,6 +1214,8 @@
  	src/game/cgame_fx/fx_muzzleflash.o \
  	src/game/cgame_fx/fx_trails.o \
@@ -22,9 +22,27 @@ diff -ru a/Makefile b/Makefile
  	src/game/cgame_fx/fx_effects.o \
  	src/game/cgame_fx/fx_tempentities.o \
  	src/common/shared/pmove.o \
+diff -ru a/src/common/shared/pmove.c b/src/common/shared/pmove.c
+--- a/src/common/shared/pmove.c	2026-11-20 22:20:53.564812115 -0500
++++ b/src/common/shared/pmove.c	2026-11-20 22:20:53.575012201 -0500
+@@ -853,11 +853,11 @@
+ 	pm->s.pm_flags |= PMF_JUMP_HELD;
+ 
+ 	pm->groundentity = NULL;
+-	pml.velocity[2] += 270;
++	pml.velocity[2] += 400; /* testmod: jump higher (stock 270) */
+ 
+-	if (pml.velocity[2] < 270)
++	if (pml.velocity[2] < 400) /* testmod */
+ 	{
+-		pml.velocity[2] = 270;
++		pml.velocity[2] = 400;
+ 	}
+ }
+ 
 diff -ru a/src/game/cgame_fx/fx_tempentities.c b/src/game/cgame_fx/fx_tempentities.c
---- a/src/game/cgame_fx/fx_tempentities.c	2026-11-20 20:31:14.577750961 -0500
-+++ b/src/game/cgame_fx/fx_tempentities.c	2026-11-20 20:31:14.592839566 -0500
+--- a/src/game/cgame_fx/fx_tempentities.c	2026-11-20 22:20:53.552814452 -0500
++++ b/src/game/cgame_fx/fx_tempentities.c	2026-11-20 22:20:53.566370686 -0500
 @@ -682,6 +682,8 @@
  	0xff00001b,
  };
@@ -48,8 +66,8 @@ diff -ru a/src/game/cgame_fx/fx_tempentities.c b/src/game/cgame_fx/fx_tempentiti
  	{
  		case TE_BLOOD: /* bullet hitting flesh */
 diff -ru a/src/game/g_items.c b/src/game/g_items.c
---- a/src/game/g_items.c	2026-11-20 20:31:14.574332672 -0500
-+++ b/src/game/g_items.c	2026-11-20 20:31:14.592686153 -0500
+--- a/src/game/g_items.c	2026-11-20 22:20:53.549798291 -0500
++++ b/src/game/g_items.c	2026-11-20 22:20:53.566577121 -0500
 @@ -26,6 +26,7 @@
   */
  
@@ -90,3 +108,18 @@ diff -ru a/src/game/g_items.c b/src/game/g_items.c
  	{NULL}
  };
  
+diff -ru a/src/game/g_spawn.c b/src/game/g_spawn.c
+--- a/src/game/g_spawn.c	2026-11-20 22:20:53.561502378 -0500
++++ b/src/game/g_spawn.c	2026-11-20 22:20:53.575144904 -0500
+@@ -1370,6 +1370,11 @@
+ /* =================================================================== */
+ 
+ static char *single_statusbar =
++/* testmod: a label of its own at the top of the screen */
++	"yt	8 "
++	"xv	128 "
++	"string2 \"TEST MOD\" "
++
+ 	"yb	-24 "
+ 
+ /* health */

@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- The test mod also changes a HUD element (a "TEST MOD" label through the status bar layout) and player movement (jump speed 400 instead of 270, about twice as high, with prediction following it). `tests/mod/mod_check.py` compares it with the stock game: jump height, prediction misses and the label on screen.
 - Code review fixes:
   - game libraries built against the old headers (mission packs, third-party mods) that call the engine's player movement get the server's air acceleration, not a value read past their struct;
   - `cl_showspeed` works again with the game library's movement (it read the engine's unused copy);
