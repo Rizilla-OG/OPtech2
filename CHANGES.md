@@ -4,6 +4,8 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Stack of mod folders: `fs_mods` lists folders to load above `baseq2` and below the `game` folder, lowest first (`+set fs_mods hires,testmod`; space, comma or semicolon separated, up to 16). A later folder's files override an earlier one's, the game library comes from the highest folder that has one, and writes still go to the game folder (or `baseq2`). Paths, `baseq2`, the game folder and repeats are skipped. Changing it in the console rebuilds the search path (latched while a server runs, like `game`). New check: `tests/mod/stack_check.py`.
+- Going back to `baseq2` from a mod no longer makes the data folder (e.g. the Steam folder) the one configs and saves are written to; it's the user's folder again.
 - The test mod also changes a HUD element (a "TEST MOD" label through the status bar layout) and player movement (jump speed 400 instead of 270, about twice as high, with prediction following it). `tests/mod/mod_check.py` compares it with the stock game: jump height, prediction misses and the label on screen.
 - Code review fixes:
   - game libraries built against the old headers (mission packs, third-party mods) that call the engine's player movement get the server's air acceleration, not a value read past their struct;

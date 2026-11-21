@@ -425,6 +425,10 @@ Cvar_SetVar(cvar_t *var, const char *value, qboolean force)
 				{
 					FS_BuildGameSpecificSearchPath(var->string);
 				}
+				else if (!strcmp(var->name, "fs_mods")) /* optech2: rebuild with the new stack */
+				{
+					FS_BuildGameSpecificSearchPath(Cvar_VariableString("game"));
+				}
 			}
 
 			return var;
@@ -543,6 +547,7 @@ void
 Cvar_GetLatchedVars(void)
 {
 	cvar_t *var;
+	qboolean rebuild_search_path = false; /* optech2: once for game and fs_mods */
 
 	for (var = cvar_vars; var; var = var->next)
 	{
@@ -557,10 +562,15 @@ Cvar_GetLatchedVars(void)
 		var->value = strtod(var->string, (char **)NULL);
 		var->integer = (int)var->value; /* optech2 */
 
-		if (!strcmp(var->name, "game"))
+		if (!strcmp(var->name, "game") || !strcmp(var->name, "fs_mods"))
 		{
-			FS_BuildGameSpecificSearchPath(var->string);
+			rebuild_search_path = true;
 		}
+	}
+
+	if (rebuild_search_path)
+	{
+		FS_BuildGameSpecificSearchPath(Cvar_VariableString("game"));
 	}
 }
 
