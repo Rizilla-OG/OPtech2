@@ -420,6 +420,13 @@ Cmd_Give_f(edict_t *ent)
 				continue;
 			}
 
+			/* optech2: no CTF runes or flags, as the re-release
+			   (the Strength rune made every shot sound like quad) */
+			if ((it->flags & IT_TECH) || (it->pickup == CTFPickup_Flag))
+			{
+				continue;
+			}
+
 			ent->client->pers.inventory[i] = 1;
 		}
 
