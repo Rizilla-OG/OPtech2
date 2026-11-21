@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenTech2 Roadmap</title>
+<meta name="description" content="What is done and what is left in OpenTech2, milestone by milestone, with the current milestone broken down task by task.">
+<meta property="og:title" content="OpenTech2 Roadmap">
+<meta property="og:description" content="Milestones M0 to M5 of OpenTech2, a Quake II derived engine for new games: what is done and what is next.">
+<meta property="og:image" content="https://rizilla-og.github.io/OPtech2/assets/img/q64-complex.jpg">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<!--
+  Updating this page: each task is an <li> in a "tasks" list. Its class is
+  "done", "part" or left empty (not started). Update the counts in the group
+  headings, the M2 badge and the progress bar width with it.
+-->
+
+<header class="page-head">
+  <div class="wrap">
+    <a class="back" href="./">&larr; OpenTech2</a>
+    <h1>Roadmap</h1>
+    <p class="lead">Six milestones, in order. Each builds on the data formats the one before it settles.
+      M0 and M1 are done; M2, the modding milestone, is about a fifth of the way through.</p>
+    <p class="updated">Updated 2026-11-20</p>
+    <div class="legend">
+      <span><i class="mark done"></i>Done</span>
+      <span><i class="mark part"></i>Partly done</span>
+      <span><i class="mark"></i>Not started</span>
+    </div>
+  </div>
+</header>
+
+<section class="road">
+  <div class="wrap">
+    <ol class="roadmap">
+      <li class="milestone done">
+        <span class="id">M0</span><h3>Foundation</h3><span class="status">DONE · 7 / 7</span>
+        <p>Base chosen (Yamagi Quake II Remaster), one-command build, first unit plays, code survey, screenshot
+          regression check, benchmark baseline, own name.</p>
+      </li>
+      <li class="milestone done">
+        <span class="id">M1</span><h3>Remove limits</h3><span class="status">DONE</span>
+        <p>Float positions and wide indices in a new protocol, packet splitting, extended QBSP maps and BSPX
+          lightmaps, ericw-tools, thousands of entities with spatial lookups, IQM models, true-color textures,
+          modern sound formats, savegames that survive code changes, 60 Hz simulation.</p>
+      </li>
+      <li class="milestone next">
+        <span class="id">M2</span><h3>Modding and gameplay systems</h3><span class="status">IN PROGRESS · 4 / 21</span>
+        <p>Move everything a mod might change out of the engine and into game code or data files.</p>
+        <div class="bar" aria-label="4 of 21 tasks done, 2 partly"><i style="width:21%"></i></div>
+      </li>
+    </ol>
+
+    <div class="task-groups">
+      <div class="task-group">
+        <h3>Client game module <span>3 / 5</span></h3>
+        <ul class="tasks">
+          <li class="done">Client game API (the 2022 re-release cgame API)</li>
+          <li class="done">HUD in the module (id's re-release HUD code)</li>
+          <li class="done">Effects in the module: explosions, beams, muzzle flashes, trails, footsteps</li>
+          <li>Menus in the module or a data-driven UI</li>
+          <li class="part">Match the re-release APIs so re-release mods load unchanged: client side done, server side next</li>
+        </ul>
+        <p class="note">Still drawn by the engine: an entity's own model (powerup shells, translucency, linked weapons).</p>
+      </div>
+
+      <div class="task-group">
+        <h3>Shared game code <span>1 / 2</span></h3>
+        <ul class="tasks">
+          <li class="done">Player movement as game code, used by the server and by prediction (and smooth lifts)</li>
+          <li>Game code defines its own networked entity fields</li>
+        </ul>
+      </div>
+
+      <div class="task-group">
+        <h3>Data-driven definitions <span>0 / 2</span></h3>
+        <ul class="tasks">
+          <li>Text files for items, weapons and monsters</li>
+          <li>Material files</li>
+        </ul>
+      </div>
+
+      <div class="task-group">
+        <h3>Mod loading <span>0 / 2</span></h3>
+        <ul class="tasks">
+          <li>A stack of mod folders with an override order</li>
+          <li class="part">Scripting: sandboxed Lua 5.4 is decided, embedding it is next</li>
+        </ul>
+      </div>
+
+      <div class="task-group">
+        <h3>Gameplay systems <span>0 / 5</span></h3>
+        <ul class="tasks">
+          <li>Monster navigation (Recast / Detour)</li>
+          <li>Animation system on IQM: blending, layers, events</li>
+          <li>Physics: Jolt for rigid bodies, ragdolls and debris</li>
+          <li>Scalable Unicode text; HUD and menus that scale</li>
+          <li>Achievements defined in data files</li>
+        </ul>
+      </div>
+
+      <div class="task-group">
+        <h3>In-game editor <span>0 / 5</span></h3>
+        <ul class="tasks">
+          <li>Dear ImGui tool windows</li>
+          <li>Editor mode: free camera, click to select, move gizmo</li>
+          <li>Undo and redo</li>
+          <li>Entity panel with live respawn</li>
+          <li>Entity override files loaded at map start</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="task-group goals">
+      <h3>M2 is done when</h3>
+      <ul class="tasks">
+        <li class="done">A test mod adds a weapon with a new visual effect, with no engine changes (the Test Gun)</li>
+        <li class="part">The same mod changes a HUD element and player movement</li>
+        <li>Two mods load together</li>
+        <li class="part">The stock game runs entirely through the client module</li>
+        <li>A monster paths around an obstacle to reach the player</li>
+        <li>Text renders in a non-Latin script at 4K</li>
+        <li>An entity moved in the editor keeps its position after a reload</li>
+      </ul>
+    </div>
+
+    <ol class="roadmap after">
+      <li class="milestone later">
+        <span class="id">M3</span><h3>Multi-threaded renderer</h3><span class="status">PLANNED · 0 / 8</span>
+        <p>Self-contained scene description, frontend and backend split, everything through the command list,
+          OpenGL on its own thread, a job system, a single-thread switch for debugging.</p>
+      </li>
+      <li class="milestone later">
+        <span class="id">M4</span><h3>Lighting and shadows</h3><span class="status">PLANNED · 0 / 24</span>
+        <p>Materials with normal and specular maps, real-time per-pixel lights, the stock lighting imported and
+          fitted, shadow maps, a light editor, decals, lit particles, post-processing.</p>
+      </li>
+      <li class="milestone later">
+        <span class="id">M5</span><h3>Supporting systems</h3><span class="status">PLANNED · 0 / 12</span>
+        <p>Sound occlusion and reverb, large outdoor spaces, hot reload, crash reports, a Blender pipeline,
+          TrenchBroom documentation, more editor panels.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <nav>
+      <a href="./">Home</a>
+      <a href="https://github.com/Rizilla-OG/OPtech2">GitHub</a>
+      <a href="https://github.com/Rizilla-OG/OPtech2/releases/tag/m2-preview">M2 preview</a>
+      <a href="https://github.com/Rizilla-OG/OPtech2/blob/main/CHANGES.md">Changes</a>
+    </nav>
+    <p>OpenTech2 is based on <a href="https://github.com/yquake2/yquake2remaster">Yamagi Quake II Remaster</a> and
+      released under the GNU GPL version 2. Quake II is a trademark of id Software; the game data is not included.</p>
+  </div>
+</footer>
+
+</body>
+</html>
