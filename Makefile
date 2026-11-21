@@ -552,6 +552,13 @@ $(BUILDDIR)/client/%.o: %.c
 	${Q}mkdir -p $(@D)
 	${Q}$(CC) -c $(CFLAGS) $(SDLCFLAGS) $(ZIPCFLAGS) $(INCLUDE) -o $@ $<
 
+$(BUILDDIR)/client/%.o: %.cpp
+	@if [ -z $(QUIET) ]; then\
+		echo "===> CXX $<";\
+	fi
+	${Q}mkdir -p $(@D)
+	${Q}$(CXX) -c -std=c++17 $(filter-out -std=% -Wstrict-prototypes -Wmissing-prototypes -Wimplicit-fallthrough%,$(CFLAGS)) $(SDLCFLAGS) $(INCLUDE) $(NAV_INCLUDE) -o $@ $<
+
 $(BINDIR)/OpenTech2.exe : LDFLAGS += -mwindows
 
 ifeq ($(WITH_CURL),yes)
@@ -589,6 +596,13 @@ $(BUILDDIR)/client/%.o: %.c
 	${Q}mkdir -p $(@D)
 	${Q}$(CC) -c $(CFLAGS) $(SDLCFLAGS) $(ZIPCFLAGS) $(INCLUDE) -o $@ $<
 endif
+
+$(BUILDDIR)/client/%.o: %.cpp
+	@if [ -z $(QUIET) ]; then\
+		echo "===> CXX $<";\
+	fi
+	${Q}mkdir -p $(@D)
+	${Q}$(CXX) -c -std=c++17 $(filter-out -std=% -Wstrict-prototypes -Wmissing-prototypes -Wimplicit-fallthrough%,$(CFLAGS)) $(SDLCFLAGS) $(INCLUDE) $(NAV_INCLUDE) -o $@ $<
 
 $(BINDIR)/OpenTech2 : CFLAGS += -Wno-unused-result
 
@@ -664,6 +678,13 @@ $(BUILDDIR)/server/%.o: %.c
 	${Q}mkdir -p $(@D)
 	${Q}$(CC) -c $(CFLAGS) $(ZIPCFLAGS) $(INCLUDE) -o $@ $<
 
+$(BUILDDIR)/server/%.o: %.cpp
+	@if [ -z $(QUIET) ]; then\
+		echo "===> CXX $<";\
+	fi
+	${Q}mkdir -p $(@D)
+	${Q}$(CXX) -c -std=c++17 $(filter-out -std=% -Wstrict-prototypes -Wmissing-prototypes -Wimplicit-fallthrough%,$(CFLAGS)) $(INCLUDE) $(NAV_INCLUDE) -o $@ $<
+
 $(BINDIR)/OpenTech2-server.exe : CFLAGS += -DDEDICATED_ONLY
 
 else # not Windows
@@ -679,6 +700,13 @@ $(BUILDDIR)/server/%.o: %.c
 	fi
 	${Q}mkdir -p $(@D)
 	${Q}$(CC) -c $(CFLAGS) $(ZIPCFLAGS) $(INCLUDE) -o $@ $<
+
+$(BUILDDIR)/server/%.o: %.cpp
+	@if [ -z $(QUIET) ]; then\
+		echo "===> CXX $<";\
+	fi
+	${Q}mkdir -p $(@D)
+	${Q}$(CXX) -c -std=c++17 $(filter-out -std=% -Wstrict-prototypes -Wmissing-prototypes -Wimplicit-fallthrough%,$(CFLAGS)) $(INCLUDE) $(NAV_INCLUDE) -o $@ $<
 
 $(BINDIR)/OpenTech2-server : CFLAGS += -DDEDICATED_ONLY -Wno-unused-result
 
@@ -1332,7 +1360,29 @@ GAME_OBJS_ = \
 # ----------
 
 # Used by the client
+# optech2: Recast/Detour (src/common/nav) find their own headers by name
+NAV_INCLUDE := -Isrc/common/nav/recast/Recast/Include -Isrc/common/nav/recast/Detour/Include
+
 CLIENT_OBJS_ := \
+	src/common/nav/nav.o \
+	src/common/nav/recast/Detour/Source/DetourAlloc.o \
+	src/common/nav/recast/Detour/Source/DetourAssert.o \
+	src/common/nav/recast/Detour/Source/DetourCommon.o \
+	src/common/nav/recast/Detour/Source/DetourNavMesh.o \
+	src/common/nav/recast/Detour/Source/DetourNavMeshBuilder.o \
+	src/common/nav/recast/Detour/Source/DetourNavMeshQuery.o \
+	src/common/nav/recast/Detour/Source/DetourNode.o \
+	src/common/nav/recast/Recast/Source/Recast.o \
+	src/common/nav/recast/Recast/Source/RecastAlloc.o \
+	src/common/nav/recast/Recast/Source/RecastArea.o \
+	src/common/nav/recast/Recast/Source/RecastAssert.o \
+	src/common/nav/recast/Recast/Source/RecastContour.o \
+	src/common/nav/recast/Recast/Source/RecastFilter.o \
+	src/common/nav/recast/Recast/Source/RecastLayers.o \
+	src/common/nav/recast/Recast/Source/RecastMesh.o \
+	src/common/nav/recast/Recast/Source/RecastMeshDetail.o \
+	src/common/nav/recast/Recast/Source/RecastRasterization.o \
+	src/common/nav/recast/Recast/Source/RecastRegion.o \
 	src/backends/generic/misc.o \
 	src/client/cl_cin.o \
 	src/client/cl_image.o \
@@ -1689,6 +1739,25 @@ endif
 
 # Used by the server
 SERVER_OBJS_ := \
+	src/common/nav/nav.o \
+	src/common/nav/recast/Detour/Source/DetourAlloc.o \
+	src/common/nav/recast/Detour/Source/DetourAssert.o \
+	src/common/nav/recast/Detour/Source/DetourCommon.o \
+	src/common/nav/recast/Detour/Source/DetourNavMesh.o \
+	src/common/nav/recast/Detour/Source/DetourNavMeshBuilder.o \
+	src/common/nav/recast/Detour/Source/DetourNavMeshQuery.o \
+	src/common/nav/recast/Detour/Source/DetourNode.o \
+	src/common/nav/recast/Recast/Source/Recast.o \
+	src/common/nav/recast/Recast/Source/RecastAlloc.o \
+	src/common/nav/recast/Recast/Source/RecastArea.o \
+	src/common/nav/recast/Recast/Source/RecastAssert.o \
+	src/common/nav/recast/Recast/Source/RecastContour.o \
+	src/common/nav/recast/Recast/Source/RecastFilter.o \
+	src/common/nav/recast/Recast/Source/RecastLayers.o \
+	src/common/nav/recast/Recast/Source/RecastMesh.o \
+	src/common/nav/recast/Recast/Source/RecastMeshDetail.o \
+	src/common/nav/recast/Recast/Source/RecastRasterization.o \
+	src/common/nav/recast/Recast/Source/RecastRegion.o \
 	src/backends/generic/misc.o \
 	src/common/argproc.o \
 	src/common/clientserver.o \
@@ -1834,22 +1903,22 @@ VIEWER_DEPS= $(VIEWER_OBJS:.o=.d)
 ifeq ($(YQ2_OSTYPE), Windows)
 $(BINDIR)/OpenTech2.exe : $(CLIENT_OBJS) icon
 	@echo "===> LD $@"
-	${Q}$(CC) $(LDFLAGS) $(BUILDROOT)/icon/icon.res $(CLIENT_OBJS) $(LDLIBS) $(SDLLDFLAGS) -o $@
+	${Q}$(CXX) $(LDFLAGS) $(BUILDROOT)/icon/icon.res $(CLIENT_OBJS) $(LDLIBS) $(SDLLDFLAGS) -static-libstdc++ -static-libgcc -o $@ # optech2: C++ for navigation
 else
 $(BINDIR)/OpenTech2 : $(CLIENT_OBJS)
 	@echo "===> LD $@"
-	${Q}$(CC) $(LDFLAGS) $(CLIENT_OBJS) $(LDLIBS) $(SDLLDFLAGS) -o $@
+	${Q}$(CXX) $(LDFLAGS) $(CLIENT_OBJS) $(LDLIBS) $(SDLLDFLAGS) -o $@ # optech2: C++ for navigation
 endif
 
 # q2ded
 ifeq ($(YQ2_OSTYPE), Windows)
 $(BINDIR)/OpenTech2-server.exe : $(SERVER_OBJS) icon
 	@echo "===> LD $@"
-	${Q}$(CC) $(LDFLAGS) $(BUILDROOT)/icon/icon.res $(SERVER_OBJS) $(LDLIBS) -o $@
+	${Q}$(CXX) $(LDFLAGS) $(BUILDROOT)/icon/icon.res $(SERVER_OBJS) $(LDLIBS) -static-libstdc++ -static-libgcc -o $@ # optech2: C++ for navigation
 else
 $(BINDIR)/OpenTech2-server : $(SERVER_OBJS)
 	@echo "===> LD $@"
-	${Q}$(CC) $(LDFLAGS) $(SERVER_OBJS) $(LDLIBS) -o $@
+	${Q}$(CXX) $(LDFLAGS) $(SERVER_OBJS) $(LDLIBS) -o $@ # optech2: C++ for navigation
 endif
 
 # pakextract

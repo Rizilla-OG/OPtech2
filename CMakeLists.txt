@@ -574,6 +574,25 @@ set(Client-Source
 	${COMMON_SRC_DIR}/argproc.c
 	${COMMON_SRC_DIR}/clientserver.c
 	${COMMON_SRC_DIR}/collision.c
+	${COMMON_SRC_DIR}/nav/nav.cpp
+	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourAlloc.cpp
+	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourAssert.cpp
+	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourCommon.cpp
+	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourNavMesh.cpp
+	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourNavMeshBuilder.cpp
+	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourNavMeshQuery.cpp
+	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourNode.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/Recast.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastAlloc.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastArea.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastAssert.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastContour.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastFilter.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastLayers.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastMesh.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastMeshDetail.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastRasterization.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastRegion.cpp
 	${COMMON_SRC_DIR}/crc.c
 	${COMMON_SRC_DIR}/cmdparser.c
 	${COMMON_SRC_DIR}/cmodels.c
@@ -678,6 +697,25 @@ set(Server-Source
 	${COMMON_SRC_DIR}/argproc.c
 	${COMMON_SRC_DIR}/clientserver.c
 	${COMMON_SRC_DIR}/collision.c
+	${COMMON_SRC_DIR}/nav/nav.cpp
+	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourAlloc.cpp
+	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourAssert.cpp
+	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourCommon.cpp
+	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourNavMesh.cpp
+	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourNavMeshBuilder.cpp
+	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourNavMeshQuery.cpp
+	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourNode.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/Recast.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastAlloc.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastArea.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastAssert.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastContour.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastFilter.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastLayers.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastMesh.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastMeshDetail.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastRasterization.cpp
+	${COMMON_SRC_DIR}/nav/recast/Recast/Source/RecastRegion.cpp
 	${COMMON_SRC_DIR}/crc.c
 	${COMMON_SRC_DIR}/cmdparser.c
 	${COMMON_SRC_DIR}/cmodels.c
@@ -1294,3 +1332,16 @@ if(SDL3_SUPPORT)
 endif()
 
 endif()
+
+# optech2: Recast/Detour (src/common/nav) find their own headers by name
+foreach(nav_target yquake2 quake2 q2ded)
+	if(NOT TARGET ${nav_target})
+		continue()
+	endif()
+	target_include_directories(${nav_target} PRIVATE
+		${COMMON_SRC_DIR}/nav/recast/Recast/Include
+		${COMMON_SRC_DIR}/nav/recast/Detour/Include)
+	if(MINGW)
+		target_link_options(${nav_target} PRIVATE -static-libstdc++ -static-libgcc)
+	endif()
+endforeach()

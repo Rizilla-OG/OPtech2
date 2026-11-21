@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Navigation mesh (monster navigation, phase 1): when a map loads, the server builds a Recast/Detour navigation mesh from the world's solid brushes (clip brushes included, doors and lifts not) for a player-sized monster, in 512-unit tiles, and caches it in `navigation/<map>.otnav` in the game folder (under 0.2 s for stock maps; then loaded in about 1 ms). Console: `nav_info`, `nav_path x1 y1 z1 x2 y2 z2`, `nav_rebuild`; `cl_shownav 1` draws the mesh in single player. Recast/Detour 1.6.0 is bundled unmodified in `src/common/nav/recast` (zlib license); the engine now links C++. New test map `tests/maps/make_nav_map.py` and check `tests/nav/nav_check.py`.
 - Scripts: `game.state(name)` gives a table that lasts across level changes and in save games (stored as text in the game save, read back with no code allowed; numbers, strings, booleans and tables, up to 1 MB).
 - Fix: loading a save fired `level_start` for the map's own spawn before the saved level replaced it; it no longer does.
 - Scripts: `game.position(player)` and `game.yaw(player)`, to spawn things in front of a player.

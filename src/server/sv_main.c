@@ -25,6 +25,7 @@
  */
 
 #include "header/server.h"
+#include "../common/header/nav.h" /* optech2 */
 
 #define HEARTBEAT_SECONDS 300
 
@@ -608,6 +609,7 @@ SV_Init(void)
 {
 	SV_SendInitBuffers();
 	SV_InitOperatorCommands();
+	Nav_Init(); /* optech2: nav_info, nav_path, nav_rebuild */
 
 	/* optech2: server frames per second. Latched: a change applies on the next new game. */
 	sv_tickrate = Cvar_Get("sv_tickrate", "60", CVAR_SERVERINFO | CVAR_LATCH); /* latched: game and server read it at the same point */
@@ -735,6 +737,7 @@ SV_Shutdown(const char *finalmsg, qboolean reconnect)
 
 	Master_Shutdown();
 	SV_ShutdownGameProgs();
+	Nav_Free(); /* optech2 */
 
 	/* free current level */
 	if (sv.demofile)

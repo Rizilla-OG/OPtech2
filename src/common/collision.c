@@ -2329,3 +2329,230 @@ CM_LoadFile(const char *path, void **buffer)
 		__func__, path);
 	return -1;
 }
+
+/*
+ * optech2: the world's solid brushes as triangles, for building navigation
+ * (src/common/nav). Each side of every brush of the world model whose
+ * contents match contents_mask becomes a polygon (a big quad on its plane,
+ * clipped by the brush's other planes), sent to emit as a triangle fan.
+ * Each triangle winds so that (b - a) x (c - a) points out of the brush.
+ * Returns the number of triangles.
+ */
+#define CM_NAV_MAX_POINTS 64
+#define CM_NAV_WORLD_SIZE 1048576.0
+
+typedef struct
+{
+	int count;
+	double points[CM_NAV_MAX_POINTS][3];
+} cm_winding_t;
+
+static void
+CM_BaseWinding(const cplane_t *plane, cm_winding_t *w)
+{
+	double normal[3] = {plane->normal[0], plane->normal[1], plane->normal[2]};
+	double up[3] = {0, 0, 0}, right[3], origin[3], length, dot;
+	int axis = 0, i;
+
+	/* the axis the plane faces most: "up" is another one */
+	for (i = 1; i < 3; i++)
+	{
+		if (fabs(normal[i]) > fabs(normal[axis]))
+		{
+			axis = i;
+		}
+	}
+
+	up[(axis == 2) ? 0 : 2] = 1;
+	dot = up[0] * normal[0] + up[1] * normal[1] + up[2] * normal[2];
+
+	for (i = 0; i < 3; i++)
+	{
+		up[i] -= dot * normal[i];
+	}
+
+	length = sqrt(up[0] * up[0] + up[1] * up[1] + up[2] * up[2]);
+
+	for (i = 0; i < 3; i++)
+	{
+		up[i] = up[i] / length * CM_NAV_WORLD_SIZE;
+		origin[i] = normal[i] * plane->dist;
+	}
+
+	/* right = up x normal */
+	right[0] = up[1] * normal[2] - up[2] * normal[1];
+	right[1] = up[2] * normal[0] - up[0] * normal[2];
+	right[2] = up[0] * normal[1] - up[1] * normal[0];
+
+	for (i = 0; i < 3; i++)
+	{
+		w->points[0][i] = origin[i] - right[i] + up[i];
+		w->points[1][i] = origin[i] + right[i] + up[i];
+		w->points[2][i] = origin[i] + right[i] - up[i];
+		w->points[3][i] = origin[i] - right[i] - up[i];
+	}
+
+	w->count = 4;
+}
+
+/* keeps the part of w behind plane (inside the brush) */
+static void
+CM_ClipWinding(cm_winding_t *w, const cplane_t *plane)
+{
+	cm_winding_t out;
+	double dists[CM_NAV_MAX_POINTS + 1];
+	int i, j;
+
+	out.count = 0;
+
+	for (i = 0; i < w->count; i++)
+	{
+		dists[i] = w->points[i][0] * plane->normal[0] + w->points[i][1] * plane->normal[1] +
+				   w->points[i][2] * plane->normal[2] - plane->dist;
+	}
+
+	for (i = 0; i < w->count && out.count < CM_NAV_MAX_POINTS - 1; i++)
+	{
+		int next = (i + 1) % w->count;
+
+		if (dists[i] <= 0.01)
+		{
+			memcpy(out.points[out.count++], w->points[i], sizeof(out.points[0]));
+		}
+
+		if ((dists[i] < -0.01 && dists[next] > 0.01) || (dists[i] > 0.01 && dists[next] < -0.01))
+		{
+			double fraction = dists[i] / (dists[i] - dists[next]);
+
+			for (j = 0; j < 3; j++)
+			{
+				out.points[out.count][j] = w->points[i][j] + fraction * (w->points[next][j] - w->points[i][j]);
+			}
+
+			out.count++;
+		}
+	}
+
+	*w = out;
+}
+
+static void
+CM_MarkWorldBrushes(int nodenum, byte *marked)
+{
+	while (nodenum >= 0)
+	{
+		CM_MarkWorldBrushes(cmod->map_nodes[nodenum].children[0], marked);
+		nodenum = cmod->map_nodes[nodenum].children[1];
+	}
+
+	{
+		const cleaf_t *leaf = &cmod->map_leafs[-1 - nodenum];
+		unsigned int i;
+
+		for (i = 0; i < leaf->numleafbrushes; i++)
+		{
+			unsigned int brush = cmod->map_leafbrushes[leaf->firstleafbrush + i];
+
+			if (brush < (unsigned int)cmod->numbrushes)
+			{
+				marked[brush] = 1;
+			}
+		}
+	}
+}
+
+int
+CM_ForEachSolidTriangle(int contents_mask, void (*emit)(const float *a, const float *b, const float *c, void *user),
+	void *user)
+{
+	byte *marked;
+	int brushnum, triangles = 0;
+
+	if (!cmod->numcmodels || !cmod->numbrushes || !cmod->map_nodes)
+	{
+		return 0;
+	}
+
+	marked = calloc(cmod->numbrushes, 1);
+
+	if (!marked)
+	{
+		return 0;
+	}
+
+	/* only the world model's brushes: doors and lifts move */
+	CM_MarkWorldBrushes(cmod->map_cmodels[0].headnode, marked);
+
+	for (brushnum = 0; brushnum < cmod->numbrushes; brushnum++)
+	{
+		const cbrush_t *brush = &cmod->map_brushes[brushnum];
+		unsigned int side, other;
+
+		if (!marked[brushnum] || !(brush->contents & contents_mask))
+		{
+			continue;
+		}
+
+		for (side = 0; side < brush->numsides; side++)
+		{
+			const cplane_t *plane = cmod->map_brushsides[brush->firstbrushside + side].plane;
+			cm_winding_t w;
+			int i;
+
+			CM_BaseWinding(plane, &w);
+
+			for (other = 0; other < brush->numsides && w.count >= 3; other++)
+			{
+				if (other != side)
+				{
+					CM_ClipWinding(&w, cmod->map_brushsides[brush->firstbrushside + other].plane);
+				}
+			}
+
+			for (i = 1; i + 1 < w.count; i++)
+			{
+				float a[3], b[3], c[3];
+				double normal[3], e1[3], e2[3];
+				int k;
+
+				for (k = 0; k < 3; k++)
+				{
+					a[k] = (float)w.points[0][k];
+					b[k] = (float)w.points[i][k];
+					c[k] = (float)w.points[i + 1][k];
+					e1[k] = w.points[i][k] - w.points[0][k];
+					e2[k] = w.points[i + 1][k] - w.points[0][k];
+				}
+
+				normal[0] = e1[1] * e2[2] - e1[2] * e2[1];
+				normal[1] = e1[2] * e2[0] - e1[0] * e2[2];
+				normal[2] = e1[0] * e2[1] - e1[1] * e2[0];
+
+				if (fabs(normal[0]) + fabs(normal[1]) + fabs(normal[2]) < 0.001)
+				{
+					continue; /* degenerate */
+				}
+
+				if (normal[0] * plane->normal[0] + normal[1] * plane->normal[1] + normal[2] * plane->normal[2] < 0)
+				{
+					emit(a, c, b, user);
+				}
+				else
+				{
+					emit(a, b, c, user);
+				}
+
+				triangles++;
+			}
+		}
+	}
+
+	free(marked);
+	return triangles;
+}
+
+unsigned
+CM_MapChecksum(void)
+{
+	return cmod->checksum;
+}

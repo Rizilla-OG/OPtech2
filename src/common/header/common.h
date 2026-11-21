@@ -750,6 +750,9 @@ qboolean Netchan_CanReliable(const netchan_t *chan);
 
 const byte* CM_GetRawMap(int *len);
 cmodel_t *CM_LoadMap(const char *name, qboolean clientload, unsigned *checksum);
+int CM_ForEachSolidTriangle(int contents_mask, void (*emit)(const float *a, const float *b, const float *c, void *user),
+	void *user); /* optech2: world brushes as triangles, for navigation */
+unsigned CM_MapChecksum(void); /* optech2 */
 cmodel_t *CM_InlineModel(const char *name);       /* *1, *2, etc */
 int CM_MapSurfacesNum(void);
 mapsurface_t* CM_MapSurfaces(int surfnum);

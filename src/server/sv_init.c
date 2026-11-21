@@ -25,6 +25,7 @@
  */
 
 #include "header/server.h"
+#include "../common/header/nav.h" /* optech2 */
 #include <limits.h>
 
 /* initialize the entities array to at least this many entities */
@@ -345,6 +346,10 @@ SV_SpawnServer(char *server, char *spawnpoint, server_state_t serverstate,
 				sizeof(sv.configstrings[CS_MODELS + 1]), "maps/%s.bsp", server);
 		sv.models[1] = CM_LoadMap(sv.configstrings[CS_MODELS + 1],
 				false, &checksum);
+
+		/* optech2: the navigation mesh for walking monsters (built, or
+		   loaded from its cache) */
+		Nav_LoadMap(server);
 	}
 
 	Com_sprintf(sv.configstrings[CS_MAPCHECKSUM],
