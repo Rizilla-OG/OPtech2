@@ -1211,6 +1211,7 @@ GAME_OBJS_ = \
 	src/game/g_misc.o \
 	src/game/g_extension.o \
 	src/game/cgame_fx/fx_main.o \
+	src/game/g_defs.o \
 	src/game/script/g_script.o \
 	src/game/lua/lapi.o \
 	src/game/lua/lauxlib.o \

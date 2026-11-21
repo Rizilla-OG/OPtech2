@@ -890,6 +890,11 @@ qboolean ItemHasValidModel(const gitem_t *item);
 void SetItemNames(void);
 gitem_t *FindItem(const char *pickup_name);
 
+/* optech2: data-driven definitions (g_defs.c) */
+int G_ModFolders(char folders[][MAX_QPATH], int max_folders);
+void G_ModFolderFile(char *out, size_t size, const char *prefix, const char *folder, const char *suffix);
+int Defs_LoadItems(int item_count);
+
 /* optech2: Lua gameplay scripts (script/g_script.c) */
 void Script_Init(void);
 void Script_Shutdown(void);

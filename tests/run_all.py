@@ -65,6 +65,7 @@ CHECKS = [
     Check("test-mod", "mod/mod_check.py", kind="window", slow=True),
     Check("mod-stack", "mod/stack_check.py"),
     Check("scripts", "mod/script_check.py"),
+    Check("item-defs", "mod/defs_check.py"),
 ]
 
 

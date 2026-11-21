@@ -4965,6 +4965,9 @@ InitItems(void)
 		free(dyn_items);
 	}
 
+	/* optech2: item definitions from the mod folders (g_defs.c) */
+	num_items = Defs_LoadItems(num_items);
+
 	itemlist_len = num_items;
 }
 

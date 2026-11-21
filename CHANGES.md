@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Item definitions in text files: each folder in the mod stack can have `defs/<folder>.items`, read in stack order, with blocks written like map entities. A block for an existing item changes its fields (name, sounds, models, icon, amounts, ammo, flags, rotation); a new classname copies an existing item (`"base"`, behaviour included) and spawns in maps by that classname. Mistakes are printed and skipped (`mods/DEFINITIONS.md`). New check: `tests/mod/defs_check.py`. Scripts and definitions share one helper for the folder order.
 - Gameplay scripts in Lua 5.4.8 (bundled in `src/game/lua`, unmodified): each folder in the mod stack runs `scripts/<folder>.lua`, lowest first, so several mods' scripts run together. Events: `level_start`, `player_spawn`, `item_pickup` (return `false` to refuse); functions for printing, cvars and player health and items (`mods/SCRIPTING.md`). Sandboxed: no io, os, package or debug, no file loading, text chunks only, an instruction limit per call and 64 MB of memory. Errors are printed and the game carries on. Cheat command `lua <code>`. New check: `tests/mod/script_check.py`.
 - Players joining a server get its `fs_mods` (sent just before the game folder; the local player on a listen server already shares it). Other clients just receive an unused cvar.
 - Changing the game folder with sound off (`s_initsound 0`) no longer crashes in the music code's restart.
