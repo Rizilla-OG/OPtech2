@@ -66,6 +66,7 @@ CHECKS = [
     Check("mod-stack", "mod/stack_check.py"),
     Check("scripts", "mod/script_check.py"),
     Check("item-defs", "mod/defs_check.py"),
+    Check("weapon-defs", "mod/weapon_defs_check.py", slow=True),
 ]
 
 

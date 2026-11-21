@@ -1,8 +1,7 @@
 # Item definitions
 
-Mods can change items and add new ones with a text file, no compiler needed.
-This is the first part of the data-driven definitions; weapons' firing and
-monsters come next.
+Mods can change items and add new ones with a text file, no compiler needed:
+pickups, ammo, and how hard weapons hit. Monsters come next.
 
 ## Where the file goes
 
@@ -64,6 +63,49 @@ the HUD shows and `give` and `use` take.
 | `flags` | Kinds, separated by spaces: `weapon ammo armor key powerup health stay_coop melee not_giveable instant_use tech flag`. |
 | `rotate` | `1` spins the item in the map, `0` doesn't. |
 | `precaches` | Extra models, sounds and pictures to load, separated by spaces. |
+
+## Weapon numbers
+
+Weapons also take the numbers their firing code uses. A field a weapon
+doesn't use is ignored; fields left out keep the stock values. A new weapon
+made with `base` fires like its base, with these numbers.
+
+```
+// a shotgun with a wide spray of weak pellets
+{
+"classname" "weapon_shotgun"
+"pellets" "30"
+"damage" "2"
+"spread_h" "1000"
+}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `damage` | Damage of a hit (per pellet for shotguns; a rocket adds 0 to 19 to it). |
+| `kick` | How hard a hit knocks the target back. |
+| `pellets` | Shotguns: pellets per shot (the Super Shotgun splits them between its barrels). |
+| `spread_h`, `spread_v` | Bullets and pellets: sideways and up-down spread. |
+| `speed` | Projectiles: flight speed in units per second. |
+| `radius_damage` | Rockets: the most splash damage. |
+| `damage_radius` | Explosions: how far the splash reaches (for grenades, also the splash damage's reach). |
+
+Which weapon uses which:
+
+| Weapon | Fields |
+| --- | --- |
+| Blaster, HyperBlaster | `damage`, `speed` |
+| Machinegun, Chaingun | `damage`, `kick`, `spread_h`, `spread_v` |
+| Shotgun, Super Shotgun | `damage`, `kick`, `pellets`, `spread_h`, `spread_v` |
+| Railgun | `damage`, `kick` |
+| Grenade Launcher | `damage`, `speed`, `damage_radius` |
+| Hand Grenades | `damage`, `damage_radius` |
+| Rocket Launcher | `damage`, `speed`, `radius_damage`, `damage_radius` |
+| BFG10K | `damage`, `speed`, `damage_radius` |
+
+Quad Damage still multiplies the numbers. How fast a weapon fires comes from
+its animation and isn't a field yet. The mission pack weapons don't read
+these fields yet.
 
 Mistakes (an unknown field, a word where a number goes, a new item without
 `base`) are printed to the console and skipped; the rest of the file still

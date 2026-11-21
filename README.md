@@ -109,6 +109,7 @@ All checks use a temporary HOME, so your own config and saves are never touched.
 - `python3 tests/mod/stack_check.py`: stacked mod folders, override order, joining players
 - `python3 tests/mod/script_check.py`: Lua scripts from three mods, events, sandbox limits
 - `python3 tests/mod/defs_check.py`: item definitions from two mods, a new weapon, mistakes reported
+- `python3 tests/mod/weapon_defs_check.py`: weapon damage, pellets and speed from a definition, against stock
 - `python3 tests/run_all.py`: all of the above
 
 ## License
