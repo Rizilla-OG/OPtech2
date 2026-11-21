@@ -424,6 +424,13 @@ Sys_UnloadGame(void)
 	game_library = NULL;
 }
 
+/* optech2: a symbol of the loaded game library (OPtech2_GetExtension), or NULL */
+void *
+Sys_GetGameProc(const char *sym)
+{
+	return game_library ? dlsym(game_library, sym) : NULL;
+}
+
 void *
 Sys_GetGameAPI(void *parms)
 {

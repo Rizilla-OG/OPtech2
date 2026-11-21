@@ -919,6 +919,11 @@ qboolean ItemHasValidModel(const gitem_t *item);
 void SetItemNames(void);
 gitem_t *FindItem(const char *pickup_name);
 
+/* optech2: the engine's services (g_extension.c): paths for monsters; NULL
+   with an engine that doesn't have them */
+#include "../../common/header/optech2_ext.h"
+extern const optech2_server_import_t *gi_optech2;
+
 /* optech2: data-driven definitions (g_defs.c) */
 int G_ModFolders(char folders[][MAX_QPATH], int max_folders);
 void G_ModFolderFile(char *out, size_t size, const char *prefix, const char *folder, const char *suffix);
