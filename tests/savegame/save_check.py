@@ -56,7 +56,8 @@ def at(milliseconds, command):
 def snapshot_lines(milliseconds, label):
     """Console lines that print a snapshot between two markers."""
     return [at(milliseconds, f"echo snapshot_{label}"), at(milliseconds, "cmd listentities all"),
-            at(milliseconds + 50, "cmd playerinfo"), at(milliseconds + 300, f"echo end_{label}")]
+            at(milliseconds + 50, "cmd playerinfo"), at(milliseconds + 100, "cmd iteminfo"),
+            at(milliseconds + 300, f"echo end_{label}")]
 
 
 def parse_snapshot(log, label):
@@ -69,8 +70,12 @@ def parse_snapshot(log, label):
                 re.findall(r"^(\w+): (-?[\d.]+) (-?[\d.]+) (-?[\d.]+)\s*$", text, re.MULTILINE) if name != "freed"]
     if not info:
         return None
+    weapon = re.search(r"^iteminfo weapon (\S+)", text, re.MULTILINE)
+    inventory = sorted(re.findall(r"^iteminfo inventory (\S+ -?\d+)", text, re.MULTILINE))  # strings: JSON-safe
+    item_entities = sorted(re.findall(r"^iteminfo entity (\S+ \S+ -?\d+ -?\d+ -?\d+)", text, re.MULTILINE))
     return {"time": float(info.group(1)), "health": int(info.group(2)), "ammo": int(info.group(3)),
-            "origin": [float(info.group(index)) for index in (4, 5, 6)], "entities": sorted(entities)}
+            "origin": [float(info.group(index)) for index in (4, 5, 6)], "entities": sorted(entities),
+            "weapon": weapon.group(1) if weapon else None, "inventory": inventory, "item_entities": item_entities}
 
 
 def run_game(home, lines, log_name, data_dir):
@@ -106,6 +111,21 @@ def compare(expected, actual, label, report):
            f"{label}: {len(actual_classes)} entities, same classes as saved ({len(expected_classes)})"
            if expected_classes == actual_classes else
            f"{label}: entity classes differ: {sorted(set(expected_classes) ^ set(actual_classes))[:6]}")
+
+    # items: weapon in hand, inventory, and the item every item entity holds
+    # (a save once lost the item of health packs: same class and position,
+    # but touching one crashed)
+    if "inventory" in expected:
+        report(actual.get("weapon") == expected["weapon"] and actual.get("inventory") == expected["inventory"],
+               f"{label}: weapon {actual.get('weapon')} and {len(actual.get('inventory', []))} inventory items as saved"
+               if actual.get("inventory") == expected["inventory"] else
+               f"{label}: items differ: {sorted(set(expected['inventory']) ^ set(actual.get('inventory', [])))[:6]}")
+        missing = [line for line in actual.get("item_entities", []) if " NONE " in line]
+        report(not missing and actual.get("item_entities") == expected["item_entities"],
+               f"{label}: {len(actual.get('item_entities', []))} item entities, each with its item as saved"
+               if not missing and actual.get("item_entities") == expected["item_entities"] else
+               f"{label}: item entities differ ({len(missing)} without an item): "
+               f"{sorted(set(expected['item_entities']) ^ set(actual.get('item_entities', [])))[:4]}")
 
     # each saved entity must have an entity of its class within the tolerance
     unmatched = []

@@ -1841,6 +1841,63 @@ Cmd_PlayerInfo_f(edict_t *ent)
 		level.time, ent->health, ammo, ent->s.origin[0], ent->s.origin[1], ent->s.origin[2]);
 }
 
+/* an item's name for iteminfo: classname, or "*" and the pickup name */
+static const char *
+ItemInfoName(const gitem_t *item)
+{
+	if (!item)
+	{
+		return "NONE";
+	}
+
+	return item->classname ? item->classname : va("*%s", item->pickup_name ? item->pickup_name : "?");
+}
+
+/*
+ * optech2: "iteminfo" prints the weapon in hand, every item the player
+ * has, and the item of every entity that holds or should hold one, one
+ * line each, for automated tests (cheat).
+ */
+static void
+Cmd_ItemInfo_f(edict_t *ent)
+{
+	int i;
+
+	if (!ent || !ent->client)
+	{
+		return;
+	}
+
+	if ((deathmatch->value || coop->value) && !sv_cheats->value)
+	{
+		gi.cprintf(ent, PRINT_HIGH, "You must run the server with '+set cheats 1' to enable this command.\n");
+		return;
+	}
+
+	gi.cprintf(ent, PRINT_HIGH, "iteminfo weapon %s\n", ItemInfoName(ent->client->pers.weapon));
+
+	for (i = 1; i < itemlist_len; i++)
+	{
+		if (ent->client->pers.inventory[i])
+		{
+			gi.cprintf(ent, PRINT_HIGH, "iteminfo inventory %s %d\n", ItemInfoName(&itemlist[i]),
+				ent->client->pers.inventory[i]);
+		}
+	}
+
+	for (i = game.maxclients + 1; i < globals.num_edicts; i++)
+	{
+		const edict_t *other = &g_edicts[i];
+
+		if (other->inuse && (other->item || other->touch == Touch_Item))
+		{
+			gi.cprintf(ent, PRINT_HIGH, "iteminfo entity %s %s %.0f %.0f %.0f\n",
+				other->classname ? other->classname : "?", ItemInfoName(other->item),
+				other->s.origin[0], other->s.origin[1], other->s.origin[2]);
+		}
+	}
+}
+
 /*
  * optech2: "fxtest [type]" sends a temporary entity of that type (default
  * 200; mods' own types only, TE_MOD_FIRST..255) 128 units in front of the
@@ -2522,6 +2579,10 @@ ClientCommand(edict_t *ent)
 	else if (Q_stricmp(cmd, "playerinfo") == 0) /* optech2 */
 	{
 		Cmd_PlayerInfo_f(ent);
+	}
+	else if (Q_stricmp(cmd, "iteminfo") == 0) /* optech2 */
+	{
+		Cmd_ItemInfo_f(ent);
 	}
 	else if (Q_stricmp(cmd, "fxtest") == 0) /* optech2 */
 	{

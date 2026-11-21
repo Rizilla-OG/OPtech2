@@ -3,7 +3,7 @@
 A small example of a gameplay script, with no game library and nothing to
 compile: one Lua file, `scripts/survival.lua`.
 
-- Players spawn with 75 health, a Shotgun in the inventory and 10 shells
+- Players spawn with 75 health and a Shotgun in hand with 10 shells
   (`+set survival_shells 20` for more).
 - Each player can take two Quad Damage per level; more stay on the floor.
 - Every 10th pickup gives 2 grenades.

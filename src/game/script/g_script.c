@@ -42,6 +42,9 @@
  *                               pickup name, e.g. "Shells"
  *   game.count(player, item)    how many of an item the player has
  *   game.weapon(player)         pickup name of the weapon in hand ("" if none)
+ *   game.use(player, item)      use an item the player has, like the "use"
+ *                               command: a weapon is switched to; true if
+ *                               it was used
  * Players are numbers, 1 to maxclients.
  *
  * Events:
@@ -370,6 +373,28 @@ Script_Weapon(lua_State *L)
 	return 1;
 }
 
+static int
+Script_Use(lua_State *L)
+{
+	edict_t *player = Script_CheckPlayer(L, 1);
+	const gitem_t *item = FindItem(luaL_checkstring(L, 2));
+
+	if (!item)
+	{
+		return luaL_argerror(L, 2, "no such item");
+	}
+
+	if (!item->use || !player->client->pers.inventory[ITEM_INDEX(item)] || player->health < 1)
+	{
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	item->use(player, item);
+	lua_pushboolean(L, true);
+	return 1;
+}
+
 static void
 Script_OpenGameAPI(lua_State *L)
 {
@@ -387,6 +412,7 @@ Script_OpenGameAPI(lua_State *L)
 		{"give", Script_Give},
 		{"count", Script_Count},
 		{"weapon", Script_Weapon},
+		{"use", Script_Use},
 		{NULL, NULL}};
 	int i;
 

@@ -114,7 +114,7 @@ def play_example():
         shutil.copytree(REPO_DIR / "mods" / "survival", user_dir / "survival")
         (user_dir / "baseq2" / "example.cfg").write_text("\n".join([
             "map base1",
-            'delay 3000 "lua print(\'example\', game.health(1), game.count(1, \'Shotgun\'), game.count(1, \'Shells\'))"',
+            'delay 3000 "lua print(\'example\', game.health(1), game.weapon(1), game.count(1, \'Shells\'))"',
             "delay 3300 quit"]) + "\n")
         environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
         try:
@@ -169,9 +169,9 @@ def main():
     example = play_example()
     found = re.search(r"^example\s+(\d+)\s+(\S+)\s+(\d+)$", example, re.M)
     report("Script loaded: scripts/survival.lua" in example and "script error" not in example and
-           bool(found and found.groups() == ("75", "1", "10")),
+           bool(found and found.groups() == ("75", "Shotgun", "10")),
            "the example mod (mods/survival) runs: " +
-           (f"health {found.group(1)}, shotguns {found.group(2)}, {found.group(3)} shells" if found else "no result"))
+           (f"health {found.group(1)}, {found.group(2)} in hand, {found.group(3)} shells" if found else "no result"))
 
     stock = play("stock", False)
     report("Script loaded" not in stock and "script error" not in stock and "Couldn't" not in stock.split("map base1")[-1]
