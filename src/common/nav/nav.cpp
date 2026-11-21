@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "recast/Recast/Include/Recast.h"
+#include "recast/Detour/Include/DetourCommon.h"
 #include "recast/Detour/Include/DetourNavMesh.h"
 #include "recast/Detour/Include/DetourNavMeshBuilder.h"
 #include "recast/Detour/Include/DetourNavMeshQuery.h"
@@ -51,6 +52,9 @@ char *Cmd_Argv(int arg);
 int CM_ForEachSolidTriangle(int contents_mask, void (*emit)(const float *a, const float *b, const float *c, void *user),
 	void *user);
 unsigned CM_MapChecksum(void);
+float CM_NavTrace(const float *start, const float *end, const float *mins, const float *maxs, int contents_mask,
+	float *endpos);
+int CM_PointContents(const float *p, int headnode);
 }
 
 /* what monsters walk on and around (shared.h's CONTENTS_*) */
@@ -64,8 +68,19 @@ static const float NAV_AGENT_CLIMB = 18.0f;
 static const float NAV_MAX_SLOPE = 45.57f; /* acos(0.7) */
 static const int NAV_TILE_CELLS = 64;      /* 512 units */
 static const float NAV_CLEARANCE = 8.0f;   /* kept from walls beyond a monster's half width */
-static const int NAV_FILE_VERSION = 3;
+static const int NAV_FILE_VERSION = 4;
 static const unsigned short NAV_FLAG_WALK = 1;
+
+/* ledge drops: one-way links from a floor's edge to floor up to
+   NAV_MAX_DROP below, flagged by how far they drop (NavDropFlag) so a
+   request's drop_height can leave the deeper ones out */
+static const float NAV_MAX_DROP = 256.0f;
+static const float NAV_DROP_STEP = 64.0f;       /* one flag per 64 units of drop */
+static const unsigned short NAV_FLAG_DROP = 2;  /* the first; NAV_FLAG_DROP << 1 drops up to 128, ... */
+static const int NAV_DROP_BANDS = 4;
+static const unsigned char NAV_AREA_DROP = 1;
+static const float NAV_DROP_SPACING = 32.0f;    /* one link per this much of a ledge */
+static const int NAV_HAZARD = 8 /* LAVA */ | 16 /* SLIME */ | 32 /* WATER */;
 
 /* monster sizes: half its width and its height. A monster uses the
    smallest one it fits (Nav_AgentFor) */
@@ -196,17 +211,60 @@ NavConfig(const NavGeometry &geometry, int agent)
 	return config;
 }
 
-/* one tile's navigation data (Detour's format), or nullptr if it has no
-   floor */
-static unsigned char *
-BuildTile(NavContext &context, const NavGeometry &geometry, rcConfig config, int agent, int tile_x, int tile_y,
-	int *size)
+/* a tile's polygons, kept until its links are known */
+struct NavTile
+{
+	int x, y;
+	rcPolyMesh *polymesh;
+	rcPolyMeshDetail *detail;
+};
+
+/* a ledge drop: from a floor's edge down to the floor below (Recast
+   coordinates) */
+struct NavLink
+{
+	float start[3];
+	float end[3];
+};
+
+static unsigned short
+NavDropFlag(float drop)
+{
+	int band = (int)ceilf(drop / NAV_DROP_STEP) - 1;
+
+	band = band < 0 ? 0 : (band >= NAV_DROP_BANDS ? NAV_DROP_BANDS - 1 : band);
+	return (unsigned short)(NAV_FLAG_DROP << band);
+}
+
+/* the drop flags a request may use: the bands no deeper than drop_height */
+static unsigned short
+NavDropFlags(float drop_height)
+{
+	unsigned short flags = 0;
+
+	for (int band = 0; band < NAV_DROP_BANDS; band++)
+	{
+		if ((band + 1) * NAV_DROP_STEP <= drop_height + 0.5f)
+		{
+			flags |= (unsigned short)(NAV_FLAG_DROP << band);
+		}
+	}
+
+	return flags;
+}
+
+/* one tile's polygons into tile->polymesh and tile->detail; false if it
+   has no floor */
+static bool
+BuildTile(NavContext &context, const NavGeometry &geometry, rcConfig config, NavTile *tile)
 {
 	const float tile_world = NAV_TILE_CELLS * NAV_CELL_SIZE;
 	const float border = config.borderSize * config.cs;
-	unsigned char *data = nullptr;
+	const int tile_x = tile->x, tile_y = tile->y;
+	bool built = false;
 
-	*size = 0;
+	tile->polymesh = nullptr;
+	tile->detail = nullptr;
 	config.bmin[0] = geometry.bmin[0] + tile_x * tile_world - border;
 	config.bmin[2] = geometry.bmin[2] + tile_y * tile_world - border;
 	config.bmax[0] = geometry.bmin[0] + (tile_x + 1) * tile_world + border;
@@ -229,7 +287,7 @@ BuildTile(NavContext &context, const NavGeometry &geometry, rcConfig config, int
 
 	if (triangles.empty())
 	{
-		return nullptr;
+		return false;
 	}
 
 	const int triangle_count = (int)(triangles.size() / 3);
@@ -296,6 +354,48 @@ BuildTile(NavContext &context, const NavGeometry &geometry, rcConfig config, int
 		polymesh->flags[i] = (polymesh->areas[i] == RC_WALKABLE_AREA) ? NAV_FLAG_WALK : 0;
 	}
 
+	tile->polymesh = polymesh;
+	tile->detail = detail;
+	polymesh = nullptr;
+	detail = nullptr;
+	built = true;
+
+done:
+	rcFreeHeightField(heightfield);
+	rcFreeCompactHeightfield(compact);
+	rcFreeContourSet(contours);
+	rcFreePolyMesh(polymesh);
+	rcFreePolyMeshDetail(detail);
+	return built;
+}
+
+/* a built tile as Detour data, with the drops that start in it; nullptr
+   if it fails */
+static unsigned char *
+TileData(const NavTile &tile, int agent, const std::vector<NavLink> &links, int *size)
+{
+	const rcPolyMesh *polymesh = tile.polymesh;
+	const rcPolyMeshDetail *detail = tile.detail;
+	const int tile_x = tile.x, tile_y = tile.y;
+	std::vector<float> link_verts, link_radii;
+	std::vector<unsigned short> link_flags;
+	std::vector<unsigned char> link_areas, link_dirs;
+	std::vector<unsigned int> link_ids;
+	unsigned char *data = nullptr;
+
+	*size = 0;
+
+	for (size_t i = 0; i < links.size(); i++)
+	{
+		link_verts.insert(link_verts.end(), links[i].start, links[i].start + 3);
+		link_verts.insert(link_verts.end(), links[i].end, links[i].end + 3);
+		link_radii.push_back(NAV_CELL_SIZE);
+		link_flags.push_back(NavDropFlag(links[i].start[1] - links[i].end[1]));
+		link_areas.push_back(NAV_AREA_DROP);
+		link_dirs.push_back(0); /* one way: down */
+		link_ids.push_back((unsigned int)i);
+	}
+
 	{
 		dtNavMeshCreateParams params;
 
@@ -320,9 +420,20 @@ BuildTile(NavContext &context, const NavGeometry &geometry, rcConfig config, int
 		params.tileLayer = 0;
 		rcVcopy(params.bmin, polymesh->bmin);
 		rcVcopy(params.bmax, polymesh->bmax);
-		params.cs = config.cs;
-		params.ch = config.ch;
+		params.cs = NAV_CELL_SIZE;
+		params.ch = NAV_CELL_HEIGHT;
 		params.buildBvTree = true;
+
+		if (!links.empty())
+		{
+			params.offMeshConVerts = link_verts.data();
+			params.offMeshConRad = link_radii.data();
+			params.offMeshConFlags = link_flags.data();
+			params.offMeshConAreas = link_areas.data();
+			params.offMeshConDir = link_dirs.data();
+			params.offMeshConUserID = link_ids.data();
+			params.offMeshConCount = (int)links.size();
+		}
 
 		if (!dtCreateNavMeshData(&params, &data, size))
 		{
@@ -331,13 +442,184 @@ BuildTile(NavContext &context, const NavGeometry &geometry, rcConfig config, int
 		}
 	}
 
-done:
-	rcFreeHeightField(heightfield);
-	rcFreeCompactHeightfield(compact);
-	rcFreeContourSet(contours);
-	rcFreePolyMesh(polymesh);
-	rcFreePolyMeshDetail(detail);
 	return data;
+}
+
+/* is this edge of a polygon the floor's end (no polygon beyond it)? */
+static bool
+NavOpenEdge(const dtMeshTile *tile, const dtPoly *poly, int edge)
+{
+	if (poly->neis[edge] == 0)
+	{
+		return true;
+	}
+
+	if (!(poly->neis[edge] & DT_EXT_LINK))
+	{
+		return false;
+	}
+
+	/* on the tile's side: open unless a polygon in the next tile joins it */
+	for (unsigned int k = poly->firstLink; k != DT_NULL_LINK; k = tile->links[k].next)
+	{
+		if (tile->links[k].edge == edge)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/* the ledge drops for a size's mesh: along every open edge of the floor,
+   step out past the edge (a wall in the way: none), trace down to floor
+   no more than NAV_MAX_DROP below that isn't water, lava or slime and has
+   mesh near it */
+static void
+FindDrops(const dtNavMesh *mesh, const dtNavMeshQuery *query, int agent, std::vector<NavLink> &links)
+{
+	const float radius = NAV_AGENTS[agent].radius;
+	const float clear = radius + NAV_CLEARANCE;                     /* how far the mesh stays from a ledge's lip */
+	const float out = clear * 2 + NAV_CELL_SIZE;                     /* past the lip, onto the lower floor's mesh */
+	const float mins[3] = {-radius, -radius, 0};
+	const float maxs[3] = {radius, radius, NAV_AGENTS[agent].height - NAV_AGENT_CLIMB};
+	const float extents[3] = {clear + 16.0f, NAV_AGENT_CLIMB, clear + 16.0f};
+	dtQueryFilter filter;
+
+	filter.setIncludeFlags(NAV_FLAG_WALK);
+
+	for (int t = 0; t < mesh->getMaxTiles(); t++)
+	{
+		const dtMeshTile *tile = mesh->getTile(t);
+
+		if (!tile || !tile->header)
+		{
+			continue;
+		}
+
+		for (int p = 0; p < tile->header->polyCount; p++)
+		{
+			const dtPoly *poly = &tile->polys[p];
+			float center[3] = {0, 0, 0};
+
+			if (poly->getType() != DT_POLYTYPE_GROUND)
+			{
+				continue;
+			}
+
+			for (int v = 0; v < poly->vertCount; v++)
+			{
+				dtVadd(center, center, &tile->verts[poly->verts[v] * 3]);
+			}
+
+			dtVscale(center, center, 1.0f / poly->vertCount);
+
+			for (int v = 0; v < poly->vertCount; v++)
+			{
+				const float *a = &tile->verts[poly->verts[v] * 3];
+				const float *b = &tile->verts[poly->verts[(v + 1) % poly->vertCount] * 3];
+				const float length = sqrtf(dtSqr(b[0] - a[0]) + dtSqr(b[2] - a[2]));
+
+				if (length < 1.0f || !NavOpenEdge(tile, poly, v))
+				{
+					continue;
+				}
+
+				/* the edge's outward side, in Recast's x and z */
+				float normal[2] = {(b[2] - a[2]) / length, (a[0] - b[0]) / length};
+
+				if (normal[0] * ((a[0] + b[0]) * 0.5f - center[0]) + normal[1] * ((a[2] + b[2]) * 0.5f - center[2]) < 0)
+				{
+					normal[0] = -normal[0];
+					normal[1] = -normal[1];
+				}
+
+				const int samples = length > NAV_DROP_SPACING ? (int)(length / NAV_DROP_SPACING) : 1;
+
+				for (int i = 0; i < samples; i++)
+				{
+					const float along = (i + 0.5f) / samples;
+					float edge_r[3], edge_q[3], top[3], below[3], outside[3], land[3], ground[3], landing_r[3],
+						on_mesh[3], on_mesh_q[3];
+					dtPolyRef landing = 0;
+
+					dtVlerp(edge_r, a, b, along);
+					/* a little inside, so the link starts in this tile and on this polygon */
+					edge_r[0] -= normal[0];
+					edge_r[2] -= normal[1];
+					ToQuake(edge_r, edge_q);
+
+					/* the floor under the edge */
+					memcpy(top, edge_q, sizeof(top));
+					top[2] += NAV_AGENT_CLIMB;
+					memcpy(below, edge_q, sizeof(below));
+					below[2] -= NAV_AGENT_CLIMB;
+
+					const float floor = CM_NavTrace(top, below, mins, maxs, NAV_SOLID, ground);
+
+					if (floor < 0 || floor >= 1)
+					{
+						continue;
+					}
+
+					/* step out past the lip at step height: no wall in the way */
+					ground[2] += NAV_AGENT_CLIMB;
+					outside[0] = ground[0] + normal[0] * out;
+					outside[1] = ground[1] - normal[1] * out; /* Recast z is -y */
+					outside[2] = ground[2];
+
+					if (CM_NavTrace(ground, outside, mins, maxs, NAV_SOLID, nullptr) != 1.0f)
+					{
+						continue;
+					}
+
+					/* down to the floor below */
+					memcpy(below, outside, sizeof(below));
+					below[2] -= NAV_MAX_DROP + NAV_AGENT_CLIMB;
+
+					const float fall = CM_NavTrace(outside, below, mins, maxs, NAV_SOLID, land);
+					const float drop = ground[2] - NAV_AGENT_CLIMB - land[2];
+
+					if (fall <= 0 || fall >= 1 || drop <= NAV_AGENT_CLIMB + 1.0f || drop > NAV_MAX_DROP)
+					{
+						continue;
+					}
+
+					land[2] += 1.0f;
+
+					if (CM_PointContents(land, 0) & NAV_HAZARD)
+					{
+						continue;
+					}
+
+					/* the lower floor's mesh near where it lands, in reach */
+					land[2] -= 1.0f;
+					ToRecast(land, landing_r);
+
+					if (dtStatusFailed(query->findNearestPoly(landing_r, extents, &filter, &landing, on_mesh)) ||
+						!landing || fabsf(on_mesh[1] - landing_r[1]) > NAV_AGENT_CLIMB)
+					{
+						continue;
+					}
+
+					ToQuake(on_mesh, on_mesh_q);
+					land[2] += NAV_AGENT_CLIMB;
+					on_mesh_q[2] += NAV_AGENT_CLIMB;
+
+					if (CM_NavTrace(land, on_mesh_q, mins, maxs, NAV_SOLID, nullptr) != 1.0f)
+					{
+						continue;
+					}
+
+					NavLink link;
+
+					memcpy(link.start, edge_r, sizeof(link.start));
+					memcpy(link.end, on_mesh, sizeof(link.end));
+					links.push_back(link);
+				}
+			}
+		}
+	}
 }
 
 static unsigned
@@ -392,18 +674,79 @@ BuildMesh(const NavGeometry &geometry, int agent)
 		return nullptr;
 	}
 
+	/* the floor, tile by tile */
+	std::vector<NavTile> tiles;
+	const std::vector<NavLink> no_links;
+
 	for (int y = 0; y < tiles_y; y++)
 	{
 		for (int x = 0; x < tiles_x; x++)
 		{
+			NavTile tile = {x, y, nullptr, nullptr};
 			int size;
-			unsigned char *data = BuildTile(context, geometry, config, agent, x, y, &size);
+
+			if (!BuildTile(context, geometry, config, &tile))
+			{
+				continue;
+			}
+
+			unsigned char *data = TileData(tile, agent, no_links, &size);
 
 			if (data && dtStatusFailed(mesh->addTile(data, size, DT_TILE_FREE_DATA, 0, nullptr)))
 			{
 				dtFree(data);
 			}
+
+			tiles.push_back(tile);
 		}
+	}
+
+	/* then the ledge drops, found on that floor: each tile with some is
+	   made again with its drops (a link belongs to the tile it starts in) */
+	dtNavMeshQuery *query = dtAllocNavMeshQuery();
+	std::vector<NavLink> drops;
+
+	if (query && dtStatusSucceed(query->init(mesh, 2048)))
+	{
+		FindDrops(mesh, query, agent, drops);
+	}
+
+	dtFreeNavMeshQuery(query);
+
+	for (NavTile &tile : tiles)
+	{
+		std::vector<NavLink> tile_drops;
+
+		for (const NavLink &drop : drops)
+		{
+			int x, y;
+
+			mesh->calcTileLoc(drop.start, &x, &y);
+
+			if (x == tile.x && y == tile.y)
+			{
+				tile_drops.push_back(drop);
+			}
+		}
+
+		if (!tile_drops.empty())
+		{
+			int size;
+			unsigned char *data = TileData(tile, agent, tile_drops, &size);
+
+			if (data)
+			{
+				mesh->removeTile(mesh->getTileRefAt(tile.x, tile.y, 0), nullptr, nullptr);
+
+				if (dtStatusFailed(mesh->addTile(data, size, DT_TILE_FREE_DATA, 0, nullptr)))
+				{
+					dtFree(data);
+				}
+			}
+		}
+
+		rcFreePolyMesh(tile.polymesh);
+		rcFreePolyMeshDetail(tile.detail);
 	}
 
 	return mesh;
@@ -613,7 +956,7 @@ NavPolygonCount(int agent)
 
 		if (tile && tile->header)
 		{
-			count += tile->header->polyCount;
+			count += tile->header->polyCount - tile->header->offMeshConCount; /* drops are polygons to Detour */
 		}
 	}
 
@@ -634,7 +977,28 @@ Nav_Free(void)
 	nav_mapname[0] = '\0';
 }
 
-/* "Navigation: base1, 1211 polygons, built in 117 ms (medium 900, large 500)" */
+/* ledge drops in a size's mesh */
+static int
+NavDropCount(int agent)
+{
+	int count = 0;
+
+	const dtNavMesh *mesh = nav_meshes[agent];
+
+	for (int i = 0; mesh && i < mesh->getMaxTiles(); i++)
+	{
+		const dtMeshTile *tile = mesh->getTile(i);
+
+		if (tile && tile->header)
+		{
+			count += tile->header->offMeshConCount;
+		}
+	}
+
+	return count;
+}
+
+/* "Navigation: base1, 1211 polygons, built in 117 ms (medium 900, large 500), 40 drops" */
 static void
 NavPrintInfo(void)
 {
@@ -648,8 +1012,8 @@ NavPrintInfo(void)
 			NavPolygonCount(a));
 	}
 
-	Com_Printf("Navigation: %s, %d polygons, %s in %d ms (%s)\n", nav_mapname, NavPolygonCount(0),
-		nav_from_cache ? "loaded" : "built", nav_build_msec, sizes);
+	Com_Printf("Navigation: %s, %d polygons, %s in %d ms (%s), %d drops\n", nav_mapname, NavPolygonCount(0),
+		nav_from_cache ? "loaded" : "built", nav_build_msec, sizes, NavDropCount(0));
 }
 
 /* the size a monster of this half width and height uses: the smallest it
@@ -740,7 +1104,7 @@ NavFindPath(int agent, const float *start, const float *goal, float (*points)[3]
 		return 0;
 	}
 
-	filter.setIncludeFlags(NAV_FLAG_WALK);
+	filter.setIncludeFlags(NAV_FLAG_WALK | NavDropFlags(NAV_MAX_DROP)); /* drops too */
 	ToRecast(start, start_r);
 	ToRecast(goal, goal_r);
 
@@ -837,6 +1201,24 @@ Nav_ForEachEdge(int agent, const float *center, float radius,
 				edges++;
 			}
 		}
+
+		/* the ledge drops, from the edge down to where they land */
+		for (int i = 0; i < tile->header->offMeshConCount; i++)
+		{
+			const float *link = tile->offMeshCons[i].pos;
+			const float dx = link[0] - center_r[0], dy = link[1] - center_r[1], dz = link[2] - center_r[2];
+			float qa[3], qb[3];
+
+			if (dx * dx + dy * dy + dz * dz > radius * radius)
+			{
+				continue;
+			}
+
+			ToQuake(link, qa);
+			ToQuake(link + 3, qb);
+			edge(qa, qb, user);
+			edges++;
+		}
 	}
 
 	return edges;
@@ -927,7 +1309,9 @@ Nav_GetPathToGoalSized(const optech2_path_request_t *request, optech2_path_info_
 	/* how far from the floor the start and goal may be: request, else defaults */
 	extents[0] = extents[2] = request->radius > 0 ? request->radius : 32.0f;
 	extents[1] = request->max_height > 0 ? request->max_height : 64.0f; /* Recast: y is up */
-	filter.setIncludeFlags(NAV_FLAG_WALK);
+	/* ledge drops if it may walk off ledges, no deeper than drop_height */
+	filter.setIncludeFlags(NAV_FLAG_WALK | ((request->path_flags & OPTECH2_PATH_WALK_OFF_LEDGE) ?
+		NavDropFlags(request->drop_height) : 0));
 	ToRecast(request->start, start_r);
 	ToRecast(request->goal, goal_r);
 
@@ -990,10 +1374,12 @@ Nav_GetPathToGoalSized(const optech2_path_request_t *request, optech2_path_info_
 	}
 
 	/* corners[0] is where the start meets the floor: move toward the first
-	   corner farther than move_dist, and the one after it */
+	   corner farther than move_dist, and the one after it. A drop's start
+	   is flagged: its end, the corner after, is never passed over */
 	next = 1;
 
-	while (next < corner_count - 1 && Distance(request->start, corners[next]) <= request->move_dist)
+	while (next < corner_count - 1 && Distance(request->start, corners[next]) <= request->move_dist &&
+		!(corner_flags[next - 1] & DT_STRAIGHTPATH_OFFMESH_CONNECTION))
 	{
 		next++;
 	}
@@ -1001,6 +1387,12 @@ Nav_GetPathToGoalSized(const optech2_path_request_t *request, optech2_path_info_
 	if (next >= corner_count)
 	{
 		next = corner_count - 1;
+	}
+
+	/* at a drop's start: walk off the ledge toward where it lands */
+	if (next > 0 && (corner_flags[next - 1] & DT_STRAIGHTPATH_OFFMESH_CONNECTION))
+	{
+		info->link_type = OPTECH2_PATH_LINK_WALK_OFF_LEDGE;
 	}
 
 	memcpy(info->first_move_point, corners[next], sizeof(info->first_move_point));

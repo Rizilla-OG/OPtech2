@@ -31,6 +31,11 @@
 
 #define DI_NODIR -1
 
+/* optech2: how far monsters drop off ledges on their paths, and how fast
+   they go off the edge */
+#define MONSTER_DROP_HEIGHT 256
+#define MONSTER_DROP_SPEED 100
+
 int c_yes, c_no;
 
 /* this is used for communications out of
@@ -877,6 +882,66 @@ SV_CloseEnough(const edict_t *ent, const edict_t *goal, float dist)
 	return true;
 }
 
+/* optech2: a step toward to_point that may leave the floor (SV_movestep
+   refuses to walk off an edge). Once nothing is under it, it falls, carried
+   on toward where the path lands, and asks for a path when it lands. */
+static qboolean
+M_NavWalkOff(edict_t *ent, const vec3_t to_point, float dist)
+{
+	vec3_t direction, end, below;
+	trace_t trace;
+	float delta;
+
+	direction[0] = to_point[0];
+	direction[1] = to_point[1];
+	direction[2] = 0;
+
+	if (VectorNormalize(direction) < 1)
+	{
+		return false;
+	}
+
+	/* turned toward it first */
+	delta = anglemod(ent->s.angles[YAW] - ent->ideal_yaw);
+
+	if ((delta > 45) && (delta < 315))
+	{
+		return true;
+	}
+
+	VectorMA(ent->s.origin, dist, direction, end);
+	trace = gi.trace(ent->s.origin, ent->mins, ent->maxs, end, ent, MASK_MONSTERSOLID);
+
+	if (trace.allsolid || trace.startsolid || (trace.fraction < 1))
+	{
+		return false;
+	}
+
+	VectorCopy(end, ent->s.origin);
+	VectorCopy(end, below);
+	below[2] -= 1;
+	trace = gi.trace(ent->s.origin, ent->mins, ent->maxs, below, ent, MASK_MONSTERSOLID);
+
+	if (trace.fraction == 1)
+	{
+		/* off the edge */
+		ent->groundentity = NULL;
+		VectorScale(direction, MONSTER_DROP_SPEED, ent->velocity);
+		ent->monsterinfo.nav_link_type = OPTECH2_PATH_LINK_WALK;
+		ent->monsterinfo.nav_retry_time = 0;
+
+		if (g_monster_nav->value >= 2)
+		{
+			gi.dprintf("%s walks off a ledge at %.0f %.0f %.0f\n", ent->classname, ent->s.origin[0],
+				ent->s.origin[1], ent->s.origin[2]);
+		}
+	}
+
+	gi.linkentity(ent);
+	G_TouchTriggers(ent);
+	return true;
+}
+
 /*
  * optech2: a step along the engine's navigation path to goal (walking
  * monsters only, when the engine offers paths and g_monster_nav is on), on
@@ -918,17 +983,26 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 		request.start[2] += ent->mins[2]; /* the feet */
 		VectorCopy(goal->s.origin, request.goal);
 		request.goal[2] += goal->mins[2];
-		request.path_flags = OPTECH2_PATH_WALK;
+		request.path_flags = OPTECH2_PATH_WALK | OPTECH2_PATH_WALK_OFF_LEDGE;
+		request.drop_height = MONSTER_DROP_HEIGHT;
 		request.move_dist = dist;
 
 		/* the mesh for its size: half its width, its height */
 		gi_optech2->GetPathToGoalSized(&request, &info, Q_max(Q_max(-ent->mins[0], ent->maxs[0]), Q_max(-ent->mins[1], ent->maxs[1])), ent->maxs[2] - ent->mins[2]);
 		ent->monsterinfo.nav_has_point = (info.return_code == OPTECH2_PATH_IN_PROGRESS);
+		ent->monsterinfo.nav_link_type = info.link_type;
 
 		if (ent->monsterinfo.nav_has_point)
 		{
 			VectorCopy(info.first_move_point, ent->monsterinfo.nav_move_point);
 			ent->monsterinfo.nav_retry_time = level.time + 0.25f + (ent - g_edicts) % 5 * 0.02f;
+
+			/* walking off a ledge: past the mesh's edge, where a new path
+			   would turn it back; it asks again once it falls */
+			if (info.link_type == OPTECH2_PATH_LINK_WALK_OFF_LEDGE)
+			{
+				ent->monsterinfo.nav_retry_time = level.time + 2.0f;
+			}
 		}
 		else
 		{
@@ -945,6 +1019,12 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 
 	if (!SV_StepDirection(ent, vectoyaw(to_point), dist))
 	{
+		/* at a ledge the path drops from: step off it */
+		if ((ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_WALK_OFF_LEDGE) && M_NavWalkOff(ent, to_point, dist))
+		{
+			return true;
+		}
+
 		ent->monsterinfo.nav_retry_time = 0; /* blocked (another monster?): ask again */
 		return false;
 	}
