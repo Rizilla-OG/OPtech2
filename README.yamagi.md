@@ -177,7 +177,7 @@ Checked with:
 [![8.31RR7](https://img.youtube.com/vi/VAFs1HtQU_0/hqdefault.jpg)](https://www.youtube.com/watch?v=VAFs1HtQU_0)
 
 
-### Goals, fully finished goals could be checked in [here](CHANGELOG):
+### Goals, fully finished goals could be checked in [here](CHANGELOG.old):
 
 * [ ] ReRelease maps: shows shadow in the middle of model,
 * [ ] soft: fix crash with md5 models in player model select and ASAN=1,

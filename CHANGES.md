@@ -1,9 +1,10 @@
 # OPtech2 changes
 
-Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGELOG`.
+Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake II Remaster) is in `CHANGELOG.old`.
 
 ## Unreleased
 
+- Yamagi's changelog renamed `CHANGELOG.old`; OpenTech2's own changes are in this file.
 - `SECURITY.md`: what counts as a security problem in the engine and the game library, and how to report one privately.
 - Fixed: the HUD showed during Quake II 64's camera scenes and level ends; like the re-release, it is hidden in intermissions on Quake II 64 levels and in deathmatch.
 - Website: the M1 download is replaced by the M2 preview (an interim build with the new names).

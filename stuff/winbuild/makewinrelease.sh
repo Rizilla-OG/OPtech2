@@ -150,7 +150,7 @@ cp -r stuff/mapfixes/juggernaut/ $OUTDIR/misc/mapfixes/
 for FILE in $(ls -1 doc/) ; do
 	cp doc/$FILE $OUTDIR/misc/docs/yquake2/${FILE%.md}.txt
 done
-cp CHANGELOG $OUTDIR/misc/docs/yquake2/CHANGELOG.txt
+cp CHANGELOG.old $OUTDIR/misc/docs/yquake2/CHANGELOG.txt
 cp LICENSE $OUTDIR/misc/docs/yquake2/LICENSE.txt
 cp README.md $OUTDIR/misc/docs/yquake2/README.txt
 
@@ -159,7 +159,7 @@ cd $CTF
 make clean
 make -j4
 cp release/game.dll $OUTDIR/ctf/
-cp CHANGELOG $OUTDIR/misc/docs/ctf/CHANGELOG.txt
+cp CHANGELOG.old $OUTDIR/misc/docs/ctf/CHANGELOG.txt
 cp LICENSE $OUTDIR/misc/docs/ctf/LICENSE.txt
 cp README.md $OUTDIR/misc/docs/ctf/README.txt
 
@@ -169,7 +169,7 @@ make clean
 make -j4
 cp release/game.dll $OUTDIR/rogue/
 cp -r stuff/mapfixes $OUTDIR/misc/mapfixes/rogue
-cp CHANGELOG $OUTDIR/misc/docs/rogue/CHANGELOG.txt
+cp CHANGELOG.old $OUTDIR/misc/docs/rogue/CHANGELOG.txt
 cp LICENSE $OUTDIR/misc/docs/rogue/LICENSE.txt
 cp README.md $OUTDIR/misc/docs/rogue/README.txt
 
@@ -179,7 +179,7 @@ make clean
 make -j4
 cp release/game.dll $OUTDIR/xatrix/
 cp -r stuff/mapfixes $OUTDIR/misc/mapfixes/xatrix
-cp CHANGELOG $OUTDIR/misc/docs/xatrix/CHANGELOG.txt
+cp CHANGELOG.old $OUTDIR/misc/docs/xatrix/CHANGELOG.txt
 cp LICENSE $OUTDIR/misc/docs/xatrix/LICENSE.txt
 cp README.md $OUTDIR/misc/docs/xatrix/README.txt
 
