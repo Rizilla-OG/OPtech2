@@ -36,9 +36,9 @@ static struct
         struct {
             char    text[24];
         } table_cells[6];
-    } table_rows[11]; // just enough to store 8 levels + header + total (+ one slack)
+    } table_rows[11] {}; // just enough to store 8 levels + header + total (+ one slack)
 
-    size_t column_widths[6];
+    size_t column_widths[6] {};
     int32_t num_rows = 0;
     int32_t num_columns = 0;
 } hud_temp;
@@ -57,12 +57,12 @@ struct cl_centerprint_t {
     std::vector<cl_bind_t> binds; // binds
 
     std::vector<std::string> lines;
-    bool        instant; // don't type out
+    bool        instant {}; // don't type out
 
-    size_t      current_line; // current line we're typing out
-    size_t      line_count; // byte count to draw on current line
-    bool        finished; // done typing it out
-    uint64_t    time_tick, time_off; // time to remove at
+    size_t      current_line {}; // current line we're typing out
+    size_t      line_count {}; // byte count to draw on current line
+    bool        finished {}; // done typing it out
+    uint64_t    time_tick {}, time_off {}; // time to remove at
 };
 
 inline bool CG_ViewingLayout(const player_state_t *ps)
@@ -92,16 +92,16 @@ constexpr size_t MAX_NOTIFY = 8;
 
 struct cl_notify_t {
     std::string     message; // utf8 message
-    bool            is_active; // filled or not
-    bool            is_chat; // green or not
-    uint64_t        time; // rotate us when < CL_Time()
+    bool            is_active {}; // filled or not
+    bool            is_chat {}; // green or not
+    uint64_t        time {}; // rotate us when < CL_Time()
 };
 
 // per-splitscreen client hud storage
 struct hud_data_t {
-    std::array<cl_centerprint_t, MAX_CENTER_PRINTS> centers; // list of centers
+    std::array<cl_centerprint_t, MAX_CENTER_PRINTS> centers {}; // list of centers
     std::optional<size_t> center_index; // current index we're drawing, or unset if none left
-    std::array<cl_notify_t, MAX_NOTIFY> notify; // list of notifies
+    std::array<cl_notify_t, MAX_NOTIFY> notify {}; // list of notifies
 };
 
 static std::array<hud_data_t, MAX_SPLIT_PLAYERS> hud_data;
@@ -139,18 +139,18 @@ static void CG_AddNotify(hud_data_t &data, const char *msg, bool is_chat)
     if (scr_maxlines->integer <= 0)
         return;
 
-    const int max = min(MAX_NOTIFY, (size_t)scr_maxlines->integer);
+    const size_t max_lines = min(MAX_NOTIFY, (size_t)scr_maxlines->integer);
 
-    for (; i < max; i++)
+    for (; i < max_lines; i++)
         if (!data.notify[i].is_active)
             break;
 
     // none left, so expire the topmost one
-    if (i == max)
+    if (i == max_lines)
     {
         data.notify[0].time = 0;
         CG_Notify_CheckExpire(data);
-        i = max - 1;
+        i = max_lines - 1;
     }
     
     data.notify[i].message.assign(msg);
@@ -174,7 +174,7 @@ static void CG_DrawNotify(int32_t isplit, vrect_t hud_vrect, vrect_t hud_safe, i
 
     if (ui_acc_contrast->integer)
     {
-        for (auto& msg : data.notify)
+        for (const auto& msg : data.notify)
         {
             if (!msg.is_active || !msg.message.length())
                 break;
@@ -187,7 +187,7 @@ static void CG_DrawNotify(int32_t isplit, vrect_t hud_vrect, vrect_t hud_safe, i
     }
 
     y = (hud_vrect.y * scale) + hud_safe.y;
-    for (auto &msg : data.notify)
+    for (const auto &msg : data.notify)
     {
         if (!msg.is_active)
             break;
@@ -218,7 +218,6 @@ static int CG_DrawHUDString (const char *string, int x, int y, int centerwidth, 
 {
     int     margin;
     char    line[1024];
-    int     width;
     int     i;
 
     margin = x;
@@ -226,7 +225,7 @@ static int CG_DrawHUDString (const char *string, int x, int y, int centerwidth, 
     while (*string)
     {
         // scan out one line of text from the string
-        width = 0;
+        int width = 0;
         while (*string && *string != '\n')
             line[width++] = *string++;
         line[width] = 0;
@@ -514,7 +513,7 @@ static void CG_DrawCenterString( const player_state_t *ps, const vrect_t &hud_vr
     {
         for (size_t i = 0; i < center.lines.size(); i++)
         {
-            auto &line = center.lines[i];
+            const auto &line = center.lines[i];
 
             cgi.SCR_SetAltTypeface(ui_acc_alttypeface->integer && true);
 
@@ -532,7 +531,7 @@ static void CG_DrawCenterString( const player_state_t *ps, const vrect_t &hud_vr
             y += lineHeight;
         }
 
-        for (auto &bind : center.binds)
+        for (const auto &bind : center.binds)
         {
             y += lineHeight * 2;
             cgi.SCR_DrawBind(isplit, bind.bind.c_str(), bind.purpose.c_str(), (hud_vrect.x + (hud_vrect.width / 2)) * scale, y, scale);
@@ -580,7 +579,7 @@ static void CG_DrawCenterString( const player_state_t *ps, const vrect_t &hud_vr
     {
         cgi.SCR_SetAltTypeface(ui_acc_alttypeface->integer && true);
 
-        auto &line = center.lines[i];
+        const auto &line = center.lines[i];
 
         buffer[0] = 0;
 
@@ -676,7 +675,8 @@ CG_DrawField
 */
 static void CG_DrawField (int x, int y, int color, int width, int value, int scale)
 {
-    char    num[16], *ptr;
+    char    num[16];
+    const char *ptr;
     int     l;
     int     frame;
 
@@ -897,7 +897,7 @@ static void CG_ExecuteLayoutString (const char *s, vrect_t hud_vrect, vrect_t hu
                     cgi.Com_Error("client >= MAX_CLIENTS");
             }
 
-            int score, ping;
+            int score;
 
             token = COM_Parse (&s);
             if (!skip_depth)
@@ -906,7 +906,7 @@ static void CG_ExecuteLayoutString (const char *s, vrect_t hud_vrect, vrect_t hu
             token = COM_Parse (&s);
             if (!skip_depth)
             {
-                ping = atoi(token);
+                const int ping = atoi(token);
 
                 if (!scr_usekfont->integer)
                     CG_DrawString (x + 32 * scale, y, scale, cgi.CL_GetClientName(value));
@@ -1250,13 +1250,13 @@ static void CG_ExecuteLayoutString (const char *s, vrect_t hud_vrect, vrect_t hu
 
                 if (index < 0 || index >= MAX_CONFIGSTRINGS)
                     cgi.Com_Error("Bad stat_string index");
-                const char *s = cgi.Localize(cgi.get_configstring(index), nullptr, 0);
+                const char *localized = cgi.Localize(cgi.get_configstring(index), nullptr, 0);
                 if (!scr_usekfont->integer)
-                    CG_DrawString (x - (strlen(s) * CONCHAR_WIDTH * scale), y, scale, s);
+                    CG_DrawString (x - (strlen(localized) * CONCHAR_WIDTH * scale), y, scale, localized);
                 else
                 {
-                    vec2_t size = cgi.SCR_MeasureFontString(s, scale);
-                    cgi.SCR_DrawFontString(s, x - size.x, y - (font_y_offset * scale), scale, rgba_white, true, text_align_t::LEFT);
+                    vec2_t size = cgi.SCR_MeasureFontString(localized, scale);
+                    cgi.SCR_DrawFontString(localized, x - size.x, y - (font_y_offset * scale), scale, rgba_white, true, text_align_t::LEFT);
                 }
             }
             continue;
@@ -1641,7 +1641,7 @@ constexpr size_t DISPLAY_ITEMS   = 19;
 static void CG_DrawInventory(const player_state_t *ps, const std::array<int16_t, MAX_ITEMS> &inventory, vrect_t hud_vrect, int32_t scale)
 {
     int     i;
-    int     num, selected_num, item;
+    int     num, selected_num;
     int     index[MAX_ITEMS];
     int     x, y;
     int     width, height;
@@ -1686,7 +1686,7 @@ static void CG_DrawInventory(const player_state_t *ps, const std::array<int16_t,
 
     for (i=top ; i<num && i < top+DISPLAY_ITEMS ; i++)
     {
-        item = index[i];
+        const int item = index[i];
         if (item == selected) // draw a blinky cursor by the selected item
         {
             if ( (cgi.CL_ClientRealTime() * 10) & 1)

@@ -46,7 +46,7 @@ uint32_t CG_GetOwnedWeaponWheelWeapons(const player_state_t *ps)
 
 int16_t CG_GetWeaponWheelAmmoCount(const player_state_t *ps, int32_t ammo_id)
 {
-	uint16_t ammo = G_GetAmmoStat((uint16_t *) &ps->stats[STAT_AMMO_INFO_START], ammo_id);
+	uint16_t ammo = G_GetAmmoStat(reinterpret_cast<const uint16_t *>(&ps->stats[STAT_AMMO_INFO_START]), ammo_id);
 
 	if (ammo == AMMO_VALUE_INFINITE)
 		return -1;
@@ -56,7 +56,7 @@ int16_t CG_GetWeaponWheelAmmoCount(const player_state_t *ps, int32_t ammo_id)
 
 int16_t CG_GetPowerupWheelCount(const player_state_t *ps, int32_t powerup_id)
 {
-	return G_GetPowerupStat((uint16_t *) &ps->stats[STAT_POWERUP_INFO_START], powerup_id);
+	return G_GetPowerupStat(reinterpret_cast<const uint16_t *>(&ps->stats[STAT_POWERUP_INFO_START]), powerup_id);
 }
 
 int16_t CG_GetHitMarkerDamage(const player_state_t *ps)
@@ -96,7 +96,7 @@ Returns a pointer to the structure with all entry points
 and global variables
 =================
 */
-Q2GAME_API cgame_export_t *GetCGameAPI(cgame_import_t *import)
+Q2GAME_API cgame_export_t *GetCGameAPI(const cgame_import_t *import)
 {
 	cgi = *import;
 

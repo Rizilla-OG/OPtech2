@@ -78,7 +78,7 @@ jobs:
       run: |
         cppcheck -j 4 --enable=all --output-format=sarif \
           --output-file=cppcheck_results.sarif --inconclusive --library=posix \
-          --suppress=missingIncludeSystem \
+          --suppress=missingIncludeSystem --check-level=exhaustive \
           -i src/common/nav/recast -i src/game/lua -i src/common/unzip \
           -DYQ2OSTYPE=\"Linux\" src
         # optech2: bundled libraries are skipped above; filter in case headers pull them in

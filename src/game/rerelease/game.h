@@ -465,48 +465,48 @@ constexpr size_t MAXTOUCH = 32;
 struct touch_list_t
 {
     uint32_t num = 0;
-    std::array<trace_t, MAXTOUCH> traces;
+    std::array<trace_t, MAXTOUCH> traces {};
 };
 
 struct pmove_t
 {
     // state (in / out)
-    pmove_state_t s;
+    pmove_state_t s {};
 
     // command (in)
-    usercmd_t cmd;
-    bool      snapinitial; // if s has been changed outside pmove
+    usercmd_t cmd {};
+    bool      snapinitial {}; // if s has been changed outside pmove
 
     // results (out)
     touch_list_t touch;
 
-    gvec3_t viewangles; // clamped
+    gvec3_t viewangles {}; // clamped
 
-    gvec3_t mins, maxs; // bounding box size
+    gvec3_t mins {}, maxs {}; // bounding box size
 
-    edict_t      *groundentity;
-    cplane_t      groundplane;
-    contents_t    watertype;
-    water_level_t waterlevel;
+    edict_t      *groundentity {};
+    cplane_t      groundplane {};
+    contents_t    watertype {};
+    water_level_t waterlevel {};
 
-    edict_t *player; // opaque handle
+    edict_t *player {}; // opaque handle
 
     // clip against world & entities
-    trace_t (*trace)(gvec3_cref_t start, gvec3_cptr_t mins, gvec3_cptr_t maxs, gvec3_cref_t end, const edict_t* passent, contents_t contentmask);
+    trace_t (*trace)(gvec3_cref_t start, gvec3_cptr_t mins, gvec3_cptr_t maxs, gvec3_cref_t end, const edict_t* passent, contents_t contentmask) {};
     // [Paril-KEX] clip against world only
-    trace_t (*clip)(gvec3_cref_t start, gvec3_cptr_t mins, gvec3_cptr_t maxs, gvec3_cref_t end, contents_t contentmask);
+    trace_t (*clip)(gvec3_cref_t start, gvec3_cptr_t mins, gvec3_cptr_t maxs, gvec3_cref_t end, contents_t contentmask) {};
 
-    contents_t (*pointcontents)(gvec3_cref_t point);
+    contents_t (*pointcontents)(gvec3_cref_t point) {};
 
     // [KEX] variables (in)
-    vec3_t viewoffset; // last viewoffset (for accurate calculation of blending)
+    vec3_t viewoffset {}; // last viewoffset (for accurate calculation of blending)
 
     // [KEX] results (out)
-    gvec4_t screen_blend;
-    refdef_flags_t rdflags; // merged with rdflags from server
-    bool jump_sound; // play jump sound
-    bool step_clip; // we clipped on top of an object from below
-    float impact_delta; // impact delta, for falling damage
+    gvec4_t screen_blend {};
+    refdef_flags_t rdflags {}; // merged with rdflags from server
+    bool jump_sound {}; // play jump sound
+    bool step_clip {}; // we clipped on top of an object from below
+    float impact_delta {}; // impact delta, for falling damage
 };
 
 
@@ -1751,33 +1751,33 @@ struct armorInfo_t {
 
 // Used by AI/Tools on the engine side...
 struct sv_entity_t {
-    bool                        init;
-    sv_ent_flags_t              ent_flags;
-    button_t                    buttons;
-    uint32_t	                spawnflags;
-    int32_t                     item_id;
-    int32_t                     armor_type;
-    int32_t                     armor_value;
-    int32_t                     health;
-    int32_t                     max_health;
-    int32_t                     starting_health;
-    int32_t                     weapon;
-    int32_t                     team;
-    int32_t                     lobby_usernum;
-    int32_t                     respawntime;
-    int32_t                     viewheight;
-    int32_t                     last_attackertime;
-    water_level_t               waterlevel;
-    gvec3_t                     viewangles;
-    gvec3_t                     viewforward;
-    gvec3_t                     velocity;
-    gvec3_t                     start_origin;
-    gvec3_t                     end_origin;
-    edict_t *                   enemy;
-    edict_t *                   ground_entity;
-    const char *                classname;
-    const char *                targetname;
-    char                        netname[ MAX_NETNAME ];
+    bool                        init {};
+    sv_ent_flags_t              ent_flags {};
+    button_t                    buttons {};
+    uint32_t	                spawnflags {};
+    int32_t                     item_id {};
+    int32_t                     armor_type {};
+    int32_t                     armor_value {};
+    int32_t                     health {};
+    int32_t                     max_health {};
+    int32_t                     starting_health {};
+    int32_t                     weapon {};
+    int32_t                     team {};
+    int32_t                     lobby_usernum {};
+    int32_t                     respawntime {};
+    int32_t                     viewheight {};
+    int32_t                     last_attackertime {};
+    water_level_t               waterlevel {};
+    gvec3_t                     viewangles {};
+    gvec3_t                     viewforward {};
+    gvec3_t                     velocity {};
+    gvec3_t                     start_origin {};
+    gvec3_t                     end_origin {};
+    edict_t *                   enemy {};
+    edict_t *                   ground_entity {};
+    const char *                classname {};
+    const char *                targetname {};
+    char                        netname[ MAX_NETNAME ] {};
     int32_t                     inventory[ MAX_ITEMS ] = { 0 };
     armorInfo_t                 armor_info[ Max_Armor_Types ];
 };
@@ -2032,15 +2032,15 @@ enum class shadow_light_type_t
 
 struct shadow_light_data_t
 {
-    shadow_light_type_t lighttype;
-	float		radius;
-	int			resolution;
+    shadow_light_type_t lighttype {};
+	float		radius {};
+	int			resolution {};
 	float		intensity = 1;
-	float		fade_start;
-	float		fade_end;
+	float		fade_start {};
+	float		fade_end {};
 	int			lightstyle = -1;
 	float		coneangle = 45;
-    vec3_t      conedirection;
+    vec3_t      conedirection {};
 };
 
 enum server_flags_t

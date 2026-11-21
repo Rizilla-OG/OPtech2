@@ -205,14 +205,13 @@ returns the blocked flags (1 = floor, 2 = step / wall)
 void PM_ClipVelocity(const vec3_t &in, const vec3_t &normal, vec3_t &out, float overbounce)
 {
 	float backoff;
-	float change;
 	int	  i;
 
 	backoff = in.dot(normal) * overbounce;
 
 	for (i = 0; i < 3; i++)
 	{
-		change = normal[i] * backoff;
+		const float change = normal[i] * backoff;
 		out[i] = in[i] - change;
 		if (out[i] > -STOP_EPSILON && out[i] < STOP_EPSILON)
 			out[i] = 0;
@@ -233,9 +232,7 @@ trace_t PM_Trace(const vec3_t &start, const vec3_t &mins, const vec3_t &maxs, co
 	{
 		if (pm->s.pm_type == PM_DEAD || pm->s.pm_type == PM_GIB)
 			mask = MASK_DEADSOLID;
-		else if (pm->s.pm_type == PM_SPECTATOR)
-			mask = MASK_SOLID;
-		else
+		else // optech2: spectators returned above
 			mask = MASK_PLAYERSOLID;
 
 		if (pm->s.pm_flags & PMF_IGNORE_PLAYER_COLLISION)
@@ -265,7 +262,7 @@ Does not modify any world state?
 constexpr float	 MIN_STEP_NORMAL = 0.7f; // can't step up onto very steep slopes
 constexpr size_t MAX_CLIP_PLANES = 5;
 
-inline void PM_RecordTrace(touch_list_t &touch, trace_t &tr)
+inline void PM_RecordTrace(touch_list_t &touch, const trace_t &tr)
 {
 	if (touch.num == MAXTOUCH)
 		return;
@@ -289,7 +286,7 @@ void PM_StepSlideMove_Generic(vec3_t &origin, vec3_t &velocity, float frametime,
 	vec3_t	primal_velocity;
 	int		i, j;
 	trace_t trace;
-	vec3_t	end;
+	vec3_t	end {};
 	float	time_left;
 
 	numbumps = 4;
@@ -326,9 +323,9 @@ void PM_StepSlideMove_Generic(vec3_t &origin, vec3_t &velocity, float frametime,
 
 			bool better = false;
 
-			for (int i = 0; i < 3; i++)
+			for (int axis = 0; axis < 3; axis++)
 			{
-				if (fabsf(clipped_a[i]) < fabsf(clipped_b[i]))
+				if (fabsf(clipped_a[axis]) < fabsf(clipped_b[axis]))
 				{
 					better = true;
 					break;
@@ -544,8 +541,7 @@ Handles both ground friction and water friction
 void PM_Friction()
 {
 	float *vel;
-	float  speed, newspeed, control;
-	float  friction;
+	float  speed, newspeed;
 	float  drop;
 
 	vel = &pml.velocity.x;
@@ -563,8 +559,8 @@ void PM_Friction()
 	// apply ground friction
 	if ((pm->groundentity && pml.groundsurface && !(pml.groundsurface->flags & SURF_SLICK)) || (pm->s.pm_flags & PMF_ON_LADDER))
 	{
-		friction = pm_friction;
-		control = speed < pm_stopspeed ? pm_stopspeed : speed;
+		const float friction = pm_friction;
+		const float control = speed < pm_stopspeed ? pm_stopspeed : speed;
 		drop += control * friction * pml.frametime;
 	}
 
@@ -636,7 +632,6 @@ PM_AddCurrents
 void PM_AddCurrents(vec3_t &wishvel)
 {
 	vec3_t v;
-	float  s;
 
 	//
 	// account for ladders
@@ -695,7 +690,7 @@ void PM_AddCurrents(vec3_t &wishvel)
 					ladder_speed *= pm_laddermod;
 
 				// check for ladder
-				vec3_t flatforward, spot;
+				vec3_t flatforward {}, spot;
 				flatforward[0] = pml.forward[0];
 				flatforward[1] = pml.forward[1];
 				flatforward[2] = 0;
@@ -748,7 +743,7 @@ void PM_AddCurrents(vec3_t &wishvel)
 		if (pm->watertype & CONTENTS_CURRENT_DOWN)
 			v[2] -= 1;
 
-		s = pm_waterspeed;
+		float s = pm_waterspeed;
 		if ((pm->waterlevel == WATER_FEET) && (pm->groundentity))
 			s /= 2;
 
@@ -789,7 +784,7 @@ PM_WaterMove
 void PM_WaterMove()
 {
 	int	   i;
-	vec3_t wishvel;
+	vec3_t wishvel {};
 	float  wishspeed;
 	vec3_t wishdir;
 
@@ -820,14 +815,12 @@ void PM_WaterMove()
 
 	if (wishspeed > pm_maxspeed)
 	{
-		wishvel *= pm_maxspeed / wishspeed;
 		wishspeed = pm_maxspeed;
 	}
 	wishspeed *= 0.5f;
 
 	if ((pm->s.pm_flags & PMF_DUCKED) && wishspeed > pm_duckspeed)
 	{
-		wishvel *= pm_duckspeed / wishspeed;
 		wishspeed = pm_duckspeed;
 	}
 
@@ -845,7 +838,7 @@ PM_AirMove
 void PM_AirMove()
 {
 	int	   i;
-	vec3_t wishvel;
+	vec3_t wishvel {};
 	float  fmove, smove;
 	vec3_t wishdir;
 	float  wishspeed;
@@ -935,7 +928,6 @@ inline void PM_GetWaterLevel(const vec3_t &position, water_level_t &level, conte
 	type = CONTENTS_NONE;
 
 	int32_t sample2 = (int) (pm->s.viewheight - pm->mins[2]);
-	int32_t sample1 = sample2 / 2;
 
 	vec3_t point = position;
 
@@ -947,6 +939,7 @@ inline void PM_GetWaterLevel(const vec3_t &position, water_level_t &level, conte
 	{
 		type = cont;
 		level = WATER_FEET;
+		const int32_t sample1 = sample2 / 2;
 		point[2] = pml.origin[2] + pm->mins[2] + sample1;
 		cont = pm->pointcontents(point);
 		if (cont & MASK_WATER)
@@ -967,7 +960,7 @@ PM_CatagorizePosition
 */
 void PM_CatagorizePosition()
 {
-	vec3_t	   point;
+	vec3_t	   point {};
 	trace_t	   trace;
 
 	// if the player hull point one unit down is solid, the player
@@ -1032,7 +1025,7 @@ void PM_CatagorizePosition()
 				}
 
 				// [Paril-KEX] calculate impact delta; this also fixes triple jumping
-				vec3_t clipped_velocity;
+				vec3_t clipped_velocity {};
 				PM_ClipVelocity(pml.velocity, pm->groundplane.normal, clipped_velocity, 1.01f);
 
 				pm->impact_delta = pml.start_velocity[2] - clipped_velocity[2];
@@ -1110,7 +1103,7 @@ PM_CheckSpecialMovement
 void PM_CheckSpecialMovement()
 {
 	vec3_t	spot;
-	vec3_t	flatforward;
+	vec3_t	flatforward {};
 	trace_t trace;
 
 	if (pm->s.pm_time)
@@ -1212,10 +1205,10 @@ PM_FlyMove
 */
 void PM_FlyMove(bool doclip)
 {
-	float	speed, drop, friction, control, newspeed;
-	float	currentspeed, addspeed, accelspeed;
+	float	speed;
+	float	currentspeed, addspeed;
 	int		i;
-	vec3_t	wishvel;
+	vec3_t	wishvel {};
 	float	fmove, smove;
 	vec3_t	wishdir;
 	float	wishspeed;
@@ -1231,14 +1224,14 @@ void PM_FlyMove(bool doclip)
 	}
 	else
 	{
-		drop = 0;
+		float drop = 0;
 
-		friction = pm_friction * 1.5f; // extra friction
-		control = speed < pm_stopspeed ? pm_stopspeed : speed;
+		const float friction = pm_friction * 1.5f; // extra friction
+		const float control = speed < pm_stopspeed ? pm_stopspeed : speed;
 		drop += control * friction * pml.frametime;
 
 		// scale the velocity
-		newspeed = speed - drop;
+		float newspeed = speed - drop;
 		if (newspeed < 0)
 			newspeed = 0;
 		newspeed /= speed;
@@ -1269,7 +1262,6 @@ void PM_FlyMove(bool doclip)
 	//
 	if (wishspeed > pm_maxspeed)
 	{
-		wishvel *= pm_maxspeed / wishspeed;
 		wishspeed = pm_maxspeed;
 	}
 
@@ -1281,7 +1273,7 @@ void PM_FlyMove(bool doclip)
 
 	if (addspeed > 0)
 	{
-		accelspeed = pm_accelerate * pml.frametime * wishspeed;
+		float accelspeed = pm_accelerate * pml.frametime * wishspeed;
 		if (accelspeed > addspeed)
 			accelspeed = addspeed;
 
