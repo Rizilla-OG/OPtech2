@@ -282,6 +282,7 @@ int GL3_PrepareForWindow(void)
 	}
 
 	// Let's see if the driver supports MSAA.
+	// cppcheck-suppress unreadVariable ; optech2: default for when r_msaa_samples is 0
 	int msaa_samples = 0;
 
 	if (r_msaa_samples->value)

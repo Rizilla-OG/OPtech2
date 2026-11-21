@@ -1276,7 +1276,7 @@ FS_LoadPK3(const char *packPath)
 		return NULL;
 	}
 
-	if (global.number_entry <= 0)
+	if (global.number_entry == 0) /* optech2: unsigned */
 	{
 		unzClose(handle);
 		Com_Error(ERR_FATAL, "%s: '%s' has " YQ2_COM_PRIdS " files",

@@ -922,10 +922,12 @@ YQ2_ATTR_NORETURN void Com_Quit(void);
 
 // terminate yq2 (with Com_Error()) if VAR is NULL (after malloc() or similar)
 // and print message about it
+#ifndef YQ2_COM_CHECK_OOM /* optech2: cppcheck's shim defines its own */
 #define YQ2_COM_CHECK_OOM(VAR, ALLOC_FN_NAME, ALLOC_SIZE) \
 	if(VAR == NULL) { \
 		Com_Error(ERR_FATAL, "%s for " YQ2_COM_PRIdS " bytes failed in %s() (%s == NULL)! Out of Memory?!\n", \
 		                     ALLOC_FN_NAME, (size_t)ALLOC_SIZE, __func__, #VAR); }
+#endif
 
 int Com_ServerState(void);              /* this should have just been a cvar... */
 void Com_SetServerState(int state);

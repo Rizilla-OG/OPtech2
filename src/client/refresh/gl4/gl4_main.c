@@ -1981,10 +1981,12 @@ GL4_Clear(void)
 
 	if (r_clear->value)
 	{
+		// cppcheck-suppress badBitmaskCheck ; optech2: stencilFlags is 0 until stereo is done
 		glClear(GL_COLOR_BUFFER_BIT | stencilFlags | GL_DEPTH_BUFFER_BIT);
 	}
 	else
 	{
+		// cppcheck-suppress badBitmaskCheck ; optech2: stencilFlags is 0 until stereo is done
 		glClear(GL_DEPTH_BUFFER_BIT | stencilFlags);
 	}
 

@@ -2428,7 +2428,6 @@ static inline void
 IN_Joy_IMU_Treatment(SDL_Joystick *joystick, const char* joystick_name, int joy_num)
 {
 	SDL_JoystickClose(joystick);
-	joystick = NULL;
 	Com_Printf ("Skipping IMU device.\n");
 }
 

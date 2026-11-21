@@ -319,10 +319,9 @@ SDL_TransferPaintBuffer(int endtime)
 					val = -32768;
 				}
 
-				// FIXME: val might be negative and right-shifting it is implementation defined
-				//        on x86 it does sign extension (=> fills up with 1 bits from the left)
-				//        so this /might/ break on other platforms - if it does, look at this code again.
-				out[out_idx] = (val >> 8) + 128;
+				/* optech2: shift the 0..65535 value, not a negative one
+				   (same result as (val >> 8) + 128, without the undefined shift) */
+				out[out_idx] = (val + 32768) >> 8;
 				out_idx = (out_idx + 1) & out_mask;
 			}
 		}

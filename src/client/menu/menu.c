@@ -1528,7 +1528,8 @@ ControllerAltButtons_MenuKey(menuframework_s *m, int key)
 	if (menukeyitem_bind)
 	{
 		// Only controller buttons allowed, different from the alt buttons modifier
-		if (key >= K_JOY_FIRST_BTN && (keybindings[key] == NULL || strcmp(keybindings[key], "+joyaltselector") != 0))
+		// optech2: not the _ALT keys themselves, their ALT index would be past K_LAST
+		if (key >= K_JOY_FIRST_BTN && key < K_JOY_FIRST_BTN_ALT && (keybindings[key] == NULL || strcmp(keybindings[key], "+joyaltselector") != 0))
 		{
 			char cmd[1024];
 			key = key + (K_JOY_FIRST_BTN_ALT - K_JOY_FIRST_BTN);   // change input to its ALT mode
@@ -7127,6 +7128,7 @@ PlayerConfig_MenuClose(menuframework_s *m)
 static void
 M_Menu_PlayerConfig_f(void)
 {
+	// cppcheck-suppress knownConditionTrueFalse ; optech2: stock check, kept in case the init can fail again
 	if (!PlayerConfig_MenuInit())
 	{
 		Menu_SetStatusBar(&s_multiplayer_menu, "no valid player models found");

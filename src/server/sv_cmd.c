@@ -348,7 +348,11 @@ SV_ListMaps_f(void)
 			mapName = userMapNames.data[i];
 		}
 
-		mapName = strtok(mapName, ".");
+		{
+			char *strtok_state; /* optech2: for Q_strtok_r */
+
+			mapName = Q_strtok_r(mapName, ".", &strtok_state);
+		}
 
 		Com_Printf("%s\n", mapName);
 	}

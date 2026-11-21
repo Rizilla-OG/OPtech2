@@ -129,7 +129,12 @@ CG_FindStringStats(const char *layout, qboolean *string_stats)
 {
 	const char *p = layout;
 
-	while (p && (p = strstr(p, "stat_string")))
+	if (!p) /* optech2 */
+	{
+		return;
+	}
+
+	while ((p = strstr(p, "stat_string")))
 	{
 		int stat;
 

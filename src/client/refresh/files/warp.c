@@ -342,12 +342,14 @@ R_MakeSkyVec(float s, float t, int axis, mvtx_t* vert, const model_t *r_worldmod
 
 		k = st_to_vec[axis][j];
 
+		/* optech2: st_to_vec holds +-1..3, never 0 */
 		if (k < 0)
 		{
 			v[j] = -b[-k - 1];
 		}
 		else
 		{
+			// cppcheck-suppress negativeIndex
 			v[j] = b[k - 1];
 		}
 	}

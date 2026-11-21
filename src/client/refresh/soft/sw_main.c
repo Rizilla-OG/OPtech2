@@ -541,7 +541,7 @@ R_ReallocateMapBuffers(void)
 
 		blocklights = malloc (r_numallocatedlights * sizeof(light_t));
 		bblocklights = malloc (r_numallocatedlights);
-		if (!blocklights)
+		if (!blocklights || !bblocklights) /* optech2: check both */
 		{
 			Com_Printf("%s: Couldn't malloc %d bytes\n",
 				 __func__, (int)(r_numallocatedlights * sizeof(light_t)));

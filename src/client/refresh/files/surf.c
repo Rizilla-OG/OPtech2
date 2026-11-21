@@ -416,6 +416,13 @@ R_MarkLeaves(const model_t *r_worldmodel)
 		int c;
 
 		fatvis = malloc(((r_worldmodel->numleafs + 31) / 32) * sizeof(int));
+
+		if (!fatvis) /* optech2 */
+		{
+			Com_Error(ERR_DROP, "%s: out of memory", __func__);
+			return;
+		}
+
 		memcpy(fatvis, vis, (r_worldmodel->numleafs + 7) / 8);
 		vis = Mod_ClusterPVS(r_viewcluster2, r_worldmodel);
 		c = (r_worldmodel->numleafs + 31) / 32;

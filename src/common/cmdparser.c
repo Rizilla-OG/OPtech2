@@ -1077,7 +1077,11 @@ Cmd_CompleteMapCommand(const char *partial)
 				mapName = mapNames.data[i];
 			}
 
-			mapName = strtok(mapName, ".");
+			{
+				char *strtok_state; /* optech2: for Q_strtok_r */
+
+				mapName = Q_strtok_r(mapName, ".", &strtok_state);
+			}
 
 			if (mapName)
 			{

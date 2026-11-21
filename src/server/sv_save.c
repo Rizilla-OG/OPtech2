@@ -306,13 +306,22 @@ SV_WriteServerFile(qboolean autosave)
 	if (!autosave)
 	{
 		struct tm *newtime;
+		struct tm newtime_buffer; /* optech2: for Q_localtime_r */
 
 		time(&aclock);
-		newtime = localtime(&aclock);
-		Com_sprintf(comment, sizeof(comment), "%2i:%i%i %2i/%2i  ",
+		newtime = Q_localtime_r(&aclock, &newtime_buffer);
+
+		if (newtime)
+		{
+			Com_sprintf(comment, sizeof(comment), "%2i:%i%i %2i/%2i  ",
 				newtime->tm_hour, newtime->tm_min / 10,
 				newtime->tm_min % 10, newtime->tm_mon + 1,
 				newtime->tm_mday);
+		}
+		else
+		{
+			comment[0] = '\0';
+		}
 		Q_strlcat(comment, sv.configstrings[CS_NAME], sizeof(comment));
 	}
 	else

@@ -2,7 +2,7 @@
 """Drops code scanning results in bundled third-party code from SARIF files.
 
 The libraries under VENDORED_PATHS are bundled unmodified (Recast/Detour,
-Lua, unzip, stb, pl_mpeg, volk, glad): their warnings are upstream's, not ours. CodeQL can't skip
+Lua, unzip, stb, pl_mpeg, volk, glad, minimp3, HandmadeMath): their warnings are upstream's, not ours. CodeQL can't skip
 them for C/C++ (paths-ignore only works for interpreted languages), so the
 CodeQL workflow analyses everything and this filters the SARIF before upload.
 
@@ -29,6 +29,8 @@ VENDORED_PATHS = (
     "src/client/refresh/files/stb_image_resize.h",
     "src/client/refresh/files/stb_truetype.h",
     "src/client/sound/header/stb_vorbis.h",
+    "src/client/sound/header/minimp3.h",
+    "src/client/refresh/files/HandmadeMath.h",
     "src/client/vid/header/stb_image_write.h",
 )
 

@@ -1264,6 +1264,7 @@ R_InitImages(void)
 	gl_state.sw_gamma = g;
 	gl_state.inverse_intensity = g / intensity->value;
 
+	// cppcheck-suppress knownConditionTrueFalse ; optech2: g is 1 only in builds without vid_gamma
 	if (g == 1)
 	{
 		for (i = 0; i < 256; i++)

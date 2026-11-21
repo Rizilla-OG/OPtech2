@@ -178,6 +178,7 @@ Mod_LoadQFaces(model_t *loadmodel, const byte *mod_base, const lump_t *l,
 		out->texinfo = loadmodel->texinfo + ti;
 
 		lightofs = -1;
+		// cppcheck-suppress knownConditionTrueFalse ; optech2: stock: this format has no light offsets
 		if (lightofs < 0) {
 			memcpy(out->lmvecs, out->texinfo->vecs, sizeof(out->lmvecs));
 			out->lmshift = DEFAULT_LMSHIFT;

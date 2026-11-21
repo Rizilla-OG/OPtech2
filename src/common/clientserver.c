@@ -292,8 +292,7 @@ Com_Error(int code, const char *fmt, ...)
 		logfile = NULL;
 	}
 
-	Sys_Error("%s", msg);
-	recursive = false;
+	Sys_Error("%s", msg); /* optech2: doesn't return */
 }
 
 /*

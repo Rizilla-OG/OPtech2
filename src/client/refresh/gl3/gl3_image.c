@@ -322,7 +322,7 @@ GL3_ImageList_f(void)
 		const char *in_use = "";
 		char isScrap = image->scrap ? 'S' : ' ';
 
-		if (image->texnum <= 0)
+		if (image->texnum == 0) /* optech2: texnum is unsigned */
 		{
 			continue;
 		}
@@ -410,6 +410,7 @@ GL3_Upload32(unsigned *data, int width, int height, qboolean mipmap)
 	glTexImage2D(GL_TEXTURE_2D, 0, comp, width, height,
 		0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
+	// cppcheck-suppress knownConditionTrueFalse ; optech2: solid and alpha formats are both GL_RGBA (stock)
 	res = (samples == gl3_alpha_format);
 
 	if (mipmap)

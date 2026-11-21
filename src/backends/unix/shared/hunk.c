@@ -79,10 +79,12 @@ Hunk_Begin(int maxsize)
 	prot |= PROT_MAX(prot);
 #endif
 
+	/* optech2: fd -1 is right for MAP_ANONYMOUS */
 	membase = (byte *)mmap(0, maxhunksize, prot,
-			flags, -1, 0);
+		flags, -1, 0); // cppcheck-suppress invalidFunctionArg
 
-	if (membase == NULL)
+	/* optech2: mmap returns MAP_FAILED on failure, not NULL */
+	if ((membase == MAP_FAILED) || (membase == NULL))
 	{
 		Sys_Error("%s: unable to virtual allocate %d bytes",
 			__func__, maxsize);

@@ -409,12 +409,13 @@ Mod_LoadModel_IQM(const char *mod_name, const void *buffer, int modfilelen)
 	}
 
 	memcpy(header.magic, buffer, sizeof(header.magic));
+	/* optech2: Mod_LittleHeader fills the header (cppcheck can't tell) */
 	Mod_LittleHeader((const int *)((const byte *)buffer + sizeof(header.magic)),
 		(sizeof(header) - sizeof(header.magic)) / sizeof(int),
 		(int *)&header.version);
 
 	if (memcmp(header.magic, IQM_MAGIC, sizeof(IQM_MAGIC)) ||
-		header.version != IQM_VERSION)
+		header.version != IQM_VERSION) // cppcheck-suppress uninitStructMember
 	{
 		Com_Printf("%s: %s is not an IQM version %d file\n", __func__,
 			mod_name, IQM_VERSION);
@@ -671,7 +672,7 @@ Mod_LoadModel_IQM(const char *mod_name, const void *buffer, int modfilelen)
 				Q_strlcpy(anim_name, IQM_Text(&header, data, anims[a].name),
 					sizeof(anim_name));
 				snprintf(frame->name, sizeof(frame->name), "%s%03d",
-					anim_name, (f - anims[a].first_frame + 1) % 1000);
+					anim_name, (int)((f - anims[a].first_frame + 1) % 1000));
 				break;
 			}
 		}

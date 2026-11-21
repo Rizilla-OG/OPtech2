@@ -458,9 +458,11 @@ Mod_LoadModel_HLMDL(const char *mod_name, const void *buffer, int modfilelen)
 	dmdx_vert_t *temp_verts = NULL;
 	hlmdl_bone_t *pbones;
 
+	/* optech2: Mod_LittleHeader fills pinmodel (cppcheck can't tell) */
 	Mod_LittleHeader((int *)buffer, sizeof(pinmodel) / sizeof(int),
 		(int *)&pinmodel);
 
+	// cppcheck-suppress uninitvar
 	if (pinmodel.version != HLMDL_VERSION)
 	{
 		Com_Printf("%s: %s has wrong version number (%i should be %i)\n",
@@ -495,6 +497,12 @@ Mod_LoadModel_HLMDL(const char *mod_name, const void *buffer, int modfilelen)
 
 	bodyparts = (hlmdl_bodypart_t *)((byte *)buffer + pinmodel.ofs_bodyparts);
 	mesh_tmp = calloc(pinmodel.num_bodyparts, sizeof(*mesh_tmp));
+
+	if (!mesh_tmp) /* optech2 */
+	{
+		Com_Printf("%s: out of memory\n", __func__);
+		return NULL;
+	}
 
 	for (i = 0; i < pinmodel.num_bodyparts; i++)
 	{

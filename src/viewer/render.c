@@ -72,10 +72,18 @@ FS_LoadFile(const char *path, void **buffer)
 	size = ftell(fp);
 	if (size <= 0)
 	{
+		fclose(fp); /* optech2: was leaked */
 		return -1;
 	}
 
 	*buffer = malloc(size);
+
+	if (!*buffer) /* optech2 */
+	{
+		fclose(fp);
+		return -1;
+	}
+
 	fseek(fp, 0, SEEK_SET);
 	fread(*buffer, size, 1, fp);
 	fclose(fp);
@@ -131,7 +139,7 @@ model_load(const char *filename)
 	{
 		char animfile[256];
 
-		strncpy(animfile, filename, sizeof(animfile));
+		Q_strlcpy(animfile, filename, sizeof(animfile)); /* optech2: always terminated */
 		memcpy(animfile + strlen(animfile) - strlen("mesh"),
 			"anim",
 			strlen("anim"));
@@ -154,6 +162,16 @@ model_load(const char *filename)
 	}
 
 	buffer = malloc(full_size);
+
+	if (!buffer) /* optech2 */
+	{
+		fclose(fp_mesh);
+		if (anim_size)
+		{
+			fclose(fp_anim);
+		}
+		return;
+	}
 
 	fseek(fp_mesh, 0, SEEK_SET);
 	fread(buffer, mesh_size, 1, fp_mesh);

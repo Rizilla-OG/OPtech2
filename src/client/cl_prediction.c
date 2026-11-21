@@ -253,6 +253,7 @@ CL_PMTrace(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end)
 
 	if (t.fraction < 1.0)
 	{
+		// cppcheck-suppress intToPointerCast ; optech2: stock "hit something" marker, never dereferenced
 		t.ent = (struct edict_s *)1;
 	}
 

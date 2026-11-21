@@ -652,8 +652,20 @@ Con_DrawConsole(float frac)
 	Draw_StringScaled(viddef.width - ((verLen * 8 + 5) * scale), lines - 35 * scale, scale, true, version);
 
 	t = time(NULL);
-	today = localtime(&t);
-	strftime(timebuf, sizeof(timebuf), "%H:%M:%S - %m/%d/%Y", today);
+	{
+		static struct tm today_buffer; /* optech2: for Q_localtime_r */
+
+		today = Q_localtime_r(&t, &today_buffer);
+	}
+
+	if (today)
+	{
+		strftime(timebuf, sizeof(timebuf), "%H:%M:%S - %m/%d/%Y", today);
+	}
+	else
+	{
+		timebuf[0] = '\0';
+	}
 
 	Com_sprintf(tmpbuf, sizeof(tmpbuf), "%s", timebuf);
 
@@ -662,7 +674,7 @@ Con_DrawConsole(float frac)
 	/* draw the text */
 	con.vislines = lines;
 
-	rows = (lines - 22) >> 3; /* rows of text to draw */
+	rows = (lines - 22) / 8; /* rows of text to draw; optech2: lines can be < 22, don't shift a negative */
 	y = (lines - 30 * scale) / scale;
 
 	/* draw from the bottom up */

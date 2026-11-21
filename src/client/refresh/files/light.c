@@ -157,10 +157,8 @@ R_RecursiveLightPoint(const msurface_t *surfaces, const mnode_t *node,
 		return r;     /* hit something */
 	}
 
-	if ((back < 0) == side)
-	{
-		return -1;     /* didn't hit anuthing */
-	}
+	/* optech2: the stock "(back < 0) == side" check here was dead, it
+	   returned above already */
 
 	/* check for impact on this node */
 	VectorCopy(mid, lightspot);
@@ -604,13 +602,14 @@ R_ResizeTemporaryLMBuffer(size_t size)
 		}
 
 		s_blocklights = malloc(new_size * sizeof(float));
-		s_blocklights_max = s_blocklights + new_size;
 
 		if (!s_blocklights)
 		{
 			Com_Error(ERR_DROP, "Can't alloc s_blocklights");
 			return;
 		}
+
+		s_blocklights_max = s_blocklights + new_size; /* optech2: after the NULL check */
 	}
 }
 
@@ -633,13 +632,14 @@ R_GetTemporaryLMBuffer(size_t size)
 		}
 
 		s_bufferlights = malloc(new_size);
-		s_bufferlights_max = s_bufferlights + new_size;
 
 		if (!s_bufferlights)
 		{
 			Com_Error(ERR_DROP, "Can't alloc s_bufferlights");
 			return NULL;
 		}
+
+		s_bufferlights_max = s_bufferlights + new_size; /* optech2: after the NULL check */
 	}
 
 	return s_bufferlights;

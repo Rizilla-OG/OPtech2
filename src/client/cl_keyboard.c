@@ -1347,6 +1347,12 @@ Key_Event(int key, qboolean down, qboolean special)
 	char *kb;
 	unsigned int time = Sys_Milliseconds();
 
+	/* optech2: every array below is K_LAST long */
+	if ((key < 0) || (key >= K_LAST))
+	{
+		return;
+	}
+
 	// evil hack for the joystick key altselector, which turns K_BTN_x into K_BTN_x_ALT
 	if(joy_altselector_pressed && key >= K_JOY_FIRST_BTN && key < K_JOY_FIRST_BTN_ALT)
 	{
@@ -1422,6 +1428,7 @@ Key_Event(int key, qboolean down, qboolean special)
 	}
 
 	/* Key is unbound */
+	// cppcheck-suppress arrayIndexOutOfBoundsCond ; optech2: key < K_LAST, checked at the top (the ALT remap stays below it)
 	if ((key >= K_MOUSE1) && !keybindings[key] && (cls.key_dest != key_console) &&
 		(cls.state == ca_active))
 	{

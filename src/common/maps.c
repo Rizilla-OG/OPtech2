@@ -44,7 +44,7 @@ Mod_LoadConvertFlags(int flags, const int *convert)
 
 	for (i = 0; i < 32; i++)
 	{
-		if (flags & (1 << i))
+		if (flags & (1U << i)) /* optech2: 1U, 1 << 31 overflows */
 		{
 			sflags |= convert[i];
 		}
@@ -147,7 +147,7 @@ Mod_LoadMaterialConvertFlags(int flags, maptype_t maptype, char *value)
 
 	for (i = 0; i < 32; i++)
 	{
-		if (flags & (1 << i) && material[i])
+		if ((flags & (1U << i)) && material[i]) /* optech2: 1U, 1 << 31 overflows */
 		{
 			strcpy(value, material[i]);
 			return;
@@ -826,8 +826,8 @@ Mod_Load2QBSP_IBSP46_SolveTexVec(const vec3_t p0, const vec3_t p1,
 		a[2][i] = normal[i];
 	}
 
-	a[0][3] = (tc1 - tc0) * BSP46_TEXCOORD_SCALE;
-	a[1][3] = (tc2 - tc0) * BSP46_TEXCOORD_SCALE;
+	a[0][3] = (double)(tc1 - tc0) * BSP46_TEXCOORD_SCALE; /* optech2: in double, a[] is double */
+	a[1][3] = (double)(tc2 - tc0) * BSP46_TEXCOORD_SCALE;
 	a[2][3] = 0.0;
 
 	for (i = 0; i < 3; i++)
@@ -2500,10 +2500,6 @@ Mod_Load2QBSP(const char *name, byte *inbuf, size_t filesize, size_t *out_len,
 	if (detected_maptype == map_quake3)
 	{
 		result_size += Mod_Load2QBSP_AREAS_AdditionalSize(lumps);
-	}
-
-	if (detected_maptype == map_quake3)
-	{
 		result_size += Mod_Load2QBSP_IBSP46_AdditionalSize(inbuf, lumps);
 	}
 
@@ -2525,10 +2521,6 @@ Mod_Load2QBSP(const char *name, byte *inbuf, size_t filesize, size_t *out_len,
 	if (detected_maptype == map_quake3)
 	{
 		ofs = Mod_Load2QBSP_IBSP46_SetLumps(ofs, inbuf, lumps, outheader->lumps);
-	}
-
-	if (detected_maptype == map_quake3)
-	{
 		ofs = Mod_Load2QBSP_AREAS_SetLumps(ofs, lumps, outheader->lumps);
 	}
 
@@ -2592,10 +2584,6 @@ Mod_Load2QBSP(const char *name, byte *inbuf, size_t filesize, size_t *out_len,
 	if (detected_maptype == map_quake3)
 	{
 		Mod_Load2QBSP_AREAS_Fix(name, *maptype, lumps, outheader, inbuf, outbuf);
-	}
-
-	if (detected_maptype == map_quake3)
-	{
 		Mod_Load2QBSP_IBSP46_Fix(name, *maptype, lumps, outheader, inbuf, outbuf);
 	}
 

@@ -175,7 +175,7 @@ CL_RequestNextDownload(void)
 				/* checking for skins in the model */
 				if (!precache_model)
 				{
-					size_t filesize;
+					int filesize; /* optech2: FS_LoadFile returns int, -1 on failure */
 
 					filesize = FS_LoadFile(cl.configstrings[precache_check],
 							(void **)&precache_model);
@@ -590,7 +590,8 @@ CL_DownloadFilter(const char *filename)
 	}
 
 	char *nodownload = strdup(cl_nodownload_list->string);
-	char *nodownload_token = strtok(nodownload, " ");
+	char *strtok_state; /* optech2: for Q_strtok_r */
+	char *nodownload_token = Q_strtok_r(nodownload, " ", &strtok_state);
 	while (nodownload_token != NULL)
 	{
 		Com_Printf("Token: %s\n", nodownload_token);
@@ -600,7 +601,7 @@ CL_DownloadFilter(const char *filename)
 			free(nodownload);
 			return true;
 		}
-		nodownload_token = strtok(NULL, " ");
+		nodownload_token = Q_strtok_r(NULL, " ", &strtok_state);
 	}
 	free(nodownload);
 

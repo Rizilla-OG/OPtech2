@@ -328,6 +328,7 @@ ApplyChanges(void *unused)
 	if (strcmp(s_mode_list.itemnames[s_mode_list.curvalue], AUTO_MODE_NAME) == 0)
 	{
 		Cvar_SetValue("r_mode", -2);
+		// cppcheck-suppress redundantAssignment ; optech2: stock, each branch sets it
 		restart = true;
 	}
 	else if (strcmp(s_mode_list.itemnames[s_mode_list.curvalue], CUSTOM_MODE_NAME) == 0)

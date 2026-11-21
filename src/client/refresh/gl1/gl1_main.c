@@ -1530,6 +1530,7 @@ RI_Init(void)
 
 	sscanf(gl_config.version_string, "%d.%d", &gl_config.major_version, &gl_config.minor_version);
 
+	// cppcheck-suppress knownConditionTrueFalse ; optech2: true in this build, not in the GLES1 one
 	if ((refresher == rf_opengl14) &&
 		gl_config.major_version == 1 && gl_config.minor_version < 4 )
 	{

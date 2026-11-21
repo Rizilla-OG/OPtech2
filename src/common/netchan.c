@@ -322,10 +322,12 @@ Netchan_Transmit(netchan_t *chan, int length, const byte *data)
 	/* write the packet header */
 	SZ_Init(&send, send_buf, sizeof(send_buf));
 
-	w1 = (chan->outgoing_sequence & ~(1U << 31)) | (send_reliable << 31);
+	/* optech2: unsigned shifts, a signed 1 << 31 overflows */
+	w1 = (chan->outgoing_sequence & ~(1U << 31)) | ((unsigned)send_reliable << 31);
 	w2 =
 		(chan->incoming_sequence &
-	~(1U << 31)) | (chan->incoming_reliable_sequence << 31);
+			~(1U << 31)) |
+		((unsigned)chan->incoming_reliable_sequence << 31);
 
 	chan->outgoing_sequence++;
 	chan->last_sent = curtime;

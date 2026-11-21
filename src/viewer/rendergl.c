@@ -59,10 +59,24 @@ image_load(const char* name, int *w, int *h, int *b)
 	if (!palette)
 	{
 		palette = malloc(768);
+
+		if (!palette) /* optech2 */
+		{
+			free(pic);
+			return NULL;
+		}
+
 		memcpy(palette, colormap, 768);
 	}
 
 	pic_decoded = malloc((*w) * (*h) * 4);
+
+	if (!pic_decoded) /* optech2 */
+	{
+		free(pic);
+		free(palette);
+		return NULL;
+	}
 
 	/* Convert indexed 8 bits texture to RGB 24 bits */
 	for (i = 0; i < (*w) * (*h); ++i)
@@ -70,7 +84,7 @@ image_load(const char* name, int *w, int *h, int *b)
 		pic_decoded[(i * 4) + 0] = palette[pic[i] * 3 + 0];
 		pic_decoded[(i * 4) + 1] = palette[pic[i] * 3 + 1];
 		pic_decoded[(i * 4) + 2] = palette[pic[i] * 3 + 2];
-		pic_decoded[(i * 4) + 2] = 0;
+		pic_decoded[(i * 4) + 3] = 255; /* optech2: alpha; the stock code zeroed blue here */
 	}
 	free(pic);
 	free(palette);
@@ -86,13 +100,18 @@ insert_skin(const char *name, byte *data, int width, int realwidth,
 
 	GLubyte *pixels = (GLubyte *)malloc(width * height * 4);
 
+	if (!pixels) /* optech2 */
+	{
+		return NULL;
+	}
+
 	/* Convert indexed 8 bits texture to RGB 24 bits */
 	for (i = 0; i < width * height; ++i)
 	{
 		pixels[(i * 4) + 0] = colormap[data[i]][0];
 		pixels[(i * 4) + 1] = colormap[data[i]][1];
 		pixels[(i * 4) + 2] = colormap[data[i]][2];
-		pixels[(i * 4) + 2] = 0;
+		pixels[(i * 4) + 3] = 255; /* optech2: alpha; the stock code zeroed blue here */
 	}
 
 	upload_texture(pixels, width, height);
