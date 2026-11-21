@@ -81,7 +81,7 @@ def play(name, mod_library=None):
         environment = dict(os.environ, HOME=home, SDL_AUDIODRIVER="dummy")
         log_path = OUTPUT_DIR / f"{name}.log"
         arguments = ["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(DATA_DIR), "+set", "game", game,
-                     "+set", "vid_renderer", "gl3", "+set", "vid_fullscreen", "0", "+set", "r_mode", "4",
+                     "+set", "fixedtime", "16667", "+set", "vid_renderer", "gl3", "+set", "vid_fullscreen", "0", "+set", "r_mode", "4",
                      "+set", "s_initsound", "0", "+set", "cheats", "1", "+set", "cl_showmiss", "1",
                      "+set", "developer", "1", "+set", "con_notifytime", "0", "+exec", "m.cfg"]
         with open(log_path, "w") as log_file:

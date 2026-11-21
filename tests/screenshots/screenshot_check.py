@@ -39,7 +39,7 @@ GAME_TIMEOUT_SECONDS = 180
 VIDEO_SETTINGS = [
     "+set", "vid_fullscreen", "0", "+set", "r_mode", "-1",
     "+set", "r_customwidth", str(SCREEN_WIDTH), "+set", "r_customheight", str(SCREEN_HEIGHT),
-    "+set", "vid_renderer", "gl3", "+set", "r_vsync", "0", "+set", "cl_maxfps", "60",
+    "+set", "fixedtime", "16667", "+set", "vid_renderer", "gl3", "+set", "r_vsync", "0", "+set", "cl_maxfps", "60",
 ]
 
 

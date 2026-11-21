@@ -56,7 +56,7 @@ def run(name, nav):
         environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
         try:
             result = subprocess.run(["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(DATA_DIR), "+set",
-                                     "vid_renderer", "soft", "+set", "r_vsync", "0", "+set", "cl_maxfps", "60",
+                                     "vid_renderer", "soft", "+set", "fixedtime", "16667", "+set", "r_vsync", "0", "+set", "cl_maxfps", "60",
                                      "+set", "s_initsound", "0", "+set", "cheats", "1", "+set", "skill", "1",
                                      "+exec", "monsternav.cfg"],
                                     env=environment, stdin=subprocess.DEVNULL, capture_output=True, text=True,
@@ -82,7 +82,7 @@ def hearing_run():
         (user_dir / "hearing.cfg").write_text("\n".join(lines) + "\n")
         environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
         result = subprocess.run(["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(DATA_DIR), "+set",
-                                 "vid_renderer", "soft", "+set", "r_vsync", "0", "+set", "s_initsound", "0",
+                                 "vid_renderer", "soft", "+set", "fixedtime", "16667", "+set", "r_vsync", "0", "+set", "s_initsound", "0",
                                  "+set", "cheats", "1", "+exec", "hearing.cfg"],
                                 env=environment, stdin=subprocess.DEVNULL, capture_output=True, text=True,
                                 timeout=60, check=False)

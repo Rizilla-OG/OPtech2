@@ -59,7 +59,7 @@ def home_with_map(home, config_name, lines):
 def run_server(commands):
     with tempfile.TemporaryDirectory(prefix="opentech2-plat-") as home:
         home_with_map(home, "plat.cfg", commands + ["quit"])
-        result = subprocess.run([str(SERVER_BINARY), "-datadir", str(DATA_DIR), "+exec", "plat.cfg"],
+        result = subprocess.run([str(SERVER_BINARY), "-datadir", str(DATA_DIR), "+set", "fixedtime", "16667", "+exec", "plat.cfg"],
                                 env=dict(os.environ, HOME=home), stdin=subprocess.DEVNULL,
                                 capture_output=True, text=True, timeout=120, check=False)
     log = result.stdout + result.stderr

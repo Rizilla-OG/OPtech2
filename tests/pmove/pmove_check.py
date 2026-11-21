@@ -70,7 +70,7 @@ def play(name, mod_library=None, engine_movement=False):
             shutil.copy(mod_library, game_dir / "game.so")
         script = ["map base1"] + [f'delay {when} "{command}"' for when, command in WALK]
         (game_dir / "p.cfg").write_text("\n".join(script) + "\n")
-        arguments = [str(CLIENT_BINARY), "-datadir", str(DATA_DIR), "+set", "vid_renderer", "soft", "+set", "r_vsync", "0",
+        arguments = [str(CLIENT_BINARY), "-datadir", str(DATA_DIR), "+set", "fixedtime", "16667", "+set", "vid_renderer", "soft", "+set", "r_vsync", "0",
                      "+set", "s_initsound", "0", "+set", "cheats", "1", "+set", "cl_showmiss", "1",
                      "+set", "cl_run", "1"]  # run: 400 u/s, over the stock 300 cap
         if mod_library:

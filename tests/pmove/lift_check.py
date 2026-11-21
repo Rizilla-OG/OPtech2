@@ -55,7 +55,7 @@ def ride(name, predict_movers):
         (game_dir / "l.cfg").write_text(scenario_script(name))
         environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
         result = subprocess.run(
-            ["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(DATA_DIR), "+set", "vid_renderer", "soft",
+            ["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(DATA_DIR), "+set", "fixedtime", "16667", "+set", "vid_renderer", "soft",
              "+set", "r_vsync", "0", "+set", "s_initsound", "0", "+set", "cl_showmiss", "1",
              "+set", "cl_predict_movers", str(predict_movers), "+exec", "l.cfg"],
             env=environment, capture_output=True, text=True, errors="replace", timeout=60)

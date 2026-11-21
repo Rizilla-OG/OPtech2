@@ -118,7 +118,11 @@ Cmd_Delay_f(void)
 		if (!delayed_commands[i].inUse)
 		{
 			delayed_commands[i].inUse = true;
-			delayed_commands[i].runAtMilliseconds = Sys_Milliseconds() + delayMilliseconds;
+			/* optech2: with fixedtime the engine clock (it starts at 0, the
+			   same on every run), else the real clock as before */
+			int now = (Cvar_VariableValue("fixedtime") > 0) ? curtime : Sys_Milliseconds();
+
+			delayed_commands[i].runAtMilliseconds = now + delayMilliseconds;
 			Q_strlcpy(delayed_commands[i].command, command, sizeof(delayed_commands[i].command));
 			return;
 		}
@@ -131,7 +135,7 @@ Cmd_Delay_f(void)
 static void
 Cmd_RunDelayedCommands(void)
 {
-	int now = Sys_Milliseconds();
+	int now = curtime;
 	int i;
 
 	for (i = 0; i < MAX_DELAYED_COMMANDS; i++)

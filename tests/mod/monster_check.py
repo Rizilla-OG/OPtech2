@@ -108,7 +108,7 @@ def session(name, with_mod, soldier):
         environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
         try:
             result = subprocess.run(["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(DATA_DIR)] + arguments +
-                                    ["+set", "vid_renderer", "soft", "+set", "r_vsync", "0", "+set", "cl_maxfps", "60",
+                                    ["+set", "fixedtime", "16667", "+set", "vid_renderer", "soft", "+set", "r_vsync", "0", "+set", "cl_maxfps", "60",
                                      "+set", "s_initsound", "0", "+set", "skill", "1", "+exec", "monsters.cfg"],
                                     env=environment, stdin=subprocess.DEVNULL, capture_output=True, text=True,
                                     timeout=90, check=False)

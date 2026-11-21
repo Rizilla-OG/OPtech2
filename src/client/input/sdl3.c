@@ -1205,7 +1205,8 @@ IN_Update(void)
 
 	// We need to save the frame time so other subsystems
 	// know the exact time of the last input events.
-	sys_frame_time = Sys_Milliseconds();
+	/* optech2: engine clock (the real clock unless fixedtime is set) */
+	sys_frame_time = curtime;
 
 	// Hot plugging delay handling, to not be "overwhelmed" because some controllers
 	// present themselves as two different devices, triggering SDL_EVENT_JOYSTICK_ADDED

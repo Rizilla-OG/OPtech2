@@ -111,7 +111,7 @@ def main():
         environment = dict(os.environ, HOME=home, SDL_AUDIODRIVER="dummy")
         if arguments.renderer == "soft":
             environment["SDL_VIDEODRIVER"] = "dummy"
-        settings = ["+set", "vid_renderer", arguments.renderer, "+set", "vid_fullscreen", "0", "+set", "r_mode", "4",
+        settings = ["+set", "fixedtime", "16667", "+set", "vid_renderer", arguments.renderer, "+set", "vid_fullscreen", "0", "+set", "r_mode", "4",
                     "+set", "r_vsync", "0", "+set", "cl_maxfps", "60", "+set", "s_initsound", "0",
                     "+set", "cl_gun", "0", "+set", "crosshair", "0", "+set", "developer", "1"]
         log_path = OUTPUT_DIR / "client.log"

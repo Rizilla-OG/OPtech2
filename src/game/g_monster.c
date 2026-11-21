@@ -1772,6 +1772,13 @@ monster_think(edict_t *self)
 		return;
 	}
 
+	/* optech2: frozen monsters keep thinking but don't move, turn or attack */
+	if (g_monster_freeze->value && (self->deadflag != DEAD_DEAD))
+	{
+		self->nextthink = level.time + FRAMETIME;
+		return;
+	}
+
 	M_MoveFrame(self);
 
 	if (self->linkcount != self->monsterinfo.linkcount)
