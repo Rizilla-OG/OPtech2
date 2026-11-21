@@ -2266,6 +2266,8 @@ void SelectSpawnPoint(const edict_t *ent, vec3_t origin, vec3_t angles);
 #define STATE_BOTTOM 1
 #define STATE_UP 2
 #define STATE_DOWN 3
+void plat_go_up(edict_t *ent); /* optech2: monsters ride lifts */
+void plat_go_down(edict_t *ent);
 
 /*
  * Uncomment for check that exported functions declarations are same as in

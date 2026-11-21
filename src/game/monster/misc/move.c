@@ -942,6 +942,121 @@ M_NavWalkOff(edict_t *ent, const vec3_t to_point, float dist)
 	return true;
 }
 
+/* optech2: is point beside the lift (within reach of its sides)? */
+static qboolean
+M_NavNearLift(const edict_t *lift, const vec3_t point, float reach)
+{
+	return (point[0] >= lift->absmin[0] - reach) && (point[0] <= lift->absmax[0] + reach) &&
+		   (point[1] >= lift->absmin[1] - reach) && (point[1] <= lift->absmax[1] + reach);
+}
+
+/* optech2: the lift (func_plat) between the monster and the path's next
+   corner, NULL if there's none */
+static edict_t *
+M_NavFindLift(const edict_t *ent)
+{
+	const float reach = Q_max(Q_max(-ent->mins[0], ent->maxs[0]), Q_max(-ent->mins[1], ent->maxs[1])) + 48;
+	int i;
+
+	for (i = game.maxclients + 1; i < globals.num_edicts; i++)
+	{
+		edict_t *lift = &g_edicts[i];
+
+		if (lift->inuse && lift->classname && !strcmp(lift->classname, "func_plat") &&
+			M_NavNearLift(lift, ent->s.origin, reach) && M_NavNearLift(lift, ent->monsterinfo.nav_move_point, reach))
+		{
+			return lift;
+		}
+	}
+
+	return NULL;
+}
+
+/* optech2: the path rides a lift to nav_move_point, the floor beside its
+   other end. Onto it when it's at this end (else wait for it, or call it
+   from the other end), send it, stand still while it moves, then step off.
+   Holds the path (no new one while riding: off the mesh). */
+static qboolean
+M_NavLift(edict_t *ent, float dist)
+{
+	edict_t *lift = M_NavFindLift(ent);
+	const float rise = ent->monsterinfo.nav_move_point[2] - (ent->s.origin[2] + ent->mins[2]);
+	const qboolean going_up = (rise > 0);
+	const int here = going_up ? STATE_BOTTOM : STATE_TOP; /* where the lift must be to get on */
+	vec3_t to_point;
+
+	if (!lift)
+	{
+		ent->monsterinfo.nav_link_type = OPTECH2_PATH_LINK_WALK;
+		ent->monsterinfo.nav_retry_time = 0;
+		return false;
+	}
+
+	/* at the other end: step off */
+	if (fabsf(rise) <= STEPSIZE)
+	{
+		VectorSubtract(ent->monsterinfo.nav_move_point, ent->s.origin, to_point);
+
+		if (!SV_StepDirection(ent, vectoyaw(to_point), dist))
+		{
+			ent->monsterinfo.nav_retry_time = 0;
+			return false;
+		}
+
+		return true;
+	}
+
+	ent->monsterinfo.nav_retry_time = level.time + 0.5f; /* hold the path while at the lift */
+
+	if (ent->groundentity == lift)
+	{
+		/* on it: send it, ride */
+		if (lift->moveinfo.state == here)
+		{
+			if (g_monster_nav->value >= 2)
+			{
+				gi.dprintf("%s rides a lift %s\n", ent->classname, going_up ? "up" : "down");
+			}
+
+			if (going_up)
+			{
+				plat_go_up(lift);
+			}
+			else
+			{
+				plat_go_down(lift);
+			}
+		}
+
+		return true;
+	}
+
+	if (lift->moveinfo.state == here)
+	{
+		/* onto it: its middle */
+		to_point[0] = (lift->absmin[0] + lift->absmax[0]) * 0.5f - ent->s.origin[0];
+		to_point[1] = (lift->absmin[1] + lift->absmax[1]) * 0.5f - ent->s.origin[1];
+		to_point[2] = 0;
+
+		if (!SV_StepDirection(ent, vectoyaw(to_point), dist))
+		{
+			ent->monsterinfo.nav_retry_time = 0;
+			return false;
+		}
+
+		return true;
+	}
+
+	/* at the other end: from the top, call it up (from the bottom it comes
+	   back down on its own) */
+	if (!going_up && (lift->moveinfo.state == STATE_BOTTOM))
+	{
+		plat_go_up(lift);
+	}
+
+	return true; /* wait */
+}
+
 /*
  * optech2: a step along the engine's navigation path to goal (walking
  * monsters only, when the engine offers paths and g_monster_nav is on), on
@@ -967,7 +1082,10 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 		VectorSubtract(ent->monsterinfo.nav_move_point, ent->s.origin, to_point);
 		to_point[2] = 0;
 
-		if (VectorLength(to_point) <= dist + 8)
+		/* (a lift's far end may be right above: reached at its height) */
+		if ((VectorLength(to_point) <= dist + 8) &&
+			((ent->monsterinfo.nav_link_type != OPTECH2_PATH_LINK_ELEVATOR) ||
+				(fabsf(ent->monsterinfo.nav_move_point[2] - (ent->s.origin[2] + ent->mins[2])) <= STEPSIZE)))
 		{
 			ent->monsterinfo.nav_retry_time = 0;
 		}
@@ -983,7 +1101,7 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 		request.start[2] += ent->mins[2]; /* the feet */
 		VectorCopy(goal->s.origin, request.goal);
 		request.goal[2] += goal->mins[2];
-		request.path_flags = OPTECH2_PATH_WALK | OPTECH2_PATH_WALK_OFF_LEDGE;
+		request.path_flags = OPTECH2_PATH_WALK | OPTECH2_PATH_WALK_OFF_LEDGE | OPTECH2_PATH_ELEVATOR;
 		request.drop_height = MONSTER_DROP_HEIGHT;
 		request.move_dist = dist;
 
@@ -1019,6 +1137,11 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 	if (!ent->monsterinfo.nav_has_point)
 	{
 		return false;
+	}
+
+	if (ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_ELEVATOR)
+	{
+		return M_NavLift(ent, dist);
 	}
 
 	VectorSubtract(ent->monsterinfo.nav_move_point, ent->s.origin, to_point);
@@ -1066,8 +1189,8 @@ M_MoveToGoal(edict_t *ent, float dist)
 	/* optech2 (from the re-release): with a clear line to the goal, step
 	   straight at it instead of following the 8-way chase directions
 	   (the zig-zag). If that step fails, use the stock chase for 5 s. */
-	if (goal && ((ent->monsterinfo.bad_move_time <= level.time) ||
-					(ent->monsterinfo.aiflags & AI_CHARGING)))
+	if (goal && ((ent->monsterinfo.bad_move_time <= level.time) || (ent->monsterinfo.aiflags & AI_CHARGING)) &&
+		!(ent->monsterinfo.nav_has_point && (ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_ELEVATOR)))
 	{
 		trace_t straightTrace;
 		vec3_t toGoal;

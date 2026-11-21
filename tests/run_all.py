@@ -71,6 +71,7 @@ CHECKS = [
     Check("navigation", "nav/nav_check.py", needs_map=("optech2_nav.bsp", "maps/make_nav_map.py")),
     Check("monster-nav", "nav/monster_nav_check.py", needs_map=("optech2_nav.bsp", "maps/make_nav_map.py")),
     Check("ledge-drops", "nav/ledge_check.py", needs_map=("optech2_ledge.bsp", "maps/make_ledge_map.py")),
+    Check("lifts", "nav/plat_check.py", needs_map=("optech2_plat.bsp", "maps/make_plat_map.py")),
 ]
 
 

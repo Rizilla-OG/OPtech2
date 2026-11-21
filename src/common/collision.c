@@ -2461,14 +2461,16 @@ CM_MarkWorldBrushes(int nodenum, byte *marked)
 	}
 }
 
-int
-CM_ForEachSolidTriangle(int contents_mask, void (*emit)(const float *a, const float *b, const float *c, void *user),
-	void *user)
+/* optech2: the solid brushes of model (0 the world, n inline model *n) as
+   triangles, raised by z_offset */
+static int
+CM_EmitModelTriangles(int model, float z_offset, int contents_mask,
+	void (*emit)(const float *a, const float *b, const float *c, void *user), void *user)
 {
 	byte *marked;
 	int brushnum, triangles = 0;
 
-	if (!cmod->numcmodels || !cmod->numbrushes || !cmod->map_nodes)
+	if (!cmod->numcmodels || !cmod->numbrushes || !cmod->map_nodes || model < 0 || model >= cmod->numcmodels)
 	{
 		return 0;
 	}
@@ -2480,8 +2482,7 @@ CM_ForEachSolidTriangle(int contents_mask, void (*emit)(const float *a, const fl
 		return 0;
 	}
 
-	/* only the world model's brushes: doors and lifts move */
-	CM_MarkWorldBrushes(cmod->map_cmodels[0].headnode, marked);
+	CM_MarkWorldBrushes(cmod->map_cmodels[model].headnode, marked);
 
 	for (brushnum = 0; brushnum < cmod->numbrushes; brushnum++)
 	{
@@ -2517,9 +2518,9 @@ CM_ForEachSolidTriangle(int contents_mask, void (*emit)(const float *a, const fl
 
 				for (k = 0; k < 3; k++)
 				{
-					a[k] = (float)w.points[0][k];
-					b[k] = (float)w.points[i][k];
-					c[k] = (float)w.points[i + 1][k];
+					a[k] = (float)w.points[0][k] + (k == 2 ? z_offset : 0.0f);
+					b[k] = (float)w.points[i][k] + (k == 2 ? z_offset : 0.0f);
+					c[k] = (float)w.points[i + 1][k] + (k == 2 ? z_offset : 0.0f);
 					e1[k] = w.points[i][k] - w.points[0][k];
 					e2[k] = w.points[i + 1][k] - w.points[0][k];
 				}
@@ -2549,6 +2550,36 @@ CM_ForEachSolidTriangle(int contents_mask, void (*emit)(const float *a, const fl
 
 	free(marked);
 	return triangles;
+}
+
+int
+CM_ForEachSolidTriangle(int contents_mask, void (*emit)(const float *a, const float *b, const float *c, void *user),
+	void *user)
+{
+	/* only the world model's brushes: doors and lifts move */
+	return CM_EmitModelTriangles(0, 0, contents_mask, emit, user);
+}
+
+/* optech2: an inline model's brushes (a lift at rest), moved z_offset */
+int
+CM_ForEachModelTriangle(int model, float z_offset, int contents_mask,
+	void (*emit)(const float *a, const float *b, const float *c, void *user), void *user)
+{
+	return CM_EmitModelTriangles(model, z_offset, contents_mask, emit, user);
+}
+
+/* optech2: an inline model's bounds; false if there's no such model */
+qboolean
+CM_ModelBounds(int model, float *mins, float *maxs)
+{
+	if (model <= 0 || model >= cmod->numcmodels)
+	{
+		return false;
+	}
+
+	VectorCopy(cmod->map_cmodels[model].mins, mins);
+	VectorCopy(cmod->map_cmodels[model].maxs, maxs);
+	return true;
 }
 
 unsigned
