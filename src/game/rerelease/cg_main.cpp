@@ -80,7 +80,10 @@ void CG_NotifyMessage(int32_t isplit, const char *msg, bool is_chat);
 void CG_GetMonsterFlashOffset(monster_muzzleflash_id_t id, gvec3_ref_t offset)
 {
 	if (id >= q_countof(monster_flash_offset))
+	{
 		cgi.Com_Error("Bad muzzle flash offset");
+		return; // optech2: Com_Error isn't marked noreturn; never read past the table
+	}
 
 	offset = monster_flash_offset[id];
 }

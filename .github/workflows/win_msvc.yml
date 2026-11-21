@@ -196,6 +196,9 @@ jobs:
         cmakeBuildDirectory: build
         buildConfiguration: RelWithDebInfo
         ruleset: NativeRecommendedRules.ruleset
+    # optech2: drop results in bundled libraries (Recast, Lua, unzip) before upload
+    - name: Filter out bundled libraries
+      run: python tools/ci/filter_sarif.py "${{ steps.run-analysis.outputs.sarif }}"
     - name: Upload SARIF to GitHub Code Scanning
       uses: github/codeql-action/upload-sarif@v4.38.1
       with:

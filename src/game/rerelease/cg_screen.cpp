@@ -1436,7 +1436,8 @@ static void CG_ExecuteLayoutString (const char *s, vrect_t hud_vrect, vrect_t hu
                 if (end_frame < cgi.CL_ServerFrame())
                     continue;
 
-                uint64_t remaining_ms = (end_frame - cgi.CL_ServerFrame()) * cgi.frame_time_ms;
+                // optech2: widen before multiplying (the 32-bit product could overflow)
+                uint64_t remaining_ms = (uint64_t) (end_frame - cgi.CL_ServerFrame()) * cgi.frame_time_ms;
 
                 const bool green = true;
                 arg_buffers[0] = G_Fmt("{:02}:{:02}", (remaining_ms / 1000) / 60, (remaining_ms / 1000) % 60).data();

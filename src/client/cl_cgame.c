@@ -34,6 +34,9 @@
 #include "header/cgame_rerelease.h"
 #include "../common/header/optech2_ext.h"
 
+/* optech2: the player state has at least the module's stats */
+typedef char cg_stats_fit[(MAX_XSTATS >= CG_MAX_STATS) ? 1 : -1];
+
 /* module allocations live in their own zone tags, apart from the server's game */
 #define CGAME_TAG_OFFSET 1000
 
@@ -1087,7 +1090,8 @@ CL_CGame_PlayerState(cg_player_state_t *out)
 		CG_FindStringStats(cl.configstrings[CS_STATUSBAR], string_stats);
 		CG_FindStringStats(cl.layout, string_stats);
 
-		for (i = 0; i < CG_MAX_STATS && i < MAX_XSTATS; i++)
+		/* (MAX_XSTATS is CG_MAX_STATS: checked where the file starts) */
+		for (i = 0; i < CG_MAX_STATS; i++)
 		{
 			/* optech2: text stats in the module's configstring numbering */
 			out->stats[i] = string_stats[i] ? (int16_t)CG_ConfigStringIndexForModule(ps->stats[i]) : ps->stats[i];
