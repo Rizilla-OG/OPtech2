@@ -697,9 +697,16 @@ CL_CGame_CenterPrint(const char *text)
 	   shown for scr_centertime before the next. Messages that come faster
 	   (a map's "5... 4... 3..." countdown) fell seconds behind the game.
 	   A message that arrives while the previous one may still be up
-	   replaces it at once, as center prints always did in Quake II. */
-	on_screen_msec = (int)(Cvar_VariableValue("scr_centertime") * 1000) + 1000; /* + typing */
-	replace = (cls.realtime - last_center_time) < on_screen_msec;
+	   replaces it at once, as center prints always did in Quake II. Two
+	   sent together (within 0.2 s: "Pump online." + "Valve opened.") still
+	   queue, so the first isn't lost. */
+	{
+		int since_last = cls.realtime - last_center_time;
+
+		on_screen_msec = (int)(Cvar_VariableValue("scr_centertime") * 1000) + 1000; /* + typing */
+		replace = (since_last >= 200) && (since_last < on_screen_msec);
+	}
+
 	last_center_time = cls.realtime;
 
 	cgame->ParseCenterPrint(text, 0, replace);
