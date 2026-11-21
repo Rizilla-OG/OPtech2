@@ -97,7 +97,7 @@ def play(name, with_mods):
         environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
         try:
             result = subprocess.run(["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(DATA_DIR)] + arguments +
-                                    ["+set", "vid_renderer", "soft", "+set", "r_vsync", "0", "+set", "s_initsound", "0",
+                                    ["+set", "fixedtime", "16667", "+set", "vid_renderer", "soft", "+set", "r_vsync", "0", "+set", "s_initsound", "0",
                                      "+set", "cheats", "1", "+exec", "scripttest.cfg"],
                                     env=environment, stdin=subprocess.DEVNULL, capture_output=True, text=True,
                                     timeout=90, check=False)
@@ -146,7 +146,7 @@ def play_state():
             environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
             try:
                 result = subprocess.run(["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(DATA_DIR), "+set",
-                                         "fs_mods", "moda", "+set", "vid_renderer", "soft", "+set", "r_vsync", "0",
+                                         "fs_mods", "moda", "+set", "fixedtime", "16667", "+set", "vid_renderer", "soft", "+set", "r_vsync", "0",
                                          "+set", "s_initsound", "0", "+set", "cheats", "1", "+exec", "state.cfg"],
                                         env=environment, stdin=subprocess.DEVNULL, capture_output=True, text=True,
                                         timeout=90, check=False)
@@ -171,7 +171,7 @@ def play_example():
         environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
         try:
             result = subprocess.run(["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(DATA_DIR), "+set", "fs_mods",
-                                     "survival", "+set", "vid_renderer", "soft", "+set", "r_vsync", "0", "+set",
+                                     "survival", "+set", "fixedtime", "16667", "+set", "vid_renderer", "soft", "+set", "r_vsync", "0", "+set",
                                      "s_initsound", "0", "+set", "cheats", "1", "+exec", "example.cfg"],
                                     env=environment, stdin=subprocess.DEVNULL, capture_output=True, text=True,
                                     timeout=90, check=False)

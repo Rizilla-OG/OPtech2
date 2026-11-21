@@ -140,7 +140,7 @@ def play(name, with_mods, home=None, fs_mods="moda,modb", console=None):
         environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
         try:
             result = subprocess.run(["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(DATA_DIR)] + arguments +
-                                    ["+set", "vid_renderer", "soft", "+set", "r_vsync", "0", "+set", "s_initsound", "0",
+                                    ["+set", "fixedtime", "16667", "+set", "vid_renderer", "soft", "+set", "r_vsync", "0", "+set", "s_initsound", "0",
                                      "+set", "cheats", "1", "+exec", "defstest.cfg"],
                                     env=environment, stdin=subprocess.DEVNULL, capture_output=True, text=True,
                                     timeout=90, check=False)

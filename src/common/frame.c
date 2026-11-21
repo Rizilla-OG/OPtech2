@@ -177,6 +177,12 @@ Qcommon_Mainloop(void)
 {
 	long long newtime;
 	long long oldtime = Sys_Microseconds();
+	/* optech2: engine clock in microseconds. It follows the real clock,
+	   except with fixedtime set: then each pass moves it on exactly
+	   fixedtime, so the game runs the same way every time (and as fast
+	   as the machine can). curtime, delay and network timers use it. */
+	long long engine_clock = (fixedtime->value > 0) ? 0 : oldtime;
+	long long step;
 
 	/* The mainloop. The legend. */
 	while (1)
@@ -214,11 +220,13 @@ Qcommon_Mainloop(void)
 #endif
 
 		newtime = Sys_Microseconds();
+		step = (fixedtime->value > 0) ? (long long)fixedtime->value : (newtime - oldtime);
+		engine_clock += step;
 
 		// Save global time for network- and input code.
-		curtime = (int)(newtime / 1000ll);
+		curtime = (int)(engine_clock / 1000ll);
 
-		Qcommon_Frame(newtime - oldtime);
+		Qcommon_Frame(step);
 		oldtime = newtime;
 	}
 }

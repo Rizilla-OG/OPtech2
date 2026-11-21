@@ -48,7 +48,7 @@ def client_settings(renderer):
     settings = ["+set", "vid_fullscreen", "0", "+set", "r_mode", "4",  # 800x600
                 "+set", "r_vsync", "0", "+set", "cl_maxfps", "60",
                 "+set", "cl_gun", "0", "+set", "crosshair", "0", "+set", "con_notifytime", "0"]
-    return ["+set", "vid_renderer", renderer, *settings]
+    return ["+set", "fixedtime", "16667", "+set", "vid_renderer", renderer, *settings]
 
 
 def script_lines():

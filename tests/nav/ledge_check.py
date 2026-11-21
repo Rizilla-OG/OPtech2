@@ -54,7 +54,7 @@ def home_with_map(home, config_name, lines):
 def run_server(commands):
     with tempfile.TemporaryDirectory(prefix="opentech2-ledge-") as home:
         home_with_map(home, "ledge.cfg", commands + ["quit"])
-        result = subprocess.run([str(SERVER_BINARY), "-datadir", str(DATA_DIR), "+exec", "ledge.cfg"],
+        result = subprocess.run([str(SERVER_BINARY), "-datadir", str(DATA_DIR), "+set", "fixedtime", "16667", "+exec", "ledge.cfg"],
                                 env=dict(os.environ, HOME=home), stdin=subprocess.DEVNULL,
                                 capture_output=True, text=True, timeout=120, check=False)
     log = result.stdout + result.stderr

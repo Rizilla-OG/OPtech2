@@ -29,7 +29,7 @@ OUTPUT_DIR = REPO_DIR / "build" / "damage-check"
 DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
 
 CLIENT_SETTINGS = [
-    "+set", "vid_renderer", "soft", "+set", "r_vsync", "0",  # dummy video driver: vsync never returns
+    "+set", "fixedtime", "16667", "+set", "vid_renderer", "soft", "+set", "r_vsync", "0",  # dummy video driver: vsync never returns
     "+set", "cl_maxfps", "60", "+set", "s_initsound", "0",
 ]
 PLAYER_SPOT = "128 -320 32 0 135 0"     # open room on base1
@@ -44,7 +44,7 @@ TOLERANCE = 0.10
 def run_session(tick_rate, weapon_name, ammo_name, data_dir, log_path):
     """Fire one weapon at a supertank for 3 s; return the log text."""
     script = [
-        "set g_damagelog 1", "map base1",
+        "set g_damagelog 1", "set g_monster_freeze 1", "map base1",  # target stands still: every shot lands
         'delay 6000 "god"', 'delay 6050 "notarget"', f'delay 6100 "teleport {PLAYER_SPOT}"',
         f'delay 6300 "cmd spawnentity monster_supertank {TARGET_SPOT}"',
         f'delay 6400 "give {weapon_name}"', f'delay 6450 "give {ammo_name}"', f'delay 6500 "use {weapon_name}"',

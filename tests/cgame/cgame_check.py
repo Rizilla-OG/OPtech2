@@ -63,7 +63,7 @@ def main():
         with open(log_path, "w") as log_file:
             data_dir = RERELEASE_DATA_DIR if (RERELEASE_DATA_DIR / "Q2Game.kpf").exists() else DEFAULT_DATA_DIR
             subprocess.run(["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(data_dir),
-                            "+set", "vid_renderer", "soft", "+set", "r_vsync", "0", "+set", "s_initsound", "0", "+set", "r_hudscale", "2",
+                            "+set", "fixedtime", "16667", "+set", "vid_renderer", "soft", "+set", "r_vsync", "0", "+set", "s_initsound", "0", "+set", "r_hudscale", "2",
                             "+set", "cl_cgame", str(module), "+exec", "c.cfg"],
                            env=environment, stdout=log_file, stderr=subprocess.STDOUT, timeout=60, check=False)
         shots = sorted((game_dir / "scrnshot").glob("*.png")) if (game_dir / "scrnshot").exists() else []

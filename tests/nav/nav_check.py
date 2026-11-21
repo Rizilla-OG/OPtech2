@@ -50,7 +50,7 @@ def run_server(home, commands, log_name):
     (user_dir / "maps").mkdir(parents=True, exist_ok=True)
     shutil.copy(MAP_FILE, user_dir / "maps" / MAP_FILE.name)
     (user_dir / "nav.cfg").write_text("\n".join(commands + ["quit"]) + "\n")
-    result = subprocess.run([str(SERVER_BINARY), "-datadir", str(DATA_DIR), "+exec", "nav.cfg"],
+    result = subprocess.run([str(SERVER_BINARY), "-datadir", str(DATA_DIR), "+set", "fixedtime", "16667", "+exec", "nav.cfg"],
                             env=dict(os.environ, HOME=str(home)), stdin=subprocess.DEVNULL,
                             capture_output=True, text=True, timeout=120, check=False)
     log = result.stdout + result.stderr

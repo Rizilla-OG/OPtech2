@@ -38,7 +38,7 @@ DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
 GAME_TIMEOUT_SECONDS = 180
 
 CLIENT_SETTINGS = [
-    "+set", "vid_renderer", "soft", "+set", "r_mode", "4", "+set", "vid_fullscreen", "0",
+    "+set", "fixedtime", "16667", "+set", "vid_renderer", "soft", "+set", "r_mode", "4", "+set", "vid_fullscreen", "0",
     "+set", "r_vsync", "0",  # with the dummy video driver vsync never returns
     "+set", "cl_maxfps", "60", "+set", "s_initsound", "0",
 ]
