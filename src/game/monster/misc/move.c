@@ -987,6 +987,12 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 		request.drop_height = MONSTER_DROP_HEIGHT;
 		request.move_dist = dist;
 
+		/* g_monster_nav 3: draw the path until the next one (single player) */
+		if (g_monster_nav->value >= 3)
+		{
+			request.draw_time = 0.3f;
+		}
+
 		/* the mesh for its size: half its width, its height */
 		gi_optech2->GetPathToGoalSized(&request, &info, Q_max(Q_max(-ent->mins[0], ent->maxs[0]), Q_max(-ent->mins[1], ent->maxs[1])), ent->maxs[2] - ent->mins[2]);
 		ent->monsterinfo.nav_has_point = (info.return_code == OPTECH2_PATH_IN_PROGRESS);

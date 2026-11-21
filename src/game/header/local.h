@@ -802,7 +802,7 @@ extern cvar_t *filterban;
 extern cvar_t *sv_gravity;
 extern cvar_t *sv_tickrate; /* optech2: server frames per second, set by the server */
 extern cvar_t *g_damagelog; /* optech2: print every hit, for tests */
-extern cvar_t *g_monster_nav; /* optech2: 0 = monsters chase the stock way, without paths; 2 = and log ledge drops */
+extern cvar_t *g_monster_nav; /* optech2: 0 = monsters chase the stock way, without paths; 2 = and log ledge drops; 3 = and draw paths */
 extern cvar_t *sv_maxvelocity;
 
 extern cvar_t *gun_x, *gun_y, *gun_z;
