@@ -650,7 +650,7 @@ CL_CGame_FindFx(OPtech2_GetExtension_t get_extension)
 	}
 
 	if (fx_ext->version != OPTECH2_FX_EXT_VERSION || !fx_ext->Init || !fx_ext->ParseTempEntity ||
-		!fx_ext->ParseMuzzleFlash || !fx_ext->EntityTrails || !fx_ext->RegisterMedia || !fx_ext->AddFrameEffects ||
+		!fx_ext->ParseMuzzleFlash || !fx_ext->EntityTrails || !fx_ext->EntityEvent || !fx_ext->RegisterMedia || !fx_ext->AddFrameEffects ||
 		!fx_ext->ClearEffects)
 	{
 		Com_Printf("client game: effects version %d doesn't match, using the engine's\n", fx_ext->version);
@@ -730,6 +730,13 @@ CL_CGame_EntityTrails(centity_t *cent, const entity_xstate_t *s1, unsigned int e
 	cent->trailcount = info.trailcount;
 	cent->fly_stoptime = info.fly_stoptime;
 	return true;
+}
+
+/* an entity event: true when the game library played it */
+qboolean
+CL_CGame_EntityEvent(const entity_xstate_t *ent)
+{
+	return cgame_fx && cgame_fx->EntityEvent(ent->number, ent->event, ent->origin);
 }
 
 /* a temp entity of this type arrived: true when the game library drew it */

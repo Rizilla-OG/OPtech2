@@ -133,6 +133,12 @@ void CL_AddMuzzleFlash(void);
 void CL_AddMuzzleFlash2(void);
 void CL_AddMuzzleFlash3(void);
 
+/* fx_events.c */
+qboolean CL_EntityEvent(int number, int event, const vec3_t origin);
+
+/* fx_tempentities.c (more) */
+struct sfx_s *CL_RandomFootstepSfx(void);
+
 /* fx_trails.c */
 qboolean FX_EntityTrails(optech2_fx_entity_t *info);
 

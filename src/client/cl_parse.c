@@ -1180,7 +1180,10 @@ CL_FireEntityEvents(const frame_t *frame)
 
 		if (s1->event)
 		{
-			CL_EntityEvent(s1);
+			if (!CL_CGame_EntityEvent(s1)) /* optech2: the game library's first */
+			{
+				CL_EntityEvent(s1);
+			}
 		}
 
 		if (s1->effects & EF_TELEPORTER)

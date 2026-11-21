@@ -95,6 +95,13 @@ FX_ParseMuzzleFlash(int kind)
 	return false;
 }
 
+static qboolean
+FX_EntityEvent(int number, int event, const vec3_t origin)
+{
+	FX_RefreshState();
+	return CL_EntityEvent(number, event, origin);
+}
+
 static void
 FX_RegisterMedia(void)
 {
@@ -121,6 +128,7 @@ const optech2_fx_ext_t fx_extension = {
 	FX_ParseTempEntity,
 	FX_ParseMuzzleFlash,
 	FX_EntityTrails,
+	FX_EntityEvent,
 	FX_RegisterMedia,
 	FX_AddFrameEffects,
 	FX_ClearEffects};

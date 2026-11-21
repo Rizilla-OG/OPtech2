@@ -50,7 +50,7 @@ typedef struct
  * ones; types it doesn't handle get the engine's built-in effects.
  */
 #define OPTECH2_EXT_FX "optech2_fx"
-#define OPTECH2_FX_EXT_VERSION 4
+#define OPTECH2_FX_EXT_VERSION 5
 
 struct sfx_s;
 struct model_s;
@@ -191,6 +191,10 @@ typedef struct
 	   flying light and return true, or return false to leave them to the
 	   engine */
 	qboolean (*EntityTrails)(optech2_fx_entity_t *ent);
+
+	/* an entity's event (EV_FOOTSTEP, EV_ITEM_RESPAWN...) arrived: play it
+	   and return true, or return false to leave it to the engine */
+	qboolean (*EntityEvent)(int number, int event, const vec3_t origin);
 
 	/* register models and sounds; at each level load */
 	void (*RegisterMedia)(void);
