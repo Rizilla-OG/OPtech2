@@ -69,6 +69,7 @@ cvar_t *sv_maxvelocity;
 cvar_t *sv_gravity;
 cvar_t *sv_tickrate; /* optech2 */
 cvar_t *g_damagelog; /* optech2 */
+cvar_t *g_monster_nav; /* optech2 */
 
 cvar_t *sv_rollspeed;
 cvar_t *sv_rollangle;
