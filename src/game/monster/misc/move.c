@@ -942,7 +942,11 @@ M_NavWalkOff(edict_t *ent, const vec3_t to_point, float dist)
 	return true;
 }
 
-/* optech2: is point beside the lift (within reach of its sides)? */
+/* optech2: how long a monster waits for a lift before it asks for another
+   way (the lift may be held by a player, or broken) */
+#define MONSTER_LIFT_WAIT 8
+
+/* optech2: is point over the lift, or within reach of its sides? */
 static qboolean
 M_NavNearLift(const edict_t *lift, const vec3_t point, float reach)
 {
@@ -950,20 +954,62 @@ M_NavNearLift(const edict_t *lift, const vec3_t point, float reach)
 		   (point[1] >= lift->absmin[1] - reach) && (point[1] <= lift->absmax[1] + reach);
 }
 
-/* optech2: the lift (func_plat) between the monster and the path's next
-   corner, NULL if there's none */
-static edict_t *
-M_NavFindLift(const edict_t *ent)
+/* optech2: a lift the navigation mesh has (func_plats nothing targets) */
+static qboolean
+M_NavIsLift(const edict_t *lift)
 {
-	const float reach = Q_max(Q_max(-ent->mins[0], ent->maxs[0]), Q_max(-ent->mins[1], ent->maxs[1])) + 48;
+	return lift->inuse && lift->classname && !strcmp(lift->classname, "func_plat") && !lift->targetname;
+}
+
+/* optech2: the lift between from and to (near both; the nearest if there
+   are several), NULL if there's none. The mesh puts a lift's far end up
+   to its size's half width + 40 past its sides: reach covers the largest. */
+static edict_t *
+M_NavFindLift(const vec3_t from, const vec3_t to)
+{
+	const float reach = 64 + 40 + 24;
+	edict_t *best = NULL;
+	float best_distance = 0;
+	vec3_t middle;
+	int i;
+
+	VectorAdd(from, to, middle);
+	VectorScale(middle, 0.5f, middle);
+
+	for (i = game.maxclients + 1; i < globals.num_edicts; i++)
+	{
+		edict_t *lift = &g_edicts[i];
+
+		if (M_NavIsLift(lift) && M_NavNearLift(lift, from, reach) && M_NavNearLift(lift, to, reach))
+		{
+			const float dx = (lift->absmin[0] + lift->absmax[0]) * 0.5f - middle[0];
+			const float dy = (lift->absmin[1] + lift->absmax[1]) * 0.5f - middle[1];
+			const float distance = dx * dx + dy * dy;
+
+			if (!best || (distance < best_distance))
+			{
+				best = lift;
+				best_distance = distance;
+			}
+		}
+	}
+
+	return best;
+}
+
+/* optech2: the lift whose resting place point is on, if it isn't there now
+   (an open shaft), else NULL */
+static edict_t *
+M_NavLiftAway(const vec3_t point)
+{
 	int i;
 
 	for (i = game.maxclients + 1; i < globals.num_edicts; i++)
 	{
 		edict_t *lift = &g_edicts[i];
 
-		if (lift->inuse && lift->classname && !strcmp(lift->classname, "func_plat") &&
-			M_NavNearLift(lift, ent->s.origin, reach) && M_NavNearLift(lift, ent->monsterinfo.nav_move_point, reach))
+		if (M_NavIsLift(lift) && (lift->moveinfo.state != STATE_BOTTOM) && M_NavNearLift(lift, point, 0) &&
+			(fabsf(point[2] - (lift->pos2[2] + lift->maxs[2])) <= 2 * STEPSIZE))
 		{
 			return lift;
 		}
@@ -972,14 +1018,61 @@ M_NavFindLift(const edict_t *ent)
 	return NULL;
 }
 
+/* optech2: waiting for a lift: true while it may wait, false (and the
+   path dropped for a while) once it has waited MONSTER_LIFT_WAIT */
+static qboolean
+M_NavLiftWait(edict_t *ent)
+{
+	if (!ent->monsterinfo.nav_lift_wait_end)
+	{
+		ent->monsterinfo.nav_lift_wait_end = level.time + MONSTER_LIFT_WAIT;
+	}
+	else if (level.time >= ent->monsterinfo.nav_lift_wait_end)
+	{
+		if (g_monster_nav->value >= 2)
+		{
+			gi.dprintf("%s gives up waiting for a lift\n", ent->classname);
+		}
+
+		ent->monsterinfo.nav_lift_wait_end = 0;
+		ent->monsterinfo.nav_has_point = false;
+		ent->monsterinfo.nav_link_type = OPTECH2_PATH_LINK_WALK;
+		ent->monsterinfo.nav_retry_time = level.time + 2.0f; /* stock chase for a while */
+		return false;
+	}
+
+	ent->monsterinfo.nav_retry_time = level.time + 0.5f; /* hold the path while waiting */
+	return true;
+}
+
+/* optech2: a step toward the lift's middle; false if blocked */
+static qboolean
+M_NavStepOntoLift(edict_t *ent, const edict_t *lift, float dist)
+{
+	vec3_t to_point;
+
+	to_point[0] = (lift->absmin[0] + lift->absmax[0]) * 0.5f - ent->s.origin[0];
+	to_point[1] = (lift->absmin[1] + lift->absmax[1]) * 0.5f - ent->s.origin[1];
+	to_point[2] = 0;
+
+	if (!SV_StepDirection(ent, vectoyaw(to_point), dist))
+	{
+		ent->monsterinfo.nav_retry_time = 0;
+		return false;
+	}
+
+	return true;
+}
+
 /* optech2: the path rides a lift to nav_move_point, the floor beside its
    other end. Onto it when it's at this end (else wait for it, or call it
-   from the other end), send it, stand still while it moves, then step off.
-   Holds the path (no new one while riding: off the mesh). */
+   from the other end), all the way on, send it, stand still while it
+   moves, then step off. Holds the path (no new one while riding: off the
+   mesh); gives up after waiting MONSTER_LIFT_WAIT. */
 static qboolean
 M_NavLift(edict_t *ent, float dist)
 {
-	edict_t *lift = M_NavFindLift(ent);
+	edict_t *lift = M_NavFindLift(ent->s.origin, ent->monsterinfo.nav_move_point);
 	const float rise = ent->monsterinfo.nav_move_point[2] - (ent->s.origin[2] + ent->mins[2]);
 	const qboolean going_up = (rise > 0);
 	const int here = going_up ? STATE_BOTTOM : STATE_TOP; /* where the lift must be to get on */
@@ -995,6 +1088,7 @@ M_NavLift(edict_t *ent, float dist)
 	/* at the other end: step off */
 	if (fabsf(rise) <= STEPSIZE)
 	{
+		ent->monsterinfo.nav_lift_wait_end = 0;
 		VectorSubtract(ent->monsterinfo.nav_move_point, ent->s.origin, to_point);
 
 		if (!SV_StepDirection(ent, vectoyaw(to_point), dist))
@@ -1006,17 +1100,39 @@ M_NavLift(edict_t *ent, float dist)
 		return true;
 	}
 
-	ent->monsterinfo.nav_retry_time = level.time + 0.5f; /* hold the path while at the lift */
-
 	if (ent->groundentity == lift)
 	{
-		/* on it: send it, ride */
+		if ((lift->moveinfo.state == STATE_UP) || (lift->moveinfo.state == STATE_DOWN))
+		{
+			/* riding */
+			ent->monsterinfo.nav_lift_wait_end = 0;
+			ent->monsterinfo.nav_retry_time = level.time + 0.5f;
+			return true;
+		}
+
 		if (lift->moveinfo.state == here)
 		{
+			/* all the way on before it goes (a box over the edge would hit
+			   the shaft) */
+			if ((ent->absmin[0] < lift->absmin[0]) || (ent->absmax[0] > lift->absmax[0]) ||
+				(ent->absmin[1] < lift->absmin[1]) || (ent->absmax[1] > lift->absmax[1]))
+			{
+				if (!M_NavStepOntoLift(ent, lift, dist))
+				{
+					return M_NavLiftWait(ent);
+				}
+
+				ent->monsterinfo.nav_retry_time = level.time + 0.5f;
+				return true;
+			}
+
 			if (g_monster_nav->value >= 2)
 			{
 				gi.dprintf("%s rides a lift %s\n", ent->classname, going_up ? "up" : "down");
 			}
+
+			ent->monsterinfo.nav_lift_wait_end = 0;
+			ent->monsterinfo.nav_retry_time = level.time + 0.5f;
 
 			if (going_up)
 			{
@@ -1026,24 +1142,22 @@ M_NavLift(edict_t *ent, float dist)
 			{
 				plat_go_down(lift);
 			}
+
+			return true;
 		}
 
-		return true;
+		return M_NavLiftWait(ent);
 	}
 
 	if (lift->moveinfo.state == here)
 	{
-		/* onto it: its middle */
-		to_point[0] = (lift->absmin[0] + lift->absmax[0]) * 0.5f - ent->s.origin[0];
-		to_point[1] = (lift->absmin[1] + lift->absmax[1]) * 0.5f - ent->s.origin[1];
-		to_point[2] = 0;
-
-		if (!SV_StepDirection(ent, vectoyaw(to_point), dist))
+		/* onto it */
+		if (!M_NavStepOntoLift(ent, lift, dist))
 		{
-			ent->monsterinfo.nav_retry_time = 0;
-			return false;
+			return M_NavLiftWait(ent);
 		}
 
+		ent->monsterinfo.nav_retry_time = level.time + 0.5f;
 		return true;
 	}
 
@@ -1054,7 +1168,7 @@ M_NavLift(edict_t *ent, float dist)
 		plat_go_up(lift);
 	}
 
-	return true; /* wait */
+	return M_NavLiftWait(ent);
 }
 
 /*
@@ -1144,6 +1258,14 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 		return M_NavLift(ent, dist);
 	}
 
+	/* the next corner is where a lift rests, and it's up (an open shaft):
+	   wait at the edge for it */
+	if (M_NavLiftAway(ent->monsterinfo.nav_move_point))
+	{
+		return M_NavLiftWait(ent);
+	}
+
+	ent->monsterinfo.nav_lift_wait_end = 0;
 	VectorSubtract(ent->monsterinfo.nav_move_point, ent->s.origin, to_point);
 
 	if (!SV_StepDirection(ent, vectoyaw(to_point), dist))

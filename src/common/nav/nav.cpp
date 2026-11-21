@@ -55,7 +55,7 @@ unsigned CM_MapChecksum(void);
 float CM_NavTrace(const float *start, const float *end, const float *mins, const float *maxs, int contents_mask,
 	float *endpos);
 int CM_PointContents(const float *p, int headnode);
-int CM_ForEachModelTriangle(int model, float z_offset, int contents_mask,
+int CM_ForEachModelTriangle(int model, const float *offset, int contents_mask,
 	void (*emit)(const float *a, const float *b, const float *c, void *user), void *user);
 int CM_ModelBounds(int model, float *mins, float *maxs);
 const char *CM_EntityString(int *size);
@@ -72,7 +72,7 @@ static const float NAV_AGENT_CLIMB = 18.0f;
 static const float NAV_MAX_SLOPE = 45.57f; /* acos(0.7) */
 static const int NAV_TILE_CELLS = 64;      /* 512 units */
 static const float NAV_CLEARANCE = 8.0f;   /* kept from walls beyond a monster's half width */
-static const int NAV_FILE_VERSION = 5;
+static const int NAV_FILE_VERSION = 6;
 static const unsigned short NAV_FLAG_WALK = 1;
 
 /* ledge drops: one-way links from a floor's edge to floor up to
@@ -88,9 +88,12 @@ static const int NAV_HAZARD = 8 /* LAVA */ | 16 /* SLIME */ | 32 /* WATER */;
 
 /* lifts (func_plat): in the mesh where they rest, at the bottom, with a
    two-way link from on top of the lift down there to the floor beside its
-   top. The game rides it (calling the lift when it's at the other end). */
+   top. The game rides it (calling the lift when it's at the other end).
+   The floor on top of a lift is its own area, only for requests that ride
+   lifts (it's an open shaft while the lift is up). */
 static const unsigned short NAV_FLAG_LIFT = NAV_FLAG_DROP << NAV_DROP_BANDS;
 static const unsigned char NAV_AREA_LIFT = 2;
+static const float NAV_LIFT_COST = 4.0f; /* paths cross a lift only to ride it */
 
 /* monster sizes: half its width and its height. A monster uses the
    smallest one it fits (Nav_AgentFor) */
@@ -140,6 +143,7 @@ ToQuake(const float *recast, float *quake)
 struct NavLift
 {
 	int model;
+	float origin[3];        /* the entity's origin key: its brushes are relative to it */
 	float mins[3], maxs[3]; /* Quake coordinates, at the top */
 	float travel;
 };
@@ -276,6 +280,33 @@ NavDropFlags(float drop_height)
 
 /* one tile's polygons into tile->polymesh and tile->detail; false if it
    has no floor */
+/* the floor on top of each lift (where it rests) becomes the lift area;
+   always true (it's in BuildTile's chain of steps) */
+static bool
+NavMarkLifts(NavContext *context, const NavGeometry &geometry, rcCompactHeightfield &compact)
+{
+	for (const NavLift &lift : geometry.lifts)
+	{
+		const float top = lift.maxs[2] - lift.travel; /* its top, at the bottom */
+		const float low[3] = {lift.mins[0], lift.mins[1], top - NAV_AGENT_CLIMB};
+		const float high[3] = {lift.maxs[0], lift.maxs[1], top + NAV_AGENT_CLIMB};
+		float a[3], b[3], bmin[3], bmax[3];
+
+		ToRecast(low, a);
+		ToRecast(high, b);
+
+		for (int k = 0; k < 3; k++)
+		{
+			bmin[k] = a[k] < b[k] ? a[k] : b[k];
+			bmax[k] = a[k] > b[k] ? a[k] : b[k];
+		}
+
+		rcMarkBoxArea(context, bmin, bmax, NAV_AREA_LIFT, compact);
+	}
+
+	return true;
+}
+
 static bool
 BuildTile(NavContext &context, const NavGeometry &geometry, rcConfig config, NavTile *tile)
 {
@@ -345,6 +376,7 @@ BuildTile(NavContext &context, const NavGeometry &geometry, rcConfig config, Nav
 	if (!compact ||
 		!rcBuildCompactHeightfield(&context, config.walkableHeight, config.walkableClimb, *heightfield, *compact) ||
 		!rcErodeWalkableArea(&context, config.walkableRadius, *compact) ||
+		!NavMarkLifts(&context, geometry, *compact) ||
 		!rcBuildDistanceField(&context, *compact) ||
 		!rcBuildRegions(&context, *compact, config.borderSize, config.minRegionArea, config.mergeRegionArea))
 	{
@@ -372,7 +404,8 @@ BuildTile(NavContext &context, const NavGeometry &geometry, rcConfig config, Nav
 
 	for (int i = 0; i < polymesh->npolys; i++)
 	{
-		polymesh->flags[i] = (polymesh->areas[i] == RC_WALKABLE_AREA) ? NAV_FLAG_WALK : 0;
+		polymesh->flags[i] = (polymesh->areas[i] == RC_WALKABLE_AREA) ? NAV_FLAG_WALK :
+			(polymesh->areas[i] == NAV_AREA_LIFT) ? NAV_FLAG_LIFT : 0;
 	}
 
 	tile->polymesh = polymesh;
@@ -652,7 +685,7 @@ FindLifts(const NavGeometry &geometry, const dtNavMeshQuery *query, int agent, s
 	const float reach = NAV_AGENTS[agent].radius + NAV_CLEARANCE + 32.0f; /* past the lift's sides */
 	dtQueryFilter filter;
 
-	filter.setIncludeFlags(NAV_FLAG_WALK);
+	filter.setIncludeFlags(NAV_FLAG_WALK | NAV_FLAG_LIFT); /* on the lift: its own area */
 
 	for (const NavLift &lift : geometry.lifts)
 	{
@@ -724,6 +757,7 @@ FindMapLifts(std::vector<NavLift> &lifts)
 		char key[64] = "", value[256] = "";
 		char classname[64] = "", model[16] = "";
 		float lip = 0, height = 0, origin[3] = {0, 0, 0};
+		int spawnflags = 0;
 		bool targeted = false, in_entity = false;
 
 		/* one entity: { "key" "value" ... } */
@@ -801,6 +835,10 @@ FindMapLifts(std::vector<NavLift> &lifts)
 			{
 				height = (float)atof(value);
 			}
+			else if (!strcmp(key, "spawnflags"))
+			{
+				spawnflags = atoi(value);
+			}
 			else if (!strcmp(key, "targetname"))
 			{
 				targeted = true;
@@ -816,7 +854,10 @@ FindMapLifts(std::vector<NavLift> &lifts)
 			text++;
 		}
 
-		if (strcmp(classname, "func_plat") || targeted || model[0] != '*')
+		/* not targeted (those start at the top, moved by triggers), and in
+		   every skill (the mesh is cached per map, not per skill) */
+		if (strcmp(classname, "func_plat") || targeted || model[0] != '*' ||
+			(spawnflags & (0x100 /* NOT_EASY */ | 0x200 /* NOT_MEDIUM */ | 0x400 /* NOT_HARD */)))
 		{
 			continue;
 		}
@@ -833,6 +874,7 @@ FindMapLifts(std::vector<NavLift> &lifts)
 
 		for (int k = 0; k < 3; k++)
 		{
+			lift.origin[k] = origin[k];
 			lift.mins[k] += origin[k];
 			lift.maxs[k] += origin[k];
 		}
@@ -1281,7 +1323,9 @@ Nav_LoadMap(const char *mapname)
 
 		for (const NavLift &lift : geometry.lifts)
 		{
-			CM_ForEachModelTriangle(lift.model, -lift.travel, NAV_SOLID, CollectTriangle, &geometry);
+			const float offset[3] = {lift.origin[0], lift.origin[1], lift.origin[2] - lift.travel};
+
+			CM_ForEachModelTriangle(lift.model, offset, NAV_SOLID, CollectTriangle, &geometry);
 		}
 
 		for (int a = 0; a < NAV_AGENT_COUNT && !geometry.triangles.empty(); a++)
@@ -1341,6 +1385,7 @@ NavFindPath(int agent, const float *start, const float *goal, float (*points)[3]
 	}
 
 	filter.setIncludeFlags(NAV_FLAG_WALK | NavDropFlags(NAV_MAX_DROP) | NAV_FLAG_LIFT); /* drops and lifts too */
+	filter.setAreaCost(NAV_AREA_LIFT, NAV_LIFT_COST);
 	ToRecast(start, start_r);
 	ToRecast(goal, goal_r);
 
@@ -1559,6 +1604,7 @@ Nav_GetPathToGoalSized(const optech2_path_request_t *request, optech2_path_info_
 	filter.setIncludeFlags(NAV_FLAG_WALK |
 		((request->path_flags & OPTECH2_PATH_WALK_OFF_LEDGE) ? NavDropFlags(request->drop_height) : 0) |
 		((request->path_flags & OPTECH2_PATH_ELEVATOR) ? NAV_FLAG_LIFT : 0));
+	filter.setAreaCost(NAV_AREA_LIFT, NAV_LIFT_COST);
 	ToRecast(request->start, start_r);
 	ToRecast(request->goal, goal_r);
 

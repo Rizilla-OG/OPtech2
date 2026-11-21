@@ -2462,9 +2462,9 @@ CM_MarkWorldBrushes(int nodenum, byte *marked)
 }
 
 /* optech2: the solid brushes of model (0 the world, n inline model *n) as
-   triangles, raised by z_offset */
+   triangles, moved by offset (NULL: not moved) */
 static int
-CM_EmitModelTriangles(int model, float z_offset, int contents_mask,
+CM_EmitModelTriangles(int model, const float *offset, int contents_mask,
 	void (*emit)(const float *a, const float *b, const float *c, void *user), void *user)
 {
 	byte *marked;
@@ -2518,9 +2518,9 @@ CM_EmitModelTriangles(int model, float z_offset, int contents_mask,
 
 				for (k = 0; k < 3; k++)
 				{
-					a[k] = (float)w.points[0][k] + (k == 2 ? z_offset : 0.0f);
-					b[k] = (float)w.points[i][k] + (k == 2 ? z_offset : 0.0f);
-					c[k] = (float)w.points[i + 1][k] + (k == 2 ? z_offset : 0.0f);
+					a[k] = (float)w.points[0][k] + (offset ? offset[k] : 0.0f);
+					b[k] = (float)w.points[i][k] + (offset ? offset[k] : 0.0f);
+					c[k] = (float)w.points[i + 1][k] + (offset ? offset[k] : 0.0f);
 					e1[k] = w.points[i][k] - w.points[0][k];
 					e2[k] = w.points[i + 1][k] - w.points[0][k];
 				}
@@ -2557,15 +2557,15 @@ CM_ForEachSolidTriangle(int contents_mask, void (*emit)(const float *a, const fl
 	void *user)
 {
 	/* only the world model's brushes: doors and lifts move */
-	return CM_EmitModelTriangles(0, 0, contents_mask, emit, user);
+	return CM_EmitModelTriangles(0, NULL, contents_mask, emit, user);
 }
 
-/* optech2: an inline model's brushes (a lift at rest), moved z_offset */
+/* optech2: an inline model's brushes (a lift at rest), moved by offset */
 int
-CM_ForEachModelTriangle(int model, float z_offset, int contents_mask,
+CM_ForEachModelTriangle(int model, const float *offset, int contents_mask,
 	void (*emit)(const float *a, const float *b, const float *c, void *user), void *user)
 {
-	return CM_EmitModelTriangles(model, z_offset, contents_mask, emit, user);
+	return CM_EmitModelTriangles(model, offset, contents_mask, emit, user);
 }
 
 /* optech2: an inline model's bounds; false if there's no such model */

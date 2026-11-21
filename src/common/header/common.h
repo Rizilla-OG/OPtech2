@@ -752,7 +752,7 @@ const byte* CM_GetRawMap(int *len);
 cmodel_t *CM_LoadMap(const char *name, qboolean clientload, unsigned *checksum);
 int CM_ForEachSolidTriangle(int contents_mask, void (*emit)(const float *a, const float *b, const float *c, void *user),
 	void *user); /* optech2: world brushes as triangles, for navigation */
-int CM_ForEachModelTriangle(int model, float z_offset, int contents_mask,
+int CM_ForEachModelTriangle(int model, const float *offset, int contents_mask,
 	void (*emit)(const float *a, const float *b, const float *c, void *user), void *user); /* optech2 */
 qboolean CM_ModelBounds(int model, float *mins, float *maxs); /* optech2: inline model bounds */
 unsigned CM_MapChecksum(void); /* optech2 */

@@ -561,14 +561,20 @@ Think_AccelMove(edict_t *ent)
 }
 
 /* ->moveinfo.endfunc = plat_hit_top; */
-/* optech2: at the top, a lift goes back down unless a monster is still
-   standing on it (players hold it with the trigger): then 1 s later */
+/* optech2: how many seconds a lift at the top waits for a monster on it to
+   step off (after its usual 3) */
+#define PLAT_MONSTER_HOLD 10
+
+/* optech2: at the top, a lift goes back down unless a live monster is still
+   on it (one that rode up may stop to shoot): then 1 s later, up to
+   PLAT_MONSTER_HOLD more seconds, so a monster that stays on it can't keep
+   it from players below (players hold it with the trigger) */
 void
 plat_top_wait(edict_t *ent)
 {
 	int i;
 
-	for (i = game.maxclients + 1; i < globals.num_edicts; i++)
+	for (i = game.maxclients + 1; (i < globals.num_edicts) && (level.time < ent->timestamp); i++)
 	{
 		const edict_t *rider = &g_edicts[i];
 
@@ -605,6 +611,7 @@ plat_hit_top(edict_t *ent)
 
 	ent->think = plat_top_wait; /* optech2: was plat_go_down */
 	ent->nextthink = level.time + 3;
+	ent->timestamp = level.time + 3 + PLAT_MONSTER_HOLD; /* optech2: no longer than this for monsters */
 }
 
 /* ->moveinfo.endfunc = plat_hit_bottom; */

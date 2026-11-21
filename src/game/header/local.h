@@ -676,6 +676,7 @@ typedef struct
 	vec3_t nav_move_point; /* the path's next corner */
 	qboolean nav_has_point; /* nav_move_point is valid */
 	int nav_link_type; /* optech2: how to get to nav_move_point (OPTECH2_PATH_LINK_) */
+	float nav_lift_wait_end; /* optech2: when to stop waiting for a lift (0: not waiting) */
 } monsterinfo_t;
 
 /* this determines how long to wait after a duck to duck again.
