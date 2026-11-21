@@ -77,6 +77,17 @@ removing or changing a field of a saved struct (`edict_t`, `gclient_t`, `level_l
 `game_locals_t` and what they contain), run `python3 tools/gen_save_fields.py` and commit the table
 it writes.
 
+## Mods
+
+Stack mod folders on top of the game, lowest first: `+set fs_mods hires,mymod` (commas, no spaces, on
+the command line). A later folder's files replace the same files in an earlier one, `+set game` goes
+on top of them all, and saves and settings still go to the game folder. Players joining a server get
+its list.
+
+Each mod folder can run a gameplay script in sandboxed Lua 5.4, `scripts/<folder>.lua`: see
+[mods/SCRIPTING.md](mods/SCRIPTING.md). For a mod with its own game library (new weapons, effects,
+HUD, movement), see [mods/testmod](mods/testmod/README.md).
+
 ## Checks
 
 All checks use a temporary HOME, so your own config and saves are never touched.
@@ -92,6 +103,10 @@ All checks use a temporary HOME, so your own config and saves are never touched.
 - `python3 tests/savegame/save_check.py`: save and load, player and every entity compared
 - `python3 tests/cgame/cgame_check.py`: loads a test client game module and checks the engine's imports
 - `python3 tests/tickrate/tick_check.py`, `damage_check.py`: 10 Hz vs 60 Hz behaviour
+- `python3 tests/mod/mod_check.py`: the test mod against the stock game (weapon, effect, HUD, movement)
+- `python3 tests/mod/stack_check.py`: stacked mod folders, override order, joining players
+- `python3 tests/mod/script_check.py`: Lua scripts from three mods, events, sandbox limits
+- `python3 tests/run_all.py`: all of the above
 
 ## License
 

@@ -1211,6 +1211,34 @@ GAME_OBJS_ = \
 	src/game/g_misc.o \
 	src/game/g_extension.o \
 	src/game/cgame_fx/fx_main.o \
+	src/game/script/g_script.o \
+	src/game/lua/lapi.o \
+	src/game/lua/lauxlib.o \
+	src/game/lua/lbaselib.o \
+	src/game/lua/lcode.o \
+	src/game/lua/lcorolib.o \
+	src/game/lua/lctype.o \
+	src/game/lua/ldebug.o \
+	src/game/lua/ldo.o \
+	src/game/lua/ldump.o \
+	src/game/lua/lfunc.o \
+	src/game/lua/lgc.o \
+	src/game/lua/llex.o \
+	src/game/lua/lmathlib.o \
+	src/game/lua/lmem.o \
+	src/game/lua/lobject.o \
+	src/game/lua/lopcodes.o \
+	src/game/lua/lparser.o \
+	src/game/lua/lstate.o \
+	src/game/lua/lstring.o \
+	src/game/lua/lstrlib.o \
+	src/game/lua/ltable.o \
+	src/game/lua/ltablib.o \
+	src/game/lua/ltm.o \
+	src/game/lua/lundump.o \
+	src/game/lua/lutf8lib.o \
+	src/game/lua/lvm.o \
+	src/game/lua/lzio.o \
 	src/game/cgame_fx/fx_muzzleflash.o \
 	src/game/cgame_fx/fx_trails.o \
 	src/game/cgame_fx/fx_events.o \

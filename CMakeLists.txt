@@ -385,6 +385,34 @@ set(Game-Source
 	${GAME_SRC_DIR}/g_misc.c
 	${GAME_SRC_DIR}/g_extension.c
 	${GAME_SRC_DIR}/cgame_fx/fx_main.c
+	${GAME_SRC_DIR}/script/g_script.c
+	${GAME_SRC_DIR}/lua/lapi.c
+	${GAME_SRC_DIR}/lua/lauxlib.c
+	${GAME_SRC_DIR}/lua/lbaselib.c
+	${GAME_SRC_DIR}/lua/lcode.c
+	${GAME_SRC_DIR}/lua/lcorolib.c
+	${GAME_SRC_DIR}/lua/lctype.c
+	${GAME_SRC_DIR}/lua/ldebug.c
+	${GAME_SRC_DIR}/lua/ldo.c
+	${GAME_SRC_DIR}/lua/ldump.c
+	${GAME_SRC_DIR}/lua/lfunc.c
+	${GAME_SRC_DIR}/lua/lgc.c
+	${GAME_SRC_DIR}/lua/llex.c
+	${GAME_SRC_DIR}/lua/lmathlib.c
+	${GAME_SRC_DIR}/lua/lmem.c
+	${GAME_SRC_DIR}/lua/lobject.c
+	${GAME_SRC_DIR}/lua/lopcodes.c
+	${GAME_SRC_DIR}/lua/lparser.c
+	${GAME_SRC_DIR}/lua/lstate.c
+	${GAME_SRC_DIR}/lua/lstring.c
+	${GAME_SRC_DIR}/lua/lstrlib.c
+	${GAME_SRC_DIR}/lua/ltable.c
+	${GAME_SRC_DIR}/lua/ltablib.c
+	${GAME_SRC_DIR}/lua/ltm.c
+	${GAME_SRC_DIR}/lua/lundump.c
+	${GAME_SRC_DIR}/lua/lutf8lib.c
+	${GAME_SRC_DIR}/lua/lvm.c
+	${GAME_SRC_DIR}/lua/lzio.c
 	${GAME_SRC_DIR}/cgame_fx/fx_muzzleflash.c
 	${GAME_SRC_DIR}/cgame_fx/fx_trails.c
 	${GAME_SRC_DIR}/cgame_fx/fx_events.c

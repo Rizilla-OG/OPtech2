@@ -119,6 +119,8 @@ ShutdownGame(void)
 {
 	gi.dprintf("==== ShutdownGame ====\n");
 
+	Script_Shutdown(); /* optech2 */
+
 	gi.FreeTags(TAG_LEVEL);
 	gi.FreeTags(TAG_GAME);
 	SpawnFree();

@@ -1747,6 +1747,11 @@ Touch_Item(edict_t *ent, edict_t *other, const cplane_t *plane /* unused */,
 		return; /* can't pick stuff up right now */
 	}
 
+	if (!Script_ItemPickup(other, ent->item))
+	{
+		return; /* optech2: a script refused it */
+	}
+
 	taken = ent->item->pickup(ent, other);
 
 	if (taken)

@@ -1696,4 +1696,8 @@ ReadLevel(const char *filename)
 
 	/* reload shadow light data from configstrings */
 	G_LoadShadowLights();
+
+	/* optech2: scripts start again; their own state isn't in the save
+	   (level_start isn't fired: the level is resumed, not started) */
+	Script_Init();
 }

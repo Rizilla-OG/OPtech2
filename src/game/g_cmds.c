@@ -2527,6 +2527,17 @@ ClientCommand(edict_t *ent)
 	{
 		Cmd_FxTest_f(ent);
 	}
+	else if (Q_stricmp(cmd, "lua") == 0) /* optech2: run a line of Lua (cheat) */
+	{
+		if (!sv_cheats->value)
+		{
+			gi.cprintf(ent, PRINT_HIGH, "You must run the server with '+set cheats 1' to enable this command.\n");
+		}
+		else
+		{
+			Script_Command(ent);
+		}
+	}
 	else if (Q_stricmp(cmd, "listitems") == 0)
 	{
 		Cmd_ListItems_f(ent);

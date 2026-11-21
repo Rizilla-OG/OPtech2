@@ -88,10 +88,10 @@
       </div>
 
       <div class="task-group">
-        <h3>Mod loading <span>1 / 2</span></h3>
+        <h3>Mod loading <span>2 / 2</span></h3>
         <ul class="tasks">
           <li class="done">A stack of mod folders with an override order (<code>fs_mods</code>)</li>
-          <li class="part">Scripting: sandboxed Lua 5.4 is decided, embedding it is next</li>
+          <li class="done">Scripting: sandboxed Lua 5.4, one script per mod folder (first events: level start, player spawn, item pickup)</li>
         </ul>
       </div>
 
@@ -123,7 +123,7 @@
       <ul class="tasks">
         <li class="done">A test mod adds a weapon with a new visual effect, with no engine changes (the Test Gun)</li>
         <li class="done">The same mod changes a HUD element and player movement</li>
-        <li>Two mods load together</li>
+        <li class="done">Two mods load together (stacked folders, each with its own script)</li>
         <li class="part">The stock game runs entirely through the client module</li>
         <li>A monster paths around an obstacle to reach the player</li>
         <li>Text renders in a non-Latin script at 4K</li>

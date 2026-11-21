@@ -889,6 +889,14 @@ void InitItems(void);
 qboolean ItemHasValidModel(const gitem_t *item);
 void SetItemNames(void);
 gitem_t *FindItem(const char *pickup_name);
+
+/* optech2: Lua gameplay scripts (script/g_script.c) */
+void Script_Init(void);
+void Script_Shutdown(void);
+void Script_LevelStart(void);
+void Script_PlayerSpawn(edict_t *player);
+qboolean Script_ItemPickup(edict_t *player, const gitem_t *item);
+void Script_Command(edict_t *ent);
 gitem_t *FindItemByClassname(const char *classname);
 
 #define ITEM_INDEX(x) ((x) - itemlist)
