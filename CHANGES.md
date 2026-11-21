@@ -4,6 +4,8 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Players joining a server get its `fs_mods` (sent just before the game folder; the local player on a listen server already shares it). Other clients just receive an unused cvar.
+- Changing the game folder with sound off (`s_initsound 0`) no longer crashes in the music code's restart.
 - Dedicated server: commands after `+map` (like `+quit`, or settings) run right away instead of waiting for the first player to join; `+map base1 +quit` used to never exit.
 - Stack of mod folders: `fs_mods` lists folders to load above `baseq2` and below the `game` folder, lowest first (`+set fs_mods hires,testmod`; space, comma or semicolon separated, up to 16). A later folder's files override an earlier one's, the game library comes from the highest folder that has one, and writes still go to the game folder (or `baseq2`). Paths, `baseq2`, the game folder and repeats are skipped. Changing it in the console rebuilds the search path (latched while a server runs, like `game`). New check: `tests/mod/stack_check.py`.
 - Going back to `baseq2` from a mod no longer makes the data folder (e.g. the Steam folder) the one configs and saves are written to; it's the user's folder again.

@@ -10,7 +10,8 @@ dedicated server with different fs_mods / game settings and checks:
   - configs are written to the game folder (or baseq2), never a mod folder,
   - the game library comes from the highest folder that has one,
   - paths, baseq2, the game folder and duplicates in fs_mods are skipped,
-  - changing fs_mods in the console rebuilds the stack.
+  - changing fs_mods in the console rebuilds the stack,
+  - a player joining a server gets the server's fs_mods.
 
 Usage:
   stack_check.py
@@ -27,6 +28,7 @@ from pathlib import Path
 
 REPO_DIR = Path(__file__).resolve().parent.parent.parent
 SERVER_BINARY = REPO_DIR / "build" / "release" / "OpenTech2-server"
+CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 GAME_LIBRARY = REPO_DIR / "build" / "release" / "baseq2" / "game.so"
 OUTPUT_DIR = REPO_DIR / "build" / "stack-check"
 DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
@@ -65,6 +67,33 @@ def run(name, arguments, commands):
     return log
 
 
+def joined_client_log():
+    """A client (no fs_mods of its own) joins a dedicated server running fs_mods modB."""
+    with tempfile.TemporaryDirectory(prefix="opentech2-stack-") as home:
+        user_dir = make_mods(home)
+        (user_dir / "baseq2").mkdir()
+        (user_dir / "baseq2" / "joined.cfg").write_text(
+            'connect 127.0.0.1:27971\ndelay 9000 "exec layer.cfg"\ndelay 9500 quit\n')
+        environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
+        server = subprocess.Popen(["stdbuf", "-oL", str(SERVER_BINARY), "-datadir", str(DATA_DIR), "+set", "port",
+                                   "27971", "+set", "fs_mods", "modB", "+map", "base1"], env=environment,
+                                  stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+            client = subprocess.run(["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(DATA_DIR), "+set",
+                                     "vid_renderer", "soft", "+set", "r_vsync", "0", "+set", "s_initsound", "0",
+                                     "+set", "port", "27972", "+exec", "joined.cfg"],
+                                    env=environment, stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                                    timeout=60, check=False)
+            log = client.stdout + client.stderr
+        except subprocess.TimeoutExpired as timeout:
+            log = (timeout.stdout or b"").decode(errors="replace") + "\nERROR: the client didn't quit\n"
+        finally:
+            server.kill()
+            server.wait()
+    (OUTPUT_DIR / "joined-client.log").write_text(log)
+    return log
+
+
 def main():
     if OUTPUT_DIR.exists():
         shutil.rmtree(OUTPUT_DIR)
@@ -100,6 +129,10 @@ def main():
     report("layer from modB" in log and log.count("layer from") == 1,
            "set fs_mods in the console: modB's file found, none before")
     report("only in modA" not in log, "set fs_mods \"\": back to baseq2 only")
+
+    log = joined_client_log()
+    report(re.search(r"Mod folder 1: modB", log) is not None and "layer from modB" in log,
+           "a player joining a server with fs_mods modB gets modB too")
 
     errors = [line for line in (OUTPUT_DIR / name for name in ("stack.log", "game-on-top.log"))
               for line in line.read_text().splitlines() if "ERROR" in line]

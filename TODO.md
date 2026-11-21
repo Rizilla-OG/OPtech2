@@ -19,8 +19,6 @@ something unfinished; remove an entry in the commit that fixes it.
 - **`tests/run_all.py` isn't on CI yet**: add `run_all.py --headless` to the
   Linux workflow (needs the game data, so probably a self-hosted runner).
 
-- **`fs_mods` isn't sent to clients**: players joining a server need the same
-  mod folders set themselves. Send it with the server data, like `game`.
 - **Two checks are timing-sensitive under load**: `lift` (standing miss
   percentile) and `tickrate` (chaingun ammo at 60 Hz) failed once while the
   machine was busy, and pass when run alone. Make them robust to load.
