@@ -684,10 +684,25 @@ CL_CGame_DrawHUD(void)
 void
 CL_CGame_CenterPrint(const char *text)
 {
-	if (cgame && cgame->ParseCenterPrint)
+	static int last_center_time = -100000;
+	int on_screen_msec;
+	qboolean replace;
+
+	if (!cgame || !cgame->ParseCenterPrint)
 	{
-		cgame->ParseCenterPrint(text, 0, false);
+		return;
 	}
+
+	/* optech2: the re-release HUD queues center prints, each typed out and
+	   shown for scr_centertime before the next. Messages that come faster
+	   (a map's "5... 4... 3..." countdown) fell seconds behind the game.
+	   A message that arrives while the previous one may still be up
+	   replaces it at once, as center prints always did in Quake II. */
+	on_screen_msec = (int)(Cvar_VariableValue("scr_centertime") * 1000) + 1000; /* + typing */
+	replace = (cls.realtime - last_center_time) < on_screen_msec;
+	last_center_time = cls.realtime;
+
+	cgame->ParseCenterPrint(text, 0, replace);
 }
 
 /* a configstring changed (our numbering); the module gets its own */
