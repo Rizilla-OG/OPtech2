@@ -138,6 +138,16 @@ SV_New_f(void)
 	   to make sure the protocol is right, and to set the gamedir */
 	gamedir = (char *)Cvar_VariableString("gamedir");
 
+	/* optech2: the server's mod folder stack, before the serverdata sets
+	   the game folder (the client runs stuffed commands first). Not for the
+	   local player: it shares the server's cvars. Other clients only get a
+	   cvar they don't use. */
+	if (sv_client->netchan.remote_address.type != NA_LOOPBACK)
+	{
+		MSG_WriteByte(&sv_client->netchan.message, svc_stufftext);
+		MSG_WriteString(&sv_client->netchan.message, va("set fs_mods \"%s\"\n", Cvar_VariableString("fs_mods")));
+	}
+
 	/* send the serverdata */
 	sv_client->protocol = SV_GetRecomendedProtocol();
 	MSG_WriteByte(&sv_client->netchan.message, svc_serverdata);

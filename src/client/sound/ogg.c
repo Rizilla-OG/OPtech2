@@ -782,7 +782,8 @@ OGG_Cmd(void)
 void
 OGG_SaveState(void)
 {
-	if (ogg_enabled->value != 1 || ogg_status != PLAY)
+	/* optech2: ogg_enabled is NULL when sound never started (s_initsound 0) */
+	if (!ogg_enabled || ogg_enabled->value != 1 || ogg_status != PLAY)
 	{
 		ogg_saved_state.saved = false;
 		return;
@@ -799,7 +800,7 @@ OGG_SaveState(void)
 void
 OGG_RecoverState(void)
 {
-	if (ogg_enabled->value != 1 || ogg_saved_state.saved != true)
+	if (!ogg_enabled || ogg_enabled->value != 1 || ogg_saved_state.saved != true) /* optech2: NULL without sound */
 	{
 		return;
 	}
