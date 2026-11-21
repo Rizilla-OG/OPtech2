@@ -1103,8 +1103,15 @@ set(Game-Rerelease-Source
 	${GAME_SRC_DIR}/rerelease/p_move.cpp
 	${GAME_SRC_DIR}/rerelease/q_std.cpp
 	)
+# optech2: C++20, the prelude forced in first, warnings off (id's code);
+# MSVC spells these /std:c++20 /FI /w
+if(MSVC)
+	set(Game-Rerelease-Options "/std:c++20;/Zc:__cplusplus;/FI${GAME_SRC_DIR}/rerelease/optech2_prelude.h;/w")
+else()
+	set(Game-Rerelease-Options "-std=c++20;-include;${GAME_SRC_DIR}/rerelease/optech2_prelude.h;-w")
+endif()
 set_source_files_properties(${Game-Rerelease-Source} PROPERTIES
-	COMPILE_OPTIONS "-std=c++20;-include;${GAME_SRC_DIR}/rerelease/optech2_prelude.h;-w"
+	COMPILE_OPTIONS "${Game-Rerelease-Options}"
 	)
 
 # Build the game dynamic library

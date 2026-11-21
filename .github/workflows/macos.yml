@@ -64,6 +64,8 @@ jobs:
         mkdir -p build/macos-dmg
         # start with app bundle template
         unzip stuff/osx/quake2-appbundle.zip -d build/macos-dmg
+        # optech2: the bundle's launcher starts the engine as Resources/quake2; ours is OpenTech2
+        sed -i '' 's|/quake2"|/OpenTech2"|' "build/macos-dmg/Quake 2.app/Contents/MacOS/q2-launcher.sh"
         # add files in root of disk image
         cp LICENSE README.md build/macos-dmg
         # copy all binaries to Resources dir
@@ -72,7 +74,7 @@ jobs:
         cp -RL /opt/homebrew/lib/libSDL3.0.dylib "build/macos-dmg/Quake 2.app/Contents/Resources"
         ls -lha "build/macos-dmg/Quake 2.app/Contents/Resources/libSDL3.0.dylib"
         install_name_tool -id "libSDL3.0.dylib" "build/macos-dmg/Quake 2.app/Contents/Resources/libSDL3.0.dylib"
-        install_name_tool -change "/opt/homebrew/lib/libSDL3.0.dylib" "@executable_path/../Resources/libSDL3.0.dylib" "build/macos-dmg/Quake 2.app/Contents/Resources/quake2"
+        install_name_tool -change "/opt/homebrew/lib/libSDL3.0.dylib" "@executable_path/../Resources/libSDL3.0.dylib" "build/macos-dmg/Quake 2.app/Contents/Resources/OpenTech2"
         install_name_tool -change "/opt/homebrew/lib/libSDL3.0.dylib" "@executable_path/../Resources/libSDL3.0.dylib" "build/macos-dmg/Quake 2.app/Contents/Resources/ref_gl1.dylib"
         install_name_tool -change "/opt/homebrew/lib/libSDL3.0.dylib" "@executable_path/../Resources/libSDL3.0.dylib" "build/macos-dmg/Quake 2.app/Contents/Resources/ref_gl3.dylib"
         install_name_tool -change "/opt/homebrew/lib/libSDL3.0.dylib" "@executable_path/../Resources/libSDL3.0.dylib" "build/macos-dmg/Quake 2.app/Contents/Resources/ref_gles3.dylib"
