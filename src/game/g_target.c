@@ -546,7 +546,7 @@ use_target_changelevel(edict_t *self, edict_t *other, edict_t *activator)
 		{
 			self->target_ent = G_PickTarget(self->target);
 
-			if (self->target_ent && activator && activator->client)
+			if (self->target_ent)
 			{
 				activator->client->landmark_name = G_CopyString(self->target_ent->targetname, TAG_GAME);
 			}

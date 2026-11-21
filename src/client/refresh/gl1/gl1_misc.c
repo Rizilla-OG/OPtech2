@@ -121,7 +121,7 @@ void
 R_ScreenShot(void)
 {
 	int w=vid.width, h=vid.height;
-	byte *buffer = malloc(w*h*3);
+	byte *buffer = malloc((size_t)w * h * 3);
 
 	if (!buffer)
 	{

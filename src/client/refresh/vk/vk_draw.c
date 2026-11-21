@@ -460,13 +460,13 @@ RE_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte *d
 			return;
 		}
 
-		raw_image32 = malloc(cols * rows * sizeof(unsigned));
+		raw_image32 = malloc((size_t)cols * rows * sizeof(unsigned));
 		if (!raw_image32)
 		{
 			return;
 		}
 
-		memcpy(raw_image32, data, cols * rows * sizeof(unsigned));
+		memcpy(raw_image32, data, (size_t)cols * rows * sizeof(unsigned));
 	}
 	else
 	{
@@ -480,7 +480,7 @@ RE_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte *d
 					return;
 				}
 
-				image_scaled = malloc(cols * rows * 9);
+				image_scaled = malloc((size_t)cols * rows * 9);
 				if (!image_scaled)
 				{
 					return;
@@ -499,7 +499,7 @@ RE_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte *d
 					return;
 				}
 
-				image_scaled = malloc(cols * rows * 4);
+				image_scaled = malloc((size_t)cols * rows * 4);
 				if (!image_scaled)
 				{
 					return;
@@ -516,7 +516,7 @@ RE_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte *d
 			image_scaled = (byte *)data;
 		}
 
-		raw_image32 = malloc(cols * rows * sizeof(unsigned));
+		raw_image32 = malloc((size_t)cols * rows * sizeof(unsigned));
 		YQ2_COM_CHECK_OOM(raw_image32, "malloc()",
 			cols * rows * sizeof(unsigned))
 		if (!raw_image32)
@@ -529,7 +529,7 @@ RE_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte *d
 			return;
 		}
 
-		R_Convert8to32Solid(image_scaled, raw_image32, cols * rows, r_rawpalette);
+		R_Convert8to32Solid(image_scaled, raw_image32, (size_t)cols * rows, r_rawpalette);
 
 		if (r_retexturing->value)
 		{

@@ -1070,9 +1070,9 @@ CM_RecursiveHullCheck(int num, float p1f, float p2f, const vec3_t p1, const vec3
 
 		else
 		{
-			offset = (float)fabs(trace_extents[0] * plane->normal[0]) +
-					 (float)fabs(trace_extents[1] * plane->normal[1]) +
-					 (float)fabs(trace_extents[2] * plane->normal[2]);
+			offset = fabsf(trace_extents[0] * plane->normal[0]) +
+					 fabsf(trace_extents[1] * plane->normal[1]) +
+					 fabsf(trace_extents[2] * plane->normal[2]);
 		}
 	}
 

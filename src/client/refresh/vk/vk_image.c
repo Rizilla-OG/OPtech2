@@ -581,7 +581,7 @@ QVk_ReadPixels(uint8_t *dstBuffer, const VkOffset2D *offset, const VkExtent2D *e
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 		.pNext = NULL,
 		.flags = 0,
-		.size = extent->width * extent->height * 4,
+		.size = (VkDeviceSize)extent->width * extent->height * 4,
 		.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
 		.queueFamilyIndexCount = 0,
@@ -634,7 +634,7 @@ QVk_ReadPixels(uint8_t *dstBuffer, const VkOffset2D *offset, const VkExtent2D *e
 
 	// store image in destination buffer
 	pMappedData = buffer_map(&buff);
-	memcpy(dstBuffer, pMappedData, extent->width * extent->height * 4);
+	memcpy(dstBuffer, pMappedData, (size_t)extent->width * extent->height * 4);
 	buffer_unmap(&buff);
 
 	buffer_destroy(&buff);
@@ -1227,7 +1227,7 @@ Vk_LoadPic(const char *name, byte *pic, int width, int realwidth,
 					return NULL;
 				}
 
-				image_converted = malloc(width * height * scale * scale);
+				image_converted = malloc((size_t)width * height * scale * scale);
 				if (!image_converted)
 					return NULL;
 
@@ -1237,9 +1237,9 @@ Vk_LoadPic(const char *name, byte *pic, int width, int realwidth,
 					scale2x(pic, image_converted, width, height);
 				}
 
-				image->vk_texture.mipLevels = Vk_Upload8(image_converted, width * scale, height * scale,
-							image->type, &texBuffer,
-							&upload_width, &upload_height);
+				image->vk_texture.mipLevels = Vk_Upload8(image_converted, (size_t)width * scale, (size_t)height * scale,
+					image->type, &texBuffer,
+					&upload_width, &upload_height);
 				free(image_converted);
 			}
 			else

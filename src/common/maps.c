@@ -768,7 +768,7 @@ Mod_Load2QBSP_IBSP46_PatchCellCount(const dq3surface_t *surface)
 		return 0;
 	}
 
-	return ((width - 1) / 2) * ((height - 1) / 2);
+	return (size_t)((width - 1) / 2) * ((height - 1) / 2);
 }
 
 static size_t

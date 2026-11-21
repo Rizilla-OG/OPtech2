@@ -109,7 +109,8 @@ Hunk_Alloc(int size)
 
 	if (curhunksize + size > maxhunksize)
 	{
-		Sys_Error("%s: overflow %d > %d",
+		// optech2: sizes are size_t, print with %zu
+		Sys_Error("%s: overflow %zu > %zu",
 			__func__, curhunksize + size, maxhunksize);
 	}
 

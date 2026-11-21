@@ -1044,7 +1044,7 @@ int main(int argc, char **argv)
 			float aspect = (float)width / (float)(height > 0 ? height : 1);
 			float near_plane = radius * 0.05f;
 			float half_height = near_plane * tanf(30.0f * M_PI / 180.0f);
-			glFrustum(-half_height * aspect, half_height * aspect, -half_height,
+			glFrustum(-(double)half_height * aspect, (double)half_height * aspect, -half_height,
 				half_height, near_plane, radius * 25.0f);
 		}
 		light_angle = (float)SDL_GetTicks() * 0.0015f;

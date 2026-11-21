@@ -634,7 +634,7 @@ CL_FlyEffect(centity_t *ent, const vec3_t origin)
 }
 
 void
-CL_BfgParticles(entity_t *ent)
+CL_BfgParticles(const entity_t *ent)
 {
 	int i;
 	vec3_t forward;

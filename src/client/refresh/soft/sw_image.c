@@ -282,7 +282,7 @@ R_LoadPic8(const char *name, const byte *pic, int width, int realwidth, int heig
 	image_t	*image;
 	size_t	size, full_size;
 
-	size = width * height;
+	size = (size_t)width * height;
 
 	/* data_size/size are unsigned */
 	if (!pic || data_size == 0 || width <= 0 || height <= 0 || size == 0)
@@ -413,14 +413,14 @@ R_LoadPic(const char *name, const byte *pic, int width, int realwidth, int heigh
 			}
 
 			// resize image
-			pic32 = malloc(uploadwidth * uploadheight * 4);
+			pic32 = malloc((size_t)uploadwidth * uploadheight * 4);
 			if (ResizeSTB(pic, width, height, pic32, uploadwidth, uploadheight))
 			{
-				R_Convert32To8bit(pic32, pic8, uploadwidth * uploadheight, type != it_wall);
+				R_Convert32To8bit(pic32, pic8, (size_t)uploadwidth * uploadheight, type != it_wall);
 				image = R_LoadPic8(name, pic8,
-							uploadwidth, realwidth,
-							uploadheight, realheight,
-							uploadwidth * uploadheight, type);
+					uploadwidth, realwidth,
+					uploadheight, realheight,
+					(size_t)uploadwidth * uploadheight, type);
 			}
 			else
 			{
@@ -452,7 +452,7 @@ R_LoadPic(const char *name, const byte *pic, int width, int realwidth, int heigh
 			byte *scaled = NULL;
 			image_t	*image;
 
-			scaled = malloc(width * height * 4);
+			scaled = malloc((size_t)width * height * 4);
 			if (!scaled)
 				return NULL;
 
@@ -461,9 +461,9 @@ R_LoadPic(const char *name, const byte *pic, int width, int realwidth, int heigh
 			height *= 2;
 
 			image = R_LoadPic8(name, scaled,
-							width, realwidth,
-							height, realheight,
-							width * height, type);
+				width, realwidth,
+				height, realheight,
+				(size_t)width * height, type);
 			free(scaled);
 
 			return image;
@@ -479,16 +479,16 @@ R_LoadPic(const char *name, const byte *pic, int width, int realwidth, int heigh
 				byte *scaled = NULL;
 				image_t	*image;
 
-				scaled = malloc(realwidth * realheight);
+				scaled = malloc((size_t)realwidth * realheight);
 				if (!scaled)
 					return NULL;
 
 				R_ImageShrink(pic, scaled, width, realwidth, height, realheight);
 
 				image = R_LoadPic8(name, scaled,
-								realwidth, realwidth,
-								realwidth, realheight,
-								realwidth * realheight, type);
+					realwidth, realwidth,
+					realwidth, realheight,
+					(size_t)realwidth * realheight, type);
 				free(scaled);
 
 				return image;

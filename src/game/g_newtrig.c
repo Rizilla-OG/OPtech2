@@ -30,7 +30,7 @@ extern void TeleportEffect(vec3_t origin);
  * Destination marker for a teleporter.
  */
 void
-SP_info_teleport_destination(edict_t *self)
+SP_info_teleport_destination(edict_t *self) // cppcheck-suppress constParameterPointer ; optech2: callback, type is fixed
 {
 }
 

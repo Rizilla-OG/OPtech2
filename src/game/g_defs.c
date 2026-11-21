@@ -224,7 +224,7 @@ static int
 Defs_ParseFlags(const char *where, const char *text)
 {
 	char list[256];
-	char *cursor = list, *name;
+	char *cursor = list;
 	int flags = 0;
 	size_t i;
 
@@ -239,7 +239,8 @@ Defs_ParseFlags(const char *where, const char *text)
 			break;
 		}
 
-		name = cursor;
+		char *name = cursor;
+
 		cursor += strcspn(cursor, " ,|");
 
 		if (*cursor)

@@ -3156,6 +3156,7 @@ static void
 func_clock_format_currtime(char *str, size_t str_sz)
 {
 	struct tm *ltime;
+	struct tm ltime_buffer; // optech2: for Q_localtime_r
 	time_t gmtime;
 
 	if (!str || !str_sz)
@@ -3164,7 +3165,13 @@ func_clock_format_currtime(char *str, size_t str_sz)
 	}
 
 	time(&gmtime);
-	ltime = localtime(&gmtime);
+	ltime = Q_localtime_r(&gmtime, &ltime_buffer);
+
+	if (!ltime)
+	{
+		*str = '\0';
+		return;
+	}
 
 	Com_sprintf(str, str_sz, "%2i:%02i:%02i",
 		ltime->tm_hour, ltime->tm_min, ltime->tm_sec);

@@ -397,7 +397,7 @@ Mod_LoadModel_MDR(const char *mod_name, const void *buffer, int modfilelen)
 	mesh_nodes = (dmdxmesh_t *)((byte *)pheader + pheader->ofs_meshes);
 	tris = (dtriangle_t*)((byte *)pheader + pheader->ofs_tris);
 	st = (dstvert_t*)((byte *)pheader + pheader->ofs_st);
-	vertx = malloc(pinmodel.num_frames * pheader->num_xyz * sizeof(dmdx_vert_t));
+	vertx = malloc((size_t)pinmodel.num_frames * pheader->num_xyz * sizeof(dmdx_vert_t));
 	if (!vertx)
 	{
 		YQ2_COM_CHECK_OOM(vertx, "malloc()",

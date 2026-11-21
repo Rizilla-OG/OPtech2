@@ -378,12 +378,12 @@ SCR_ReadNextMPGFrame(void)
 			}
 
 			audiobuffer = (short *)(cin.audio_buf + cin.audio_pos);
-			for (i=0; i < samples->count * cin.s_channels; i++)
+			for (i = 0; i < (size_t)samples->count * cin.s_channels; i++)
 			{
 				audiobuffer[i] = samples->interleaved[i] * (1 << 15);
 			}
 
-			cin.audio_pos += samples->count * cin.s_channels * cin.s_width;
+			cin.audio_pos += (size_t)samples->count * cin.s_channels * cin.s_width;
 		}
 
 		if (count > cin.audio_pos)

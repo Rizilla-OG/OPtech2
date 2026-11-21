@@ -1104,7 +1104,10 @@ static void CG_ExecuteLayoutString (const char *s, vrect_t hud_vrect, vrect_t hu
             {
                 index = atoi(token);
                 if (index < 0 || index >= MAX_STATS)
+                {
                     cgi.Com_Error("Bad stat_string index");
+                    return; // optech2: Com_Error doesn't return; tells checkers too
+                }
                 index = ps->stats[index];
 
                 if (cgi.CL_ServerProtocol() <= PROTOCOL_VERSION_3XX)
@@ -1218,7 +1221,10 @@ static void CG_ExecuteLayoutString (const char *s, vrect_t hud_vrect, vrect_t hu
             {
                 index = atoi(token);
                 if (index < 0 || index >= MAX_STATS)
+                {
                     cgi.Com_Error("Bad stat_string index");
+                    return; // optech2: Com_Error doesn't return; tells checkers too
+                }
                 index = ps->stats[index];
 
                 if (cgi.CL_ServerProtocol() <= PROTOCOL_VERSION_3XX)
@@ -1242,7 +1248,10 @@ static void CG_ExecuteLayoutString (const char *s, vrect_t hud_vrect, vrect_t hu
             {
                 index = atoi(token);
                 if (index < 0 || index >= MAX_STATS)
+                {
                     cgi.Com_Error("Bad stat_string index");
+                    return; // optech2: Com_Error doesn't return; tells checkers too
+                }
                 index = ps->stats[index];
 
                 if (cgi.CL_ServerProtocol() <= PROTOCOL_VERSION_3XX)
@@ -1270,7 +1279,10 @@ static void CG_ExecuteLayoutString (const char *s, vrect_t hud_vrect, vrect_t hu
             {
                 index = atoi(token);
                 if (index < 0 || index >= MAX_STATS)
+                {
                     cgi.Com_Error("Bad stat_string index");
+                    return; // optech2: Com_Error doesn't return; tells checkers too
+                }
                 index = ps->stats[index];
 
                 if (cgi.CL_ServerProtocol() <= PROTOCOL_VERSION_3XX)
@@ -1291,7 +1303,10 @@ static void CG_ExecuteLayoutString (const char *s, vrect_t hud_vrect, vrect_t hu
             {
                 index = atoi(token);
                 if (index < 0 || index >= MAX_STATS)
+                {
                     cgi.Com_Error("Bad stat_string index");
+                    return; // optech2: Com_Error doesn't return; tells checkers too
+                }
                 index = ps->stats[index];
 
                 if (cgi.CL_ServerProtocol() <= PROTOCOL_VERSION_3XX)
@@ -1312,7 +1327,14 @@ static void CG_ExecuteLayoutString (const char *s, vrect_t hud_vrect, vrect_t hu
             int32_t num_args = atoi(COM_Parse (&s));
 
             if (num_args < 0 || num_args >= MAX_LOCALIZATION_ARGS)
+
+            {
+
                 cgi.Com_Error("Bad loc string");
+
+                return; // optech2: Com_Error doesn't return; tells checkers too
+
+            }
 
             // parse base
             token = COM_Parse (&s);
@@ -1336,7 +1358,14 @@ static void CG_ExecuteLayoutString (const char *s, vrect_t hud_vrect, vrect_t hu
             int32_t num_args = atoi(COM_Parse (&s));
 
             if (num_args < 0 || num_args >= MAX_LOCALIZATION_ARGS)
+
+            {
+
                 cgi.Com_Error("Bad loc string");
+
+                return; // optech2: Com_Error doesn't return; tells checkers too
+
+            }
 
             // parse base
             token = COM_Parse (&s);
@@ -1365,7 +1394,14 @@ static void CG_ExecuteLayoutString (const char *s, vrect_t hud_vrect, vrect_t hu
             int32_t num_args = atoi(COM_Parse (&s));
 
             if (num_args < 0 || num_args >= MAX_LOCALIZATION_ARGS)
+
+            {
+
                 cgi.Com_Error("Bad loc string");
+
+                return; // optech2: Com_Error doesn't return; tells checkers too
+
+            }
 
             // parse base
             token = COM_Parse (&s);
@@ -1392,7 +1428,14 @@ static void CG_ExecuteLayoutString (const char *s, vrect_t hud_vrect, vrect_t hu
             int32_t num_args = atoi(COM_Parse (&s));
 
             if (num_args < 0 || num_args >= MAX_LOCALIZATION_ARGS)
+
+            {
+
                 cgi.Com_Error("Bad loc string");
+
+                return; // optech2: Com_Error doesn't return; tells checkers too
+
+            }
 
             // parse base
             token = COM_Parse (&s);
@@ -1561,7 +1604,10 @@ static void CG_ExecuteLayoutString (const char *s, vrect_t hud_vrect, vrect_t hu
             {
                 index = atoi(token);
                 if (index < 0 || index >= MAX_STATS)
+                {
                     cgi.Com_Error("Bad stat_string index");
+                    return; // optech2: Com_Error doesn't return; tells checkers too
+                }
                 index = ps->stats[index] - 1;
 
                 if (!scr_usekfont->integer)
@@ -1587,7 +1633,8 @@ static void CG_ExecuteLayoutString (const char *s, vrect_t hud_vrect, vrect_t hu
 
             y += cgi.SCR_FontLineHeight(scale);
 
-            float x = ((hud_vrect.x + (hud_vrect.width * 0.5f)) * scale) - (bar_width * 0.5f);
+            // optech2: bar_x, not x (x is the layout cursor)
+            float bar_x = ((hud_vrect.x + (hud_vrect.width * 0.5f)) * scale) - (bar_width * 0.5f);
 
             // 2 health bars, hardcoded
             for (size_t i = 0; i < 2; i++, stat++)
@@ -1597,12 +1644,12 @@ static void CG_ExecuteLayoutString (const char *s, vrect_t hud_vrect, vrect_t hu
 
                 float percent = (*stat & 0b01111111) / 127.f;
 
-                cgi.SCR_DrawColorPic(x, y, bar_width + scale, bar_height + scale, "_white", rgba_black);
+                cgi.SCR_DrawColorPic(bar_x, y, bar_width + scale, bar_height + scale, "_white", rgba_black);
 
                 if (percent > 0)
-                    cgi.SCR_DrawColorPic(x, y, bar_width * percent, bar_height, "_white", rgba_red);
+                    cgi.SCR_DrawColorPic(bar_x, y, bar_width * percent, bar_height, "_white", rgba_red);
                 if (percent < 1)
-                    cgi.SCR_DrawColorPic(x + (bar_width * percent), y, bar_width * (1.f - percent), bar_height, "_white", { 80, 80, 80, 255 });
+                    cgi.SCR_DrawColorPic(bar_x + (bar_width * percent), y, bar_width * (1.f - percent), bar_height, "_white", { 80, 80, 80, 255 });
 
                 y += bar_height * 3;
             }

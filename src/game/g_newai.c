@@ -1239,7 +1239,7 @@ drawbbox(edict_t *self)
 }
 
 void
-M_MonsterDodge(edict_t *self, edict_t *attacker, float eta, trace_t *tr)
+M_MonsterDodge(edict_t *self, edict_t *attacker, float eta, trace_t *tr) // cppcheck-suppress constParameterPointer ; optech2: callback, type is fixed
 {
 	float r = random();
 	float height;

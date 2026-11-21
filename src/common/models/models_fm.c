@@ -1221,7 +1221,7 @@ Mod_FlexConvert(const char *mod_name, const flex_model_t *model, model_skin_t *s
 		return false;
 	}
 
-	skin->poses = calloc(model->num_frames * fit.bone_count, sizeof(*skin->poses));
+	skin->poses = calloc((size_t)model->num_frames * fit.bone_count, sizeof(*skin->poses));
 	if (!skin->poses)
 	{
 		Mod_FMFreeTempData(&fit);

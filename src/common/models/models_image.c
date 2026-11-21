@@ -161,7 +161,7 @@ Mod_LoadBKImage(const char *mod_name, int texture_index, byte *buffer, int modfi
 
 	*pwidth = header.width;
 	*pheight = header.height;
-	pic = malloc(header.width * header.height * 4);
+	pic = malloc((size_t)header.width * header.height * 4);
 	YQ2_COM_CHECK_OOM(pic, "malloc()", header.width * header.height * 4)
 	if (!pic)
 	{
@@ -169,7 +169,7 @@ Mod_LoadBKImage(const char *mod_name, int texture_index, byte *buffer, int modfi
 		return NULL;
 	}
 
-	memset(pic, 0, header.width * header.height * 4);
+	memset(pic, 0, (size_t)header.width * header.height * 4);
 
 	for (i = 0; i < header.numframes; i++)
 	{
@@ -250,7 +250,7 @@ Mod_LoadSPRImage(const char *mod_name, int texture_index, byte *buffer, int modf
 
 		*width = LittleLong(((int *)curr_pos)[3]);
 		*height = LittleLong(((int *)curr_pos)[4]);
-		size = (*width) * (*height);
+		size = (size_t)(*width) * (*height);
 
 		if (i == texture_index)
 		{

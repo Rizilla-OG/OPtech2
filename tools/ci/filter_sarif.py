@@ -2,7 +2,7 @@
 """Drops code scanning results in bundled third-party code from SARIF files.
 
 The libraries under VENDORED_PATHS are bundled unmodified (Recast/Detour,
-Lua, unzip): their warnings are upstream's, not ours. CodeQL can't skip
+Lua, unzip, stb, pl_mpeg, volk, glad): their warnings are upstream's, not ours. CodeQL can't skip
 them for C/C++ (paths-ignore only works for interpreted languages), so the
 CodeQL workflow analyses everything and this filters the SARIF before upload.
 
@@ -14,7 +14,23 @@ import json
 import sys
 from pathlib import Path
 
-VENDORED_PATHS = ("src/common/nav/recast/", "src/game/lua/", "src/common/unzip/")
+VENDORED_PATHS = (
+    "src/common/nav/recast/",
+    "src/game/lua/",
+    "src/common/unzip/",
+    # single-file libraries bundled next to our code
+    "src/client/refresh/vk/volk/",
+    "src/client/refresh/gl1/glad-gles1/",
+    "src/client/refresh/gl3/glad/",
+    "src/client/refresh/gl3/glad-gles3/",
+    "src/client/refresh/gl4/glad/",
+    "src/client/cinema/pl_mpeg.h",
+    "src/client/refresh/files/stb_image.h",
+    "src/client/refresh/files/stb_image_resize.h",
+    "src/client/refresh/files/stb_truetype.h",
+    "src/client/sound/header/stb_vorbis.h",
+    "src/client/vid/header/stb_image_write.h",
+)
 
 
 def is_vendored(result):

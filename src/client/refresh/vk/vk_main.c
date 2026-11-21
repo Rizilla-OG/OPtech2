@@ -732,11 +732,10 @@ void Mat_Rotate(float *matrix, float deg, float x, float y, float z)
 	vec3_t r = { x, y, z };
 	VectorNormalize(r);
 
-	float rot[16] = { r[0]*r[0]*cd + c,		 r[1]*r[0]*cd + r[2]*s, r[0]*r[2]*cd - r[1]*s,	0.f,
-					  r[0]*r[1]*cd - r[2]*s, r[1]*r[1]*cd + c,		r[1]*r[2]*cd + r[0]*s,	0.f,
-					  r[0]*r[2]*cd + r[1]*s, r[1]*r[2]*cd - r[0]*s, r[2]*r[2]*cd + c,		0.f,
-					  0.f,					 0.f,					0.f,					1.f
-	};
+	float rot[16] = {(double)r[0] * r[0] * cd + c, (double)r[1] * r[0] * cd + r[2] * s, (double)r[0] * r[2] * cd - r[1] * s, 0.f,
+		(double)r[0] * r[1] * cd - r[2] * s, (double)r[1] * r[1] * cd + c, (double)r[1] * r[2] * cd + r[0] * s, 0.f,
+		(double)r[0] * r[2] * cd + r[1] * s, (double)r[1] * r[2] * cd - r[0] * s, (double)r[2] * r[2] * cd + c, 0.f,
+		0.f, 0.f, 0.f, 1.f};
 
 	Mat_Mul(matrix, rot, matrix);
 }

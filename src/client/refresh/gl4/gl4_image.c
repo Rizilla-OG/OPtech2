@@ -651,7 +651,7 @@ GL4_LoadPic(const char *name, byte *pic, int width, int realwidth,
 					return NULL;
 				}
 
-				image_converted = malloc(width * height * scale * scale);
+				image_converted = malloc((size_t)width * height * scale * scale);
 				if (!image_converted)
 					return NULL;
 
@@ -661,8 +661,8 @@ GL4_LoadPic(const char *name, byte *pic, int width, int realwidth,
 					scale2x(pic, image_converted, width, height);
 				}
 
-				image->has_alpha = GL4_Upload8(image_converted, width * scale, height * scale,
-							(image->type != it_pic && image->type != it_sky));
+				image->has_alpha = GL4_Upload8(image_converted, (size_t)width * scale, (size_t)height * scale,
+					(image->type != it_pic && image->type != it_sky));
 				free(image_converted);
 			}
 			else

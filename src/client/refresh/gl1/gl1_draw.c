@@ -646,7 +646,7 @@ RDraw_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte *dat
 				}
 			}
 
-			R_Convert8to32Solid(data, img, cols * rows, r_rawpalette);
+			R_Convert8to32Solid(data, img, (size_t)cols * rows, r_rawpalette);
 
 			glTexImage2D(GL_TEXTURE_2D, 0, gl_tex_solid_format,
 								cols, rows, 0, GL_RGBA, GL_UNSIGNED_BYTE,

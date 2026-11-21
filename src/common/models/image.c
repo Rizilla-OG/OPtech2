@@ -768,7 +768,7 @@ LMP_Decode(const char *name, const byte *raw, int len, byte **pic,
 
 	lmp_width = LittleLong(((int*)raw)[0]) & 0xFFFF;
 	lmp_height = LittleLong(((int*)raw)[1]) & 0xFFFF;
-	lmp_size = lmp_height * lmp_width;
+	lmp_size = (size_t)lmp_height * lmp_width;
 	if ((lmp_size + sizeof(int) * 2) > len)
 	{
 		Com_Printf("%s: can't load %s, small body %dx%d ? %d\n",

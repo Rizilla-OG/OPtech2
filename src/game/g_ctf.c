@@ -1009,8 +1009,7 @@ CTFPickup_Flag(edict_t *ent, edict_t *other)
 					{
 						player->client->resp.ctf_lasthurtcarrier = -5;
 					}
-					else if (player->client->resp.ctf_team ==
-							 other->client->resp.ctf_team)
+					else /* optech2: same team (the check above covers the other case) */
 					{
 						if (player != other)
 						{
@@ -2368,7 +2367,7 @@ CTFWhat_Tech(const edict_t *ent)
 }
 
 qboolean
-CTFPickup_Tech(edict_t *ent, edict_t *other)
+CTFPickup_Tech(edict_t *ent, edict_t *other) // cppcheck-suppress constParameterPointer ; optech2: callback, type is fixed
 {
 	int i;
 
@@ -5196,6 +5195,7 @@ CTFWarp(edict_t *ent)
 	char text[1024];
 	const char *token;
 	char *mlist;
+	char *strtok_state; // optech2: for Q_strtok_r
 	static const char *seps = " \t\n\r";
 
 	if (gi.argc() < 2)
@@ -5208,7 +5208,7 @@ CTFWarp(edict_t *ent)
 
 	mlist = strdup(warp_list->string);
 
-	token = strtok(mlist, seps);
+	token = Q_strtok_r(mlist, seps, &strtok_state);
 
 	while (token != NULL)
 	{
@@ -5217,7 +5217,7 @@ CTFWarp(edict_t *ent)
 			break;
 		}
 
-		token = strtok(NULL, seps);
+		token = Q_strtok_r(NULL, seps, &strtok_state);
 	}
 
 	if (token == NULL)

@@ -137,10 +137,10 @@ Mod_LoadMDLSkins(const char *mod_name, dmdx_t *pheader, const byte *curr_pos)
 		}
 
 		/* copy 8bit image */
-		memcpy((byte*)pheader + pheader->ofs_imgbit +
-				(pheader->skinwidth * pheader->skinheight * i),
-				curr_pos,
-				pheader->skinwidth * pheader->skinheight);
+		memcpy((byte *)pheader + pheader->ofs_imgbit +
+				   (pheader->skinwidth * pheader->skinheight * i),
+			curr_pos,
+			(size_t)pheader->skinwidth * pheader->skinheight);
 		curr_pos += pheader->skinwidth * pheader->skinheight;
 	}
 

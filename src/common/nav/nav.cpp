@@ -279,9 +279,8 @@ NavDropFlags(float drop_height)
 
 /* one tile's polygons into tile->polymesh and tile->detail; false if it
    has no floor */
-/* the floor on top of each lift (where it rests) becomes the lift area;
-   always true (it's in BuildTile's chain of steps) */
-static bool
+/* the floor on top of each lift (where it rests) becomes the lift area */
+static void
 NavMarkLifts(NavContext *context, const NavGeometry &geometry, rcCompactHeightfield &compact)
 {
 	for (const NavLift &lift : geometry.lifts)
@@ -302,8 +301,6 @@ NavMarkLifts(NavContext *context, const NavGeometry &geometry, rcCompactHeightfi
 
 		rcMarkBoxArea(context, bmin, bmax, NAV_AREA_LIFT, compact);
 	}
-
-	return true;
 }
 
 static bool
@@ -374,9 +371,14 @@ BuildTile(NavContext &context, const NavGeometry &geometry, rcConfig config, Nav
 
 	if (!compact ||
 		!rcBuildCompactHeightfield(&context, config.walkableHeight, config.walkableClimb, *heightfield, *compact) ||
-		!rcErodeWalkableArea(&context, config.walkableRadius, *compact) ||
-		!NavMarkLifts(&context, geometry, *compact) ||
-		!rcBuildDistanceField(&context, *compact) ||
+		!rcErodeWalkableArea(&context, config.walkableRadius, *compact))
+	{
+		goto done;
+	}
+
+	NavMarkLifts(&context, geometry, *compact);
+
+	if (!rcBuildDistanceField(&context, *compact) ||
 		!rcBuildRegions(&context, *compact, config.borderSize, config.minRegionArea, config.mergeRegionArea))
 	{
 		goto done;

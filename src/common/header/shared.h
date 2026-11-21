@@ -351,6 +351,18 @@ void Com_PageInMemory(const byte *buffer, int size);
 
 /* portable case insensitive compare */
 int Q_stricmp(const char *s1, const char *s2);
+
+// optech2: thread-safe strtok and localtime on every platform
+#ifdef _MSC_VER
+#define Q_strtok_r strtok_s
+#else
+#define Q_strtok_r strtok_r
+#endif
+#ifdef _WIN32
+#define Q_localtime_r(timer, result) (localtime_s((result), (timer)) ? NULL : (result))
+#else
+#define Q_localtime_r(timer, result) localtime_r((timer), (result))
+#endif
 int Q_strcasecmp(const char *s1, const char *s2);
 int Q_strncasecmp(const char *s1, const char *s2, size_t n);
 char *Q_strcasestr(const char *haystack, const char *needle);

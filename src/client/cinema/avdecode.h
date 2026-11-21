@@ -386,7 +386,7 @@ cinavdecode_init(cinavdecode_t *state, int max_width, int max_height)
 	state->audio_res = malloc(state->audio_buffsize);
 
 	/* buffer half second of video */
-	state->video_frame_size = 4 * state->width * state->height;
+	state->video_frame_size = 4L * state->width * state->height;
 	state->video_buffsize = state->video_frame_size * (state->fps / 2 + 1);
 	state->video_res = malloc(state->video_buffsize);
 	state->video_last = malloc(state->video_frame_size);

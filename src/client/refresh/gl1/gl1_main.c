@@ -754,7 +754,7 @@ R_SetPerspective(GLdouble fovy)
 
 	if (gl_state.camera_separation)
 	{
-		const GLdouble separation = - gl1_stereo_convergence->value * (2 * gl_state.camera_separation) / zNear;
+		const GLdouble separation = -gl1_stereo_convergence->value * (2.0 * gl_state.camera_separation) / zNear;
 		xmin += separation;
 		xmax += separation;
 	}

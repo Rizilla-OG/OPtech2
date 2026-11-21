@@ -425,14 +425,14 @@ RE_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte *d
 
 	if (bits == 32)
 	{
-		image_scaled = malloc(cols * rows);
-		R_Convert32To8bit(data, image_scaled, cols * rows, false);
+		image_scaled = malloc((size_t)cols * rows);
+		R_Convert32To8bit(data, image_scaled, (size_t)cols * rows, false);
 	}
 	else if (r_retexturing->value)
 	{
 		if (cols < (w / 3) || rows < (h / 3))
 		{
-			image_scaled = malloc(cols * rows * 9);
+			image_scaled = malloc((size_t)cols * rows * 9);
 
 			scale3x(data, image_scaled, cols, rows);
 
@@ -441,7 +441,7 @@ RE_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte *d
 		}
 		else
 		{
-			image_scaled = malloc(cols * rows * 4);
+			image_scaled = malloc((size_t)cols * rows * 4);
 
 			scale2x(data, image_scaled, cols, rows);
 

@@ -377,7 +377,7 @@ Mod_LoadHLMDLSkins(const char *mod_name, dmdx_t *pheader, const hlmdl_header_t *
 	int i;
 	byte *img_cache;
 
-	size = pheader->skinwidth * pheader->skinheight * 4;
+	size = (size_t)pheader->skinwidth * pheader->skinheight * 4;
 	img_cache = malloc(size);
 	if (!img_cache)
 	{
@@ -411,11 +411,9 @@ Mod_LoadHLMDLSkins(const char *mod_name, dmdx_t *pheader, const hlmdl_header_t *
 			{
 				byte *dst, val;
 
-				dst = img_cache + (y * pheader->skinwidth + x) * 4;
-				val = src[
-					(x * width / pheader->skinwidth) +
-					(y * height / pheader->skinheight) * width
-				];
+				dst = img_cache + ((size_t)y * pheader->skinwidth + x) * 4;
+				val = src[(x * width / pheader->skinwidth) +
+						  (size_t)(y * height / pheader->skinheight) * width];
 
 				dst[0] = pal[val * 3 + 0];
 				dst[1] = pal[val * 3 + 1];

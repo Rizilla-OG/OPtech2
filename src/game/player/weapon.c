@@ -1455,7 +1455,7 @@ Throw_Generic(edict_t *ent, int FRAME_FIRE_LAST, int FRAME_IDLE_LAST, int FRAME_
 			return;
 		}
 
-		if (pause_frames)
+		/* optech2: pause_frames is checked at the top */
 		{
 			int n;
 

@@ -473,7 +473,7 @@ plat_Accelerate(moveinfo_t *moveinfo)
 				return;
 			}
 
-			moveinfo->current_speed = moveinfo->move_speed;
+			// optech2: current_speed already equals move_speed here
 			moveinfo->next_speed = moveinfo->move_speed - moveinfo->decel *
 								   (p2_distance / distance);
 			return;

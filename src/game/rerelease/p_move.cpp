@@ -317,7 +317,7 @@ void PM_StepSlideMove_Generic(vec3_t &origin, vec3_t &velocity, float frametime,
 		// of the curved map.
 		if (trace.surface2)
 		{
-			vec3_t clipped_a, clipped_b;
+			vec3_t clipped_a {}, clipped_b {}; // optech2: zeroed, PM_ClipVelocity fills them
 			PM_ClipVelocity(velocity, trace.plane.normal, clipped_a, 1.01f);
 			PM_ClipVelocity(velocity, trace.plane2.normal, clipped_b, 1.01f);
 

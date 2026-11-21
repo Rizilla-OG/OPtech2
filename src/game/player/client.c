@@ -918,31 +918,8 @@ LookAtKiller(edict_t *self, edict_t *inflictor, edict_t *attacker)
 		return;
 	}
 
-	if (dir[0])
-	{
-		self->client->killer_yaw = 180 / M_PI * atan2(dir[1], dir[0]);
-	}
-	else if (dir[1] > 0)
-	{
-		self->client->killer_yaw = 90;
-	}
-	else if (dir[1] < 0)
-	{
-		self->client->killer_yaw = 270;
-	}
-	else
-	{
-		self->client->killer_yaw = 0;
-
-		if (dir[1] > 0)
-		{
-			self->client->killer_yaw = 90;
-		}
-		else if (dir[1] < 0)
-		{
-			self->client->killer_yaw = -90;
-		}
-	}
+	/* optech2: atan2 covers dir[0] == 0 too (90, -90 = 270, or 0) */
+	self->client->killer_yaw = 180 / M_PI * atan2(dir[1], dir[0]);
 
 	if (self->client->killer_yaw < 0)
 	{

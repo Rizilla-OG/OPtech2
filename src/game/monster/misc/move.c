@@ -888,7 +888,7 @@ SV_CloseEnough(const edict_t *ent, const edict_t *goal, float dist)
 static qboolean
 M_NavWalkOff(edict_t *ent, const vec3_t to_point, float dist)
 {
-	vec3_t direction, end, below;
+	vec3_t direction, end, below_end; // optech2: not "below", that is a function
 	trace_t trace;
 	float delta;
 
@@ -918,9 +918,9 @@ M_NavWalkOff(edict_t *ent, const vec3_t to_point, float dist)
 	}
 
 	VectorCopy(end, ent->s.origin);
-	VectorCopy(end, below);
-	below[2] -= 1;
-	trace = gi.trace(ent->s.origin, ent->mins, ent->maxs, below, ent, MASK_MONSTERSOLID);
+	VectorCopy(end, below_end);
+	below_end[2] -= 1;
+	trace = gi.trace(ent->s.origin, ent->mins, ent->maxs, below_end, ent, MASK_MONSTERSOLID);
 
 	if (trace.fraction == 1)
 	{
@@ -1076,7 +1076,6 @@ M_NavLift(edict_t *ent, float dist)
 	const float rise = ent->monsterinfo.nav_move_point[2] - (ent->s.origin[2] + ent->mins[2]);
 	const qboolean going_up = (rise > 0);
 	const int here = going_up ? STATE_BOTTOM : STATE_TOP; /* where the lift must be to get on */
-	vec3_t to_point;
 
 	if (!lift)
 	{
@@ -1088,6 +1087,8 @@ M_NavLift(edict_t *ent, float dist)
 	/* at the other end: step off */
 	if (fabsf(rise) <= STEPSIZE)
 	{
+		vec3_t to_point;
+
 		ent->monsterinfo.nav_lift_wait_end = 0;
 		VectorSubtract(ent->monsterinfo.nav_move_point, ent->s.origin, to_point);
 
@@ -1315,7 +1316,6 @@ M_MoveToGoal(edict_t *ent, float dist)
 		!(ent->monsterinfo.nav_has_point && (ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_ELEVATOR)))
 	{
 		trace_t straightTrace;
-		vec3_t toGoal;
 
 		if (!FacingIdeal(ent))
 		{
@@ -1327,6 +1327,8 @@ M_MoveToGoal(edict_t *ent, float dist)
 
 		if ((straightTrace.fraction == 1.0f) || (straightTrace.ent == goal))
 		{
+			vec3_t toGoal;
+
 			VectorSubtract(goal->s.origin, ent->s.origin, toGoal);
 
 			if (SV_StepDirection(ent, vectoyaw(toGoal), dist))

@@ -627,7 +627,7 @@ LoadHiColorImage(const char *name, const char* namewe, const char *ext,
 			image = load_image(name, pic,
 				width, realwidth,
 				height, realheight,
-				width * height,
+				(size_t)width * height,
 				type, 32);
 		}
 	}
@@ -684,7 +684,7 @@ LoadImage_Ext(const char *name, const char* namewe, const char *ext, imagetype_t
 				size_t img_size;
 				byte *pic_scale;
 
-				img_size = width * height * 4 * 4;
+				img_size = (size_t)width * height * 4 * 4;
 				pic_scale = malloc(img_size);
 				YQ2_COM_CHECK_OOM(pic_scale, "malloc()",
 					img_size)
@@ -702,7 +702,7 @@ LoadImage_Ext(const char *name, const char* namewe, const char *ext, imagetype_t
 				image = load_image(name, pic_scale,
 					width, realwidth,
 					height, realheight,
-					width * height,
+					(size_t)width * height,
 					type, bitsPerPixel);
 				free(pic_scale);
 			}
@@ -711,7 +711,7 @@ LoadImage_Ext(const char *name, const char* namewe, const char *ext, imagetype_t
 				image = load_image(name, pic,
 					width, realwidth,
 					height, realheight,
-					width * height,
+					(size_t)width * height,
 					type, bitsPerPixel);
 			}
 		}
@@ -722,7 +722,7 @@ LoadImage_Ext(const char *name, const char* namewe, const char *ext, imagetype_t
 				byte *image_scale = NULL;
 
 				/* scale image paletted images */
-				image_scale = malloc(width * height * 4);
+				image_scale = malloc((size_t)width * height * 4);
 				YQ2_COM_CHECK_OOM(image_scale, "malloc()",
 					width * height * 4)
 				if (!image_scale)
@@ -772,7 +772,7 @@ LoadImage_Ext(const char *name, const char* namewe, const char *ext, imagetype_t
 					size_t img_size;
 					byte *pic_scale;
 
-					img_size = width * height * 4 * 4;
+					img_size = (size_t)width * height * 4 * 4;
 					pic_scale = malloc(img_size);
 					YQ2_COM_CHECK_OOM(pic_scale, "malloc()",
 						img_size)
@@ -789,7 +789,7 @@ LoadImage_Ext(const char *name, const char* namewe, const char *ext, imagetype_t
 					image = load_image(name, pic_scale,
 						width, realwidth,
 						height, realheight,
-						width * height,
+						(size_t)width * height,
 						type, 32);
 					free(pic_scale);
 				}
@@ -813,7 +813,7 @@ LoadImage_Ext(const char *name, const char* namewe, const char *ext, imagetype_t
 				image = load_image(name, pic,
 					width, realwidth,
 					height, realheight,
-					width * height, type, bitsPerPixel);
+					(size_t)width * height, type, bitsPerPixel);
 			}
 		}
 
@@ -1329,7 +1329,7 @@ R_LoadTTFFont(const char *ttffont, int vid_height, float *r_font_size,
 	}
 	*r_font_height = power_two;
 
-	texture_size = (*r_font_height) * (*r_font_height);
+	texture_size = (size_t)(*r_font_height) * (*r_font_height);
 	font_mask = malloc(texture_size);
 	YQ2_COM_CHECK_OOM(font_mask, "malloc()", texture_size)
 	font_data = malloc(texture_size * 4);

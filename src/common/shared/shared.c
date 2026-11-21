@@ -297,10 +297,8 @@ R_ConcatTransforms(const float in1[3][4], const float in2[3][4], float out[3][4]
 float
 Q_fabs(float f)
 {
-	int tmp = *(int *)&f;
-
-	tmp &= 0x7FFFFFFF;
-	return *(float *)&tmp;
+	// optech2: no float/int pointer casts
+	return fabsf(f);
 }
 
 float

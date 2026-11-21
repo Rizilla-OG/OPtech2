@@ -1425,7 +1425,7 @@ R_InitGraphics( int width, int height )
 		sc_base = NULL;
 	}
 
-	d_pzbuffer = malloc(width * height * sizeof(zvalue_t));
+	d_pzbuffer = malloc((size_t)width * height * sizeof(zvalue_t));
 
 	R_InitCaches();
 
@@ -1463,7 +1463,7 @@ RE_BeginFrame(float camera_separation)
 		VID_WholeDamageBuffer();
 		// and backbuffer should be zeroed
 		memset(swap_buffers + ((swap_current + 1) & 1), 0,
-			vid_buffer_height * vid_buffer_width * sizeof(pixel_t));
+			(size_t)vid_buffer_height * vid_buffer_width * sizeof(pixel_t));
 
 		vid_gamma->modified = false;
 		sw_overbrightbits->modified = false;
@@ -2152,7 +2152,7 @@ RE_CopyFrame(Uint32 *pixels, int pitch, SDL_Rect *rect)
 		dst = pixels;
 		src = vid_buffer + rect->y * vid_buffer_width;
 
-		R_Convert8to32Solid(src, dst, rect->h * vid_buffer_width, sdl_palette);
+		R_Convert8to32Solid(src, dst, (size_t)rect->h * vid_buffer_width, sdl_palette);
 	}
 	else
 	{
@@ -2230,7 +2230,7 @@ RE_CleanFrame(void)
 	Uint32 *pixels;
 
 	memset(swap_buffers, 0,
-		vid_buffer_height * vid_buffer_width * sizeof(pixel_t) * 2);
+		(size_t)vid_buffer_height * vid_buffer_width * sizeof(pixel_t) * 2);
 
 #ifdef USE_SDL3
 	if (!SDL_LockTexture(texture, NULL, (void**)&pixels, &pitch))
@@ -2243,7 +2243,7 @@ RE_CleanFrame(void)
 	}
 
 	// only cleanup texture without flush texture to screen
-	memset(pixels, 0, pitch * vid_buffer_height);
+	memset(pixels, 0, (size_t)pitch * vid_buffer_height);
 	SDL_UnlockTexture(texture);
 
 	// All changes flushed
@@ -2505,7 +2505,7 @@ static void
 SWimp_CreateRender(int width, int height)
 {
 	swap_current = 0;
-	swap_buffers = malloc(height * width * sizeof(pixel_t) * 2);
+	swap_buffers = malloc((size_t)height * width * sizeof(pixel_t) * 2);
 	if (!swap_buffers)
 	{
 		Com_Error(ERR_FATAL, "%s: Can't allocate swapbuffer.", __func__);
@@ -2513,7 +2513,7 @@ SWimp_CreateRender(int width, int height)
 		return;
 	}
 	swap_frames[0] = swap_buffers;
-	swap_frames[1] = swap_buffers + height * width * sizeof(pixel_t);
+	swap_frames[1] = swap_buffers + (size_t)height * width * sizeof(pixel_t);
 	vid_buffer = swap_frames[swap_current&1];
 	// Need to rewrite whole frame
 	VID_WholeDamageBuffer();
@@ -2552,7 +2552,7 @@ SWimp_CreateRender(int width, int height)
 
 	R_ReallocateMapBuffers();
 
-	r_warpbuffer = malloc(height * width * sizeof(pixel_t));
+	r_warpbuffer = malloc((size_t)height * width * sizeof(pixel_t));
 
 	// 2k+ resolution and 32 == shift20_t
 	if ((width >= 2048) && (sizeof(shift20_t) == 4))
@@ -2591,7 +2591,7 @@ static void
 R_ScreenShot_f(void)
 {
 	int x, y;
-	byte *buffer = malloc(vid_buffer_width * vid_buffer_height * 3);
+	byte *buffer = malloc((size_t)vid_buffer_width * vid_buffer_height * 3);
 	const byte *palette = sw_state.currentpalette;
 
 	if (!buffer)
