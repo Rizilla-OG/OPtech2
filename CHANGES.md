@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 
 ## Unreleased
 
+- Fixed: Quake II 64's second level (q64/complex) crashed on load (division by zero): its lights use the re-release's extra light styles 12-14, which weren't defined. Added them, and a light whose style is empty no longer crashes.
 - Renamed to OpenTech2: executables `OpenTech2` / `OpenTech2.exe` and `OpenTech2-server` (no `quake2.exe` wrapper any more), window title, renderer names, user folder (`~/.local/share/OpenTech2`, `Documents\OpenTech2` on Windows, `~/.opentech2`), README, website and CI package names. The GitHub repository keeps its name.
 - The game library's player movement is a plain build of `src/common/shared/pmove.c` (both binaries build with hidden symbols, so each keeps its own copy), and its engine extensions live in `src/game/g_extension.c`. The client finds the game's movement whenever it opens the game library, also without a client game module.
 - `tests/run_all.py` runs every check and prints one summary (`--headless`, `--quick`, `--only`, `--list`). Known gaps are listed in `TODO.md`.

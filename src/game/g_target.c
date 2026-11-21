@@ -2041,6 +2041,13 @@ target_light_think(edict_t *self)
 	}
 
 	style = gi.GetConfigString(CS_LIGHTS + self->style);
+
+	/* optech2: a style no one set would divide by zero below */
+	if (!style || !style[0])
+	{
+		style = "m";
+	}
+
 	self->delay += self->speed;
 
 	index = ((int) self->delay) % strlen(style);
