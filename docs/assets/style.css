@@ -164,3 +164,21 @@ footer nav { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 12px; }
 .tasks li.part { color: var(--text); }
 .tasks li.part::before { border-color: var(--next); background: linear-gradient(90deg, var(--next) 50%, transparent 50%); }
 .roadmap-link { margin: 18px 0 0; font: 600 .95rem/1.4 ui-monospace, monospace; }
+
+/* hero clip */
+.hero-shot video { display: block; width: 100%; height: auto; background: #000; }
+.hero-shot figcaption { padding: 10px 14px; color: var(--muted); font-size: .9rem; text-align: left; background: var(--panel); }
+
+/* questions */
+.faq { display: grid; gap: 10px; max-width: 860px; }
+.faq details { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 0 16px; }
+.faq summary { cursor: pointer; padding: 14px 0; font-weight: 600; }
+.faq summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.faq details p { margin: 0 0 14px; color: var(--muted); font-size: .95rem; }
+
+/* commands table: first column holds code, let it wrap */
+table.commands td:first-child { white-space: normal; font-family: inherit; width: 34%; }
+table.commands td:nth-child(2) { white-space: normal; font-family: inherit; color: var(--muted); }
+
+.badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.badges img { display: block; }

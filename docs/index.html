@@ -7,9 +7,12 @@
 <meta name="description" content="OpenTech2 is a Quake II derived engine for building new games: no arbitrary limits for mappers and modders, 60 Hz simulation, thousands of entities, IQM models, a client game module and mods without engine changes.">
 <meta property="og:title" content="OpenTech2">
 <meta property="og:description" content="A Quake II derived engine for building new games, with the stock limits removed.">
-<meta property="og:image" content="https://rizilla-og.github.io/OPtech2/assets/img/stress-idle.jpg">
+<meta property="og:image" content="https://rizilla-og.github.io/OPtech2/assets/img/q64-complex.jpg">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
@@ -27,8 +30,12 @@
     <a class="btn ghost" href="https://github.com/Rizilla-OG/OPtech2">View on GitHub</a>
   </div>
   <figure class="hero-shot">
-    <img src="assets/img/stress-idle.jpg" width="1280" height="720"
-      alt="Soldiers spread across a big room full of items and spinning red pillars">
+    <video src="assets/video/stress1k.mp4" poster="assets/img/stress1k-poster.jpg" width="1280" height="720"
+      autoplay muted loop playsinline preload="metadata"
+      aria-label="A thousand soldiers rush the player across a huge room, with performance numbers in the corner"></video>
+    <figcaption>1,000 soldiers attacking at once on the stress map, recorded in the engine (damage flash turned
+      off). The overlay is <code>cl_perf</code>: about 56 frames per second here, with the game code using some
+      14 ms of each 16.7 ms tick at 60 Hz, near the limit.</figcaption>
   </figure>
 </header>
 
@@ -285,6 +292,49 @@
   </div>
 </section>
 
+<section id="faq">
+  <div class="wrap">
+    <h2>Questions</h2>
+    <div class="faq">
+      <details open>
+        <summary>What do I need to play?</summary>
+        <p>The Quake II game data, from Steam or GOG: point OpenTech2 at the folder that holds <code>baseq2</code>
+          with <code>-datadir</code>. OpenTech2 is the engine; it doesn't include the game.</p>
+      </details>
+      <details>
+        <summary>How do I play the re-release episodes (Quake II 64, Call of the Machine...)?</summary>
+        <p>If you own the 2023 re-release, start OpenTech2 with its data folder:
+          <code>-datadir ".../Quake 2/rerelease"</code>. The Game menu then lists Quake II, The Reckoning, Ground
+          Zero, Call of the Machine and Quake II 64. Their intro videos play in builds with FFmpeg (built from
+          source); the prebuilt downloads skip them.</p>
+      </details>
+      <details>
+        <summary>What computer do I need?</summary>
+        <p>Anything from the last ten years or so. The default renderer needs OpenGL 3.2; an OpenGL 1.4 and a
+          software renderer cover older hardware. Downloads are for Windows (64 and 32 bit) and Linux x86_64
+          (a recent distribution: it was built with glibc 2.43). macOS and older Linux: build from source.</p>
+      </details>
+      <details>
+        <summary>Can I join normal Quake II servers or play old mods?</summary>
+        <p>No. OpenTech2 changed the network protocol and the game library interface to remove Quake II's
+          limits, so it plays with other OpenTech2 servers and with mods built for it. Stock Quake II maps and
+          data keep working.</p>
+      </details>
+      <details>
+        <summary>Where are my saves and settings?</summary>
+        <p><code>~/.local/share/OpenTech2</code> on Linux, <code>Documents\OpenTech2</code> on Windows. If you
+          played M1 (then named OPtech2), move your files over from the old <code>OPtech2</code> folder.</p>
+      </details>
+      <details>
+        <summary>Is this a finished game?</summary>
+        <p>Not yet. OpenTech2 is an engine in development, meant for building an original game on. Today it
+          plays Quake II and its expansions as test content; see the <a href="roadmap.html">roadmap</a> for
+          what comes next.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
 <section id="get">
   <div class="wrap">
     <h2>Get it</h2>
@@ -304,9 +354,44 @@ Linux:    ./OpenTech2 -datadir "/path/to/Quake 2"</code></pre>
         <pre><code>git clone https://github.com/Rizilla-OG/OPtech2
 cd OPtech2
 cmake --workflow --preset default</code></pre>
+        <p class="badges">
+          <a href="https://github.com/Rizilla-OG/OPtech2/actions/workflows/linux_x86_64.yml"><img src="https://github.com/Rizilla-OG/OPtech2/actions/workflows/linux_x86_64.yml/badge.svg" alt="Linux build status" height="20"></a>
+          <a href="https://github.com/Rizilla-OG/OPtech2/actions/workflows/win_mingw.yml"><img src="https://github.com/Rizilla-OG/OPtech2/actions/workflows/win_mingw.yml/badge.svg" alt="Windows build status" height="20"></a>
+          <a href="https://github.com/Rizilla-OG/OPtech2/actions/workflows/macos.yml"><img src="https://github.com/Rizilla-OG/OPtech2/actions/workflows/macos.yml/badge.svg" alt="macOS build status" height="20"></a>
+        </p>
         <p class="note">Output lands in <code>build/release/</code>. The README lists the checks: screenshots,
           benchmark, multiplayer, packet splitting, tick rate, limits, stress, IQM, textures, sound and savegames.</p>
       </div>
+    </div>
+  </div>
+</section>
+
+<section id="commands">
+  <div class="wrap">
+    <h2>Things to try</h2>
+    <p class="lead">Console commands and settings that are new in OpenTech2. Open the console with the key below
+      Esc; commands marked cheat need <code>+set cheats 1</code> on the command line.</p>
+    <div class="table-scroll">
+      <table class="commands">
+        <thead><tr><th>Type this</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>cl_perf 1</code></td><td>Performance overlay: frame, server and render times, the load of
+            every CPU core and the busiest threads, GPU load, memory, temperatures and clocks. Bind it to a key:
+            <code>bind F11 "toggle cl_perf"</code>.</td></tr>
+          <tr><td><code>-datadir ".../Quake 2/rerelease"</code></td><td>On the command line: plays the
+            re-release data, with all five episodes in the Game menu.</td></tr>
+          <tr><td><code>cl_predict_movers 0</code> / <code>1</code></td><td>Turns smooth lift riding off and on, to
+            see the difference on any elevator.</td></tr>
+          <tr><td><code>sv_tickrate 10</code> to <code>120</code></td><td>Server frames per second (default 60,
+            stock Quake II 10). Takes effect on the next map.</td></tr>
+          <tr><td><code>+set game testmod</code></td><td>Plays the test mod (built from <code>mods/testmod</code>);
+            <code>give test gun</code> (cheat) hands you its weapon.</td></tr>
+          <tr><td><code>fxtest 200</code></td><td>Cheat, for modders: sends a temp entity of that type in front of
+            you, to try a new effect from the game library.</td></tr>
+          <tr><td><code>cmd playerinfo</code></td><td>Cheat: prints game time, health, ammo and your position in
+            one line; the automated checks use it.</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </section>
@@ -342,6 +427,38 @@ cmake --workflow --preset default</code></pre>
   </div>
 </section>
 
+<section id="credits">
+  <div class="wrap">
+    <h2>Credits</h2>
+    <div class="features">
+      <div class="feature">
+        <h3>id Software</h3>
+        <p>Quake II (1997), released as open source under the GPL, and the 2023 re-release's game source, which
+          the HUD and its client game interface come from.</p>
+      </div>
+      <div class="feature">
+        <h3>Yamagi Quake II</h3>
+        <p>OpenTech2 is built on <a href="https://github.com/yquake2/yquake2remaster">Yamagi Quake II Remaster</a>
+          by Yamagi, Denis Pauk and their contributors: renderers, platform code and loaders for many formats.</p>
+      </div>
+      <div class="feature">
+        <h3>Tools and libraries</h3>
+        <p><a href="https://github.com/ericwa/ericw-tools">ericw-tools</a> compile the maps;
+          <a href="https://github.com/lsalzman/iqm">IQM</a> by Lee Salzman is the model format;
+          <a href="https://www.libsdl.org/">SDL</a>, <a href="https://openal-soft.org/">OpenAL Soft</a>,
+          <a href="https://curl.se/">curl</a> and <a href="https://ffmpeg.org/">FFmpeg</a> do the platform work.</p>
+      </div>
+      <div class="feature">
+        <h3>Get involved</h3>
+        <p>Bug reports and ideas are welcome in the <a href="https://github.com/Rizilla-OG/OPtech2/issues">issues</a>.
+          To send changes, read <a href="https://github.com/Rizilla-OG/OPtech2/blob/main/CONTRIBUTING.md">how to
+          contribute</a>; security problems go privately, see the
+          <a href="https://github.com/Rizilla-OG/OPtech2/blob/main/SECURITY.md">security policy</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="wrap">
     <nav>
@@ -349,6 +466,8 @@ cmake --workflow --preset default</code></pre>
       <a href="https://github.com/Rizilla-OG/OPtech2">GitHub</a>
       <a href="https://github.com/Rizilla-OG/OPtech2/blob/main/CHANGES.md">Changes</a>
       <a href="https://github.com/Rizilla-OG/OPtech2/issues">Issues</a>
+      <a href="https://github.com/Rizilla-OG/OPtech2/blob/main/CONTRIBUTING.md">Contributing</a>
+      <a href="https://github.com/Rizilla-OG/OPtech2/blob/main/SECURITY.md">Security</a>
     </nav>
     <p>OpenTech2 is based on <a href="https://github.com/yquake2/yquake2remaster">Yamagi Quake II Remaster</a> and
       released under the GNU GPL version 2. Quake II is a trademark of id Software; the game data is not included.</p>
