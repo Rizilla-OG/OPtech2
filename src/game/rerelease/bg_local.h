@@ -26,7 +26,7 @@ extern pm_config_t pm_config;
 void Pmove(pmove_t *pmove);
 using pm_trace_func_t = trace_t(const vec3_t &start, const vec3_t &mins, const vec3_t &maxs, const vec3_t &end);
 using pm_trace_t = std::function<pm_trace_func_t>;
-void PM_StepSlideMove_Generic(vec3_t &origin, vec3_t &velocity, float frametime, const vec3_t &mins, const vec3_t &maxs, touch_list_t &touch, bool has_time, pm_trace_t trace);
+void PM_StepSlideMove_Generic(vec3_t &origin, vec3_t &velocity, float frametime, const vec3_t &mins, const vec3_t &maxs, touch_list_t &touch, bool has_time, pm_trace_t trace_func);
 
 enum class stuck_result_t
 {
@@ -139,26 +139,33 @@ constexpr size_t num_of_type_for_bits(size_t num_bits)
 	return (num_bits + (sizeof(TI) * 8) - 1) / ((sizeof(TI) * 8) + 1);
 }
 
+// optech2: the 16 bits at an odd byte offset are read and written with
+// memcpy (was a misaligned uint16_t pointer: undefined behaviour)
 template<size_t bits_per_value>
-constexpr void set_compressed_integer(uint16_t *start, uint8_t id, uint16_t count)
+inline void set_compressed_integer(uint16_t *start, uint8_t id, uint16_t count)
 {
 	uint16_t bit_offset = bits_per_value * id;
 	uint16_t byte = bit_offset / 8;
 	uint16_t bit_shift = bit_offset % 8;
 	uint16_t mask = (bit_v<bits_per_value> - 1) << bit_shift;
-	uint16_t *base = (uint16_t *) ((uint8_t *) start + byte);
-	*base = (*base & ~mask) | ((count << bit_shift) & mask);
+	uint8_t *base = reinterpret_cast<uint8_t *>(start) + byte;
+	uint16_t value;
+	memcpy(&value, base, sizeof(value));
+	value = (value & ~mask) | ((count << bit_shift) & mask);
+	memcpy(base, &value, sizeof(value));
 }
 
 template<size_t bits_per_value>
-constexpr uint16_t get_compressed_integer(uint16_t *start, uint8_t id)
+inline uint16_t get_compressed_integer(const uint16_t *start, uint8_t id)
 {
 	uint16_t bit_offset = bits_per_value * id;
 	uint16_t byte = bit_offset / 8;
 	uint16_t bit_shift = bit_offset % 8;
 	uint16_t mask = (bit_v<bits_per_value> - 1) << bit_shift;
-	uint16_t *base = (uint16_t *) ((uint8_t *) start + byte);
-	return (*base & mask) >> bit_shift;
+	const uint8_t *base = reinterpret_cast<const uint8_t *>(start) + byte;
+	uint16_t value;
+	memcpy(&value, base, sizeof(value));
+	return (value & mask) >> bit_shift;
 }
 
 constexpr size_t NUM_BITS_FOR_AMMO = 9;
@@ -166,12 +173,12 @@ constexpr size_t NUM_AMMO_STATS = num_of_type_for_bits<uint16_t>(NUM_BITS_FOR_AM
 // if this value is set on an STAT_AMMO_INFO_xxx, don't render ammo
 constexpr uint16_t AMMO_VALUE_INFINITE = bit_v<NUM_BITS_FOR_AMMO> - 1;
 
-constexpr void G_SetAmmoStat(uint16_t *start, uint8_t ammo_id, uint16_t count)
+inline void G_SetAmmoStat(uint16_t *start, uint8_t ammo_id, uint16_t count)
 {
 	set_compressed_integer<NUM_BITS_FOR_AMMO>(start, ammo_id, count);
 }
 
-constexpr uint16_t G_GetAmmoStat(uint16_t *start, uint8_t ammo_id)
+inline uint16_t G_GetAmmoStat(const uint16_t *start, uint8_t ammo_id)
 {
 	return get_compressed_integer<NUM_BITS_FOR_AMMO>(start, ammo_id);
 }
@@ -182,12 +189,12 @@ constexpr uint16_t G_GetAmmoStat(uint16_t *start, uint8_t ammo_id)
 constexpr size_t NUM_BITS_PER_POWERUP = 2;
 constexpr size_t NUM_POWERUP_STATS = num_of_type_for_bits<uint16_t>(NUM_BITS_PER_POWERUP * POWERUP_MAX);
 
-constexpr void G_SetPowerupStat(uint16_t *start, uint8_t powerup_id, uint16_t count)
+inline void G_SetPowerupStat(uint16_t *start, uint8_t powerup_id, uint16_t count)
 {
 	set_compressed_integer<NUM_BITS_PER_POWERUP>(start, powerup_id, count);
 }
 
-constexpr uint16_t G_GetPowerupStat(uint16_t *start, uint8_t powerup_id)
+inline uint16_t G_GetPowerupStat(const uint16_t *start, uint8_t powerup_id)
 {
 	return get_compressed_integer<NUM_BITS_PER_POWERUP>(start, powerup_id);
 }

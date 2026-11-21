@@ -271,7 +271,7 @@ inline void AddPointToBounds(const vec3_t &v, vec3_t &mins, vec3_t &maxs)
 	int	   pos;
 	int	   i;
 	float  minelem = 1.0F;
-	vec3_t tempvec;
+	vec3_t tempvec {};
 
 	/*
 	** find the smallest magnitude axially aligned vector
@@ -523,8 +523,8 @@ constexpr float STOP_EPSILON = 0.1f;
     {
         float ang = acos(dot);
         float sinOmega = sin(ang);
-        float sinAOmega = sin((1.0f - t) * ang);
-        float sinBOmega = sin(t * ang);
+        float sinAOmega = sin(static_cast<double>(1.0f - t) * ang); // optech2: multiply as double
+        float sinBOmega = sin(static_cast<double>(t) * ang);
         aFactor = sinAOmega / sinOmega;
         bFactor = sinBOmega / sinOmega;
     }

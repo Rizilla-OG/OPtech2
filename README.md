@@ -17,12 +17,17 @@ and assets keep loading and serve as test content.
 ## Status
 
 - **M0 Foundation:** done. One-command build, screenshot regression check, benchmark.
-- **M1 Remove limits:** in progress. Done so far: raised client render, particle, light
-  and sound limits; 1024 packet entities; bigger configstring and image limits (protocol
-  2025); 60 Hz server tick with client smoothing; re-release AI and weapon timing ports;
-  rate limiter fixed for any tick rate; network packet splitting; an oversized test map
-  (beyond +-4096 units, over 256 models and sounds, extended QBSP with BSPX lightmaps); 8192
-  entities and a ~3800 entity stress map at 60 Hz.
+- **M1 Remove limits:** done. Raised client render, particle, light and sound limits; 1024 packet
+  entities, 8192 entities; bigger configstring and image limits (protocol 2025); 60 Hz server tick
+  with client smoothing; network packet splitting; maps past +-4096 units with extended QBSP and BSPX
+  lightmaps; IQM models, true-color textures, more sound formats; saves that load across builds.
+- **M2 Modding architecture:** in progress. Done so far: the client game module (re-release client
+  game API, id's re-release HUD, effects), player movement as game code shared with prediction, the
+  re-release episodes in the Game menu, stacked mod folders, sandboxed Lua scripts, item, weapon and
+  monster definitions in text files, and monster navigation (paths, three monster sizes, ledge drops,
+  lifts).
+
+Downloads (pre-releases, Windows and Linux): https://github.com/Rizilla-OG/OPtech2/releases
 
 Changes are listed in [CHANGES.md](CHANGES.md).
 
@@ -37,6 +42,17 @@ Output lands in `build/release/` (`OpenTech2`, `OpenTech2-server`). Point it at 
 ```
 build/release/OpenTech2 -datadir "<path to Quake 2>"
 ```
+
+## Re-release episodes
+
+Point `-datadir` at the 2023 re-release's `rerelease` folder:
+
+```
+build/release/OpenTech2 -datadir "<path to Quake 2>/rerelease"
+```
+
+The Game menu then lists Quake II, The Reckoning, Ground Zero, Call of the Machine and Quake II 64,
+each starting with its own intro. Re-release mods with their own game library don't load yet.
 
 ## Map tools
 
@@ -86,9 +102,22 @@ its list.
 
 Each mod folder can run a gameplay script in sandboxed Lua 5.4, `scripts/<folder>.lua`: see
 [mods/SCRIPTING.md](mods/SCRIPTING.md). Items can be changed or added in a text file,
-`defs/<folder>.items`: see [mods/DEFINITIONS.md](mods/DEFINITIONS.md). [mods/survival](mods/survival/README.md)
+`defs/<folder>.items` (weapons take damage, spread and speed numbers there too), and monsters in
+`defs/<folder>.monsters`: see [mods/DEFINITIONS.md](mods/DEFINITIONS.md). [mods/survival](mods/survival/README.md)
 is a small example script mod. For a mod with its own game library (new weapons, effects,
 HUD, movement), see [mods/testmod](mods/testmod/README.md).
+
+## Monster navigation
+
+Every map gets a navigation mesh when it loads (Recast/Detour; one per monster size, built in under
+a second, cached in `navigation/<map>.otnav` in the game folder). Walking monsters that can't walk
+straight at you follow it: around walls, off ledges up to 256 units high, and onto lifts
+(`func_plat`), which they call and ride.
+
+- `g_monster_nav 0` turns it off (the stock chase), `2` logs ledge drops and lift rides, `3` also
+  draws each monster's path (single player)
+- `cl_shownav 1`, `2`, `3` draw the small, medium and large mesh
+- `nav_info`, `nav_path x1 y1 z1 x2 y2 z2 [small|medium|large]`, `nav_rebuild` in the console
 
 ## Checks
 
@@ -104,6 +133,10 @@ All checks use a temporary HOME, so your own config and saves are never touched.
 - `python3 tests/models/iqm_check.py`: IQM test model (two bones, bend animation) in a small map
 - `python3 tests/savegame/save_check.py`: save and load, player and every entity compared
 - `python3 tests/cgame/cgame_check.py`: loads a test client game module and checks the engine's imports
+- `python3 tests/pmove/pmove_check.py`: player movement runs from the game library; a scripted walk on base1
+- `python3 tests/maps/make_lift_map.py`, then `tests/pmove/lift_check.py`: prediction while riding a lift
+- `python3 tests/maps/texture_check.py`: true-color textures
+- `python3 tests/sound/sound_check.py`: the extra sound formats
 - `python3 tests/tickrate/tick_check.py`, `damage_check.py`: 10 Hz vs 60 Hz behaviour
 - `python3 tests/mod/mod_check.py`: the test mod against the stock game (weapon, effect, HUD, movement)
 - `python3 tests/mod/stack_check.py`: stacked mod folders, override order, joining players
@@ -114,6 +147,7 @@ All checks use a temporary HOME, so your own config and saves are never touched.
 - `python3 tests/maps/make_nav_map.py`, then `tests/nav/nav_check.py`: navigation mesh, paths around a wall, cache
 - `python3 tests/nav/monster_nav_check.py`: a Berserker paths around the wall to the player (and stock, to compare); hearing at 60 Hz
 - `python3 tests/maps/make_ledge_map.py`, then `tests/nav/ledge_check.py`: ledge drops, one way, not from too high; a Berserker walks off a ledge to the player
+- `python3 tests/maps/make_plat_map.py`, then `tests/nav/plat_check.py`: monsters (Berserker, Tank) ride a lift up and down to the player
 - `python3 tests/run_all.py`: all of the above
 
 ## License

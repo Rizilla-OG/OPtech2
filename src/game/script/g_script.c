@@ -125,13 +125,20 @@ Script_Alloc(void *ud, void *ptr, size_t old_size, size_t new_size)
 		return NULL; /* Lua raises "not enough memory" */
 	}
 
-	ptr = realloc(ptr, new_size);
-
-	if (ptr)
+	/* optech2: realloc into a new pointer: on failure Lua keeps the old block */
 	{
-		script_memory_used += new_size;
-		script_memory_used -= old_size;
+		void *grown = realloc(ptr, new_size);
+
+		if (!grown)
+		{
+			return NULL;
+		}
+
+		ptr = grown;
 	}
+
+	script_memory_used += new_size;
+	script_memory_used -= old_size;
 
 	return ptr;
 }
@@ -295,7 +302,7 @@ Script_Map(lua_State *L)
 static int
 Script_Cvar(lua_State *L)
 {
-	cvar_t *var = gi.cvar(luaL_checkstring(L, 1), NULL, 0);
+	const cvar_t *var = gi.cvar(luaL_checkstring(L, 1), NULL, 0);
 
 	lua_pushstring(L, var ? var->string : "");
 	return 1;
@@ -857,7 +864,7 @@ Script_Damage(double result, int damage)
 }
 
 int
-Script_PlayerDamage(edict_t *player, edict_t *attacker, int damage)
+Script_PlayerDamage(const edict_t *player, const edict_t *attacker, int damage)
 {
 	double result = damage;
 
@@ -866,7 +873,7 @@ Script_PlayerDamage(edict_t *player, edict_t *attacker, int damage)
 }
 
 int
-Script_MonsterDamage(edict_t *monster, edict_t *attacker, int damage)
+Script_MonsterDamage(const edict_t *monster, const edict_t *attacker, int damage)
 {
 	double result = damage;
 
@@ -876,13 +883,13 @@ Script_MonsterDamage(edict_t *monster, edict_t *attacker, int damage)
 }
 
 void
-Script_PlayerDeath(edict_t *player, edict_t *attacker)
+Script_PlayerDeath(const edict_t *player, const edict_t *attacker)
 {
 	Script_FireV("player_death", NULL, "is", (int)(player - g_edicts), Script_AttackerName(attacker));
 }
 
 void
-Script_MonsterDeath(edict_t *monster, edict_t *attacker)
+Script_MonsterDeath(const edict_t *monster, const edict_t *attacker)
 {
 	Script_FireV("monster_death", NULL, "sinnn", monster->classname ? monster->classname : "",
 		Script_PlayerNumber(attacker), (double)monster->s.origin[0], (double)monster->s.origin[1],
@@ -909,19 +916,19 @@ Script_LevelStart(void)
 }
 
 void
-Script_PlayerSpawn(edict_t *player)
+Script_PlayerSpawn(const edict_t *player)
 {
 	Script_Fire("player_spawn", (int)(player - g_edicts), NULL);
 }
 
 qboolean
-Script_ItemPickup(edict_t *player, const gitem_t *item)
+Script_ItemPickup(const edict_t *player, const gitem_t *item)
 {
 	return Script_Fire("item_pickup", (int)(player - g_edicts), item->pickup_name);
 }
 
 void
-Script_ItemTaken(edict_t *player, const gitem_t *item)
+Script_ItemTaken(const edict_t *player, const gitem_t *item)
 {
 	Script_Fire("item_taken", (int)(player - g_edicts), item->pickup_name);
 }

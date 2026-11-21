@@ -208,9 +208,8 @@ protected:
 static rcConfig
 NavConfig(const NavGeometry &geometry, int agent)
 {
-	rcConfig config;
+	rcConfig config = {};
 
-	memset(&config, 0, sizeof(config));
 	config.cs = NAV_CELL_SIZE;
 	config.ch = NAV_CELL_HEIGHT;
 	config.walkableSlopeAngle = NAV_MAX_SLOPE;
@@ -451,9 +450,8 @@ TileData(const NavTile &tile, int agent, const std::vector<NavLink> &links, int 
 	}
 
 	{
-		dtNavMeshCreateParams params;
+		dtNavMeshCreateParams params = {};
 
-		memset(&params, 0, sizeof(params));
 		params.verts = polymesh->verts;
 		params.vertCount = polymesh->nverts;
 		params.polys = polymesh->polys;
@@ -924,10 +922,9 @@ BuildMesh(const NavGeometry &geometry, int agent)
 	const int tiles_y = (int)ceilf((geometry.bmax[2] - geometry.bmin[2]) / tile_world);
 	const unsigned tile_bits = Log2(NextPowerOfTwo((unsigned)(tiles_x * tiles_y))) < 14 ?
 		Log2(NextPowerOfTwo((unsigned)(tiles_x * tiles_y))) : 14;
-	dtNavMeshParams params;
+	dtNavMeshParams params = {};
 	dtNavMesh *mesh = dtAllocNavMesh();
 
-	memset(&params, 0, sizeof(params));
 	rcVcopy(params.orig, geometry.bmin);
 	params.tileWidth = tile_world;
 	params.tileHeight = tile_world;
@@ -1100,7 +1097,7 @@ SaveCache(void)
 		return;
 	}
 
-	memset(&header, 0, sizeof(header));
+	header = NavFileHeader();
 	memcpy(header.magic, "OTNV", 4);
 	header.version = NAV_FILE_VERSION;
 	header.checksum = CM_MapChecksum();
@@ -1141,7 +1138,7 @@ LoadMesh(FILE *file)
 		unsigned char *data;
 
 		if (fread(&size, sizeof(size), 1, file) != 1 || size <= 0 || size > 64 * 1024 * 1024 ||
-			!(data = (unsigned char *)dtAlloc(size, DT_ALLOC_PERM)))
+			!(data = static_cast<unsigned char *>(dtAlloc(size, DT_ALLOC_PERM))))
 		{
 			dtFreeNavMesh(mesh);
 			return nullptr;
@@ -1366,7 +1363,7 @@ Nav_LoadMap(const char *mapname)
 static int
 NavFindPath(int agent, const float *start, const float *goal, float (*points)[3], int max_points, int *complete)
 {
-	dtNavMeshQuery *nav_query = nav_queries[agent];
+	const dtNavMeshQuery *nav_query = nav_queries[agent];
 	static const float extents[3] = {32.0f, 64.0f, 32.0f}; /* Recast axes: up is y */
 	static const int MAX_POLYS = 512;
 	dtPolyRef path[MAX_POLYS], start_ref, goal_ref;
@@ -1396,7 +1393,7 @@ NavFindPath(int agent, const float *start, const float *goal, float (*points)[3]
 	}
 
 	if (dtStatusFailed(nav_query->findPath(start_ref, goal_ref, start_on, goal_on, &filter, path, &path_count,
-		MAX_POLYS)) || path_count == 0)
+		MAX_POLYS)) || path_count <= 0)
 	{
 		return 0;
 	}
@@ -1570,7 +1567,7 @@ Nav_GetPathToGoalSized(const optech2_path_request_t *request, optech2_path_info_
 	float agent_height)
 {
 	const int agent = NavAgentFor(agent_radius, agent_height);
-	dtNavMeshQuery *nav_query = nav_queries[agent];
+	const dtNavMeshQuery *nav_query = nav_queries[agent];
 	static const int MAX_POLYS = 512;
 	static const int MAX_CORNERS = 128;
 	dtPolyRef path[MAX_POLYS], start_ref = 0, goal_ref = 0;
@@ -1582,7 +1579,7 @@ Nav_GetPathToGoalSized(const optech2_path_request_t *request, optech2_path_info_
 	dtQueryFilter filter;
 	float length = 0;
 
-	memset(info, 0, sizeof(*info));
+	*info = optech2_path_info_t();
 	info->link_type = OPTECH2_PATH_LINK_WALK;
 
 	if (!(request->path_flags & (OPTECH2_PATH_WALK | OPTECH2_PATH_WATER)))
@@ -1621,7 +1618,7 @@ Nav_GetPathToGoalSized(const optech2_path_request_t *request, optech2_path_info_
 	}
 
 	if (dtStatusFailed(nav_query->findPath(start_ref, goal_ref, start_on, goal_on, &filter, path, &path_count,
-		MAX_POLYS)) || path_count == 0)
+		MAX_POLYS)) || path_count <= 0)
 	{
 		info->return_code = OPTECH2_PATH_NO_PATH_FOUND;
 		return 0;
@@ -1635,7 +1632,7 @@ Nav_GetPathToGoalSized(const optech2_path_request_t *request, optech2_path_info_
 	}
 
 	if (dtStatusFailed(nav_query->findStraightPath(start_on, goal_on, path, path_count, corners_r, corner_flags,
-		corner_refs, &corner_count, MAX_CORNERS)) || corner_count == 0)
+		corner_refs, &corner_count, MAX_CORNERS)) || corner_count <= 0)
 	{
 		info->return_code = OPTECH2_PATH_NO_PATH_FOUND;
 		return 0;
@@ -1774,7 +1771,8 @@ Nav_Path_f(void)
 
 	for (int i = 1; i < count; i++)
 	{
-		float d[3] = {points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1], points[i][2] - points[i - 1][2]};
+		const float d[3] = {points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1],
+			points[i][2] - points[i - 1][2]};
 
 		length += sqrtf(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
 	}
