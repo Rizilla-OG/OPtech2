@@ -70,7 +70,6 @@ extern cvar_t *crosshair_color_r;
 extern cvar_t *crosshair_color_g;
 extern cvar_t *crosshair_color_b;
 extern cvar_t *cl_showspeed;
-extern float GetPlayerSpeed(float *, float *);
 
 static void SCR_TimeRefresh_f(void);
 static void SCR_Loading_f(void);
@@ -1535,7 +1534,10 @@ SCR_DrawSpeed(void)
 	float scale = SCR_GetConsoleScale();
 	int str_len, xPos, yPos = 0;
 
-	GetPlayerSpeed(&speed, &speedxy);
+	/* optech2: from prediction; the movement code may be the game library's */
+	speedxy = sqrtf(cl.predicted_velocity[0] * cl.predicted_velocity[0] +
+					cl.predicted_velocity[1] * cl.predicted_velocity[1]);
+	speed = VectorLength(cl.predicted_velocity);
 	snprintf(spd_str, sizeof(spd_str), "%6.2f (%6.2f) QU/s", speed, speedxy);
 	str_len = scale * (strlen(spd_str) * CHAR_SIZE + 2);
 

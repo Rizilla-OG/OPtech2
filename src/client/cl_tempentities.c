@@ -1297,6 +1297,18 @@ CL_ParseTEnt(void)
 			break;
 
 		default:
+			/* optech2: 200 and up are mods' own effects. A client without the
+			   mod's game library can't know their size: it skips the rest of
+			   this message (normally the frame's last effects and sounds)
+			   instead of dropping from the server. */
+			if (type >= TE_MOD_FIRST)
+			{
+				Com_DPrintf("%s: no effect code for mod effect %d (mod's game library missing?), skipping\n",
+					__func__, type);
+				net_message.readcount = net_message.cursize;
+				return;
+			}
+
 			Com_Error(ERR_DROP, "%s: bad effect type 0x%2x", __func__, type);
 	}
 }

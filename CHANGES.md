@@ -4,6 +4,16 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Code review fixes:
+  - game libraries built against the old headers (mission packs, third-party mods) that call the engine's player movement get the server's air acceleration, not a value read past their struct;
+  - `cl_showspeed` works again with the game library's movement (it read the engine's unused copy);
+  - a client without a mod's game library skips that mod's effects (types 200 and up, `TE_MOD_FIRST`) instead of dropping from the server; `fxtest` only sends those types;
+  - the `cl_perf` overlay can't write past its 24 lines on machines with many cores;
+  - CMake builds with MinGW link `game.dll` statically, like the Makefile;
+  - item names past the HUD's 256 slots: their parking slots are reset each level and reused oldest first;
+  - a `target_changelevel` without a map no longer crashes the server;
+  - the Windows release script copies the mission packs' own `CHANGELOG`;
+  - clearer console message when a game library's effects extension can't be used.
 - Website: a looping clip of 1,000 soldiers on the stress map at the top, questions and requirements, a table of new commands, credits, a site icon, a Quake II 64 link preview image and live build badges (also in the README).
 - `CONTRIBUTING.md`: building, the checks, code style, `CHANGES.md` entries and pull requests.
 - `tests/maps/make_stress_map.py --soldiers N --name NAME` builds bigger fights (the website clip uses 1000).

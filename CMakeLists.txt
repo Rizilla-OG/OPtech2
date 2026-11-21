@@ -1116,6 +1116,10 @@ set_source_files_properties(${Game-Rerelease-Source} PROPERTIES
 
 # Build the game dynamic library
 add_library(game MODULE ${Game-Source} ${Game-Header} ${Game-Rerelease-Source})
+if(MINGW)
+	# optech2: C++ runtime and winpthread inside game.dll, as the Makefile does
+	target_link_options(game PRIVATE -static)
+endif()
 set_target_properties(game PROPERTIES
 		PREFIX ""
 		SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX}

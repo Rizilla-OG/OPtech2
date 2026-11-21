@@ -24,6 +24,7 @@
  * =======================================================================
  */
 
+#include <stddef.h> /* optech2: offsetof */
 #include "header/server.h"
 #include <limits.h>
 
@@ -552,6 +553,48 @@ GI_FreeTags(int tag)
 	Z_FreeTags((unsigned short)tag);
 }
 
+/*
+ * optech2: player movement for game libraries that call the engine's copy.
+ * pmove_t gained airaccelerate at its end; libraries built against the
+ * older header (the mission packs, third-party mods) allocate a pmove_t
+ * without it. Their part is copied into a full one, airaccelerate is set
+ * as the server announces it (CS_AIRACCEL), and the results copied back,
+ * so the engine never reads past the caller's struct.
+ */
+#define PMOVE_OLD_SIZE offsetof(pmove_t, airaccelerate)
+
+static void
+PF_PmoveFull(pmove_t *caller_pmove, int *origin)
+{
+	pmove_t pm;
+
+	memcpy(&pm, caller_pmove, PMOVE_OLD_SIZE);
+	pm.airaccelerate = (float)atof(sv.configstrings[CS_AIRACCEL]);
+
+	if (origin)
+	{
+		PmoveEx(&pm, origin);
+	}
+	else
+	{
+		Pmove(&pm);
+	}
+
+	memcpy(caller_pmove, &pm, PMOVE_OLD_SIZE);
+}
+
+static void
+PF_Pmove(pmove_t *pmove)
+{
+	PF_PmoveFull(pmove, NULL);
+}
+
+static void
+PF_PmoveEx(pmove_t *pmove, int *origin)
+{
+	PF_PmoveFull(pmove, origin);
+}
+
 void
 SV_InitGameProgs(void)
 {
@@ -582,7 +625,7 @@ SV_InitGameProgs(void)
 	import.setmodel = PF_setmodel;
 	import.inPVS = PF_inPVS;
 	import.inPHS = PF_inPHS;
-	import.Pmove = Pmove;
+	import.Pmove = PF_Pmove;
 
 	import.modelindex = SV_ModelIndex;
 	import.soundindex = SV_SoundIndex;
@@ -630,7 +673,7 @@ SV_InitGameProgs(void)
 	import.GetConfigString = PF_ConfigStringGet;
 	import.GetModelInfo = PF_GetModelInfo;
 	import.GetModelFrameInfo = PF_GetModelFrameInfo;
-	import.PmoveEx = PmoveEx;
+	import.PmoveEx = PF_PmoveEx;
 	import.LocalizationMessage = PF_LocalizationMessage;
 	import.LocalizationUIMessage = SV_LocalizationUIMessage;
 	import.TagRealloc = Z_TagRealloc;

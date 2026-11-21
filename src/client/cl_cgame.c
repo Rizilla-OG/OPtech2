@@ -62,12 +62,15 @@ CG_Error(const char *message)
 /* optech2: stats that hold a configstring index (the layout's stat_string)
    go to the module in the re-release numbering. Strings it has no slot
    for (item names past its 256 items: mission pack, Quake II 64 and mod
-   items) are parked in the last re-release general strings. */
+   items) are parked in the last 8 re-release general strings. The game only
+   writes general strings for player names (CS_GENERAL + player number), so
+   the end of the range is free. */
 #define CG_MAX_GENERAL 512 /* MAX_GENERAL of the re-release API (MAX_CLIENTS * 2) */
 #define CG_PARKED_STRINGS 8
 static int cg_parked_index[CG_PARKED_STRINGS]; /* re-release index of each parked string */
 static int cg_parked_from[CG_PARKED_STRINGS]; /* our configstring index it shows */
-static int cg_parked_count;
+static int cg_parked_count; /* slots in use */
+static int cg_parked_next; /* slot to reuse when all are in use (oldest first) */
 
 static int
 CG_RRGeneralEnd(void)
@@ -101,14 +104,19 @@ CG_ConfigStringIndexForModule(int ours)
 		}
 	}
 
-	if (cg_parked_count == CG_PARKED_STRINGS)
+	if (cg_parked_count < CG_PARKED_STRINGS)
 	{
-		return ours;
+		cg_parked_from[cg_parked_count] = ours;
+		cg_parked_index[cg_parked_count] = CG_RRGeneralEnd() - 1 - cg_parked_count;
+		return cg_parked_index[cg_parked_count++];
 	}
 
-	cg_parked_from[cg_parked_count] = ours;
-	cg_parked_index[cg_parked_count] = CG_RRGeneralEnd() - 1 - cg_parked_count;
-	return cg_parked_index[cg_parked_count++];
+	/* all in use: reuse the oldest slot rather than hand back an index the
+	   module would read as a different string */
+	i = cg_parked_next;
+	cg_parked_next = (cg_parked_next + 1) % CG_PARKED_STRINGS;
+	cg_parked_from[i] = ours;
+	return cg_parked_index[i];
 }
 
 /* stats the status bar or layout shows as text ("stat_string N",
@@ -736,17 +744,31 @@ CL_CGame_FindFx(OPtech2_GetExtension_t get_extension)
 		return;
 	}
 
-	if (fx_ext->version != OPTECH2_FX_EXT_VERSION || !fx_ext->Init || !fx_ext->ParseTempEntity ||
-		!fx_ext->ParseMuzzleFlash || !fx_ext->EntityTrails || !fx_ext->EntityEvent || !fx_ext->RegisterMedia || !fx_ext->AddFrameEffects ||
-		!fx_ext->ClearEffects)
+	if (fx_ext->version != OPTECH2_FX_EXT_VERSION)
 	{
-		Com_Printf("client game: effects version %d doesn't match, using the engine's\n", fx_ext->version);
+		Com_Printf("client game: effects version %d, the engine needs %d; using the engine's effects\n",
+			fx_ext->version, OPTECH2_FX_EXT_VERSION);
+		return;
+	}
+
+	if (!fx_ext->Init || !fx_ext->ParseTempEntity || !fx_ext->ParseMuzzleFlash || !fx_ext->EntityTrails ||
+		!fx_ext->EntityEvent || !fx_ext->RegisterMedia || !fx_ext->AddFrameEffects || !fx_ext->ClearEffects)
+	{
+		Com_Printf("client game: the effects extension leaves an entry point empty; using the engine's effects\n");
 		return;
 	}
 
 	cgame_fx = fx_ext;
 	cgame_fx->Init(&fx_import); /* its media is registered right after (CL_CGame_RegisterEffects) */
 	Com_Printf("client game: effects from the game library\n");
+}
+
+/* a new level: forget the parked strings of the last one */
+void
+CL_CGame_NewLevel(void)
+{
+	cg_parked_count = 0;
+	cg_parked_next = 0;
 }
 
 /* models and sounds of the game library's effects, at each level load */
@@ -962,6 +984,7 @@ CL_CGame_Unload(void)
 {
 	cgame_pmove = NULL;
 	cgame_fx = NULL;
+	CL_CGame_NewLevel();
 
 	if (cgame)
 	{

@@ -364,6 +364,8 @@ CL_PredictMovement(void)
 		{
 			cl.predicted_angles[i] = cl.viewangles[i] + SHORT2ANGLE(
 					cl.frame.playerstate.pmove.delta_angles[i]);
+			/* optech2: the server's velocity for the speedometer */
+			cl.predicted_velocity[i] = cl.frame.playerstate.pmove.velocity[i] * 0.125f;
 		}
 
 		return;
@@ -450,6 +452,10 @@ CL_PredictMovement(void)
 	// step is used for movement prediction on stairs
 	// (so moving up/down stairs is smooth)
 	step = origin[2] - (int)(cl.predicted_origin[2] * 8);
+	/* optech2: speedometer (velocity is in 1/8 units) */
+	cl.predicted_velocity[0] = pm.s.velocity[0] * 0.125f;
+	cl.predicted_velocity[1] = pm.s.velocity[1] * 0.125f;
+	cl.predicted_velocity[2] = pm.s.velocity[2] * 0.125f;
 	VectorCopy(pm.s.velocity, tmp);
 
 	if (((step > 62 && step < 66) || (step > 94 && step < 98) || (step > 126 && step < 130))

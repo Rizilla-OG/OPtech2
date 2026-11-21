@@ -1843,8 +1843,9 @@ Cmd_PlayerInfo_f(edict_t *ent)
 
 /*
  * optech2: "fxtest [type]" sends a temporary entity of that type (default
- * 200, outside the stock ones) 128 units in front of the player, with the
- * direction back at them, for testing a game library's own effects (cheat).
+ * 200; mods' own types only, TE_MOD_FIRST..255) 128 units in front of the
+ * player, with the direction back at them, for testing a game library's own
+ * effects (cheat). Stock types carry other data, so they aren't allowed.
  */
 static void
 Cmd_FxTest_f(edict_t *ent)
@@ -1868,9 +1869,9 @@ Cmd_FxTest_f(edict_t *ent)
 		type = atoi(gi.argv(1));
 	}
 
-	if ((type < 0) || (type > 255))
+	if ((type < TE_MOD_FIRST) || (type > 255))
 	{
-		gi.cprintf(ent, PRINT_HIGH, "fxtest: type must be 0..255\n");
+		gi.cprintf(ent, PRINT_HIGH, "fxtest: type must be %d..255 (mod effects)\n", TE_MOD_FIRST);
 		return;
 	}
 
