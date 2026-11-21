@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Client game module check for OPtech2: builds tests/cgame/test_cgame.c (a
+"""Client game module check for OpenTech2: builds tests/cgame/test_cgame.c (a
 small module with the re-release cgame API 2022), loads it with cl_cgame on
 base1 and checks what the module reports about the engine's imports:
   - it loads, Init runs, DrawHUD is called every frame, Shutdown on quit,
@@ -28,7 +28,7 @@ import tempfile
 from pathlib import Path
 
 REPO_DIR = Path(__file__).resolve().parent.parent.parent
-CLIENT_BINARY = REPO_DIR / "build" / "release" / "optech2"
+CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 MODULE_SOURCE = REPO_DIR / "tests" / "cgame" / "test_cgame.c"
 OUTPUT_DIR = REPO_DIR / "build" / "cgame-check"
 DOC_SHOT = REPO_DIR / "docs" / "screenshots" / "m2_test_cgame_hud.png"
@@ -53,7 +53,7 @@ def main():
         print(f"{'ok' if passed else 'FAIL':<6}{text}")
 
     with tempfile.TemporaryDirectory(prefix="optech2-cgame-") as home:
-        game_dir = Path(home) / ".optech2" / "baseq2"
+        game_dir = Path(home) / ".opentech2" / "baseq2"
         game_dir.mkdir(parents=True)
         (game_dir / "c.cfg").write_text('map base1\ndelay 6000 "screenshot png"\ndelay 7000 "quit"\n')
         environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")

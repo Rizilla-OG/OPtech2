@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Player movement check for OPtech2 (M2: movement is game code).
+"""Player movement check for OpenTech2 (M2: movement is game code).
 
 Player movement lives in the game library (src/game/g_pmove.c compiles the
 shared src/common/shared/pmove.c) and the client predicts with the game
@@ -29,7 +29,7 @@ import tempfile
 from pathlib import Path
 
 REPO_DIR = Path(__file__).resolve().parent.parent.parent
-CLIENT_BINARY = REPO_DIR / "build" / "release" / "optech2"
+CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 OUTPUT_DIR = REPO_DIR / "build" / "pmove-check"
 DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
 MOD_NAME = "pmovetest"
@@ -64,7 +64,7 @@ def build_test_mod():
 
 def play(name, mod_library=None, engine_movement=False):
     with tempfile.TemporaryDirectory(prefix="optech2-pmove-") as home:
-        game_dir = Path(home) / ".optech2" / (MOD_NAME if mod_library else "baseq2")
+        game_dir = Path(home) / ".opentech2" / (MOD_NAME if mod_library else "baseq2")
         game_dir.mkdir(parents=True)
         if mod_library:
             shutil.copy(mod_library, game_dir / "game.so")

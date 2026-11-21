@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Runs every OPtech2 check and prints one summary.
+"""Runs every OpenTech2 check and prints one summary.
 
 Each check is its own script under tests/ (see its docstring for what it
 tests); this runs them one after another, keeps each one's output in
@@ -30,7 +30,7 @@ from pathlib import Path
 
 REPO_DIR = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = REPO_DIR / "build" / "run-all"
-CLIENT_BINARY = REPO_DIR / "build" / "release" / "optech2"
+CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 MAPS_DIR = REPO_DIR / "build" / "maps"
 TOOLS_DIR = REPO_DIR / "build" / "tools" / "ericw-tools"
 

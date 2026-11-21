@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 
 ## Unreleased
 
+- Renamed to OpenTech2: executables `OpenTech2` / `OpenTech2.exe` and `OpenTech2-server` (no `quake2.exe` wrapper any more), window title, renderer names, user folder (`~/.local/share/OpenTech2`, `Documents\OpenTech2` on Windows, `~/.opentech2`), README, website and CI package names. The GitHub repository keeps its name.
 - The game library's player movement is a plain build of `src/common/shared/pmove.c` (both binaries build with hidden symbols, so each keeps its own copy), and its engine extensions live in `src/game/g_extension.c`. The client finds the game's movement whenever it opens the game library, also without a client game module.
 - `tests/run_all.py` runs every check and prints one summary (`--headless`, `--quick`, `--only`, `--list`). Known gaps are listed in `TODO.md`.
 - Smoother lifts: prediction moved the player against a lift one tick behind, a correction of about 3 units every frame while riding (the jitter on elevators, also in stock Quake II). Replayed commands now see moving brush models moved on by their speed, and the player is carried with the one under their feet (`cl_predict_movers`, on by default). On the lift test map the error while standing drops from about 3.4 to under 1 unit, and by about 85% in total. New: `tests/maps/make_lift_map.py`, `tests/pmove/lift_check.py`.

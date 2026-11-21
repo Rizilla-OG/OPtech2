@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Two-client multiplayer check for OPtech2.
+"""Two-client multiplayer check for OpenTech2.
 
 Starts a dedicated server (deathmatch, q2dm1) and two hidden clients on this
 machine, then checks that:
@@ -32,8 +32,8 @@ from PIL import Image, ImageChops
 
 CHECK_DIR = Path(__file__).resolve().parent
 REPO_DIR = CHECK_DIR.parent.parent
-CLIENT_BINARY = REPO_DIR / "build" / "release" / "optech2"
-SERVER_BINARY = REPO_DIR / "build" / "release" / "optech2ded"
+CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
+SERVER_BINARY = REPO_DIR / "build" / "release" / "OpenTech2-server"
 OUTPUT_DIR = REPO_DIR / "build" / "mp-check"
 DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
 
@@ -108,7 +108,7 @@ def bob_script():
 
 
 def write_script(home, name, lines):
-    game_dir = home / ".optech2" / "baseq2"
+    game_dir = home / ".opentech2" / "baseq2"
     game_dir.mkdir(parents=True, exist_ok=True)
     (game_dir / f"{name}.cfg").write_text("\n".join(lines) + "\n")
     return game_dir
@@ -148,7 +148,7 @@ def main():
         temp_root = Path(temp_folder)
         homes = {name: temp_root / name for name in ("server", "alice", "bob")}
         for home in homes.values():
-            (home / ".optech2").mkdir(parents=True)
+            (home / ".opentech2").mkdir(parents=True)
 
         server, server_log = start(
             [str(SERVER_BINARY), "-datadir", str(arguments.datadir),

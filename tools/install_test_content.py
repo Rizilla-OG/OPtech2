@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Builds the OPtech2 test maps and models and installs them into your game
+"""Builds the OpenTech2 test maps and models and installs them into your game
 folder, so you can play them yourself:
 
   optech2_iqm      IQM showcase: the two-bone test bar as still frames and
@@ -19,7 +19,7 @@ Usage:
   install_test_content.py --extra path/to/model.iqm [--extra other.iqm]
       (textures next to the .iqm are copied along; models without a
        licence you can share stay in your game folder only)
-  install_test_content.py --game-dir ~/.local/share/OPtech2/baseq2
+  install_test_content.py --game-dir ~/.local/share/OpenTech2/baseq2
 
 Needs ericw-tools (python3 tools/get_ericw_tools.py) and the stock data.
 """
@@ -42,17 +42,17 @@ import make_sound_demo  # noqa: E402
 import make_limits_map as map_tools  # noqa: E402
 
 BUILD_DIR = REPO_DIR / "build" / "test-content"
-CLIENT_BINARY = REPO_DIR / "build" / "release" / "optech2"
+CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 SHOWCASE_MAP = "optech2_iqm"
 
 
 def default_game_dir():
-    """Where the game keeps your files: ~/.optech2 if it exists, else the XDG data folder."""
-    old_style = Path.home() / ".optech2"
+    """Where the game keeps your files: ~/.opentech2 if it exists, else the XDG data folder."""
+    old_style = Path.home() / ".opentech2"
     if old_style.is_dir():
         return old_style / "baseq2"
     data_home = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share"))
-    return data_home / "OPtech2" / "baseq2"
+    return data_home / "OpenTech2" / "baseq2"
 
 
 def iqm_first_animation(path):
@@ -92,7 +92,7 @@ def build_showcase_map(extra_models, data_dir, tools_dir):
         box((size, -size, 0), (size + wall, size, height), map_tools.WALL_TEXTURE),
     ]
     entity = map_tools.entity
-    entities = [entity({"classname": "worldspawn", "message": "OPtech2 IQM showcase"}, world)]
+    entities = [entity({"classname": "worldspawn", "message": "OpenTech2 IQM showcase"}, world)]
     for classname in ("info_player_start", "info_player_deathmatch", "info_player_coop"):
         entities.append(entity({"classname": classname, "origin": "0 -360 24", "angle": "90"}))
 

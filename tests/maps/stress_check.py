@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Entity stress check for OPtech2: plays the stress map (built by
+"""Entity stress check for OpenTech2: plays the stress map (built by
 make_stress_map.py, ~3800 entities) in a GL3 window and measures frame times
 with host_speeds, in two phases:
   idle   notarget on: 300 soldiers idle, 500 rotators spinning, 3000 items
@@ -31,7 +31,7 @@ from pathlib import Path
 
 CHECK_DIR = Path(__file__).resolve().parent
 REPO_DIR = CHECK_DIR.parent.parent
-CLIENT_BINARY = REPO_DIR / "build" / "release" / "optech2"
+CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 MAP_FILE = REPO_DIR / "build" / "maps" / "optech2_stress.bsp"
 OUTPUT_DIR = REPO_DIR / "build" / "stress-check"
 DOC_SHOT_DIR = REPO_DIR / "docs" / "screenshots"
@@ -81,7 +81,7 @@ def script_lines(map_name):
 def run_session(map_name, data_dir):
     log_path = OUTPUT_DIR / f"{map_name}.log"
     with tempfile.TemporaryDirectory(prefix="optech2-stress-") as home:
-        game_dir = Path(home) / ".optech2" / "baseq2"
+        game_dir = Path(home) / ".opentech2" / "baseq2"
         (game_dir / "maps").mkdir(parents=True)
         if map_name == "optech2_stress":
             shutil.copy(MAP_FILE, game_dir / "maps" / MAP_FILE.name)

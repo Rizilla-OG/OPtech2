@@ -106,7 +106,7 @@ def build_map_text(data_dir):
         box_brush((256, room_y, 0), (288, room_y + 512, 256), WALL_TEXTURE),
         box_brush((36, room_y + 252, 0), (44, room_y + 260, 160), PILLAR_TEXTURE),  # the post
     ]
-    entities = [entity({"classname": "worldspawn", "message": "OPtech2 limits test", "sky": "unit1_"}, world_brushes)]
+    entities = [entity({"classname": "worldspawn", "message": "OpenTech2 limits test", "sky": "unit1_"}, world_brushes)]
     entities.append(entity({"classname": "light", "origin": f"0 {room_y + 256} 64", "light": "400"}))
 
     for classname in ("info_player_start", "info_player_deathmatch", "info_player_coop"):

@@ -19,6 +19,10 @@ something unfinished; remove an entry in the commit that fixes it.
 - **`tests/run_all.py` isn't on CI yet**: add `run_all.py --headless` to the
   Linux workflow (needs the game data, so probably a self-hosted runner).
 
+- **Two checks are timing-sensitive under load**: `lift` (standing miss
+  percentile) and `tickrate` (chaingun ammo at 60 Hz) failed once while the
+  machine was busy, and pass when run alone. Make them robust to load.
+
 ## Re-release support
 
 - Last ~0.25 s of FFmpeg videos is cut: the decoder isn't drained at end of file.

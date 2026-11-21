@@ -1,6 +1,6 @@
-# OPtech2
+# OpenTech2
 
-OPtech2 ("Open Tech 2") is a Quake II derived engine for building an original game:
+OpenTech2 is a Quake II derived engine for building an original game:
 no arbitrary limits for mappers and modders, a multi-threaded renderer, and per-pixel
 lighting with real-time shadows, while staying playable on modest hardware.
 
@@ -28,16 +28,16 @@ Changes are listed in [CHANGES.md](CHANGES.md).
 cmake --workflow --preset default
 ```
 
-Output lands in `build/release/` (`optech2`, `optech2ded`). Point it at a Quake II install:
+Output lands in `build/release/` (`OpenTech2`, `OpenTech2-server`). Point it at a Quake II install:
 
 ```
-build/release/optech2 -datadir "<path to Quake 2>"
+build/release/OpenTech2 -datadir "<path to Quake 2>"
 ```
 
 ## Map tools
 
 Maps are compiled with [ericw-tools](https://github.com/ericwa/ericw-tools) (qbsp, vis, light).
-OPtech2 is tested with **ericw-tools 2.0.0-alpha11**. To get exactly that version (official release,
+OpenTech2 is tested with **ericw-tools 2.0.0-alpha11**. To get exactly that version (official release,
 sha256 checked) into `build/tools/ericw-tools/`:
 
 ```
@@ -50,7 +50,7 @@ faces subdivided like stock maps); `light -world_units_per_luxel N` adds decoupl
 
 ## Models
 
-OPtech2's model format is **IQM** (Inter-Quake Model, version 2): one binary file holding the mesh,
+OpenTech2's model format is **IQM** (Inter-Quake Model, version 2): one binary file holding the mesh,
 skeleton and animations. Export it from Blender with the [IQM exporter](https://github.com/lsalzman/iqm)
 (add-ons up to Blender 5.0). Each animation shows up as a frame group named after it. Materials name
 the skin image. Stock MD2 and the other formats keep loading.
@@ -59,7 +59,7 @@ the skin image. Stock MD2 and the other formats keep loading.
 
 ```
 python3 tools/install_test_content.py [--extra your_model.iqm]
-build/release/optech2 -datadir "<path to Quake 2>" +map optech2_iqm
+build/release/OpenTech2 -datadir "<path to Quake 2>" +map optech2_iqm
 ```
 
 `optech2_iqm` shows IQM models still and animated, `optech2_limits` goes past the stock limits,

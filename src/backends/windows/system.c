@@ -131,7 +131,7 @@ Sys_Init(void)
 		((vinfo.dwMajorVersion == 5) &&
 			(vinfo.dwMinorVersion >= 1))))
 	{
-		Sys_Error("OPtech2 needs Windows XP or higher!\n");
+		Sys_Error("OpenTech2 needs Windows XP or higher!\n");
 	}
 
 

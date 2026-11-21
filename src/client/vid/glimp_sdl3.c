@@ -136,7 +136,7 @@ CreateSDLWindow(SDL_WindowFlags flags, int fullscreen, int w, int h)
 	SDL_SetHint(SDL_HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS, "1");
 
 	SDL_PropertiesID props = SDL_CreateProperties();
-	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, "OPtech2");
+	SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, "OpenTech2");
 	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X_NUMBER, last_position_x);
 	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_Y_NUMBER, last_position_y);
 	SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, w);

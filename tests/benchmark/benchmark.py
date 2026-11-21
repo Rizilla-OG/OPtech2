@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Timedemo benchmark for OPtech2.
+"""Timedemo benchmark for OpenTech2.
 
 Plays the stock demos as fast as possible and reports frame times.
 
@@ -26,7 +26,7 @@ from pathlib import Path
 
 BENCHMARK_DIR = Path(__file__).resolve().parent
 REPO_DIR = BENCHMARK_DIR.parent.parent
-GAME_BINARY = REPO_DIR / "build" / "release" / "optech2"
+GAME_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 BASELINE_PATH = BENCHMARK_DIR / "baseline.json"
 DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
 
@@ -50,8 +50,8 @@ STAT_NAMES = ["avg", "p50", "p95", "p99", "max"]
 
 def run_timedemo(demo_name, data_dir, temp_home):
     """Play one demo with timedemo on; return its frame-time stats in ms."""
-    # The engine only creates the last folder level, so make ~/.optech2 up front.
-    (temp_home / ".optech2").mkdir(exist_ok=True)
+    # The engine only creates the last folder level, so make ~/.opentech2 up front.
+    (temp_home / ".opentech2").mkdir(exist_ok=True)
     environment = dict(os.environ, HOME=str(temp_home))
     # stdbuf: the game buffers stdout when it is a pipe, which would hide the stats line until exit.
     command = ["stdbuf", "-oL", str(GAME_BINARY), "-datadir", str(data_dir), *GAME_SETTINGS,

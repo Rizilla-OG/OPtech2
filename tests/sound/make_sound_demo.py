@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes a listening demo of the sound formats OPtech2 loads, and a console
+"""Writes a listening demo of the sound formats OpenTech2 loads, and a console
 script that plays them one after another with a label on screen:
 
    1  8 bit 11 kHz mono        (stock Quake II quality, sounds dull)
@@ -19,7 +19,7 @@ Play it in the game console:  exec optech2_sound_demo.cfg
 (tools/install_test_content.py installs it with the test maps.)
 
 Usage:
-  make_sound_demo.py <game dir>     e.g. ~/.local/share/OPtech2/baseq2
+  make_sound_demo.py <game dir>     e.g. ~/.local/share/OpenTech2/baseq2
 """
 
 import math
@@ -128,7 +128,7 @@ CLIPS = [
 
 def write_demo(game_dir):
     game_dir = Path(game_dir)
-    lines = ['echo "OPtech2 sound demo: 9 clips, about 70 seconds"']
+    lines = ['echo "OpenTech2 sound demo: 9 clips, about 70 seconds"']
     time_ms = 1500
     for file_name, label, value_format, bits, rate, channels, seconds, signal, extensible in CLIPS:
         write_wav(game_dir / "sound" / "optech2" / "demo" / f"{file_name}.wav", value_format, bits, rate, channels,
@@ -136,7 +136,7 @@ def write_demo(game_dir):
         lines.append(f'delay {time_ms} "echo {label}"')
         lines.append(f'delay {time_ms + 400} "play optech2/demo/{file_name}.wav"')
         time_ms += int((seconds + GAP_SECONDS) * 1000) + 400
-    lines.append(f'delay {time_ms} "echo OPtech2 sound demo finished. soundlist shows how each one loaded."')
+    lines.append(f'delay {time_ms} "echo OpenTech2 sound demo finished. soundlist shows how each one loaded."')
     (game_dir / "optech2_sound_demo.cfg").write_text("\n".join(lines) + "\n")
     return len(CLIPS), time_ms / 1000
 

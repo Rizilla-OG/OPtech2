@@ -37,7 +37,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-#define REF_VERSION	"OPtech2 Software Refresher"
+#define REF_VERSION "OpenTech2 Software Refresher"
 
 /*
 

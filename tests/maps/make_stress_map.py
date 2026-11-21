@@ -68,7 +68,7 @@ def build_map_text():
         box((size, -size, 0), (size + wall, size, height), limits_map.WALL_TEXTURE),
     ]
     entity = limits_map.entity
-    entities = [entity({"classname": "worldspawn", "message": "OPtech2 entity stress test", "sky": "unit1_"}, world_brushes)]
+    entities = [entity({"classname": "worldspawn", "message": "OpenTech2 entity stress test", "sky": "unit1_"}, world_brushes)]
     # spawn closet: a sealed room behind the north wall, so 300 soldiers can't shoot the player
     # while the map loads; stress_check.py teleports into the hall after god + notarget
     closet_y = size + wall + 64

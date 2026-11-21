@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Downloads the ericw-tools release OPtech2 is tested with (map compiler: qbsp,
+"""Downloads the ericw-tools release OpenTech2 is tested with (map compiler: qbsp,
 vis, light) into build/tools/ericw-tools/.
 
 ericw-tools is a separate GPL3 project (https://github.com/ericwa/ericw-tools);

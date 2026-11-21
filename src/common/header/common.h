@@ -34,7 +34,7 @@
 
 #define YQ2VERSION "8.71RR16" /* upstream version this fork is based on */
 /* optech2: engine name and own version */
-#define ENGINE_NAME "OPtech2"
+#define ENGINE_NAME "OpenTech2"
 #define OPTECH2_VERSION "0.1.0-dev"
 #define BASEDIRNAME "baseq2"
 
@@ -46,10 +46,10 @@
 #define BUILD_DATE __DATE__
 #endif
 
-#define CFGDIRNAME_SHORT "optech2" // optech2: own user data folder
+#define CFGDIRNAME_SHORT "opentech2" // optech2: own user data folder
 
 #if defined(USE_XDG) || defined(_WIN32)
-  #define CFGDIRNAME "OPtech2"
+#define CFGDIRNAME "OpenTech2"
 #else
   #ifdef __HAIKU__
     #define CFGDIRNAME CFGDIRNAME_SHORT
@@ -814,8 +814,6 @@ byte * Mod_LoadEmbededLMP(const char *mod_name, int *width, int *height,
 /* PLAYER MOVEMENT CODE */
 
 
-void Pmove(pmove_t *pmove);
-void PmoveEx(pmove_t *pmove, int *origin);
 
 /* FILESYSTEM */
 

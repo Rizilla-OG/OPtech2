@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lift prediction check for OPtech2.
+"""Lift prediction check for OpenTech2.
 
 Rides the lift of the lift test map (tests/maps/make_lift_map.py: a 128 x 128
 func_train going up and down 384 units at 200 units/s) with cl_showmiss 1 and
@@ -29,7 +29,7 @@ import tempfile
 from pathlib import Path
 
 REPO_DIR = Path(__file__).resolve().parent.parent.parent
-CLIENT_BINARY = REPO_DIR / "build" / "release" / "optech2"
+CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 MAP_FILE = REPO_DIR / "build" / "maps" / "optech2_lift.bsp"
 OUTPUT_DIR = REPO_DIR / "build" / "lift-check"
 DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
@@ -49,7 +49,7 @@ def scenario_script(name):
 
 def ride(name, predict_movers):
     with tempfile.TemporaryDirectory(prefix="optech2-lift-") as home:
-        game_dir = Path(home) / ".optech2" / "baseq2"
+        game_dir = Path(home) / ".opentech2" / "baseq2"
         (game_dir / "maps").mkdir(parents=True)
         shutil.copy(MAP_FILE, game_dir / "maps" / MAP_FILE.name)
         (game_dir / "l.cfg").write_text(scenario_script(name))

@@ -42,7 +42,7 @@ def build_map_text():
     entity = limits_map.entity
     half, thick = LIFT_HALF_SIZE, LIFT_THICKNESS
     entities = [
-        entity({"classname": "worldspawn", "message": "OPtech2 lift test"}, world_brushes),
+        entity({"classname": "worldspawn", "message": "OpenTech2 lift test"}, world_brushes),
         # no targetname: a func_train starts moving by itself; its brush's mins go to each path_corner
         entity({"classname": "func_train", "target": "lift_bottom", "speed": str(LIFT_SPEED)},
                [box((-half, -half, 0), (half, half, thick), limits_map.PILLAR_TEXTURE)]),
