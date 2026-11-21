@@ -54,6 +54,19 @@ end)
 game.on("item_taken", function(player, item)
     print(game.name(player) .. " took " .. item)
 end)
+
+-- tanks drop a health pack; players take half damage from lava and falls
+game.on("monster_death", function(monster, player, x, y, z)
+    if monster == "monster_tank" then
+        game.spawn("item_health_large", x, y, z + 16)
+    end
+end)
+
+game.on("player_damage", function(player, damage, attacker)
+    if attacker == "worldspawn" then
+        return damage // 2
+    end
+end)
 ```
 
 ## Events
@@ -68,6 +81,10 @@ added.
 | `player_spawn` | player | A player entered the level or respawned. |
 | `item_pickup` | player, item's pickup name | Before the pickup. Return `false` to refuse it. It's asked on every touch, every frame the player stands on an item, also for items they can't take (full ammo or health): don't count pickups here. |
 | `item_taken` | player, item's pickup name | After the player took an item: count pickups here. |
+| `player_damage` | player, damage, attacker | Before a player takes damage. `attacker` is `"player"` or a classname (`"monster_tank"`, `"worldspawn"` for falls and lava). Return a number to change the damage. |
+| `monster_damage` | monster's classname, damage, player | Before a living monster takes damage; `player` is the attacker's number, `0` if it wasn't a player. Return a number to change the damage. |
+| `player_death` | player, attacker | A player died. |
+| `monster_death` | monster's classname, player, x, y, z | A monster died (once, not again when its body is gibbed), at x, y, z; `player` as above. |
 
 ## Functions
 
@@ -89,6 +106,7 @@ Players are numbers, from 1 to `maxclients`.
 | `game.count(player, item)` | How many of an item the player has. |
 | `game.weapon(player)` | The pickup name of the weapon in the player's hand (`""` if none). |
 | `game.use(player, item)` | Uses an item the player has, like the `use` command: a weapon is switched to, a powerup activated. Returns `true` if it was used. |
+| `game.spawn(classname, x, y, z)` | Spawns an item or monster there, e.g. a drop where a monster died. Returns `true` if it spawned. |
 
 `print(...)` writes to the server console. With `+set cheats 1`, the console
 command `lua <code>` runs one line of Lua, handy for trying things out:

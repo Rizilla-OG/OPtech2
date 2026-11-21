@@ -45,6 +45,9 @@
  *   game.use(player, item)      use an item the player has, like the "use"
  *                               command: a weapon is switched to; true if
  *                               it was used
+ *   game.spawn(classname, x, y, z)
+ *                               spawn an item or monster there; true if it
+ *                               spawned
  * Players are numbers, 1 to maxclients.
  *
  * Events:
@@ -56,11 +59,24 @@
  *                               the player can't take (full ammo):
  *                               don't count pickups here.
  *   item_taken(player, item)    after the player took an item
+ *   player_damage(player, damage, attacker)
+ *                               before a player takes damage; attacker is
+ *                               "player" or a classname. Return a number
+ *                               to change the damage (0 for none)
+ *   monster_damage(monster, damage, player)
+ *                               before a monster takes damage; monster is
+ *                               its classname, player the attacker's
+ *                               number (0 if not a player). Return a
+ *                               number to change the damage
+ *   player_death(player, attacker)
+ *   monster_death(monster, player, x, y, z)
+ *                               where it died
  *
  * print() goes to the server console.
  */
 
 #include <ctype.h>
+#include <stdarg.h>
 #include "../header/local.h"
 #include "../lua/lua.h"
 #include "../lua/lauxlib.h"
@@ -71,7 +87,8 @@
 #define SCRIPT_HOOK_STEP 10000
 #define SCRIPT_MAX_FOLDERS 20
 
-static const char *script_events[] = {"level_start", "player_spawn", "item_pickup", "item_taken"};
+static const char *script_events[] = {"level_start", "player_spawn", "item_pickup", "item_taken",
+	"player_damage", "monster_damage", "player_death", "monster_death"};
 #define SCRIPT_EVENT_COUNT (int)(sizeof(script_events) / sizeof(script_events[0]))
 
 static lua_State *script_state;
@@ -395,6 +412,33 @@ Script_Use(lua_State *L)
 	return 1;
 }
 
+static int
+Script_Spawn(lua_State *L)
+{
+	const char *classname = luaL_checkstring(L, 1);
+	edict_t *ent;
+
+	if (strlen(classname) >= MAX_QPATH)
+	{
+		return luaL_argerror(L, 1, "too long");
+	}
+
+	ent = G_Spawn();
+	ent->classname = G_CopyString(classname, TAG_LEVEL);
+	ent->s.origin[0] = (float)luaL_checknumber(L, 2);
+	ent->s.origin[1] = (float)luaL_checknumber(L, 3);
+	ent->s.origin[2] = (float)luaL_checknumber(L, 4);
+	ED_CallSpawn(ent);
+
+	if (ent->inuse)
+	{
+		gi.linkentity(ent);
+	}
+
+	lua_pushboolean(L, ent->inuse);
+	return 1;
+}
+
 static void
 Script_OpenGameAPI(lua_State *L)
 {
@@ -413,6 +457,7 @@ Script_OpenGameAPI(lua_State *L)
 		{"count", Script_Count},
 		{"weapon", Script_Weapon},
 		{"use", Script_Use},
+		{"spawn", Script_Spawn},
 		{NULL, NULL}};
 	int i;
 
@@ -522,10 +567,14 @@ Script_Shutdown(void)
 	}
 }
 
-/* runs every handler of event with the player number (if > 0) and text
-   (if set) as arguments; returns false if any handler returned false */
+/*
+ * runs every handler of event with arguments described by types, one
+ * character each: 'i' an integer, 's' a string, 'n' a number (double).
+ * Returns false if any handler returned false; a handler's number result
+ * goes to *number_result, if given (the last one wins).
+ */
 static qboolean
-Script_Fire(const char *event, int player, const char *text)
+Script_FireV(const char *event, double *number_result, const char *types, ...)
 {
 	qboolean allowed = true;
 	lua_Integer count, i;
@@ -540,27 +589,39 @@ Script_Fire(const char *event, int player, const char *text)
 
 	for (i = 1; i <= count; i++)
 	{
-		int argument_count = 0;
+		const char *type;
+		va_list arguments;
 
 		lua_rawgeti(script_state, -1, i);
+		va_start(arguments, types);
 
-		if (player > 0)
+		for (type = types; *type; type++)
 		{
-			lua_pushinteger(script_state, player);
-			argument_count++;
+			switch (*type)
+			{
+				case 'i':
+					lua_pushinteger(script_state, va_arg(arguments, int));
+					break;
+				case 's':
+					lua_pushstring(script_state, va_arg(arguments, const char *));
+					break;
+				default:
+					lua_pushnumber(script_state, va_arg(arguments, double));
+					break;
+			}
 		}
 
-		if (text)
-		{
-			lua_pushstring(script_state, text);
-			argument_count++;
-		}
+		va_end(arguments);
 
-		if (Script_Call(argument_count, event))
+		if (Script_Call((int)strlen(types), event))
 		{
 			if (lua_isboolean(script_state, -1) && !lua_toboolean(script_state, -1))
 			{
 				allowed = false;
+			}
+			else if (number_result && lua_type(script_state, -1) == LUA_TNUMBER)
+			{
+				*number_result = lua_tonumber(script_state, -1);
 			}
 		}
 
@@ -569,6 +630,85 @@ Script_Fire(const char *event, int player, const char *text)
 
 	lua_pop(script_state, 1);
 	return allowed;
+}
+
+static qboolean
+Script_Fire(const char *event, int player, const char *text)
+{
+	if (player > 0 && text)
+	{
+		return Script_FireV(event, NULL, "is", player, text);
+	}
+	else if (player > 0)
+	{
+		return Script_FireV(event, NULL, "i", player);
+	}
+
+	return Script_FireV(event, NULL, text ? "s" : "", text);
+}
+
+/* who did it: a player's number, else 0 */
+static int
+Script_PlayerNumber(const edict_t *ent)
+{
+	return (ent && ent->client) ? (int)(ent - g_edicts) : 0;
+}
+
+/* what did it: "player" for players, else the classname ("worldspawn"
+   for falling, lava, ...) */
+static const char *
+Script_AttackerName(const edict_t *ent)
+{
+	if (!ent)
+	{
+		return "";
+	}
+
+	return ent->client ? "player" : (ent->classname ? ent->classname : "");
+}
+
+static int
+Script_Damage(double result, int damage)
+{
+	if (result != (double)damage)
+	{
+		damage = (int)Q_clamp(result, 0.0, 100000.0);
+	}
+
+	return damage;
+}
+
+int
+Script_PlayerDamage(edict_t *player, edict_t *attacker, int damage)
+{
+	double result = damage;
+
+	Script_FireV("player_damage", &result, "iis", (int)(player - g_edicts), damage, Script_AttackerName(attacker));
+	return Script_Damage(result, damage);
+}
+
+int
+Script_MonsterDamage(edict_t *monster, edict_t *attacker, int damage)
+{
+	double result = damage;
+
+	Script_FireV("monster_damage", &result, "sii", monster->classname ? monster->classname : "", damage,
+		Script_PlayerNumber(attacker));
+	return Script_Damage(result, damage);
+}
+
+void
+Script_PlayerDeath(edict_t *player, edict_t *attacker)
+{
+	Script_FireV("player_death", NULL, "is", (int)(player - g_edicts), Script_AttackerName(attacker));
+}
+
+void
+Script_MonsterDeath(edict_t *monster, edict_t *attacker)
+{
+	Script_FireV("monster_death", NULL, "sinnn", monster->classname ? monster->classname : "",
+		Script_PlayerNumber(attacker), (double)monster->s.origin[0], (double)monster->s.origin[1],
+		(double)monster->s.origin[2]);
 }
 
 void

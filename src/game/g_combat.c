@@ -232,6 +232,20 @@ Killed(edict_t *targ, edict_t *inflictor, edict_t *attacker,
 		}
 	}
 
+	/* optech2: scripts hear of a player's or monster's death (not of a
+	   corpse being gibbed) */
+	if (targ->deadflag != DEAD_DEAD)
+	{
+		if (targ->client)
+		{
+			Script_PlayerDeath(targ, attacker);
+		}
+		else if (targ->svflags & SVF_MONSTER)
+		{
+			Script_MonsterDeath(targ, attacker);
+		}
+	}
+
 	if ((targ->movetype == MOVETYPE_PUSH) ||
 		(targ->movetype == MOVETYPE_STOP) ||
 		(targ->movetype == MOVETYPE_NONE))
@@ -821,6 +835,19 @@ T_Damage(edict_t *targ, edict_t *inflictor, edict_t *attacker, vec3_t dir,
 
 	/* strength tech */
 	damage = CTFApplyStrength(attacker, damage);
+
+	/* optech2: a monster definition's damage_percent, then scripts can
+	   change the damage (g_defs.c, script/g_script.c) */
+	damage = Defs_MonsterDamage(attacker, damage);
+
+	if (targ->client)
+	{
+		damage = Script_PlayerDamage(targ, attacker, damage);
+	}
+	else if ((targ->svflags & SVF_MONSTER) && (targ->health > 0))
+	{
+		damage = Script_MonsterDamage(targ, attacker, damage);
+	}
 
 	if (targ->flags & FL_NO_KNOCKBACK)
 	{

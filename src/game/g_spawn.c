@@ -542,8 +542,8 @@ StaticSpawnSearch(const char *classname)
  * Finds the spawn function for
  * the entity and calls it
  */
-void
-ED_CallSpawn(edict_t *ent)
+static void
+ED_CallSpawnStock(edict_t *ent)
 {
 	const spawn_t *s;
 	gitem_t *item;
@@ -676,6 +676,36 @@ ED_CallSpawn(edict_t *ent)
 	}
 
 	gi.dprintf("%s doesn't have a spawn function\n", ent->classname);
+}
+
+/*
+ * optech2: spawns an entity, then applies its monster definition
+ * (g_defs.c): a new monster spawns as its "base" first, then gets its own
+ * classname back.
+ */
+void
+ED_CallSpawn(edict_t *ent)
+{
+	const monster_def_t *def = ent ? Defs_FindMonster(ent->classname) : NULL;
+
+	if (!def)
+	{
+		ED_CallSpawnStock(ent);
+		return;
+	}
+
+	if (def->base[0])
+	{
+		ent->classname = def->base;
+		ED_CallSpawnStock(ent);
+		ent->classname = def->classname;
+	}
+	else
+	{
+		ED_CallSpawnStock(ent);
+	}
+
+	Defs_ApplyMonster(ent, def); /* if it's still there */
 }
 
 char *

@@ -45,6 +45,10 @@
  * spread_v, radius_damage, damage_radius (weapon_field_names; which ones a
  * weapon uses depends on how it fires).
  *
+ * defs/<folder>.monsters works the same way for monsters (monster_def_t):
+ * health, gib_health, mass, skin, scale, damage_percent; a new classname
+ * with "base" spawns as its base and then takes the changes.
+ *
  * Items are read once, when the game library starts, so item numbers stay
  * the same for a whole game. Saves store items by number: change the item
  * files and older saves may give the wrong items.
@@ -393,18 +397,29 @@ Defs_SetItemField(gitem_t *item, const char *where, const char *key, const char 
 
 #define DEFS_MAX_KEYS 32
 
-/* reads one { ... } block; false at the end of the file or on an error */
-static qboolean
-Defs_ParseBlock(char **data, const char *file, int *item_count)
+/* one { ... } block of "key" "value" pairs */
+typedef struct
 {
+	int count;
 	char keys[DEFS_MAX_KEYS][64];
 	char values[DEFS_MAX_KEYS][MAX_TOKEN_CHARS];
-	const char *token;
-	const char *classname = NULL, *base = NULL;
-	char where[MAX_QPATH + 80];
-	gitem_t *item;
-	int key_count = 0, i;
+	const char *classname;
+	const char *base;
+} defs_block_t;
 
+static defs_block_t defs_block; /* one at a time; too big for the stack */
+
+/* reads the next block into defs_block; false at the end of the file or on
+   an error (printed) */
+static qboolean
+Defs_ReadBlock(char **data, const char *file)
+{
+	defs_block_t *block = &defs_block;
+	const char *token;
+
+	block->count = 0;
+	block->classname = NULL;
+	block->base = NULL;
 	token = COM_Parse(data);
 
 	if (!*data)
@@ -433,39 +448,56 @@ Defs_ParseBlock(char **data, const char *file, int *item_count)
 			break;
 		}
 
-		if (key_count == DEFS_MAX_KEYS)
+		if (block->count == DEFS_MAX_KEYS)
 		{
 			gi.dprintf("%s: more than %d fields in a block\n", file, DEFS_MAX_KEYS);
 			return false;
 		}
 
-		Q_strlcpy(keys[key_count], token, sizeof(keys[0]));
+		Q_strlcpy(block->keys[block->count], token, sizeof(block->keys[0]));
 		token = COM_Parse(data);
 
 		if (!*data || !strcmp(token, "}"))
 		{
-			gi.dprintf("%s: \"%s\" has no value\n", file, keys[key_count]);
+			gi.dprintf("%s: \"%s\" has no value\n", file, block->keys[block->count]);
 			return false;
 		}
 
-		Q_strlcpy(values[key_count], token, sizeof(values[0]));
+		Q_strlcpy(block->values[block->count], token, sizeof(block->values[0]));
 
-		if (!Q_stricmp(keys[key_count], "classname"))
+		if (!Q_stricmp(block->keys[block->count], "classname"))
 		{
-			classname = values[key_count];
+			block->classname = block->values[block->count];
 		}
-		else if (!Q_stricmp(keys[key_count], "base"))
+		else if (!Q_stricmp(block->keys[block->count], "base"))
 		{
-			base = values[key_count];
+			block->base = block->values[block->count];
 		}
 
-		key_count++;
+		block->count++;
 	}
+
+	if (!block->classname)
+	{
+		gi.dprintf("%s: a block has no \"classname\"; skipped\n", file);
+	}
+
+	return true;
+}
+
+/* applies defs_block to the item list */
+static void
+Defs_ApplyItemBlock(const char *file, int *item_count)
+{
+	const defs_block_t *block = &defs_block;
+	const char *classname = block->classname, *base = block->base;
+	char where[MAX_QPATH + 80];
+	gitem_t *item;
+	int i;
 
 	if (!classname)
 	{
-		gi.dprintf("%s: a block has no \"classname\"; skipped\n", file);
-		return true;
+		return;
 	}
 
 	Com_sprintf(where, sizeof(where), "%s, %s", file, classname);
@@ -479,13 +511,13 @@ Defs_ParseBlock(char **data, const char *file, int *item_count)
 		{
 			gi.dprintf("%s: a new item needs \"base\", an existing item to copy%s; skipped\n", where,
 				base ? " (that one doesn't exist)" : "");
-			return true;
+			return;
 		}
 
 		if (*item_count >= MAX_ITEMS - 1)
 		{
 			gi.dprintf("%s: more than %d items; skipped\n", where, MAX_ITEMS - 1);
-			return true;
+			return;
 		}
 
 		item = &itemlist[(*item_count)++];
@@ -498,20 +530,18 @@ Defs_ParseBlock(char **data, const char *file, int *item_count)
 		gi.dprintf("%s: \"base\" only applies to new items; ignored\n", where);
 	}
 
-	for (i = 0; i < key_count; i++)
+	for (i = 0; i < block->count; i++)
 	{
-		if (!Q_stricmp(keys[i], "classname") || !Q_stricmp(keys[i], "base"))
+		if (!Q_stricmp(block->keys[i], "classname") || !Q_stricmp(block->keys[i], "base"))
 		{
 			continue;
 		}
 
-		if (!Defs_SetItemField(item, where, keys[i], values[i]))
+		if (!Defs_SetItemField(item, where, block->keys[i], block->values[i]))
 		{
-			gi.dprintf("%s: unknown field \"%s\"\n", where, keys[i]);
+			gi.dprintf("%s: unknown field \"%s\"\n", where, block->keys[i]);
 		}
 	}
-
-	return true;
 }
 
 /*
@@ -558,8 +588,9 @@ Defs_LoadItems(int item_count)
 		before = item_count;
 		data = text;
 
-		while (Defs_ParseBlock(&data, name, &item_count))
+		while (Defs_ReadBlock(&data, name))
 		{
+			Defs_ApplyItemBlock(name, &item_count);
 		}
 
 		gi.dprintf("Item definitions: %s (%d new)\n", name, item_count - before);
@@ -592,4 +623,263 @@ Defs_LoadItems(int item_count)
 	}
 
 	return item_count;
+}
+
+/* ---- monsters ---- */
+
+#define DEFS_MAX_MONSTERS 256
+
+static monster_def_t monster_defs[DEFS_MAX_MONSTERS];
+static int monster_def_count;
+
+const monster_def_t *
+Defs_FindMonster(const char *classname)
+{
+	int i;
+
+	if (!classname)
+	{
+		return NULL;
+	}
+
+	for (i = 0; i < monster_def_count; i++)
+	{
+		if (!Q_stricmp(monster_defs[i].classname, classname))
+		{
+			return &monster_defs[i];
+		}
+	}
+
+	return NULL;
+}
+
+/* applies defs_block to the monster list */
+static void
+Defs_ApplyMonsterBlock(const char *file)
+{
+	const defs_block_t *block = &defs_block;
+	monster_def_t *def = (monster_def_t *)Defs_FindMonster(block->classname);
+	char where[MAX_QPATH + 80];
+	int i, number;
+
+	if (!block->classname)
+	{
+		return;
+	}
+
+	Com_sprintf(where, sizeof(where), "%s, %s", file, block->classname);
+
+	if (!def)
+	{
+		if (monster_def_count == DEFS_MAX_MONSTERS)
+		{
+			gi.dprintf("%s: more than %d monster definitions; skipped\n", where, DEFS_MAX_MONSTERS);
+			return;
+		}
+
+		def = &monster_defs[monster_def_count++];
+		memset(def, 0, sizeof(*def));
+		Q_strlcpy(def->classname, block->classname, sizeof(def->classname));
+	}
+
+	if (block->base)
+	{
+		if (!Q_stricmp(block->base, block->classname) || Defs_FindMonster(block->base) == def)
+		{
+			gi.dprintf("%s: \"base\" can't be the monster itself; ignored\n", where);
+		}
+		else
+		{
+			Q_strlcpy(def->base, block->base, sizeof(def->base));
+		}
+	}
+
+	for (i = 0; i < block->count; i++)
+	{
+		const char *key = block->keys[i], *value = block->values[i];
+
+		if (!Q_stricmp(key, "classname") || !Q_stricmp(key, "base"))
+		{
+			continue;
+		}
+
+		if (!Q_stricmp(key, "scale"))
+		{
+			char *end;
+			float scale = strtof(value, &end);
+
+			if (end == value || *end || scale < 0.1f || scale > 10.0f)
+			{
+				gi.dprintf("%s: \"scale\" needs a number from 0.1 to 10, not \"%s\"\n", where, value);
+				continue;
+			}
+
+			def->scale = scale;
+			def->set |= MDEF_SCALE;
+			continue;
+		}
+
+		if (!Defs_ParseInteger(value, &number))
+		{
+			if (!Q_stricmp(key, "health") || !Q_stricmp(key, "gib_health") || !Q_stricmp(key, "mass") ||
+				!Q_stricmp(key, "skin") || !Q_stricmp(key, "damage_percent"))
+			{
+				gi.dprintf("%s: \"%s\" needs a whole number, not \"%s\"\n", where, key, value);
+			}
+			else
+			{
+				gi.dprintf("%s: unknown field \"%s\"\n", where, key);
+			}
+
+			continue;
+		}
+
+		if (!Q_stricmp(key, "health") && number > 0)
+		{
+			def->health = number;
+			def->set |= MDEF_HEALTH;
+		}
+		else if (!Q_stricmp(key, "gib_health"))
+		{
+			def->gib_health = -abs(number); /* written either way: gibbed below minus this */
+			def->set |= MDEF_GIB_HEALTH;
+		}
+		else if (!Q_stricmp(key, "mass") && number > 0)
+		{
+			def->mass = number;
+			def->set |= MDEF_MASS;
+		}
+		else if (!Q_stricmp(key, "skin") && number >= 0)
+		{
+			def->skin = number;
+			def->set |= MDEF_SKIN;
+		}
+		else if (!Q_stricmp(key, "damage_percent") && number >= 0)
+		{
+			def->damage_percent = number;
+			def->set |= MDEF_DAMAGE_PERCENT;
+		}
+		else if (!Q_stricmp(key, "health") || !Q_stricmp(key, "mass") || !Q_stricmp(key, "skin") ||
+				 !Q_stricmp(key, "damage_percent"))
+		{
+			gi.dprintf("%s: \"%s\" can't be %d\n", where, key, number);
+		}
+		else
+		{
+			gi.dprintf("%s: unknown field \"%s\"\n", where, key);
+		}
+	}
+}
+
+/* reads every folder's defs/<folder>.monsters */
+void
+Defs_LoadMonsters(void)
+{
+	char folders[DEFS_MAX_FOLDERS][MAX_QPATH];
+	char name[MAX_QPATH + 16];
+	int folder_count, i, j;
+
+	monster_def_count = 0;
+	folder_count = G_ModFolders(folders, DEFS_MAX_FOLDERS);
+
+	for (i = 0; i < folder_count; i++)
+	{
+		char *buffer, *text, *data;
+		int length;
+
+		G_ModFolderFile(name, sizeof(name), "defs/", folders[i], ".monsters");
+		length = gi.LoadFile(name, (void **)&buffer);
+
+		if (length <= 0 || !buffer)
+		{
+			continue;
+		}
+
+		text = malloc(length + 1);
+
+		if (!text)
+		{
+			gi.FreeFile(buffer);
+			continue;
+		}
+
+		memcpy(text, buffer, length);
+		text[length] = '\0';
+		gi.FreeFile(buffer);
+		data = text;
+
+		while (Defs_ReadBlock(&data, name))
+		{
+			Defs_ApplyMonsterBlock(name);
+		}
+
+		gi.dprintf("Monster definitions: %s\n", name);
+		free(text);
+	}
+
+	/* a base that is itself a new monster: not followed (one step only) */
+	for (i = 0; i < monster_def_count; i++)
+	{
+		for (j = 0; j < monster_def_count; j++)
+		{
+			if (monster_defs[i].base[0] && !Q_stricmp(monster_defs[i].base, monster_defs[j].classname) &&
+				monster_defs[j].base[0])
+			{
+				gi.dprintf("defs: %s: base %s is itself a new monster; use a stock one\n",
+					monster_defs[i].classname, monster_defs[i].base);
+				monster_defs[i].base[0] = '\0';
+			}
+		}
+	}
+}
+
+/* after a monster spawned: its definition's changes */
+void
+Defs_ApplyMonster(edict_t *ent, const monster_def_t *def)
+{
+	if (!ent || !def || !ent->inuse)
+	{
+		return;
+	}
+
+	if (def->set & MDEF_HEALTH)
+	{
+		ent->health = ent->max_health = def->health;
+	}
+
+	if (def->set & MDEF_GIB_HEALTH)
+	{
+		ent->gib_health = def->gib_health;
+	}
+
+	if (def->set & MDEF_MASS)
+	{
+		ent->mass = def->mass;
+	}
+
+	if (def->set & MDEF_SKIN)
+	{
+		ent->s.skinnum = def->skin;
+	}
+
+	if (def->set & MDEF_SCALE)
+	{
+		VectorSet(ent->rrs.scale, def->scale, def->scale, def->scale);
+	}
+}
+
+/* a monster's attack damage after its definition's damage_percent */
+int
+Defs_MonsterDamage(const edict_t *attacker, int damage)
+{
+	const monster_def_t *def;
+
+	if (!attacker || !(attacker->svflags & SVF_MONSTER) || !(def = Defs_FindMonster(attacker->classname)) ||
+		!(def->set & MDEF_DAMAGE_PERCENT))
+	{
+		return damage;
+	}
+
+	damage = damage * def->damage_percent / 100;
+	return (damage < 1 && def->damage_percent > 0) ? 1 : damage;
 }

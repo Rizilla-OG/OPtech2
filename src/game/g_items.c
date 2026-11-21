@@ -4979,6 +4979,7 @@ InitItems(void)
 
 	/* optech2: item definitions from the mod folders (g_defs.c) */
 	num_items = Defs_LoadItems(num_items);
+	Defs_LoadMonsters();
 
 	itemlist_len = num_items;
 }
