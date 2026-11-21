@@ -30,6 +30,9 @@
 /* the engine's calls, set by FX_Init */
 extern const optech2_fx_import_t *fxi;
 
+#include <limits.h>
+
+#define MAX_CL_ENTNUM SHRT_MAX /* as the engine */
 #define MAX_SUSTAINS 128
 #define PARTICLE_GRAVITY 40
 #define INSTANT_PARTICLE -10000.0
@@ -49,6 +52,19 @@ typedef struct cl_sustain
 	int magnitude;
 	void (*think)(struct cl_sustain *self);
 } cl_sustain_t;
+
+/* the engine's client entity, as far as effects use it: its current
+   position and angles (CL_AllocEntity asks the engine) */
+typedef struct
+{
+	struct
+	{
+		vec3_t origin;
+		vec3_t angles;
+	} current;
+} centity_t;
+
+centity_t *CL_AllocEntity(int entnum); /* NULL when the engine doesn't know it */
 
 /* the engine's types, by their extension names */
 typedef optech2_particle_t cparticle_t;
@@ -97,9 +113,24 @@ void FX_RefreshState(void);
 
 #define Com_Printf fxi->Printf
 #define Com_Error(code, ...) fxi->Error(__VA_ARGS__)
+#define Com_DPrintf(...)                 \
+	do                                   \
+	{                                    \
+		if (fxi->CvarValue("developer")) \
+			fxi->Printf(__VA_ARGS__);    \
+	} while (0)
 #define Draw_FindPic(name) fxi->RegisterPic(name)
 
+/* fx_tempentities.c */
+void CL_SmokeAndFlash(vec3_t origin);
+
+/* fx_muzzleflash.c */
+void CL_AddMuzzleFlash(void);
+void CL_AddMuzzleFlash2(void);
+void CL_AddMuzzleFlash3(void);
+
 /* fx_effects.c */
+cparticle_t *CL_AllocParticle(void);
 unsigned int CL_CombineColors(unsigned int basecolor, unsigned int finalcolor, float scale);
 void CL_ExplosionParticles(const vec3_t org);
 void CL_BigTeleportParticles(const vec3_t org);

@@ -37,9 +37,9 @@ something unfinished; remove an entry in the commit that fixes it.
 
 ## Effects (M2 step 4)
 
-- Temp entities run in the game library; still in the engine: muzzle flashes
-  (svc_muzzleflash / muzzleflash2), entity trails and effect flags (rocket
-  trail, BFG glow...), entity events.
+- Temp entities and muzzle flashes run in the game library; still in the
+  engine: entity trails and effect flags (rocket trail, BFG glow...), entity
+  events.
 - `fxtest` only sends position + direction; stock types with other data
   can't be sent with it.
 

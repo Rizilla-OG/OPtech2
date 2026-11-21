@@ -41,7 +41,7 @@ static int default_colortable[] = {
 	0xff7b9f97, /* 0x90 */
 };
 
-static cparticle_t *
+cparticle_t *
 CL_AllocParticle(void)
 {
 	return fxi->AllocParticle(); /* optech2: the engine's particle list */
@@ -1016,13 +1016,13 @@ CL_PowerSplash(void)
 		0xff1bd33f,
 		0xff27bb53};
 	int entnum, type, i;
-	vec3_t entity_origin;
+	vec3_t entity_origin, entity_angles;
 
 	entnum = MSG_ReadShort(&net_message);
 	type = MSG_ReadByte(&net_message);
 
 	/* optech2: the entity's current position from the engine */
-	if (!fxi->EntityOrigin(entnum, entity_origin))
+	if (!fxi->EntityState(entnum, entity_origin, entity_angles))
 	{
 		return;
 	}

@@ -50,7 +50,7 @@ typedef struct
  * ones; types it doesn't handle get the engine's built-in effects.
  */
 #define OPTECH2_EXT_FX "optech2_fx"
-#define OPTECH2_FX_EXT_VERSION 2
+#define OPTECH2_FX_EXT_VERSION 3
 
 struct sfx_s;
 struct model_s;
@@ -145,7 +145,8 @@ typedef struct
 		const vec3_t end, int contentmask);
 
 	void (*GetState)(optech2_fx_state_t *state);
-	qboolean (*EntityOrigin)(int entnum, vec3_t origin); /* false: not in the current frame */
+	/* an entity's current position and angles; false: not known */
+	qboolean (*EntityState)(int entnum, vec3_t origin, vec3_t angles);
 	float (*CvarValue)(const char *name);
 	unsigned (*PaletteColor)(byte index); /* the game palette as 0xAABBGGRR */
 
@@ -165,6 +166,12 @@ typedef struct
 	/* a temp entity of this type arrived; read its data and return true,
 	   or read nothing and return false to leave it to the engine */
 	qboolean (*ParseTempEntity)(int type);
+
+	/* a muzzle flash message arrived: kind 1 = svc_muzzleflash (players),
+	   2 = svc_muzzleflash2, 3 = svc_muzzleflash3 (monsters). Read it and
+	   return true, or read nothing and return false to leave it to the
+	   engine */
+	qboolean (*ParseMuzzleFlash)(int kind);
 
 	/* register models and sounds; at each level load */
 	void (*RegisterMedia)(void);

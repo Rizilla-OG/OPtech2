@@ -48,6 +48,19 @@ FX_RefreshState(void)
 	VectorCopy(state.gunorigin, fx_cl.gunorigin);
 }
 
+centity_t *
+CL_AllocEntity(int entnum)
+{
+	static centity_t entity;
+
+	if (!fxi->EntityState(entnum, entity.current.origin, entity.current.angles))
+	{
+		return NULL;
+	}
+
+	return &entity;
+}
+
 static void
 FX_Init(const optech2_fx_import_t *import)
 {
@@ -59,6 +72,27 @@ FX_ParseTempEntity(int type)
 {
 	FX_RefreshState();
 	return CL_ParseTEnt(type);
+}
+
+static qboolean
+FX_ParseMuzzleFlash(int kind)
+{
+	FX_RefreshState();
+
+	switch (kind)
+	{
+		case 1:
+			CL_AddMuzzleFlash();
+			return true;
+		case 2:
+			CL_AddMuzzleFlash2();
+			return true;
+		case 3:
+			CL_AddMuzzleFlash3();
+			return true;
+	}
+
+	return false;
 }
 
 static void
@@ -85,6 +119,7 @@ const optech2_fx_ext_t fx_extension = {
 	OPTECH2_FX_EXT_VERSION,
 	FX_Init,
 	FX_ParseTempEntity,
+	FX_ParseMuzzleFlash,
 	FX_RegisterMedia,
 	FX_AddFrameEffects,
 	FX_ClearEffects};

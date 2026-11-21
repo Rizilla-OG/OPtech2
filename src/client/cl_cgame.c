@@ -491,7 +491,7 @@ FX_GetState(optech2_fx_state_t *state)
 }
 
 static qboolean
-FX_EntityOrigin(int entnum, vec3_t origin)
+FX_EntityState(int entnum, vec3_t origin, vec3_t angles)
 {
 	centity_t *ent;
 
@@ -508,6 +508,7 @@ FX_EntityOrigin(int entnum, vec3_t origin)
 	}
 
 	VectorCopy(ent->current.origin, origin);
+	VectorCopy(ent->current.angles, angles);
 	return true;
 }
 
@@ -634,7 +635,7 @@ static const optech2_fx_import_t fx_import = {
 	FX_AllocParticle, FX_AllocDlight,
 	S_RegisterSound, FX_StartSound,
 	FX_Trace,
-	FX_GetState, FX_EntityOrigin, FX_CvarValue, FX_PaletteColor,
+	FX_GetState, FX_EntityState, FX_CvarValue, FX_PaletteColor,
 	R_RegisterModel, FX_RegisterPic, FX_AddEntity, FX_AddLight};
 
 /* the game library's effects, if it has them */
@@ -649,7 +650,8 @@ CL_CGame_FindFx(OPtech2_GetExtension_t get_extension)
 	}
 
 	if (fx_ext->version != OPTECH2_FX_EXT_VERSION || !fx_ext->Init || !fx_ext->ParseTempEntity ||
-		!fx_ext->RegisterMedia || !fx_ext->AddFrameEffects || !fx_ext->ClearEffects)
+		!fx_ext->ParseMuzzleFlash || !fx_ext->RegisterMedia || !fx_ext->AddFrameEffects ||
+		!fx_ext->ClearEffects)
 	{
 		Com_Printf("client game: effects version %d doesn't match, using the engine's\n", fx_ext->version);
 		return;
@@ -688,6 +690,14 @@ CL_CGame_ClearEffects(void)
 	{
 		cgame_fx->ClearEffects();
 	}
+}
+
+/* a muzzle flash (kind 1-3: svc_muzzleflash, 2, 3): true when the game
+   library drew it */
+qboolean
+CL_CGame_ParseMuzzleFlash(int kind)
+{
+	return cgame_fx && cgame_fx->ParseMuzzleFlash(kind);
 }
 
 /* a temp entity of this type arrived: true when the game library drew it */

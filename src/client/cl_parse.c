@@ -2648,12 +2648,18 @@ CL_ParseServerMessage(void)
 				CL_ParseTEnt();
 				break;
 
-			case svc_muzzleflash:
-				CL_AddMuzzleFlash();
+			case svc_muzzleflash: /* optech2: the game library's first */
+				if (!CL_CGame_ParseMuzzleFlash(1))
+				{
+					CL_AddMuzzleFlash();
+				}
 				break;
 
 			case svc_muzzleflash2:
-				CL_AddMuzzleFlash2();
+				if (!CL_CGame_ParseMuzzleFlash(2))
+				{
+					CL_AddMuzzleFlash2();
+				}
 				break;
 
 			case svc_download:
@@ -2727,7 +2733,10 @@ CL_ParseServerMessage(void)
 				break;
 
 			case svc_muzzleflash3:
-				CL_AddMuzzleFlash3();
+				if (!CL_CGame_ParseMuzzleFlash(3))
+				{
+					CL_AddMuzzleFlash3();
+				}
 				break;
 
 			case svc_achievement:

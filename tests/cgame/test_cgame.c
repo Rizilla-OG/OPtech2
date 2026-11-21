@@ -215,10 +215,17 @@ FxNothing(void)
 {
 }
 
+static qboolean
+FxNoMuzzleFlash(int kind)
+{
+	return false;
+}
+
 static const optech2_fx_ext_t fx_extension = {
 	OPTECH2_FX_EXT_VERSION,
 	FxInit,
 	FxParseTempEntity,
+	FxNoMuzzleFlash, /* ParseMuzzleFlash: leave them to the engine */
 	FxNothing, /* RegisterMedia */
 	FxNothing, /* AddFrameEffects */
 	FxNothing /* ClearEffects */
