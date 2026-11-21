@@ -60,6 +60,7 @@ the HUD shows and `give` and `use` take.
 | `count_width` | Digits shown next to the icon. |
 | `quantity` | Ammo: how much a pickup gives. Weapons: ammo used per shot. |
 | `ammo` | Weapons: the `pickup_name` of their ammo. |
+| `gives` | Ammo: picking it up adds to this item instead (its `pickup_name`), e.g. a bigger box that gives `"Shells"`. |
 | `flags` | Kinds, separated by spaces: `weapon ammo armor key powerup health stay_coop melee not_giveable instant_use tech flag`. |
 | `rotate` | `1` spins the item in the map, `0` doesn't. |
 | `precaches` | Extra models, sounds and pictures to load, separated by spaces. |
@@ -72,9 +73,12 @@ loads.
 
 - Item files are read once, when the game starts. Restart the game after
   changing one.
-- Saves store items by number. Adding or removing items, or changing the mod
-  folders, can mix up items in older saves.
-- An ammo item made with `base` has its own count, separate from its base's:
-  a new "ammo_shells_big" gives "Shell Box", not "Shells".
+- Saves match items by classname, so a save keeps working when mods add or
+  remove items. An item the game no longer has is dropped from the save, with
+  a message in the console (a weapon in hand becomes the Blaster). Saves made
+  before this version still need the same items as when they were saved.
+- An ammo item made with `base` has its own count, separate from its base's,
+  unless it has `gives`: a new "ammo_shells_big" with `"gives" "Shells"` adds
+  to Shells.
 - Renaming a stock item's `pickup_name` also renames it for the weapons that
   use it as ammo: change their `ammo` too.

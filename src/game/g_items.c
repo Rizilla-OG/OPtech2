@@ -1295,6 +1295,7 @@ Add_Ammo(edict_t *ent, const gitem_t *item, int count)
 static qboolean
 Pickup_Ammo(edict_t *ent, edict_t *other)
 {
+	const gitem_t *ammo;
 	int oldcount;
 	int count;
 	qboolean weapon;
@@ -1319,9 +1320,18 @@ Pickup_Ammo(edict_t *ent, edict_t *other)
 		count = ent->item->quantity;
 	}
 
-	oldcount = other->client->pers.inventory[ITEM_INDEX(ent->item)];
+	/* optech2: an item definition's "gives" adds to another item, e.g. a
+	   bigger shells box that gives Shells */
+	ammo = ent->item;
 
-	if (!Add_Ammo(other, ent->item, count))
+	if (ent->item->gives && FindItem(ent->item->gives))
+	{
+		ammo = FindItem(ent->item->gives);
+	}
+
+	oldcount = other->client->pers.inventory[ITEM_INDEX(ammo)];
+
+	if (!Add_Ammo(other, ammo, count))
 	{
 		return false;
 	}

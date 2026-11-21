@@ -900,6 +900,122 @@ SG_WriteSchema(FILE *f, const savefield_t *fields, int count)
 	}
 }
 
+/*
+ * optech2: saved item number -> current item number, from the name table
+ * at the end of the file being read (see WriteItemsNames). Without a table
+ * the numbers are used as they are.
+ */
+#define SG_ITEM_TABLE_MAGIC "OTIT"
+
+static int sg_item_remap[MAX_ITEMS];
+static int sg_item_remap_count;
+static qboolean sg_item_remap_active;
+
+static int
+SG_RemapItem(int saved)
+{
+	if (!sg_item_remap_active || saved <= 0)
+	{
+		return saved;
+	}
+
+	return (saved < sg_item_remap_count) ? sg_item_remap[saved] : 0;
+}
+
+/* reads the item name table at the end of f, if it has one; leaves the
+   file position where it was */
+static qboolean
+SG_LoadItemTable(FILE *f, const char *what)
+{
+	long start = ftell(f);
+	char magic[4];
+	char name[MAX_QPATH + 1];
+	int count, i;
+
+	sg_item_remap_active = false;
+
+	if (fseek(f, -(long)(sizeof(count) + sizeof(magic)), SEEK_END) != 0 ||
+		fread(&count, sizeof(count), 1, f) != 1 || fread(magic, sizeof(magic), 1, f) != 1 ||
+		memcmp(magic, SG_ITEM_TABLE_MAGIC, sizeof(magic)) || count < 0 || count >= MAX_ITEMS ||
+		fseek(f, -(long)(sizeof(count) + sizeof(magic) + (size_t)count * MAX_QPATH), SEEK_END) != 0)
+	{
+		fseek(f, start, SEEK_SET);
+		return false;
+	}
+
+	sg_item_remap[0] = 0;
+	sg_item_remap_count = count + 1;
+
+	for (i = 1; i <= count; i++)
+	{
+		const gitem_t *item = NULL;
+
+		if (fread(name, MAX_QPATH, 1, f) != 1)
+		{
+			fseek(f, start, SEEK_SET);
+			return false;
+		}
+
+		name[MAX_QPATH] = '\0';
+
+		if (name[0])
+		{
+			item = FindItemByClassname(name);
+
+			if (!item)
+			{
+				gi.dprintf("%s: the save has an item this game doesn't, %s; dropped\n", what, name);
+			}
+		}
+
+		sg_item_remap[i] = item ? ITEM_INDEX(item) : 0;
+	}
+
+	sg_item_remap_active = true;
+	fseek(f, start, SEEK_SET);
+	return true;
+}
+
+/* a client's item numbers that aren't pointers: inventories and the
+   selected item */
+static void
+SG_RemapClientItems(gclient_t *client)
+{
+	client_persistant_t *lists[2];
+	int saved[MAX_ITEMS];
+	int l, i;
+
+	if (!sg_item_remap_active)
+	{
+		return;
+	}
+
+	lists[0] = &client->pers;
+	lists[1] = &client->resp.coop_respawn;
+
+	for (l = 0; l < 2; l++)
+	{
+		memcpy(saved, lists[l]->inventory, sizeof(saved));
+		memset(lists[l]->inventory, 0, sizeof(lists[l]->inventory));
+
+		for (i = 1; i < sg_item_remap_count && i < MAX_ITEMS; i++)
+		{
+			if (sg_item_remap[i] > 0)
+			{
+				lists[l]->inventory[sg_item_remap[i]] += saved[i];
+			}
+		}
+
+		lists[l]->selected_item = SG_RemapItem(lists[l]->selected_item);
+
+		/* the weapon in hand isn't in this game any more: the blaster */
+		if (!lists[l]->weapon && FindItem("Blaster") && lists[l]->inventory[ITEM_INDEX(FindItem("Blaster"))])
+		{
+			lists[l]->weapon = FindItem("Blaster");
+		}
+	}
+}
+
 static void
 SG_WriteRecord(FILE *f, const void *base, const savefield_t *fields, int count,
 	const fptrList_t *fpl)
@@ -1106,7 +1222,7 @@ SG_ReadRecord(FILE *f, void *base, const schemafield_t *schema, int count,
 
 				if (field)
 				{
-					*(gitem_t **)p = GetItemByIndex(value);
+					*(gitem_t **)p = GetItemByIndex(SG_RemapItem(value));
 				}
 				break;
 
@@ -1178,22 +1294,35 @@ WriteSaveHeader(FILE *f)
 	sg_fwrite(&sv, sizeof(sv), f);
 }
 
+/*
+ * optech2: the item names, at the end of game and level saves: one
+ * MAX_QPATH name per item number from 1, then the count and
+ * SG_ITEM_TABLE_MAGIC. Loading maps saved item numbers to the current
+ * ones by name, so a save keeps working when mods add or remove items.
+ * (Yamagi's saves have the names without count and magic; an older reader
+ * still reads them as before.)
+ */
 static void
 WriteItemsNames(FILE *f)
 {
 	size_t i;
+	int count = 0;
 
-	for (i = 0; i < itemlist_len; i++)
+	for (i = 1; i < itemlist_len; i++)
 	{
+		char temp[MAX_QPATH + 1] = {0};
+
 		if (itemlist[i].classname)
 		{
-			char temp[MAX_QPATH + 1] = {0};
-
 			Q_strlcpy(temp, itemlist[i].classname, sizeof(temp));
-
-			sg_fwrite(&temp, sizeof(temp) - 1 /* MAX_QPATH */, f);
 		}
+
+		sg_fwrite(&temp, sizeof(temp) - 1 /* MAX_QPATH */, f);
+		count++;
 	}
+
+	sg_fwrite(&count, sizeof(count), f);
+	sg_fwrite(SG_ITEM_TABLE_MAGIC, 4, f);
 }
 
 void
@@ -1417,6 +1546,8 @@ ReadGame(const char *filename)
 		return;
 	}
 
+	SG_LoadItemTable(f, "game"); /* optech2: match items by name */
+
 	if (save_ver >= SAVE_VERSION_TAGGED)
 	{
 		/* optech2: tagged format */
@@ -1438,6 +1569,7 @@ ReadGame(const char *filename)
 		for (i = 0; i < game.maxclients; i++)
 		{
 			SG_ReadRecord(f, &game.clients[i], schema, schema_count, TAG_GAME, NULL);
+			SG_RemapClientItems(&game.clients[i]); /* optech2 */
 			SanitizeClientStruct(&game.clients[i]);
 		}
 
@@ -1461,9 +1593,14 @@ ReadGame(const char *filename)
 		reading_raw_format = false;
 	}
 
-	/* Read and recheck items class names */
-	ReadItemsNames(f);
+	/* Read and recheck items class names (optech2: only in saves without
+	   the name table; with it, items were matched by name) */
+	if (!sg_item_remap_active)
+	{
+		ReadItemsNames(f);
+	}
 
+	sg_item_remap_active = false;
 	fclose(f);
 }
 
@@ -1511,6 +1648,8 @@ WriteLevel(const char *filename)
 
 	i = -1;
 	sg_fwrite(&i, sizeof(i), f);
+
+	WriteItemsNames(f); /* optech2: so loading can match items by name */
 
 	fclose(f);
 
@@ -1576,6 +1715,8 @@ ReadLevel(const char *filename)
 		gi.error("%s: Couldn't open %s", __func__, filename);
 		return;
 	}
+
+	SG_LoadItemTable(f, "level"); /* optech2: match items by name */
 
 	/* free any dynamic memory allocated by
 	   loading the level  base state */
@@ -1660,6 +1801,7 @@ ReadLevel(const char *filename)
 		gi.linkentity(ent);
 	}
 
+	sg_item_remap_active = false; /* optech2 */
 	fclose(f);
 	free(edict_schema);
 	reading_raw_format = false;

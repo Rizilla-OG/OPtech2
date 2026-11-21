@@ -347,6 +347,8 @@ typedef struct gitem_s
 	int tag;
 
 	const char *precaches;            /* string of all models, sounds, and images this item will use */
+
+	const char *gives; /* optech2: ammo pickups add to this item instead (its pickup name) */
 } gitem_t;
 
 /* this structure is left intact through an entire game

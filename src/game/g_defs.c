@@ -39,8 +39,9 @@
  * classname needs "base", an existing item it copies (behaviour
  * included: pickup, use, firing). New items spawn in maps by their
  * classname. Fields: pickup_name, pickup_sound, world_model, view_model,
- * icon, count_width, quantity, ammo, flags (names, see item_flag_names),
- * rotate (0/1), precaches.
+ * icon, count_width, quantity, ammo, gives (ammo pickups add to this item,
+ * by pickup name), flags (names, see item_flag_names), rotate (0/1),
+ * precaches.
  *
  * Items are read once, when the game library starts, so item numbers stay
  * the same for a whole game. Saves store items by number: change the item
@@ -287,6 +288,10 @@ Defs_SetItemField(gitem_t *item, const char *where, const char *key, const char 
 	{
 		item->ammo = value[0] ? Defs_String(value) : NULL;
 	}
+	else if (!Q_stricmp(key, "gives"))
+	{
+		item->gives = value[0] ? Defs_String(value) : NULL;
+	}
 	else if (!Q_stricmp(key, "precaches"))
 	{
 		item->precaches = Defs_String(value);
@@ -499,6 +504,31 @@ Defs_LoadItems(int item_count)
 
 		gi.dprintf("Item definitions: %s (%d new)\n", name, item_count - before);
 		free(text);
+	}
+
+	/* "gives" names an item by its pickup name: check now all are read */
+	for (i = 1; i < item_count; i++)
+	{
+		int j;
+
+		if (!itemlist[i].gives)
+		{
+			continue;
+		}
+
+		for (j = 1; j < item_count; j++)
+		{
+			if (itemlist[j].pickup_name && !Q_stricmp(itemlist[j].pickup_name, itemlist[i].gives))
+			{
+				break;
+			}
+		}
+
+		if (j == item_count)
+		{
+			gi.dprintf("defs: %s: \"gives\" \"%s\" isn't an item's pickup_name\n", itemlist[i].classname,
+				itemlist[i].gives);
+		}
 	}
 
 	return item_count;

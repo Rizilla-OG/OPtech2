@@ -22,9 +22,7 @@ something unfinished; remove an entry in the commit that fixes it.
 - **Lua scripts' own variables aren't in save games**: scripts start again on
   load. Save a table per script (serialize plain values) with the level.
 - **Item definitions are items only**: weapons' firing (damage, spread,
-  projectile) and monsters still come from C. An ammo item made with "base"
-  counts separately from its base; add a "gives" field. Saves store items by
-  number, so changed item files can mix up older saves: save by classname.
+  projectile) and monsters still come from C.
 - **Scripting API is small**: three events and player functions. Grow it with
   the data-driven definitions (entities, damage, think, spawn).
 - **Two checks are timing-sensitive under load**: `lift` (standing miss
