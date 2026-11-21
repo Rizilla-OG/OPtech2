@@ -903,6 +903,7 @@ void Script_Shutdown(void);
 void Script_LevelStart(void);
 void Script_PlayerSpawn(edict_t *player);
 qboolean Script_ItemPickup(edict_t *player, const gitem_t *item);
+void Script_ItemTaken(edict_t *player, const gitem_t *item);
 void Script_Command(edict_t *ent);
 gitem_t *FindItemByClassname(const char *classname);
 

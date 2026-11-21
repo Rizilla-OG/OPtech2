@@ -49,6 +49,11 @@ game.on("item_pickup", function(player, item)
         return false
     end
 end)
+
+-- count what players actually take
+game.on("item_taken", function(player, item)
+    print(game.name(player) .. " took " .. item)
+end)
 ```
 
 ## Events
@@ -61,7 +66,8 @@ added.
 | --- | --- | --- |
 | `level_start` | map name | After the level's entities spawned. Not after loading a save. |
 | `player_spawn` | player | A player entered the level or respawned. |
-| `item_pickup` | player, item's pickup name | Before the pickup. Return `false` to refuse it. A refused item is touched again every frame the player stands on it. |
+| `item_pickup` | player, item's pickup name | Before the pickup. Return `false` to refuse it. It's asked on every touch, every frame the player stands on an item, also for items they can't take (full ammo or health): don't count pickups here. |
+| `item_taken` | player, item's pickup name | After the player took an item: count pickups here. |
 
 ## Functions
 

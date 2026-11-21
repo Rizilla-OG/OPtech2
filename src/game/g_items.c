@@ -1766,6 +1766,8 @@ Touch_Item(edict_t *ent, edict_t *other, const cplane_t *plane /* unused */,
 
 	if (taken)
 	{
+		Script_ItemTaken(other, ent->item); /* optech2 */
+
 		/* flash the screen */
 		other->client->bonus_alpha = 0.25;
 
