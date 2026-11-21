@@ -698,6 +698,7 @@ FindTarget(edict_t *self)
 {
 	edict_t *client;
 	qboolean heardit;
+	int think_frames; /* optech2 */
 
 	if (!self)
 	{
@@ -722,7 +723,18 @@ FindTarget(edict_t *self)
 
 	heardit = false;
 
-	if ((level.sight_entity_framenum >= (level.framenum - 1)) &&
+	/* optech2: a sight or noise counts for one monster think (0.1 s), as at
+	   stock's 10 Hz; "the last frame" missed most of them at 60 Hz, where
+	   monsters think every 6th frame. The wider window also reaches back
+	   before the first sight or noise of a level: check there is one. */
+	think_frames = (int)(FRAMETIME * level.tickrate + 0.5f);
+
+	if (think_frames < 1)
+	{
+		think_frames = 1;
+	}
+
+	if (level.sight_entity && (level.sight_entity_framenum >= (level.framenum - think_frames)) &&
 		!(self->spawnflags & SPAWNFLAG_MONSTER_AMBUSH))
 	{
 		client = level.sight_entity;
@@ -736,13 +748,13 @@ FindTarget(edict_t *self)
 	{
 		client = level.disguise_violator;
 	}
-	else if (level.sound_entity_framenum >= (level.framenum - 1))
+	else if (level.sound_entity && (level.sound_entity_framenum >= (level.framenum - think_frames)))
 	{
 		client = level.sound_entity;
 		heardit = true;
 	}
 	else if (!(self->enemy) &&
-			 (level.sound2_entity_framenum >= (level.framenum - 1)) &&
+			 level.sound2_entity && (level.sound2_entity_framenum >= (level.framenum - think_frames)) &&
 			 !(self->spawnflags & SPAWNFLAG_MONSTER_AMBUSH))
 	{
 		client = level.sound2_entity;

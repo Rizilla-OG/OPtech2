@@ -112,6 +112,7 @@ All checks use a temporary HOME, so your own config and saves are never touched.
 - `python3 tests/mod/weapon_defs_check.py`: weapon damage, pellets and speed from a definition, against stock
 - `python3 tests/mod/monster_check.py`: a new monster from a definition, damage and death events, drops
 - `python3 tests/maps/make_nav_map.py`, then `tests/nav/nav_check.py`: navigation mesh, paths around a wall, cache
+- `python3 tests/nav/monster_nav_check.py`: a Berserker paths around the wall to the player (and stock, to compare); hearing at 60 Hz
 - `python3 tests/run_all.py`: all of the above
 
 ## License

@@ -670,6 +670,11 @@ typedef struct
 	float checkattack_time; /* when the next attack check may run */
 	float random_change_time; /* when the next random direction roll may run */
 	float bad_move_time; /* optech2 (re-release): no straight-line chasing until this time */
+
+	/* optech2: following the navigation mesh (monster/misc/move.c, M_NavStep) */
+	float nav_retry_time; /* when to ask for a path again */
+	vec3_t nav_move_point; /* the path's next corner */
+	qboolean nav_has_point; /* nav_move_point is valid */
 } monsterinfo_t;
 
 /* this determines how long to wait after a duck to duck again.
@@ -796,6 +801,7 @@ extern cvar_t *filterban;
 extern cvar_t *sv_gravity;
 extern cvar_t *sv_tickrate; /* optech2: server frames per second, set by the server */
 extern cvar_t *g_damagelog; /* optech2: print every hit, for tests */
+extern cvar_t *g_monster_nav; /* optech2: 0 = monsters chase the stock way, without paths */
 extern cvar_t *sv_maxvelocity;
 
 extern cvar_t *gun_x, *gun_y, *gun_z;

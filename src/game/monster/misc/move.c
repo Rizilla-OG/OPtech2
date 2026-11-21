@@ -877,6 +877,79 @@ SV_CloseEnough(const edict_t *ent, const edict_t *goal, float dist)
 	return true;
 }
 
+/*
+ * optech2: a step along the engine's navigation path to goal (walking
+ * monsters only, when the engine offers paths and g_monster_nav is on).
+ * The path is asked for again every 0.25 s (staggered between monsters),
+ * when its next corner is reached, or when a step fails. False when there's
+ * no path to follow: the stock chase takes over.
+ */
+static qboolean
+M_NavStep(edict_t *ent, const edict_t *goal, float dist)
+{
+	vec3_t to_point;
+
+	if (!gi_optech2 || !gi_optech2->GetPathToGoal || !g_monster_nav || !g_monster_nav->value ||
+		(ent->flags & (FL_FLY | FL_SWIM)) || !ent->groundentity)
+	{
+		return false;
+	}
+
+	/* the corner is reached: the next one */
+	if (ent->monsterinfo.nav_has_point)
+	{
+		VectorSubtract(ent->monsterinfo.nav_move_point, ent->s.origin, to_point);
+		to_point[2] = 0;
+
+		if (VectorLength(to_point) <= dist + 8)
+		{
+			ent->monsterinfo.nav_retry_time = 0;
+		}
+	}
+
+	if (ent->monsterinfo.nav_retry_time <= level.time)
+	{
+		optech2_path_request_t request;
+		optech2_path_info_t info;
+
+		memset(&request, 0, sizeof(request));
+		VectorCopy(ent->s.origin, request.start);
+		request.start[2] += ent->mins[2]; /* the feet */
+		VectorCopy(goal->s.origin, request.goal);
+		request.goal[2] += goal->mins[2];
+		request.path_flags = OPTECH2_PATH_WALK;
+		request.move_dist = dist;
+
+		gi_optech2->GetPathToGoal(&request, &info);
+		ent->monsterinfo.nav_has_point = (info.return_code == OPTECH2_PATH_IN_PROGRESS);
+
+		if (ent->monsterinfo.nav_has_point)
+		{
+			VectorCopy(info.first_move_point, ent->monsterinfo.nav_move_point);
+			ent->monsterinfo.nav_retry_time = level.time + 0.25f + (ent - g_edicts) % 5 * 0.02f;
+		}
+		else
+		{
+			ent->monsterinfo.nav_retry_time = level.time + 1.0f; /* no path: stock chase for a while */
+		}
+	}
+
+	if (!ent->monsterinfo.nav_has_point)
+	{
+		return false;
+	}
+
+	VectorSubtract(ent->monsterinfo.nav_move_point, ent->s.origin, to_point);
+
+	if (!SV_StepDirection(ent, vectoyaw(to_point), dist))
+	{
+		ent->monsterinfo.nav_retry_time = 0; /* blocked (another monster?): ask again */
+		return false;
+	}
+
+	return true;
+}
+
 void
 M_MoveToGoal(edict_t *ent, float dist)
 {
@@ -936,6 +1009,12 @@ M_MoveToGoal(edict_t *ent, float dist)
 			ent->monsterinfo.bad_move_time = level.time + 5;
 			ent->monsterinfo.aiflags &= ~AI_CHARGING;
 		}
+	}
+
+	/* optech2: no straight line to the goal: follow the navigation mesh */
+	if (goal && M_NavStep(ent, goal, dist))
+	{
+		return;
 	}
 
 	/* optech2: roll for a random direction change at most once per 0.1 s,
