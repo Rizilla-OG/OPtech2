@@ -141,7 +141,7 @@ BeginIntermission(const edict_t *targ)
 	level.intermissiontime = level.time;
 	level.changemap = targ->map;
 
-	if (strstr(level.changemap, "*"))
+	if (level.changemap && strstr(level.changemap, "*")) /* optech2: a map can leave it out */
 	{
 		if (coop->value)
 		{

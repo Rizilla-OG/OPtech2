@@ -1248,6 +1248,8 @@ typedef enum
 	TE_FLARE,
 } temp_event_t;
 
+#define TE_MOD_FIRST 200 /* optech2: temp entity types from here up are mods' own effects */
+
 #define SPLASH_UNKNOWN 0
 #define SPLASH_SPARKS 1
 #define SPLASH_BLUE_WATER 2

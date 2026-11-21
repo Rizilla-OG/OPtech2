@@ -61,6 +61,17 @@ static struct
 
 /* last finished window, as drawn */
 static char stats_lines[STATS_LINES][160];
+
+/* optech2: one more overlay line, if there is room (many cores and the GPU
+   lines could run past STATS_LINES) */
+#define STATS_LINE(...)                                                         \
+	do                                                                          \
+	{                                                                           \
+		if (line < STATS_LINES)                                                 \
+		{                                                                       \
+			snprintf(stats_lines[line++], sizeof(stats_lines[0]), __VA_ARGS__); \
+		}                                                                       \
+	} while (0)
 static int stats_line_count;
 
 #ifdef __linux__
@@ -408,24 +419,24 @@ SCR_StatsAccumulate(long long server_us, long long game_us, long long client_us,
 		int game_frames = Q_max(window.game_frames, 1);
 		int line = 0;
 
-		snprintf(stats_lines[line++], sizeof(stats_lines[0]),
+		STATS_LINE(
 			"FPS %4.0f   frame %5.2f ms   worst %5.2f ms",
 			window.rendered_frames / seconds,
 			window.frame_time_sum / 1000.0 / frames,
 			window.frame_time_max / 1000.0);
 
-		snprintf(stats_lines[line++], sizeof(stats_lines[0]),
+		STATS_LINE(
 			"server %5.2f ms/tick   game %5.2f ms/tick   (%2.0f ticks/s)",
 			window.server_sum / 1000.0 / game_frames,
 			window.game_sum / 1000.0 / game_frames,
 			window.game_frames / seconds);
 
-		snprintf(stats_lines[line++], sizeof(stats_lines[0]),
+		STATS_LINE(
 			"client %5.2f ms/frame   render submit %5.2f ms/frame",
 			window.client_sum / 1000.0 / frames,
 			window.render_sum / 1000.0 / frames);
 
-		snprintf(stats_lines[line++], sizeof(stats_lines[0]),
+		STATS_LINE(
 			"drawn: %d entities   %d lights   %d particles",
 			cl.refdef.num_entities, cl.refdef.num_dlights, cl.refdef.num_particles);
 
@@ -435,7 +446,7 @@ SCR_StatsAccumulate(long long server_us, long long game_us, long long client_us,
 
 			Stats_CpuLoad(seconds, &process_percent, &system_percent);
 
-			snprintf(stats_lines[line++], sizeof(stats_lines[0]),
+			STATS_LINE(
 				"CPU  game %3.0f%% of a core   system %3.0f%%",
 				process_percent, system_percent);
 
@@ -474,7 +485,7 @@ SCR_StatsAccumulate(long long server_us, long long game_us, long long client_us,
 				qsort(sorted, thread_count, sizeof(sorted[0]), Stats_CompareThreadLoad);
 
 				/* three per line, busiest first */
-				for (t = 0; t < thread_count && t < STATS_SHOWN_THREADS && line < STATS_LINES - 1; t++)
+				for (t = 0; t < thread_count && t < STATS_SHOWN_THREADS && line < STATS_LINES - 4; t++)
 				{
 					if (t % 3 == 0)
 					{
@@ -506,7 +517,7 @@ SCR_StatsAccumulate(long long server_us, long long game_us, long long client_us,
 				snprintf(path, sizeof(path), "%s/mem_info_vram_total", gpu_sysfs_dir);
 				total = Stats_ReadNumber(path);
 
-				snprintf(stats_lines[line++], sizeof(stats_lines[0]),
+				STATS_LINE(
 					"GPU  busy %3lld%%   VRAM %5.2f / %5.2f GB",
 					busy, used / 1073741824.0, total / 1073741824.0);
 
@@ -524,22 +535,22 @@ SCR_StatsAccumulate(long long server_us, long long game_us, long long client_us,
 						sensor[n] = Stats_ReadNumber(path);
 					}
 
-					snprintf(stats_lines[line++], sizeof(stats_lines[0]),
+					STATS_LINE(
 						"     edge %3lldC  hotspot %3lldC  mem %3lldC",
 						sensor[0] / 1000, sensor[1] / 1000, sensor[2] / 1000);
-					snprintf(stats_lines[line++], sizeof(stats_lines[0]),
+					STATS_LINE(
 						"     core %4lld MHz  mem %4lld MHz  power %3lld W  fan %4lld rpm",
 						sensor[3] / 1000000, sensor[4] / 1000000, sensor[5] / 1000000, sensor[6]);
 				}
 			}
 			else
 			{
-				snprintf(stats_lines[line++], sizeof(stats_lines[0]),
+				STATS_LINE(
 					"GPU  load n/a (needs amdgpu)");
 			}
 		}
 #else
-		snprintf(stats_lines[line++], sizeof(stats_lines[0]), "CPU/GPU load n/a on this system");
+		STATS_LINE("CPU/GPU load n/a on this system");
 #endif
 
 		stats_line_count = line;
