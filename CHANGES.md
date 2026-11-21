@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Scripts: `game.position(player)` and `game.yaw(player)`, to spawn things in front of a player.
 - Monster definitions: `defs/<folder>.monsters` changes stock monsters or adds new ones based on them (`health`, `gib_health`, `mass`, `skin`, `scale`, `damage_percent`). A new monster spawns as its base and keeps its own classname. New check: `tests/mod/monster_check.py`.
 - Scripts: combat events `player_damage` and `monster_damage` (return a number to change the damage), `player_death` and `monster_death` (with where it died); `game.spawn(classname, x, y, z)`.
 - Weapon definitions: the item files take weapon numbers, `damage`, `kick`, `pellets`, `spread_h`, `spread_v`, `speed`, `radius_damage`, `damage_radius`, read by the ten stock weapons and hand grenades (stock values when left out; Quad still multiplies). A new weapon made with `"base"` fires like its base with its own numbers. New check: `tests/mod/weapon_defs_check.py`.

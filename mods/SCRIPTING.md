@@ -106,6 +106,8 @@ Players are numbers, from 1 to `maxclients`.
 | `game.count(player, item)` | How many of an item the player has. |
 | `game.weapon(player)` | The pickup name of the weapon in the player's hand (`""` if none). |
 | `game.use(player, item)` | Uses an item the player has, like the `use` command: a weapon is switched to, a powerup activated. Returns `true` if it was used. |
+| `game.position(player)` | Where the player's feet are: three numbers, `x, y, z`. |
+| `game.yaw(player)` | Which way the player looks, in degrees (0 is +x, 90 is +y). |
 | `game.spawn(classname, x, y, z)` | Spawns an item or monster there, e.g. a drop where a monster died. Returns `true` if it spawned. |
 
 `print(...)` writes to the server console. With `+set cheats 1`, the console

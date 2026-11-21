@@ -72,6 +72,7 @@ CONSOLE = [
     'delay 4900 "lua while true do end"',
     'delay 5100 "lua local s = string.rep(\'x\', 200 * 1024 * 1024)"',
     'delay 5300 "lua print(\'still running\', game.map())"',
+    'delay 5350 "lua local x, y, z = game.position(1) print(\'position\', x, y, z, game.yaw(1))"',
     'delay 5600 quit',
 ]
 
@@ -165,6 +166,9 @@ def main():
     report("script ran too long" in log, "an endless loop is stopped")
     report("not enough memory" in log, "a 200 MB allocation is refused")
     report(re.search(r"^still running\s+base1$", log, re.M) is not None, "the game carries on after all that")
+    position = re.search(r"^position\s+(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)$", log, re.M)
+    report(bool(position) and abs(float(position.group(1)) - 128) < 1 and abs(float(position.group(2)) + 320) < 1,
+           "game.position and game.yaw: " + (" ".join(position.groups()) if position else "nothing printed"))
 
     example = play_example()
     found = re.search(r"^example\s+(\d+)\s+(\S+)\s+(\d+)$", example, re.M)

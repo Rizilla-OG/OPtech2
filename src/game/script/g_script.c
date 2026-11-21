@@ -45,6 +45,9 @@
  *   game.use(player, item)      use an item the player has, like the "use"
  *                               command: a weapon is switched to; true if
  *                               it was used
+ *   game.position(player)       x, y, z of the player's feet
+ *   game.yaw(player)            which way the player looks, in degrees
+ *                               (0 = +x, 90 = +y)
  *   game.spawn(classname, x, y, z)
  *                               spawn an item or monster there; true if it
  *                               spawned
@@ -413,6 +416,24 @@ Script_Use(lua_State *L)
 }
 
 static int
+Script_Position(lua_State *L)
+{
+	const edict_t *player = Script_CheckPlayer(L, 1);
+
+	lua_pushnumber(L, player->s.origin[0]);
+	lua_pushnumber(L, player->s.origin[1]);
+	lua_pushnumber(L, player->s.origin[2] + player->mins[2]);
+	return 3;
+}
+
+static int
+Script_Yaw(lua_State *L)
+{
+	lua_pushnumber(L, Script_CheckPlayer(L, 1)->client->v_angle[YAW]);
+	return 1;
+}
+
+static int
 Script_Spawn(lua_State *L)
 {
 	const char *classname = luaL_checkstring(L, 1);
@@ -458,6 +479,8 @@ Script_OpenGameAPI(lua_State *L)
 		{"weapon", Script_Weapon},
 		{"use", Script_Use},
 		{"spawn", Script_Spawn},
+		{"position", Script_Position},
+		{"yaw", Script_Yaw},
 		{NULL, NULL}};
 	int i;
 
