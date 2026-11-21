@@ -58,6 +58,162 @@ CL_EntityLerpFraction(int changeTime, int lerpMsec)
 	return Q_clamp(fraction, 0.0f, 1.0f);
 }
 
+/*
+ * optech2: the particle trails and flying lights of an entity's effect flags
+ * (rocket, blaster, gib, grenade, flies, BFG, flags, tracker...), moved out
+ * of CL_AddPacketEntities so the game library can draw them instead.
+ */
+static void
+CL_EntityTrails(centity_t *cent, const entity_xstate_t *s1, unsigned int effects, entity_t *ent)
+{
+	/* add automatic particle trails */
+	if ((effects & ~EF_ROTATE))
+	{
+		if (effects & EF_ROCKET)
+		{
+			CL_RocketTrail(cent->lerp_origin, ent->origin, cent);
+
+			if (cl_r1q2_lightstyle->value)
+			{
+				V_AddLight(ent->origin, 200, 1, 0.23f, 0);
+			}
+			else
+			{
+				V_AddLight(ent->origin, 200, 1, 1, 0);
+			}
+		}
+
+		/* Do not reorder EF_BLASTER and EF_HYPERBLASTER.
+		   EF_BLASTER | EF_TRACKER is a special case for
+		   EF_BLASTER2 */
+		else if (effects & EF_BLASTER)
+		{
+			if (effects & EF_TRACKER)
+			{
+				CL_BlasterTrail2(cent->lerp_origin, ent->origin);
+				V_AddLight(ent->origin, 200, 0, 1, 0);
+			}
+			else
+			{
+				CL_BlasterTrail(cent->lerp_origin, ent->origin);
+				V_AddLight(ent->origin, 200, 1, 1, 0);
+			}
+		}
+		else if (effects & EF_HYPERBLASTER)
+		{
+			if (effects & EF_TRACKER)
+			{
+				V_AddLight(ent->origin, 200, 0, 1, 0);
+			}
+			else
+			{
+				V_AddLight(ent->origin, 200, 1, 1, 0);
+			}
+		}
+		else if (effects & EF_GIB)
+		{
+			CL_DiminishingTrail(cent->lerp_origin, ent->origin,
+				cent, effects);
+		}
+		else if (effects & EF_GRENADE)
+		{
+			CL_DiminishingTrail(cent->lerp_origin, ent->origin,
+				cent, effects);
+		}
+		else if (effects & EF_FLIES)
+		{
+			CL_FlyEffect(cent, ent->origin);
+		}
+		else if (effects & EF_BFG)
+		{
+			static const int bfg_lightramp[6] = {300, 400, 600, 300, 150, 75};
+			static int bfg_lightramp_max = (int)ARRLEN(bfg_lightramp);
+			int i;
+
+			if (effects & EF_ANIM_ALLFAST)
+			{
+				CL_BfgParticles(ent);
+				i = 200;
+			}
+			else
+			{
+				if (s1->frame >= 0 && s1->frame < bfg_lightramp_max)
+				{
+					i = bfg_lightramp[s1->frame];
+				}
+				else
+				{
+					i = bfg_lightramp[0];
+				}
+			}
+
+			V_AddLight(ent->origin, i, 0, 1, 0);
+		}
+		else if (effects & EF_TRAP)
+		{
+			int i;
+
+			ent->origin[2] += 32;
+			CL_TrapParticles(ent);
+			i = (randk() % 100) + 100;
+			V_AddLight(ent->origin, i, 1, 0.8f, 0.1f);
+		}
+		else if (effects & EF_FLAG1)
+		{
+			CL_FlagTrail(cent->lerp_origin, ent->origin, 0xff0000ff);
+			V_AddLight(ent->origin, 225, 1, 0.1f, 0.1f);
+		}
+		else if (effects & EF_FLAG2)
+		{
+			CL_FlagTrail(cent->lerp_origin, ent->origin, 0xff7f672f);
+			V_AddLight(ent->origin, 225, 0.1f, 0.1f, 1);
+		}
+		else if (effects & EF_TAGTRAIL)
+		{
+			CL_TagTrail(cent->lerp_origin, ent->origin, 0xff27ffff);
+			V_AddLight(ent->origin, 225, 1.0, 1.0, 0.0);
+		}
+		else if (effects & EF_TRACKERTRAIL)
+		{
+			if (effects & EF_TRACKER)
+			{
+				float intensity;
+
+				intensity = 50 + (500 * ((float)sin(cl.time / 500.0f) + 1.0f));
+				V_AddLight(ent->origin, intensity, -1.0, -1.0, -1.0);
+			}
+			else
+			{
+				CL_Tracker_Shell(cent->lerp_origin);
+				V_AddLight(ent->origin, 155, -1.0, -1.0, -1.0);
+			}
+		}
+		else if (effects & EF_TRACKER)
+		{
+			CL_TrackerTrail(cent->lerp_origin, ent->origin, 0xff000000);
+			V_AddLight(ent->origin, 200, -1, -1, -1);
+		}
+		else if (effects & EF_IONRIPPER)
+		{
+			CL_IonripperTrail(cent->lerp_origin, ent->origin);
+			V_AddLight(ent->origin, 100, 1, 0.5, 0.5);
+		}
+		else if (effects & EF_BLUEHYPERBLASTER)
+		{
+			V_AddLight(ent->origin, 200, 0, 0, 1);
+		}
+		else if (effects & EF_PLASMA)
+		{
+			if (effects & EF_ANIM_ALLFAST)
+			{
+				CL_BlasterTrail(cent->lerp_origin, ent->origin);
+			}
+
+			V_AddLight(ent->origin, 130, 1, 0.5, 0.5);
+		}
+	}
+}
+
 static void
 CL_AddPacketEntities(const frame_t *frame)
 {
@@ -647,151 +803,10 @@ CL_AddPacketEntities(const frame_t *frame)
 			CL_HologramParticles(ent.origin, radius);
 		}
 
-		/* add automatic particle trails */
-		if ((effects & ~EF_ROTATE))
+		/* add automatic particle trails; optech2: the game library's first */
+		if (!CL_CGame_EntityTrails(cent, s1, effects, &ent))
 		{
-			if (effects & EF_ROCKET)
-			{
-				CL_RocketTrail(cent->lerp_origin, ent.origin, cent);
-
-				if (cl_r1q2_lightstyle->value)
-				{
-					V_AddLight(ent.origin, 200, 1, 0.23f, 0);
-				}
-				else
-				{
-					V_AddLight(ent.origin, 200, 1, 1, 0);
-				}
-			}
-
-			/* Do not reorder EF_BLASTER and EF_HYPERBLASTER.
-			   EF_BLASTER | EF_TRACKER is a special case for
-			   EF_BLASTER2 */
-			else if (effects & EF_BLASTER)
-			{
-				if (effects & EF_TRACKER)
-				{
-					CL_BlasterTrail2(cent->lerp_origin, ent.origin);
-					V_AddLight(ent.origin, 200, 0, 1, 0);
-				}
-				else
-				{
-					CL_BlasterTrail(cent->lerp_origin, ent.origin);
-					V_AddLight(ent.origin, 200, 1, 1, 0);
-				}
-			}
-			else if (effects & EF_HYPERBLASTER)
-			{
-				if (effects & EF_TRACKER)
-				{
-					V_AddLight(ent.origin, 200, 0, 1, 0);
-				}
-				else
-				{
-					V_AddLight(ent.origin, 200, 1, 1, 0);
-				}
-			}
-			else if (effects & EF_GIB)
-			{
-				CL_DiminishingTrail(cent->lerp_origin, ent.origin,
-						cent, effects);
-			}
-			else if (effects & EF_GRENADE)
-			{
-				CL_DiminishingTrail(cent->lerp_origin, ent.origin,
-						cent, effects);
-			}
-			else if (effects & EF_FLIES)
-			{
-				CL_FlyEffect(cent, ent.origin);
-			}
-			else if (effects & EF_BFG)
-			{
-				static const int bfg_lightramp[6] = {300, 400, 600, 300, 150, 75};
-				static int bfg_lightramp_max = (int)ARRLEN(bfg_lightramp);
-				int i;
-
-				if (effects & EF_ANIM_ALLFAST)
-				{
-					CL_BfgParticles(&ent);
-					i = 200;
-				}
-				else
-				{
-					if (s1->frame >= 0 && s1->frame < bfg_lightramp_max)
-					{
-						i = bfg_lightramp[s1->frame];
-					}
-					else
-					{
-						i = bfg_lightramp[0];
-					}
-				}
-
-				V_AddLight(ent.origin, i, 0, 1, 0);
-			}
-			else if (effects & EF_TRAP)
-			{
-				int i;
-
-				ent.origin[2] += 32;
-				CL_TrapParticles(&ent);
-				i = (randk() % 100) + 100;
-				V_AddLight(ent.origin, i, 1, 0.8f, 0.1f);
-			}
-			else if (effects & EF_FLAG1)
-			{
-				CL_FlagTrail(cent->lerp_origin, ent.origin, 0xff0000ff);
-				V_AddLight(ent.origin, 225, 1, 0.1f, 0.1f);
-			}
-			else if (effects & EF_FLAG2)
-			{
-				CL_FlagTrail(cent->lerp_origin, ent.origin, 0xff7f672f);
-				V_AddLight(ent.origin, 225, 0.1f, 0.1f, 1);
-			}
-			else if (effects & EF_TAGTRAIL)
-			{
-				CL_TagTrail(cent->lerp_origin, ent.origin, 0xff27ffff);
-				V_AddLight(ent.origin, 225, 1.0, 1.0, 0.0);
-			}
-			else if (effects & EF_TRACKERTRAIL)
-			{
-				if (effects & EF_TRACKER)
-				{
-					float intensity;
-
-					intensity = 50 + (500 * ((float)sin(cl.time / 500.0f) + 1.0f));
-					V_AddLight(ent.origin, intensity, -1.0, -1.0, -1.0);
-				}
-				else
-				{
-					CL_Tracker_Shell(cent->lerp_origin);
-					V_AddLight(ent.origin, 155, -1.0, -1.0, -1.0);
-				}
-			}
-			else if (effects & EF_TRACKER)
-			{
-				CL_TrackerTrail(cent->lerp_origin, ent.origin, 0xff000000);
-				V_AddLight(ent.origin, 200, -1, -1, -1);
-			}
-			else if (effects & EF_IONRIPPER)
-			{
-				CL_IonripperTrail(cent->lerp_origin, ent.origin);
-				V_AddLight(ent.origin, 100, 1, 0.5, 0.5);
-			}
-			else if (effects & EF_BLUEHYPERBLASTER)
-			{
-				V_AddLight(ent.origin, 200, 0, 0, 1);
-			}
-			else if (effects & EF_PLASMA)
-			{
-				if (effects & EF_ANIM_ALLFAST)
-				{
-					CL_BlasterTrail(cent->lerp_origin, ent.origin);
-				}
-
-				V_AddLight(ent.origin, 130, 1, 0.5, 0.5);
-			}
+			CL_EntityTrails(cent, s1, effects, &ent);
 		}
 
 		VectorCopy(ent.origin, cent->lerp_origin);
@@ -1064,6 +1079,7 @@ CL_AddEntities(void)
 	CL_UpdateUnderwaterSound(cl.refdef.vieworg); /* optech2 */
 	CL_AddPacketEntities(&cl.frame);
 	CL_AddTEnts();
+	CL_CGame_AddEffects(); /* optech2: the game library's effects */
 	CL_AddParticles();
 	CL_AddDLights();
 	CL_AddLightStyles();

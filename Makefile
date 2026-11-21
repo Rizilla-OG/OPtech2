@@ -1210,6 +1210,12 @@ GAME_OBJS_ = \
 	src/game/g_main.o \
 	src/game/g_misc.o \
 	src/game/g_extension.o \
+	src/game/cgame_fx/fx_main.o \
+	src/game/cgame_fx/fx_muzzleflash.o \
+	src/game/cgame_fx/fx_trails.o \
+	src/game/cgame_fx/fx_events.o \
+	src/game/cgame_fx/fx_effects.o \
+	src/game/cgame_fx/fx_tempentities.o \
 	src/common/shared/pmove.o \
 	src/game/g_monster.o \
 	src/game/g_newai.o \

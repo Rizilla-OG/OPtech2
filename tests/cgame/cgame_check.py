@@ -10,7 +10,8 @@ base1 and checks what the module reports about the engine's imports:
   - health from the player state, frame valid, server frame, client time,
   - a picture's size, a key binding,
   - the HUD rect in HUD units at r_hudscale 2 (pixels / scale),
-  - Localize of "$key" texts with arguments (with the re-release data).
+  - Localize of "$key" texts with arguments (with the re-release data),
+  - the effects extension: "fxtest" sends temp entity 200, the module draws it.
 The screenshot (module HUD instead of the built-in one) lands in
 build/cgame-check/ and docs/screenshots/.
 
@@ -55,7 +56,8 @@ def main():
     with tempfile.TemporaryDirectory(prefix="optech2-cgame-") as home:
         game_dir = Path(home) / ".opentech2" / "baseq2"
         game_dir.mkdir(parents=True)
-        (game_dir / "c.cfg").write_text('map base1\ndelay 6000 "screenshot png"\ndelay 7000 "quit"\n')
+        (game_dir / "c.cfg").write_text('map base1\ndelay 5800 "cmd fxtest"\ndelay 6000 "screenshot png"\n'
+                                          'delay 7000 "quit"\n')
         environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
         log_path = OUTPUT_DIR / "client.log"
         with open(log_path, "w") as log_file:
@@ -108,6 +110,14 @@ def main():
                f"scale {scale}, HUD rect {rect[0]}x{rect[1]} (screen {shot_size} / scale)")
     else:
         report(False, "DrawHUD ran (no 'cgtest hud' line)")
+
+    # effects extension: a temp entity type of the module's own (200, sent by "fxtest")
+    sent = re.search(r"fxtest: sent type 200 at (-?\d+) (-?\d+) (-?\d+)", log)
+    drawn = re.search(r"cgtest fx: type 200 at (-?\d+) (-?\d+) (-?\d+) dir \S+ \S+ \S+, (\d+) particles", log)
+    report("client game: effects from the game library" in log, "effects extension found")
+    report(bool(sent and drawn) and sent.groups() == drawn.groups()[:3] and int(drawn.group(4)) == 64,
+           f"own temp entity 200: sent at {sent.groups() if sent else None}, "
+           f"drawn at {drawn.groups()[:3] if drawn else None} with {drawn.group(4) if drawn else 0} particles")
 
     draws = re.search(r"cgtest shutdown after (\d+) HUD draws", log)
     report(bool(draws) and int(draws.group(1)) > 100, f"Shutdown ran after {draws.group(1) if draws else 0} HUD draws")

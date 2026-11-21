@@ -516,6 +516,13 @@ void CL_CGame_Load(void);
 void CL_CGame_Unload(void);
 qboolean CL_CGame_Active(void);
 void CL_CGame_PmoveEx(pmove_t *pmove, int *origin); /* optech2 */
+qboolean CL_CGame_ParseTempEntity(int type); /* optech2 */
+qboolean CL_CGame_ParseMuzzleFlash(int kind); /* optech2 */
+qboolean CL_CGame_EntityEvent(const entity_xstate_t *ent); /* optech2 */
+qboolean CL_CGame_EntityTrails(centity_t *cent, const entity_xstate_t *s1, unsigned int effects, entity_t *ent); /* optech2 */
+void CL_CGame_RegisterEffects(void); /* optech2 */
+void CL_CGame_AddEffects(void); /* optech2 */
+void CL_CGame_ClearEffects(void); /* optech2 */
 void CL_CGame_DrawHUD(void);
 void CL_CGame_CenterPrint(const char *text);
 void CL_CGame_ConfigString(int index, const char *text);

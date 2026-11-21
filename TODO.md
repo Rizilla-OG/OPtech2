@@ -35,6 +35,15 @@ something unfinished; remove an entry in the commit that fixes it.
   the weapon wheel aren't wired; re-release mods (q2arpg) need the re-release
   `pmove_t` for `cgame->Pmove`.
 
+## Effects (M2 step 4)
+
+- Temp entities, muzzle flashes, entity trails and events run in the game
+  library; still in the engine: how an entity's own model is drawn (powerup shells, translucency, rotation,
+  linked weapon models) - the latter means the module drawing entities,
+  Quake 3 style.
+- `fxtest` only sends position + direction; stock types with other data
+  can't be sent with it.
+
 ## Prediction
 
 - Jumping on a moving lift still misses a tick around takeoff and landing

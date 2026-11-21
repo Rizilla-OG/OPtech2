@@ -384,6 +384,12 @@ set(Game-Source
 	${GAME_SRC_DIR}/g_main.c
 	${GAME_SRC_DIR}/g_misc.c
 	${GAME_SRC_DIR}/g_extension.c
+	${GAME_SRC_DIR}/cgame_fx/fx_main.c
+	${GAME_SRC_DIR}/cgame_fx/fx_muzzleflash.c
+	${GAME_SRC_DIR}/cgame_fx/fx_trails.c
+	${GAME_SRC_DIR}/cgame_fx/fx_events.c
+	${GAME_SRC_DIR}/cgame_fx/fx_effects.c
+	${GAME_SRC_DIR}/cgame_fx/fx_tempentities.c
 	${COMMON_SRC_DIR}/shared/pmove.c
 	${GAME_SRC_DIR}/g_monster.c
 	${GAME_SRC_DIR}/g_newai.c

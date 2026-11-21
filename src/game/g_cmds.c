@@ -1841,6 +1841,54 @@ Cmd_PlayerInfo_f(edict_t *ent)
 		level.time, ent->health, ammo, ent->s.origin[0], ent->s.origin[1], ent->s.origin[2]);
 }
 
+/*
+ * optech2: "fxtest [type]" sends a temporary entity of that type (default
+ * 200, outside the stock ones) 128 units in front of the player, with the
+ * direction back at them, for testing a game library's own effects (cheat).
+ */
+static void
+Cmd_FxTest_f(edict_t *ent)
+{
+	vec3_t forward, position, back;
+	int type = 200;
+
+	if (!ent || !ent->client)
+	{
+		return;
+	}
+
+	if ((deathmatch->value || coop->value) && !sv_cheats->value)
+	{
+		gi.cprintf(ent, PRINT_HIGH, "You must run the server with '+set cheats 1' to enable this command.\n");
+		return;
+	}
+
+	if (gi.argc() > 1)
+	{
+		type = atoi(gi.argv(1));
+	}
+
+	if ((type < 0) || (type > 255))
+	{
+		gi.cprintf(ent, PRINT_HIGH, "fxtest: type must be 0..255\n");
+		return;
+	}
+
+	AngleVectors(ent->client->v_angle, forward, NULL, NULL);
+	VectorMA(ent->s.origin, 128, forward, position);
+	position[2] += ent->viewheight;
+	VectorNegate(forward, back);
+
+	gi.WriteByte(svc_temp_entity);
+	gi.WriteByte(type);
+	gi.WritePosition(position);
+	gi.WriteDir(back);
+	gi.multicast(position, MULTICAST_PVS);
+
+	gi.cprintf(ent, PRINT_HIGH, "fxtest: sent type %d at %.0f %.0f %.0f\n", type,
+		position[0], position[1], position[2]);
+}
+
 static void
 Cmd_ListEntities_f(edict_t *ent)
 {
@@ -2473,6 +2521,10 @@ ClientCommand(edict_t *ent)
 	else if (Q_stricmp(cmd, "playerinfo") == 0) /* optech2 */
 	{
 		Cmd_PlayerInfo_f(ent);
+	}
+	else if (Q_stricmp(cmd, "fxtest") == 0) /* optech2 */
+	{
+		Cmd_FxTest_f(ent);
 	}
 	else if (Q_stricmp(cmd, "listitems") == 0)
 	{

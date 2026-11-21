@@ -29,6 +29,7 @@
  * =======================================================================
  */
 
+#include <stdarg.h>
 #include "header/client.h"
 #include "header/cgame_rerelease.h"
 #include "../common/header/optech2_ext.h"
@@ -40,6 +41,7 @@ static cvar_t *cl_cgame; /* library to load instead of the game folder's game li
 static void *cgame_library;
 static cgame_export_t *cgame;
 static const optech2_pmove_ext_t *cgame_pmove; /* the game library's player movement, or NULL */
+static const optech2_fx_ext_t *cgame_fx; /* the game library's effects, or NULL */
 static cgame_import_t cgame_import;
 
 /* ------------------------------------------------------------------ */
@@ -57,15 +59,102 @@ CG_Error(const char *message)
 	Com_Error(ERR_DROP, "client game: %s", message);
 }
 
+/* optech2: stats that hold a configstring index (the layout's stat_string)
+   go to the module in the re-release numbering. Strings it has no slot
+   for (item names past its 256 items: mission pack, Quake II 64 and mod
+   items) are parked in the last re-release general strings. */
+#define CG_MAX_GENERAL 512 /* MAX_GENERAL of the re-release API (MAX_CLIENTS * 2) */
+#define CG_PARKED_STRINGS 8
+static int cg_parked_index[CG_PARKED_STRINGS]; /* re-release index of each parked string */
+static int cg_parked_from[CG_PARKED_STRINGS]; /* our configstring index it shows */
+static int cg_parked_count;
+
+static int
+CG_RRGeneralEnd(void)
+{
+	return P_ConvertConfigStringTo(CS_GENERAL, PROTOCOL_RR22_VERSION) + CG_MAX_GENERAL;
+}
+
+/* our configstring index as the module will ask for it */
+static int
+CG_ConfigStringIndexForModule(int ours)
+{
+	int rr, i;
+
+	if (ours < 0 || ours >= MAX_CONFIGSTRINGS)
+	{
+		return ours;
+	}
+
+	rr = P_ConvertConfigStringTo(ours, PROTOCOL_RR22_VERSION);
+
+	if (rr >= 0 && P_ConvertConfigStringFrom(rr, PROTOCOL_RR22_VERSION) == ours)
+	{
+		return rr; /* has a re-release slot */
+	}
+
+	for (i = 0; i < cg_parked_count; i++)
+	{
+		if (cg_parked_from[i] == ours)
+		{
+			return cg_parked_index[i];
+		}
+	}
+
+	if (cg_parked_count == CG_PARKED_STRINGS)
+	{
+		return ours;
+	}
+
+	cg_parked_from[cg_parked_count] = ours;
+	cg_parked_index[cg_parked_count] = CG_RRGeneralEnd() - 1 - cg_parked_count;
+	return cg_parked_index[cg_parked_count++];
+}
+
+/* stats the status bar or layout shows as text ("stat_string N",
+   "loc_stat_string N"...): a bit per stat */
+static void
+CG_FindStringStats(const char *layout, qboolean *string_stats)
+{
+	const char *p = layout;
+
+	while (p && (p = strstr(p, "stat_string")))
+	{
+		int stat;
+
+		p += strlen("stat_string");
+
+		while (*p && *p != ' ')
+		{
+			p++; /* "_multiline" and the like */
+		}
+
+		stat = atoi(p);
+
+		if (stat >= 0 && stat < CG_MAX_STATS)
+		{
+			string_stats[stat] = true;
+		}
+	}
+}
+
 /* the module uses the re-release configstring numbering */
 static const char *
 CG_GetConfigString(int num)
 {
-	int ours;
+	int ours, i;
 
 	if (num < 0)
 	{
 		return "";
+	}
+
+	for (i = 0; i < cg_parked_count; i++)
+	{
+		if (cg_parked_index[i] == num)
+		{
+			return cl.configstrings[cg_parked_from[i]];
+		}
 	}
 
 	ours = P_ConvertConfigStringFrom(num, PROTOCOL_RR22_VERSION);
@@ -414,6 +503,336 @@ CL_CGame_Open(const char *path)
 	return true;
 }
 
+/* ------------------------------------------------------------------ */
+/* effects extension: calls the game library's effect code can make */
+
+extern cparticle_t *active_particles, *free_particles;
+
+/* the extension's structs must be the engine's, byte for byte */
+_Static_assert(sizeof(optech2_particle_t) == sizeof(cparticle_t), "optech2_particle_t layout");
+_Static_assert(offsetof(optech2_particle_t, alphavel) == offsetof(cparticle_t, alphavel), "optech2_particle_t layout");
+_Static_assert(sizeof(optech2_dlight_t) == sizeof(cdlight_t), "optech2_dlight_t layout");
+_Static_assert(offsetof(optech2_dlight_t, minlight) == offsetof(cdlight_t, minlight), "optech2_dlight_t layout");
+_Static_assert(sizeof(optech2_entity_t) == sizeof(entity_t), "optech2_entity_t layout");
+_Static_assert(offsetof(optech2_entity_t, skin) == offsetof(entity_t, skin), "optech2_entity_t layout");
+_Static_assert(offsetof(optech2_entity_t, flags) == offsetof(entity_t, flags), "optech2_entity_t layout");
+
+static void
+FX_Printf(const char *fmt, ...)
+{
+	char text[1024];
+	va_list args;
+
+	va_start(args, fmt);
+	vsnprintf(text, sizeof(text), fmt, args);
+	va_end(args);
+	Com_Printf("%s", text);
+}
+
+static void
+FX_Error(const char *fmt, ...)
+{
+	char text[1024];
+	va_list args;
+
+	va_start(args, fmt);
+	vsnprintf(text, sizeof(text), fmt, args);
+	va_end(args);
+	Com_Error(ERR_DROP, "%s", text);
+}
+
+/* the client state effects read, for the frame being drawn */
+static void
+FX_GetState(optech2_fx_state_t *state)
+{
+	frame_t *oldframe;
+	player_xstate_t *ps, *ops;
+	int i;
+
+	state->time = cl.time;
+	state->servertime = cl.frame.servertime;
+	state->lerpfrac = cl.lerpfrac;
+	state->playernum = cl.playernum;
+	VectorCopy(cl.refdef.vieworg, state->vieworg);
+	VectorCopy(cl.v_forward, state->v_forward);
+	VectorCopy(cl.v_right, state->v_right);
+	VectorCopy(cl.v_up, state->v_up);
+
+	/* gun position: view origin plus the gun offset, lerped between the
+	   previous and the current frame (was AdjustToWeapon) */
+	ps = &cl.frame.playerstate;
+	i = (cl.frame.serverframe - 1) & UPDATE_MASK;
+	oldframe = &cl.frames[i];
+
+	if ((oldframe->serverframe != cl.frame.serverframe - 1) || !oldframe->valid)
+	{
+		oldframe = &cl.frame; /* previous frame was dropped or invalid */
+	}
+
+	ops = &oldframe->playerstate;
+
+	for (i = 0; i < 3; i++)
+	{
+		state->gunorigin[i] = cl.refdef.vieworg[i] + ops->gunoffset[i] + cl.lerpfrac * (ps->gunoffset[i] - ops->gunoffset[i]);
+	}
+}
+
+static qboolean
+FX_EntityState(int entnum, vec3_t origin, vec3_t angles)
+{
+	centity_t *ent;
+
+	if ((entnum < 1) || (entnum > MAX_CL_ENTNUM))
+	{
+		return false;
+	}
+
+	ent = CL_AllocEntity(entnum);
+
+	if (!ent)
+	{
+		return false;
+	}
+
+	VectorCopy(ent->current.origin, origin);
+	VectorCopy(ent->current.angles, angles);
+	return true;
+}
+
+static float
+FX_CvarValue(const char *name)
+{
+	return Cvar_VariableValue(name);
+}
+static unsigned
+FX_PaletteColor(byte index)
+{
+	return VID_PaletteColor(index);
+}
+static void
+FX_RegisterPic(const char *name)
+{
+	Draw_FindPic(name);
+}
+static void
+FX_AddEntity(const optech2_entity_t *ent)
+{
+	V_AddEntity((const entity_t *)ent);
+}
+
+static void
+FX_AddLight(const vec3_t org, float intensity, float r, float g, float b)
+{
+	vec3_t where;
+
+	VectorCopy(org, where);
+	V_AddLight(where, intensity, r, g, b);
+}
+
+static int
+FX_ReadByte(void)
+{
+	return MSG_ReadByte(&net_message);
+}
+static int
+FX_ReadShort(void)
+{
+	return MSG_ReadShort(&net_message);
+}
+static int
+FX_ReadLong(void)
+{
+	return MSG_ReadLong(&net_message);
+}
+static float
+FX_ReadFloat(void)
+{
+	return MSG_ReadFloat(&net_message);
+}
+static void
+FX_ReadPos(vec3_t pos)
+{
+	MSG_ReadPos(&net_message, pos, cls.serverProtocol);
+}
+static void
+FX_ReadDir(vec3_t dir)
+{
+	MSG_ReadDir(&net_message, dir);
+}
+static int
+FX_Time(void)
+{
+	return cl.time;
+}
+static int
+FX_Rand(void)
+{
+	return randk() & 0x7fff;
+}
+
+static optech2_particle_t *
+FX_AllocParticle(void)
+{
+	cparticle_t *p;
+
+	if (!free_particles)
+	{
+		return NULL;
+	}
+
+	p = free_particles;
+	free_particles = p->next;
+	p->next = active_particles;
+	active_particles = p;
+
+	return (optech2_particle_t *)p;
+}
+
+static optech2_dlight_t *
+FX_AllocDlight(int key)
+{
+	return (optech2_dlight_t *)CL_AllocDlight(key);
+}
+
+static void
+FX_StartSound(const vec3_t origin, int entnum, int channel, struct sfx_s *sfx,
+	float volume, float attenuation, float timeofs)
+{
+	vec3_t where;
+
+	if (origin)
+	{
+		VectorCopy(origin, where);
+	}
+
+	S_StartSound(origin ? where : NULL, entnum, channel, sfx, volume, attenuation, timeofs);
+}
+
+static trace_t
+FX_Trace(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int contentmask)
+{
+	return CM_BoxTrace(start, end, mins ? mins : vec3_origin, maxs ? maxs : vec3_origin, 0, contentmask);
+}
+
+static const optech2_fx_import_t fx_import = {
+	OPTECH2_FX_EXT_VERSION,
+	FX_Printf, FX_Error,
+	FX_ReadByte, FX_ReadShort, FX_ReadLong, FX_ReadFloat, FX_ReadPos, FX_ReadDir,
+	FX_Time, FX_Rand,
+	FX_AllocParticle, FX_AllocDlight,
+	S_RegisterSound, FX_StartSound,
+	FX_Trace,
+	FX_GetState, FX_EntityState, FX_CvarValue, FX_PaletteColor,
+	R_RegisterModel, FX_RegisterPic, FX_AddEntity, FX_AddLight};
+
+/* the game library's effects, if it has them */
+static void
+CL_CGame_FindFx(OPtech2_GetExtension_t get_extension)
+{
+	const optech2_fx_ext_t *fx_ext = get_extension ? get_extension(OPTECH2_EXT_FX) : NULL;
+
+	if (!fx_ext)
+	{
+		return;
+	}
+
+	if (fx_ext->version != OPTECH2_FX_EXT_VERSION || !fx_ext->Init || !fx_ext->ParseTempEntity ||
+		!fx_ext->ParseMuzzleFlash || !fx_ext->EntityTrails || !fx_ext->EntityEvent || !fx_ext->RegisterMedia || !fx_ext->AddFrameEffects ||
+		!fx_ext->ClearEffects)
+	{
+		Com_Printf("client game: effects version %d doesn't match, using the engine's\n", fx_ext->version);
+		return;
+	}
+
+	cgame_fx = fx_ext;
+	cgame_fx->Init(&fx_import); /* its media is registered right after (CL_CGame_RegisterEffects) */
+	Com_Printf("client game: effects from the game library\n");
+}
+
+/* models and sounds of the game library's effects, at each level load */
+void
+CL_CGame_RegisterEffects(void)
+{
+	if (cgame_fx)
+	{
+		cgame_fx->RegisterMedia();
+	}
+}
+
+/* the game library's effects for this frame */
+void
+CL_CGame_AddEffects(void)
+{
+	if (cgame_fx)
+	{
+		cgame_fx->AddFrameEffects();
+	}
+}
+
+/* forget the game library's effects (level change, disconnect) */
+void
+CL_CGame_ClearEffects(void)
+{
+	if (cgame_fx)
+	{
+		cgame_fx->ClearEffects();
+	}
+}
+
+/* a muzzle flash (kind 1-3: svc_muzzleflash, 2, 3): true when the game
+   library drew it */
+qboolean
+CL_CGame_ParseMuzzleFlash(int kind)
+{
+	return cgame_fx && cgame_fx->ParseMuzzleFlash(kind);
+}
+
+/* an entity's trail and flying light: true when the game library drew them */
+qboolean
+CL_CGame_EntityTrails(centity_t *cent, const entity_xstate_t *s1, unsigned int effects, entity_t *ent)
+{
+	optech2_fx_entity_t info;
+
+	if (!cgame_fx)
+	{
+		return false;
+	}
+
+	info.number = s1->number;
+	info.effects = effects;
+	info.renderfx = s1->renderfx;
+	info.frame = s1->frame;
+	VectorCopy(cent->lerp_origin, info.oldorigin);
+	VectorCopy(ent->origin, info.origin);
+	VectorCopy(ent->angles, info.angles);
+	info.trailcount = cent->trailcount;
+	info.fly_stoptime = cent->fly_stoptime;
+
+	if (!cgame_fx->EntityTrails(&info))
+	{
+		return false;
+	}
+
+	VectorCopy(info.origin, ent->origin);
+	cent->trailcount = info.trailcount;
+	cent->fly_stoptime = info.fly_stoptime;
+	return true;
+}
+
+/* an entity event: true when the game library played it */
+qboolean
+CL_CGame_EntityEvent(const entity_xstate_t *ent)
+{
+	return cgame_fx && cgame_fx->EntityEvent(ent->number, ent->event, ent->origin);
+}
+
+/* a temp entity of this type arrived: true when the game library drew it */
+qboolean
+CL_CGame_ParseTempEntity(int type)
+{
+	return cgame_fx && cgame_fx->ParseTempEntity(type);
+}
+
 /* the game library's own player movement for prediction, if it has one */
 static void
 CL_CGame_FindPmove(void)
@@ -422,6 +841,8 @@ CL_CGame_FindPmove(void)
 		(OPtech2_GetExtension_t)Sys_GetProcAddress(cgame_library, "OPtech2_GetExtension");
 	const optech2_pmove_ext_t *pmove_ext =
 		get_extension ? get_extension(OPTECH2_EXT_PMOVE) : NULL;
+
+	CL_CGame_FindFx(get_extension);
 
 	if (pmove_ext && pmove_ext->version == OPTECH2_PMOVE_EXT_VERSION &&
 		pmove_ext->pmove_size == (int)sizeof(pmove_t) && pmove_ext->PmoveEx)
@@ -516,8 +937,8 @@ CL_CGame_Load(void)
 
 	if (!cgame)
 	{
-		/* no client game module: keep the library only for its movement */
-		if (!cgame_pmove)
+		/* no client game module: keep the library for its movement / effects */
+		if (!cgame_pmove && !cgame_fx)
 		{
 			Sys_FreeLibrary(cgame_library);
 			cgame_library = NULL;
@@ -540,6 +961,7 @@ void
 CL_CGame_Unload(void)
 {
 	cgame_pmove = NULL;
+	cgame_fx = NULL;
 
 	if (cgame)
 	{
@@ -636,9 +1058,17 @@ CL_CGame_PlayerState(cg_player_state_t *out)
 	out->fov = ps->fov;
 	out->rdflags = (uint8_t)ps->rdflags;
 
-	for (i = 0; i < CG_MAX_STATS && i < MAX_XSTATS; i++)
 	{
-		out->stats[i] = ps->stats[i];
+		qboolean string_stats[CG_MAX_STATS] = {false};
+
+		CG_FindStringStats(cl.configstrings[CS_STATUSBAR], string_stats);
+		CG_FindStringStats(cl.layout, string_stats);
+
+		for (i = 0; i < CG_MAX_STATS && i < MAX_XSTATS; i++)
+		{
+			/* optech2: text stats in the module's configstring numbering */
+			out->stats[i] = string_stats[i] ? (int16_t)CG_ConfigStringIndexForModule(ps->stats[i]) : ps->stats[i];
+		}
 	}
 }
 
