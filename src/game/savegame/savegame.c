@@ -958,14 +958,24 @@ SG_LoadItemTable(FILE *f, const char *what)
 
 		name[MAX_QPATH] = '\0';
 
-		if (name[0])
+		if (name[0] == '*')
+		{
+			item = FindItem(name + 1); /* an item without classname, by pickup name */
+		}
+		else if (name[0])
 		{
 			item = FindItemByClassname(name);
+		}
+		else if (i < itemlist_len && !itemlist[i].classname)
+		{
+			/* saves from before the "*" names: an item without classname
+			   (like "Health") at the same number */
+			item = &itemlist[i];
+		}
 
-			if (!item)
-			{
-				gi.dprintf("%s: the save has an item this game doesn't, %s; dropped\n", what, name);
-			}
+		if (!item && name[0])
+		{
+			gi.dprintf("%s: the save has an item this game doesn't, %s; dropped\n", what, name);
 		}
 
 		sg_item_remap[i] = item ? ITEM_INDEX(item) : 0;
@@ -1296,7 +1306,8 @@ WriteSaveHeader(FILE *f)
 
 /*
  * optech2: the item names, at the end of game and level saves: one
- * MAX_QPATH name per item number from 1, then the count and
+ * MAX_QPATH name per item number from 1 (the classname, or "*" and the
+ * pickup name for items without one, like "Health"), then the count and
  * SG_ITEM_TABLE_MAGIC. Loading maps saved item numbers to the current
  * ones by name, so a save keeps working when mods add or remove items.
  * (Yamagi's saves have the names without count and magic; an older reader
@@ -1315,6 +1326,10 @@ WriteItemsNames(FILE *f)
 		if (itemlist[i].classname)
 		{
 			Q_strlcpy(temp, itemlist[i].classname, sizeof(temp));
+		}
+		else if (itemlist[i].pickup_name)
+		{
+			Com_sprintf(temp, sizeof(temp), "*%s", itemlist[i].pickup_name);
 		}
 
 		sg_fwrite(&temp, sizeof(temp) - 1 /* MAX_QPATH */, f);

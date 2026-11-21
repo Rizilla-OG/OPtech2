@@ -1732,7 +1732,7 @@ Touch_Item(edict_t *ent, edict_t *other, const cplane_t *plane /* unused */,
 {
 	qboolean taken;
 
-	if (!ent || !other)
+	if (!ent || !other || !ent->item) /* optech2: never crash on an item-less entity */
 	{
 		return;
 	}
