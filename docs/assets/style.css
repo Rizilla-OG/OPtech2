@@ -135,3 +135,32 @@ pre code { border: 0; padding: 0; background: none; }
 
 footer { border-top: 1px solid var(--line); padding: 32px 0 48px; color: var(--muted); font-size: .85rem; }
 footer nav { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 12px; }
+
+/* roadmap page */
+.page-head { padding: 40px 0 8px; }
+.page-head h1 { font: 800 clamp(2.2rem, 7vw, 3.4rem)/1 ui-monospace, "Cascadia Mono", "Noto Sans Mono", monospace; margin: 12px 0 14px; }
+.back { font: 600 .9rem/1.4 ui-monospace, monospace; text-decoration: none; }
+.updated { color: var(--muted); font: .85rem/1.4 ui-monospace, monospace; margin: -16px 0 16px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; color: var(--muted); font-size: .9rem; }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.mark { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--later); flex: none; display: inline-block; }
+.mark.done { background: var(--done); border-color: var(--done); }
+.mark.part { border-color: var(--next); background: linear-gradient(90deg, var(--next) 50%, transparent 50%); }
+.road { border-top: 0; padding-top: 24px; }
+.roadmap.after { margin-top: 24px; }
+.bar { grid-column: 2 / 4; height: 8px; border-radius: 99px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; margin-top: 8px; }
+.bar i { display: block; height: 100%; background: var(--next); }
+.task-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-top: 12px; }
+.task-group { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.task-group h3 { display: flex; justify-content: space-between; gap: 8px; margin: 0; font-size: 1rem; }
+.task-group h3 span { color: var(--muted); font: .85rem/1.6 ui-monospace, monospace; }
+.task-group.goals { margin-top: 12px; }
+.task-group .note { margin: 0; font-size: .85rem; }
+.tasks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.tasks li { position: relative; padding-left: 22px; font-size: .93rem; line-height: 1.45; color: var(--muted); }
+.tasks li::before { content: ""; position: absolute; left: 0; top: 5px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--later); box-sizing: border-box; }
+.tasks li.done { color: var(--text); }
+.tasks li.done::before { background: var(--done); border-color: var(--done); }
+.tasks li.part { color: var(--text); }
+.tasks li.part::before { border-color: var(--next); background: linear-gradient(90deg, var(--next) 50%, transparent 50%); }
+.roadmap-link { margin: 18px 0 0; font: 600 .95rem/1.4 ui-monospace, monospace; }

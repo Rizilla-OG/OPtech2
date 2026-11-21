@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OpenTech2</title>
-<meta name="description" content="OpenTech2 is a Quake II derived engine for building new games: no arbitrary limits for mappers and modders, 60 Hz simulation, thousands of entities, IQM models.">
+<meta name="description" content="OpenTech2 is a Quake II derived engine for building new games: no arbitrary limits for mappers and modders, 60 Hz simulation, thousands of entities, IQM models, a client game module and mods without engine changes.">
 <meta property="og:title" content="OpenTech2">
 <meta property="og:description" content="A Quake II derived engine for building new games, with the stock limits removed.">
 <meta property="og:image" content="https://rizilla-og.github.io/OPtech2/assets/img/stress-idle.jpg">
@@ -46,9 +46,10 @@
           formats, packet splitting and savegames that survive code changes.</p>
       </li>
       <li class="milestone next">
-        <span class="id">M2</span><h3>Modding architecture</h3><span class="status">NEXT</span>
+        <span class="id">M2</span><h3>Modding architecture</h3><span class="status">IN PROGRESS</span>
         <p>Client game module, shared movement code, data-driven definitions, mod stacking, monster navigation,
-          animation system and an in-game editor for entities and lights.</p>
+          animation system and an in-game editor for entities and lights. Done so far: the client game module
+          with its HUD and effects, player movement as game code, and a first mod made without engine changes.</p>
       </li>
       <li class="milestone later">
         <span class="id">M3</span><h3>Multi-threaded renderer</h3><span class="status">PLANNED</span>
@@ -64,6 +65,83 @@
         <p>Sound occlusion and reverb, large outdoor spaces, hot reload, crash reports, a Blender asset pipeline.</p>
       </li>
     </ol>
+    <p class="roadmap-link"><a href="roadmap.html">Full roadmap, task by task &rarr;</a></p>
+  </div>
+</section>
+
+<section id="m2">
+  <div class="wrap">
+    <h2>M2 so far</h2>
+    <p class="lead">M2 moves what a mod might change out of the engine and into game code. The first pieces
+      are in the M2 preview: the HUD, player movement and every effect the server triggers now come from the
+      game library, and the re-release's episodes are playable from the menu.</p>
+    <div class="features">
+      <div class="feature">
+        <h3>Re-release episodes</h3>
+        <p>With the 2023 re-release data, the Game menu lists Quake II, The Reckoning, Ground Zero, Call of the
+          Machine and Quake II 64, each starting with its own intro. Map texts come translated from the
+          re-release's localization files.</p>
+      </div>
+      <div class="feature">
+        <h3>Client game module</h3>
+        <p>The HUD is drawn by id's re-release HUD code, built into the game library through the re-release's
+          own client game interface. Explosions, beams, muzzle flashes, trails and footsteps come from the game
+          library too.</p>
+      </div>
+      <div class="feature">
+        <h3>Movement as game code</h3>
+        <p>Player movement lives in the game library and the client predicts with the same code, so a mod that
+          changes movement keeps prediction smooth. Lifts no longer jitter while you ride them.</p>
+      </div>
+      <div class="feature">
+        <h3>Mods without engine changes</h3>
+        <p>The test mod in <code>mods/testmod</code> adds the Test Gun, a new weapon with its own effect, by
+          changing game code only. The engine binary stays the same.</p>
+      </div>
+    </div>
+    <div class="gallery" style="margin-top:16px">
+      <figure class="wide">
+        <a href="assets/img/q64-complex.jpg"><img src="assets/img/q64-complex.jpg" width="1600" height="900" loading="lazy"
+          alt="A Quake II 64 level: a riveted metal room with a blue lit window ahead"></a>
+        <figcaption>Quake II 64's second level, Central Complex, with the re-release HUD drawn by the client game
+          module.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/episodes-menu.jpg"><img src="assets/img/episodes-menu.jpg" width="1600" height="900" loading="lazy"
+          alt="The Game menu listing Quake II, Call of the Machine, The Reckoning, Ground Zero and Quake II 64"></a>
+        <figcaption>The Game menu reads the episodes from the re-release data; pick one, then the skill.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/episodes-starts.jpg"><img src="assets/img/episodes-starts.jpg" width="808" height="608" loading="lazy"
+          alt="Four screenshots: the first levels of The Reckoning, Ground Zero, Call of the Machine and the Quake II 64 title"></a>
+        <figcaption>First steps into The Reckoning, Ground Zero and Call of the Machine, and Quake II 64's
+          title scene.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/testmod-testgun.jpg"><img src="assets/img/testmod-testgun.jpg" width="1600" height="900" loading="lazy"
+          alt="The Test Gun firing a purple and green spiral beam"></a>
+        <figcaption>The Test Gun from the test mod: its spiral beam is a new effect the engine knows nothing
+          about, drawn by the mod's own client code.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/perf-overlay.jpg"><img src="assets/img/perf-overlay.jpg" width="1600" height="900" loading="lazy"
+          alt="Performance numbers in the top-left corner over a firing chaingun"></a>
+        <figcaption><code>cl_perf 1</code>: frame, server, client and render times, load of every CPU core,
+          the busiest threads, and GPU load, memory, temperatures and clocks.</figcaption>
+      </figure>
+      <figure class="wide">
+        <a href="assets/img/effects-compare.jpg"><img src="assets/img/effects-compare.jpg" width="972" height="488" loading="lazy"
+          alt="Two rows of three screenshots: a rocket explosion, a railgun trail and a hyperblaster, top and bottom"></a>
+        <figcaption>Effects drawn by the game library (top) and by the engine's own copy (bottom): the same
+          explosion and railgun spiral. Game libraries without the effects extension still get the engine's.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/q64-title.jpg"><img src="assets/img/q64-title.jpg" width="1600" height="900" loading="lazy"
+          alt="Giant metal letters spelling QUAKE in a dark space"></a>
+        <figcaption>Quake II 64's title scene, a camera fly-by that ends in the intro video and the first
+          level.</figcaption>
+      </figure>
+    </div>
   </div>
 </section>
 
@@ -260,8 +338,10 @@ cmake --workflow --preset default</code></pre>
       </div>
       <div class="feature">
         <h3>Game code</h3>
-        <p>After changing a saved struct, <code>tools/gen_save_fields.py</code> updates the savegame field table.
-          The client game module and data-driven definitions arrive in M2.</p>
+        <p>The game library draws the HUD (re-release client game API), runs player movement and draws effects
+          through the effects extension; <code>fxtest [type]</code> sends a temp entity to try an effect. See
+          <code>mods/testmod</code> for a complete example. After changing a saved struct,
+          <code>tools/gen_save_fields.py</code> updates the savegame field table.</p>
       </div>
     </div>
   </div>
@@ -270,6 +350,7 @@ cmake --workflow --preset default</code></pre>
 <footer>
   <div class="wrap">
     <nav>
+      <a href="roadmap.html">Roadmap</a>
       <a href="https://github.com/Rizilla-OG/OPtech2">GitHub</a>
       <a href="https://github.com/Rizilla-OG/OPtech2/blob/main/CHANGES.md">Changes</a>
       <a href="https://github.com/Rizilla-OG/OPtech2/issues">Issues</a>

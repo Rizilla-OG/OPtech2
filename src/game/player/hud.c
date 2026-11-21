@@ -792,6 +792,13 @@ G_SetStats(edict_t *ent)
 		}
 	}
 
+	/* optech2: no HUD in Quake II 64's camera scenes and level ends, nor in
+	   deathmatch intermissions, as the re-release */
+	if (level.intermissiontime && (level.is_n64 || deathmatch->value))
+	{
+		ent->client->ps_rrstats[STAT_LAYOUTS] |= LAYOUTS_HIDE_HUD;
+	}
+
 	if (level.story_active)
 	{
 		ent->client->ps_rrstats[STAT_LAYOUTS] |= LAYOUTS_HIDE_CROSSHAIR;

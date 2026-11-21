@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history is in `CHANGEL
 
 ## Unreleased
 
+- Fixed: the HUD showed during Quake II 64's camera scenes and level ends; like the re-release, it is hidden in intermissions on Quake II 64 levels and in deathmatch.
 - Website: the M1 download is replaced by the M2 preview (an interim build with the new names).
 - Windows: `game.dll` is linked fully static, so its C++ runtime and winpthread are inside it (it needed `libwinpthread-1.dll` from MinGW). Cross-built and run under Wine: the client game module, movement and effects load from `game.dll`.
 - Test mod (`mods/testmod/`): the Test Gun, a new weapon with its own effect (temp entity 201, a double helix drawn by the mod's client code), built from the game source with no engine change. `tests/mod/mod_check.py` builds it, checks no engine source is touched, and plays it (also in `run_all.py`).
