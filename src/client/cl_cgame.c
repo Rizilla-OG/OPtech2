@@ -29,6 +29,7 @@
  * =======================================================================
  */
 
+#include <stdarg.h>
 #include "header/client.h"
 #include "header/cgame_rerelease.h"
 #include "../common/header/optech2_ext.h"
@@ -425,6 +426,120 @@ _Static_assert(sizeof(optech2_particle_t) == sizeof(cparticle_t), "optech2_parti
 _Static_assert(offsetof(optech2_particle_t, alphavel) == offsetof(cparticle_t, alphavel), "optech2_particle_t layout");
 _Static_assert(sizeof(optech2_dlight_t) == sizeof(cdlight_t), "optech2_dlight_t layout");
 _Static_assert(offsetof(optech2_dlight_t, minlight) == offsetof(cdlight_t, minlight), "optech2_dlight_t layout");
+_Static_assert(sizeof(optech2_entity_t) == sizeof(entity_t), "optech2_entity_t layout");
+_Static_assert(offsetof(optech2_entity_t, skin) == offsetof(entity_t, skin), "optech2_entity_t layout");
+_Static_assert(offsetof(optech2_entity_t, flags) == offsetof(entity_t, flags), "optech2_entity_t layout");
+
+static void
+FX_Printf(const char *fmt, ...)
+{
+	char text[1024];
+	va_list args;
+
+	va_start(args, fmt);
+	vsnprintf(text, sizeof(text), fmt, args);
+	va_end(args);
+	Com_Printf("%s", text);
+}
+
+static void
+FX_Error(const char *fmt, ...)
+{
+	char text[1024];
+	va_list args;
+
+	va_start(args, fmt);
+	vsnprintf(text, sizeof(text), fmt, args);
+	va_end(args);
+	Com_Error(ERR_DROP, "%s", text);
+}
+
+/* the client state effects read, for the frame being drawn */
+static void
+FX_GetState(optech2_fx_state_t *state)
+{
+	frame_t *oldframe;
+	player_xstate_t *ps, *ops;
+	int i;
+
+	state->time = cl.time;
+	state->servertime = cl.frame.servertime;
+	state->lerpfrac = cl.lerpfrac;
+	state->playernum = cl.playernum;
+	VectorCopy(cl.refdef.vieworg, state->vieworg);
+	VectorCopy(cl.v_forward, state->v_forward);
+	VectorCopy(cl.v_right, state->v_right);
+	VectorCopy(cl.v_up, state->v_up);
+
+	/* gun position: view origin plus the gun offset, lerped between the
+	   previous and the current frame (was AdjustToWeapon) */
+	ps = &cl.frame.playerstate;
+	i = (cl.frame.serverframe - 1) & UPDATE_MASK;
+	oldframe = &cl.frames[i];
+
+	if ((oldframe->serverframe != cl.frame.serverframe - 1) || !oldframe->valid)
+	{
+		oldframe = &cl.frame; /* previous frame was dropped or invalid */
+	}
+
+	ops = &oldframe->playerstate;
+
+	for (i = 0; i < 3; i++)
+	{
+		state->gunorigin[i] = cl.refdef.vieworg[i] + ops->gunoffset[i] + cl.lerpfrac * (ps->gunoffset[i] - ops->gunoffset[i]);
+	}
+}
+
+static qboolean
+FX_EntityOrigin(int entnum, vec3_t origin)
+{
+	centity_t *ent;
+
+	if ((entnum < 1) || (entnum > MAX_CL_ENTNUM))
+	{
+		return false;
+	}
+
+	ent = CL_AllocEntity(entnum);
+
+	if (!ent)
+	{
+		return false;
+	}
+
+	VectorCopy(ent->current.origin, origin);
+	return true;
+}
+
+static float
+FX_CvarValue(const char *name)
+{
+	return Cvar_VariableValue(name);
+}
+static unsigned
+FX_PaletteColor(byte index)
+{
+	return VID_PaletteColor(index);
+}
+static void
+FX_RegisterPic(const char *name)
+{
+	Draw_FindPic(name);
+}
+static void
+FX_AddEntity(const optech2_entity_t *ent)
+{
+	V_AddEntity((const entity_t *)ent);
+}
+
+static void
+FX_AddLight(const vec3_t org, float intensity, float r, float g, float b)
+{
+	vec3_t where;
+
+	VectorCopy(org, where);
+	V_AddLight(where, intensity, r, g, b);
+}
 
 static int
 FX_ReadByte(void)
@@ -513,11 +628,14 @@ FX_Trace(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t 
 
 static const optech2_fx_import_t fx_import = {
 	OPTECH2_FX_EXT_VERSION,
+	FX_Printf, FX_Error,
 	FX_ReadByte, FX_ReadShort, FX_ReadLong, FX_ReadFloat, FX_ReadPos, FX_ReadDir,
 	FX_Time, FX_Rand,
 	FX_AllocParticle, FX_AllocDlight,
 	S_RegisterSound, FX_StartSound,
-	FX_Trace};
+	FX_Trace,
+	FX_GetState, FX_EntityOrigin, FX_CvarValue, FX_PaletteColor,
+	R_RegisterModel, FX_RegisterPic, FX_AddEntity, FX_AddLight};
 
 /* the game library's effects, if it has them */
 static void
@@ -530,15 +648,46 @@ CL_CGame_FindFx(OPtech2_GetExtension_t get_extension)
 		return;
 	}
 
-	if (fx_ext->version != OPTECH2_FX_EXT_VERSION || !fx_ext->Init || !fx_ext->ParseTempEntity)
+	if (fx_ext->version != OPTECH2_FX_EXT_VERSION || !fx_ext->Init || !fx_ext->ParseTempEntity ||
+		!fx_ext->RegisterMedia || !fx_ext->AddFrameEffects || !fx_ext->ClearEffects)
 	{
 		Com_Printf("client game: effects version %d doesn't match, using the engine's\n", fx_ext->version);
 		return;
 	}
 
 	cgame_fx = fx_ext;
-	cgame_fx->Init(&fx_import);
+	cgame_fx->Init(&fx_import); /* its media is registered right after (CL_CGame_RegisterEffects) */
 	Com_Printf("client game: effects from the game library\n");
+}
+
+/* models and sounds of the game library's effects, at each level load */
+void
+CL_CGame_RegisterEffects(void)
+{
+	if (cgame_fx)
+	{
+		cgame_fx->RegisterMedia();
+	}
+}
+
+/* the game library's effects for this frame */
+void
+CL_CGame_AddEffects(void)
+{
+	if (cgame_fx)
+	{
+		cgame_fx->AddFrameEffects();
+	}
+}
+
+/* forget the game library's effects (level change, disconnect) */
+void
+CL_CGame_ClearEffects(void)
+{
+	if (cgame_fx)
+	{
+		cgame_fx->ClearEffects();
+	}
 }
 
 /* a temp entity of this type arrived: true when the game library drew it */

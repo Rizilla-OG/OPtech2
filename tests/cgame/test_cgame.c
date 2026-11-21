@@ -210,10 +210,18 @@ FxParseTempEntity(int type)
 	return true;
 }
 
+static void
+FxNothing(void)
+{
+}
+
 static const optech2_fx_ext_t fx_extension = {
 	OPTECH2_FX_EXT_VERSION,
 	FxInit,
-	FxParseTempEntity
+	FxParseTempEntity,
+	FxNothing, /* RegisterMedia */
+	FxNothing, /* AddFrameEffects */
+	FxNothing /* ClearEffects */
 };
 
 void *

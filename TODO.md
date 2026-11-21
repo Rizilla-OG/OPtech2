@@ -37,9 +37,11 @@ something unfinished; remove an entry in the commit that fixes it.
 
 ## Effects (M2 step 4)
 
-- Move the stock effects (temp entities, muzzle flashes, trails, entity
-  effect flags) into the game library through the effects extension; the
-  extension has no model/entity drawing yet (explosions, beams need it).
+- Temp entities run in the game library; still in the engine: muzzle flashes
+  (svc_muzzleflash / muzzleflash2), entity trails and effect flags (rocket
+  trail, BFG glow...), entity events.
+- `fxtest` only sends position + direction; stock types with other data
+  can't be sent with it.
 
 ## Prediction
 

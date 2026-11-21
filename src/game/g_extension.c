@@ -20,15 +20,18 @@
  * =======================================================================
  *
  * optech2: additions this game library offers the engine beyond the game
- * and client game APIs (src/common/header/optech2_ext.h). For now its own
- * player movement (src/common/shared/pmove.c, compiled into this library),
- * so the client predicts with the same code the server moves players with.
+ * and client game APIs (src/common/header/optech2_ext.h): its own player
+ * movement (src/common/shared/pmove.c, compiled into this library), so the
+ * client predicts with the same code the server moves players with, and its
+ * client effects (src/game/cgame_fx/).
  *
  * =======================================================================
  */
 
 #include "header/local.h"
 #include "../common/header/optech2_ext.h"
+
+extern const optech2_fx_ext_t fx_extension; /* cgame_fx/fx_main.c */
 
 static const optech2_pmove_ext_t pmove_extension = {
 	OPTECH2_PMOVE_EXT_VERSION,
@@ -46,6 +49,11 @@ OPtech2_GetExtension(const char *name)
 	if (name && !strcmp(name, OPTECH2_EXT_PMOVE))
 	{
 		return (void *)&pmove_extension;
+	}
+
+	if (name && !strcmp(name, OPTECH2_EXT_FX))
+	{
+		return (void *)&fx_extension;
 	}
 
 	return NULL;

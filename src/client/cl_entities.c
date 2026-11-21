@@ -1064,6 +1064,7 @@ CL_AddEntities(void)
 	CL_UpdateUnderwaterSound(cl.refdef.vieworg); /* optech2 */
 	CL_AddPacketEntities(&cl.frame);
 	CL_AddTEnts();
+	CL_CGame_AddEffects(); /* optech2: the game library's effects */
 	CL_AddParticles();
 	CL_AddDLights();
 	CL_AddLightStyles();

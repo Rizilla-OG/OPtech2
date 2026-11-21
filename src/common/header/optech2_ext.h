@@ -50,9 +50,11 @@ typedef struct
  * ones; types it doesn't handle get the engine's built-in effects.
  */
 #define OPTECH2_EXT_FX "optech2_fx"
-#define OPTECH2_FX_EXT_VERSION 1
+#define OPTECH2_FX_EXT_VERSION 2
 
 struct sfx_s;
+struct model_s;
+struct image_s;
 
 /* a particle: same layout as the engine's cparticle_t. The engine moves it
    (vel, accel) and fades it (alphavel per second) until alpha reaches 0. */
@@ -80,9 +82,43 @@ typedef struct
 	float minlight;
 } optech2_dlight_t;
 
+/* a model to draw this frame: same layout as the engine's entity_t */
+typedef struct
+{
+	struct model_s *model;
+	float angles[3];
+	float origin[3]; /* also RF_BEAM's "from" */
+	int frame; /* also RF_BEAM's diameter */
+	float oldorigin[3]; /* also RF_BEAM's "to" */
+	int oldframe;
+	float backlerp; /* 0.0 = current, 1.0 = old */
+	int skinnum; /* also RF_BEAM's palette index */
+	vec3_t scale;
+	unsigned rr_mesh;
+	int lightstyle;
+	float alpha; /* with RF_TRANSLUCENT */
+	unsigned color;
+	struct image_s *skin; /* NULL: the model's own */
+	int flags; /* RF_* */
+} optech2_entity_t;
+
+/* the client state effects need, for the frame being drawn */
+typedef struct
+{
+	int time; /* client time, msec */
+	int servertime; /* time of the current server frame, msec */
+	float lerpfrac; /* between the previous and the current server frame */
+	int playernum; /* our player's entity number - 1 */
+	vec3_t vieworg, v_forward, v_right, v_up;
+	vec3_t gunorigin; /* view origin plus the gun offset, for beams from our weapon */
+} optech2_fx_state_t;
+
 typedef struct
 {
 	int version; /* OPTECH2_FX_EXT_VERSION */
+
+	void (*Printf)(const char *fmt, ...);
+	void (*Error)(const char *fmt, ...); /* drops to the console */
 
 	/* the rest of the current temp entity message, after its type byte */
 	int (*ReadByte)(void);
@@ -107,6 +143,16 @@ typedef struct
 	/* the world only (no entities) */
 	trace_t (*Trace)(const vec3_t start, const vec3_t mins, const vec3_t maxs,
 		const vec3_t end, int contentmask);
+
+	void (*GetState)(optech2_fx_state_t *state);
+	qboolean (*EntityOrigin)(int entnum, vec3_t origin); /* false: not in the current frame */
+	float (*CvarValue)(const char *name);
+	unsigned (*PaletteColor)(byte index); /* the game palette as 0xAABBGGRR */
+
+	struct model_s *(*RegisterModel)(const char *name);
+	void (*RegisterPic)(const char *name); /* precache only */
+	void (*AddEntity)(const optech2_entity_t *ent); /* this frame only */
+	void (*AddLight)(const vec3_t org, float intensity, float r, float g, float b); /* this frame only */
 } optech2_fx_import_t;
 
 typedef struct
@@ -119,6 +165,15 @@ typedef struct
 	/* a temp entity of this type arrived; read its data and return true,
 	   or read nothing and return false to leave it to the engine */
 	qboolean (*ParseTempEntity)(int type);
+
+	/* register models and sounds; at each level load */
+	void (*RegisterMedia)(void);
+
+	/* add this frame's effects (explosions, beams, lasers...) */
+	void (*AddFrameEffects)(void);
+
+	/* forget all effects (level change, disconnect) */
+	void (*ClearEffects)(void);
 } optech2_fx_ext_t;
 
 #endif
