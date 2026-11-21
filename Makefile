@@ -1960,7 +1960,7 @@ endif
 ifeq ($(YQ2_OSTYPE), Windows)
 $(BINDIR)/baseq2/game.dll : $(GAME_OBJS)
 	@echo "===> LD $@"
-	${Q}$(CXX) $(LDFLAGS) $(GAME_OBJS) $(LDLIBS) -static-libstdc++ -static-libgcc -o $@
+	${Q}$(CXX) $(LDFLAGS) $(GAME_OBJS) $(LDLIBS) -static -o $@ # optech2: C++ runtime and winpthread inside the DLL
 else ifeq ($(YQ2_OSTYPE), Darwin)
 $(BINDIR)/baseq2/game.dylib : $(GAME_OBJS)
 	@echo "===> LD $@"
