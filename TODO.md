@@ -58,8 +58,7 @@ something unfinished; remove an entry in the commit that fixes it.
 - Multi-line localized texts get a stray space after each line break
   (`src/server/sv_translate.c` escape handling).
 - Client game module: `NotifyMessage` / `ClearNotify` (kill feed, pickups) and
-  the weapon wheel aren't wired; re-release mods (q2arpg) need the re-release
-  `pmove_t` for `cgame->Pmove`.
+  the weapon wheel aren't wired (phase 3, in progress).
 
 ## Effects (M2 step 4)
 
@@ -76,6 +75,15 @@ something unfinished; remove an entry in the commit that fixes it.
   (client and server disagreeing for a tick). The `lift` check on the fixed
   test clock now shows under a unit both standing and jumping; confirm in play
   at a real frame rate before dropping this.
+- Re-release games, riding trains and lifts: the client carries the player
+  at the mover's speed from its last two positions, so when the mover speeds
+  up, slows, stops or turns the carry is a frame late: 2-5 unit hitches
+  (101 of 591 misses on a train.bsp ride, the rest under 0.4 units). Fix:
+  send the mover's exact velocity and next stop. Stock Quake 2 doesn't
+  carry at all, so this is already better than stock.
+- Re-release games, combat: 3-7 unit misses for a few frames while being
+  shot (knockback?); not reproduced headless with monsters firing at a god
+  mode player. Get `cl_showmiss 2` from a real fight.
 
 ## Builds and releases
 
