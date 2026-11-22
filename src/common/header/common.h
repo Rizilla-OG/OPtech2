@@ -998,6 +998,9 @@ void SV_Shutdown(const char *finalmsg, qboolean reconnect);
 void SV_Frame(int usec);
 const char *SV_LocalizationUIMessage(const char *message, const char *default_message);
 const char *SV_LocalizationMessage(const char *message, const char **sound);
+/* optech2: fills "{}" / "{N}" in a localized format from args */
+void SV_LocalizeFormat(const char *format, const char **args, int num_args,
+	char *out, size_t out_size);
 void SV_LocalizationInit(void);
 void SV_LocalizationFree(void);
 
@@ -1029,7 +1032,8 @@ void Sys_Nanosleep(int nanosec);
 void *Sys_GetProcAddress(void *handle, const char *sym);
 void Sys_FreeLibrary(void *handle);
 void *Sys_LoadLibrary(const char *path, const char *sym, void **handle);
-void *Sys_GetGameAPI(void *parms);
+/* optech2: rerelease_parms (and *rerelease set) for a re-release game library */
+void *Sys_GetGameAPI(void *parms, void *rerelease_parms, qboolean *rerelease);
 void *Sys_GetGameProc(const char *sym); /* optech2 */
 void Sys_UnloadGame(void);
 void Sys_GetWorkDir(char *buffer, size_t len);

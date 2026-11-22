@@ -329,6 +329,11 @@ SV_PrepWorldFrame(void)
 		/* events only last for a single message */
 		ent->s.event = 0;
 	}
+
+	if (sv_rerelease_game)
+	{
+		SV_RR_PrepFrame(); /* optech2: the game clears its own edicts' events */
+	}
 }
 
 static void

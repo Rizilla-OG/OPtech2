@@ -2349,93 +2349,11 @@ CL_ParseDamage(void)
 	}
 }
 
-/*
- * optech2: fills a localized format ("{}" = next argument, "{N}" = argument
- * N, as the re-release writes them) into out. Shared by svc_locprint and the
- * client game module's Localize.
- */
+/* optech2: the localized format filler, shared with the server (sv_translate.c) */
 void
 CL_LocalizeFormat(const char *format, const char **args, int num_args, char *out, size_t out_size)
 {
-	int seq_arg = 0;
-	const char *p, *end;
-	char *dest;
-
-	if (!out_size)
-	{
-		return;
-	}
-
-	p = format;
-	dest = out;
-	end = out + out_size - 1;
-
-	while (*p && dest < end)
-	{
-		if (*p == '{')
-		{
-			const char *brace_start = p;
-			p++;
-			if (*p == '}')
-			{
-				p++;
-				if (seq_arg < num_args)
-				{
-					const char *arg = args[seq_arg++];
-					while (*arg && dest < end)
-					{
-						*dest++ = *arg++;
-					}
-				}
-			}
-			else if (*p >= '0' && *p <= '9')
-			{
-				int index = 0;
-				while (*p >= '0' && *p <= '9')
-				{
-					index = index * 10 + (*p - '0');
-					p++;
-				}
-				if (*p == '}')
-				{
-					p++;
-					if (index >= 0 && index < num_args)
-					{
-						const char *arg = args[index];
-						while (*arg && dest < end)
-						{
-							*dest++ = *arg++;
-						}
-					}
-				}
-				else
-				{
-					const char *src = brace_start;
-					while (src < p && dest < end)
-					{
-						*dest++ = *src++;
-					}
-				}
-			}
-			else
-			{
-				const char *src = brace_start;
-				while (*src && src <= p && dest < end)
-				{
-					*dest++ = *src++;
-				}
-				if (*p)
-				{
-					p++;
-				}
-			}
-		}
-		else
-		{
-			*dest++ = *p++;
-		}
-	}
-	*dest = '\0';
+	SV_LocalizeFormat(format, args, num_args, out, out_size);
 }
 
 static void
@@ -2531,6 +2449,9 @@ CL_ParseServerMessage(void)
 		Com_Printf("------------------\n");
 	}
 
+	/* optech2: the commands read so far in this packet, for the error below */
+	int recent_cmds[8], recent_reads[8], recent_count = 0;
+
 	/* parse the message */
 	while (1)
 	{
@@ -2554,13 +2475,43 @@ CL_ParseServerMessage(void)
 
 		CL_ShowNetCmd(cmd);
 
+		recent_cmds[recent_count % 8] = cmd;
+		recent_reads[recent_count % 8] = net_message.readcount - 1;
+		recent_count++;
+
 		/* other commands */
 		switch (cmd)
 		{
 			default:
+			{
+				/* optech2: name what came before: the message read wrongly is
+				   usually the one before the illegible byte */
+				int recent, first = (recent_count > 8) ? recent_count - 8 : 0;
+
+				Com_Printf("Packet of %d bytes; commands before the bad one:\n",
+					net_message.cursize);
+
+				for (recent = first; recent < recent_count - 1; recent++)
+				{
+					int known = recent_cmds[recent % 8];
+
+					Com_Printf("  at %d: %s (%d)\n", recent_reads[recent % 8],
+						(known >= 0 && known < (int)(sizeof(svc_strings) / sizeof(svc_strings[0]))) ? svc_strings[known] : "?", known);
+				}
+
+				/* the whole packet, for decoding by hand */
+				for (recent = 0; recent < net_message.cursize; recent++)
+				{
+					Com_Printf("%02x%s", net_message.data[recent],
+						((recent % 32) == 31) ? "\n" : " ");
+				}
+
+				Com_Printf("\n");
+
 				Com_Error(ERR_DROP, "%s: Illegible server message 0x%02x\n",
 					__func__, cmd);
 				return;
+			}
 
 			case svc_nop:
 				break;

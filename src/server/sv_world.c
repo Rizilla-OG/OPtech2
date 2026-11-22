@@ -25,6 +25,7 @@
  */
 
 #include "header/server.h"
+#include "header/game_rerelease.h" /* optech2: RR_ contents and svflags */
 
 /* optech2: deeper area tree (was depth 4 = 16 leaves for any map size). With
    thousands of entities the few big leaves held long lists that every
@@ -56,6 +57,8 @@ static int area_count, area_maxcount;
 static int area_type;
 
 static int SV_HullForEntity(edict_t *ent);
+
+void (*SV_WorldSyncEdict)(edict_t *ent); /* optech2 */
 
 /* ClearLink is used for new headnodes */
 static void
@@ -433,6 +436,11 @@ SV_AreaEdicts_r(areanode_t *node)
 		next = l->next;
 		check = (EDICT_FROM_AREA(l));
 
+		if (SV_WorldSyncEdict)
+		{
+			SV_WorldSyncEdict(check); /* optech2 */
+		}
+
 		if (check->solid == SOLID_NOT)
 		{
 			continue; /* deactivated */
@@ -621,6 +629,23 @@ SV_ClipMoveToEntities(moveclip_t *clip)
 			continue;
 		}
 
+		/* optech2: re-release games: players and projectiles only block
+		   traces that ask for them */
+		if (sv_rerelease_game)
+		{
+			if (!(clip->contentmask & RR_CONTENTS_PROJECTILE) &&
+				(touch->svflags & RR_SVF_PROJECTILE))
+			{
+				continue;
+			}
+
+			if (!(clip->contentmask & RR_CONTENTS_PLAYER) &&
+				(touch->svflags & RR_SVF_PLAYER))
+			{
+				continue;
+			}
+		}
+
 		/* might intersect, so do an exact clip */
 		headnode = SV_HullForEntity(touch);
 		angles = touch->s.angles;
@@ -733,3 +758,51 @@ SV_Trace(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t 
 	return clip.trace;
 }
 
+/*
+ * optech2: like SV_Trace, but against one entity only; a SOLID_TRIGGER
+ * with an inline model clips against that model (re-release gi.clip)
+ */
+trace_t
+SV_ClipToEntity(const vec3_t start, const vec3_t mins, const vec3_t maxs,
+	const vec3_t end, edict_t *ent, int contentmask)
+{
+	trace_t trace;
+	int headnode;
+	const float *angles;
+
+	if (!mins)
+	{
+		mins = vec3_origin;
+	}
+
+	if (!maxs)
+	{
+		maxs = vec3_origin;
+	}
+
+	if (!ent || (ent == ge->edicts))
+	{
+		trace = CM_BoxTrace(start, end, mins, maxs, 0, contentmask);
+		trace.ent = ge->edicts;
+		return trace;
+	}
+
+	if ((ent->solid == SOLID_TRIGGER) && (ent->s.modelindex > 0) &&
+		(ent->s.modelindex < MAX_MODELS) && sv.models[ent->s.modelindex] &&
+		(sv.configstrings[CS_MODELS + ent->s.modelindex][0] == '*'))
+	{
+		headnode = sv.models[ent->s.modelindex]->headnode;
+		angles = ent->s.angles;
+	}
+	else
+	{
+		headnode = SV_HullForEntity(ent);
+		/* boxes don't rotate */
+		angles = (ent->solid == SOLID_BSP) ? ent->s.angles : vec3_origin;
+	}
+
+	trace = CM_TransformedBoxTrace(start, end, mins, maxs, headnode,
+		contentmask, ent->s.origin, angles);
+	trace.ent = ent;
+	return trace;
+}

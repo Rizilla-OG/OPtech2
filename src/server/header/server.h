@@ -328,6 +328,24 @@ int SV_PointContents(const vec3_t p);
 trace_t SV_Trace(const vec3_t start, const vec3_t mins, const vec3_t maxs,
 		const vec3_t end, const edict_t *passedict, int contentmask);
 
+/* optech2: like SV_Trace, against one entity only (SOLID_TRIGGER by its own model too) */
+trace_t SV_ClipToEntity(const vec3_t start, const vec3_t mins, const vec3_t maxs,
+	const vec3_t end, edict_t *ent, int contentmask);
+
+/* optech2: when set, called for each entity a world query looks at, first
+   (the re-release game bridge refreshes it from the game's edict) */
+extern void (*SV_WorldSyncEdict)(edict_t *ent);
+
+/* optech2: sv_game.c, also for sv_game_rr.c */
+qboolean SV_InPVS(const vec3_t p1, const vec3_t p2);
+qboolean SV_InPHS(const vec3_t p1, const vec3_t p2);
+
+/* optech2: sv_game_rr.c, a re-release game library (game API 2023) */
+extern qboolean sv_rerelease_game;
+void *SV_RR_GameImport(void);
+game_export_t *SV_RR_Connect(void *game_export);
+void SV_RR_PrepFrame(void);
+
 /* loadtime optimizations */
 
 #define OPTIMIZE_MSGUTIL 1

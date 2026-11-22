@@ -416,7 +416,7 @@ Sys_GetGameProc(const char *sym)
 }
 
 void *
-Sys_GetGameAPI(void *parms)
+Sys_GetGameAPI(void *parms, void *rerelease_parms, qboolean *rerelease)
 {
 	void *(*GetGameAPI)(const void *);
 	char name[MAX_OSPATH];
@@ -428,6 +428,8 @@ Sys_GetGameAPI(void *parms)
 		Com_Error(ERR_FATAL, "%s without Sys_UnloadingGame", __func__);
 		return NULL;
 	}
+
+	*rerelease = false;
 
 	/* now run through the search paths */
 	path = NULL;
@@ -462,6 +464,18 @@ Sys_GetGameAPI(void *parms)
 			Com_DPrintf("Loading library: %s\n", name);
 			break;
 		}
+
+		/* optech2: a re-release game library (game API 2023) */
+		Com_sprintf(name, sizeof(name), "%s/%s", path, "game_x64.dll");
+		MultiByteToWideChar(CP_UTF8, 0, name, -1, wname, MAX_OSPATH);
+		game_library = LoadLibraryW(wname);
+
+		if (game_library)
+		{
+			Com_DPrintf("Loading library: %s\n", name);
+			*rerelease = true;
+			break;
+		}
 	}
 
 	GetGameAPI = (void *)GetProcAddress(game_library, "GetGameAPI");
@@ -472,7 +486,7 @@ Sys_GetGameAPI(void *parms)
 		return NULL;
 	}
 
-	return GetGameAPI(parms);
+	return GetGameAPI(*rerelease ? rerelease_parms : parms);
 }
 
 /* ======================================================================= */

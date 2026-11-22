@@ -399,8 +399,8 @@ PF_WriteAngle(float f)
 /*
  * Also checks portalareas so that doors block sight
  */
-static qboolean
-PF_inPVS(vec3_t p1, vec3_t p2)
+qboolean
+SV_InPVS(const vec3_t p1, const vec3_t p2) /* optech2: shared with sv_game_rr.c */
 {
 	int leafnum;
 	int cluster;
@@ -437,8 +437,8 @@ PF_inPVS(vec3_t p1, vec3_t p2)
 /*
  * Also checks portalareas so that doors block sound
  */
-static qboolean
-PF_inPHS(vec3_t p1, vec3_t p2)
+qboolean
+SV_InPHS(const vec3_t p1, const vec3_t p2) /* optech2: shared with sv_game_rr.c */
 {
 	int leafnum;
 	int cluster;
@@ -470,6 +470,18 @@ PF_inPHS(vec3_t p1, vec3_t p2)
 	}
 
 	return true;
+}
+
+static qboolean
+PF_inPVS(vec3_t p1, vec3_t p2)
+{
+	return SV_InPVS(p1, p2);
+}
+
+static qboolean
+PF_inPHS(vec3_t p1, vec3_t p2)
+{
+	return SV_InPHS(p1, p2);
 }
 
 static void
@@ -712,7 +724,19 @@ SV_InitGameProgs(void)
 	import.LocalizationUIMessage = SV_LocalizationUIMessage;
 	import.TagRealloc = Z_TagRealloc;
 
-	ge = (game_export_t *)Sys_GetGameAPI(&import);
+	{
+		qboolean rerelease;
+		void *api;
+
+		/* optech2: a folder may have a re-release game library (game API 2023) instead */
+		api = Sys_GetGameAPI(&import, SV_RR_GameImport(), &rerelease);
+		ge = rerelease ? SV_RR_Connect(api) : (game_export_t *)api;
+
+		if (!ge && rerelease)
+		{
+			Sys_UnloadGame();
+		}
+	}
 
 	if (!ge)
 	{

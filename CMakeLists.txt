@@ -637,6 +637,7 @@ set(Client-Source
 	${SERVER_SRC_DIR}/sv_conless.c
 	${SERVER_SRC_DIR}/sv_entities.c
 	${SERVER_SRC_DIR}/sv_game.c
+	${SERVER_SRC_DIR}/sv_game_rr.c
 	${SERVER_SRC_DIR}/sv_init.c
 	${SERVER_SRC_DIR}/sv_main.c
 	${SERVER_SRC_DIR}/sv_save.c
@@ -691,6 +692,7 @@ set(Client-Header
 	${COMMON_SRC_DIR}/unzip/miniz/miniz_tinfl.h
 	${COMMON_SRC_DIR}/unzip/miniz/minizconf.h
 	${SERVER_SRC_DIR}/header/server.h
+	${SERVER_SRC_DIR}/header/game_rerelease.h
 	)
 
 set(Server-Source
@@ -758,6 +760,7 @@ set(Server-Source
 	${SERVER_SRC_DIR}/sv_conless.c
 	${SERVER_SRC_DIR}/sv_entities.c
 	${SERVER_SRC_DIR}/sv_game.c
+	${SERVER_SRC_DIR}/sv_game_rr.c
 	${SERVER_SRC_DIR}/sv_init.c
 	${SERVER_SRC_DIR}/sv_main.c
 	${SERVER_SRC_DIR}/sv_save.c
@@ -783,6 +786,7 @@ set(Server-Header
 	${COMMON_SRC_DIR}/unzip/miniz/miniz_tinfl.h
 	${COMMON_SRC_DIR}/unzip/miniz/minizconf.h
 	${SERVER_SRC_DIR}/header/server.h
+	${SERVER_SRC_DIR}/header/game_rerelease.h
 	)
 
 set(Pakextract-Source

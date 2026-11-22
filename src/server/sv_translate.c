@@ -726,3 +726,92 @@ SV_LocalizationMessage(const char *message, const char **sound)
 
 	return message;
 }
+
+/*
+ * optech2: fills a localized format ("{}" = next argument, "{N}" = argument
+ * N, as the re-release writes them) into out. Shared by the client's svc_locprint
+ * and client game Localize, and the re-release game bridge.
+ */
+void
+SV_LocalizeFormat(const char *format, const char **args, int num_args, char *out, size_t out_size)
+{
+	int seq_arg = 0;
+	const char *p, *end;
+	char *dest;
+
+	if (!out_size)
+	{
+		return;
+	}
+
+	p = format;
+	dest = out;
+	end = out + out_size - 1;
+
+	while (*p && dest < end)
+	{
+		if (*p == '{')
+		{
+			const char *brace_start = p;
+			p++;
+			if (*p == '}')
+			{
+				p++;
+				if (seq_arg < num_args)
+				{
+					const char *arg = args[seq_arg++];
+					while (*arg && dest < end)
+					{
+						*dest++ = *arg++;
+					}
+				}
+			}
+			else if (*p >= '0' && *p <= '9')
+			{
+				int index = 0;
+				while (*p >= '0' && *p <= '9')
+				{
+					index = index * 10 + (*p - '0');
+					p++;
+				}
+				if (*p == '}')
+				{
+					p++;
+					if (index >= 0 && index < num_args)
+					{
+						const char *arg = args[index];
+						while (*arg && dest < end)
+						{
+							*dest++ = *arg++;
+						}
+					}
+				}
+				else
+				{
+					const char *src = brace_start;
+					while (src < p && dest < end)
+					{
+						*dest++ = *src++;
+					}
+				}
+			}
+			else
+			{
+				const char *src = brace_start;
+				while (*src && src <= p && dest < end)
+				{
+					*dest++ = *src++;
+				}
+				if (*p)
+				{
+					p++;
+				}
+			}
+		}
+		else
+		{
+			*dest++ = *p++;
+		}
+	}
+	*dest = '\0';
+}

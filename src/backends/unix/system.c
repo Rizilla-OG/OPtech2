@@ -432,7 +432,7 @@ Sys_GetGameProc(const char *sym)
 }
 
 void *
-Sys_GetGameAPI(void *parms)
+Sys_GetGameAPI(void *parms, void *rerelease_parms, qboolean *rerelease)
 {
 	typedef void *(*fnAPI)(const void *);
 	fnAPI GetGameAPI;
@@ -441,9 +441,13 @@ Sys_GetGameAPI(void *parms)
 	const char *path, *str_p;
 #ifdef __APPLE__
 	const char *gamename = "game.dylib";
+	const char *rerelease_gamename = "game_x64.dylib"; /* optech2 */
 #else
 	const char *gamename = "game.so";
+	const char *rerelease_gamename = "game_x64.so"; /* optech2 */
 #endif
+
+	*rerelease = false;
 
 	if (game_library)
 	{
@@ -474,7 +478,16 @@ Sys_GetGameAPI(void *parms)
 
 		if (fp == NULL)
 		{
-			continue;
+			/* optech2: a re-release game library (game API 2023) in this folder */
+			snprintf(name, MAX_OSPATH, "%s/%s", path, rerelease_gamename);
+			fp = fopen(name, "rb");
+
+			if (fp == NULL)
+			{
+				continue;
+			}
+
+			*rerelease = true;
 		}
 
 		fclose(fp);
@@ -520,7 +533,7 @@ Sys_GetGameAPI(void *parms)
 		return NULL;
 	}
 
-	return GetGameAPI(parms);
+	return GetGameAPI(*rerelease ? rerelease_parms : parms);
 }
 
 /* ================================================================ */

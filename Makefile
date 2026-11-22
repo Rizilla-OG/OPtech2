@@ -1466,6 +1466,7 @@ CLIENT_OBJS_ := \
 	src/server/sv_conless.o \
 	src/server/sv_entities.o \
 	src/server/sv_game.o \
+	src/server/sv_game_rr.o \
 	src/server/sv_init.o \
 	src/server/sv_main.o \
 	src/server/sv_save.o \
@@ -1806,6 +1807,7 @@ SERVER_OBJS_ := \
 	src/server/sv_conless.o \
 	src/server/sv_entities.o \
 	src/server/sv_game.o \
+	src/server/sv_game_rr.o \
 	src/server/sv_init.o \
 	src/server/sv_main.o \
 	src/server/sv_save.o \
