@@ -13,7 +13,8 @@ On the dedicated server (no window):
 
 In the game (no window), with the player on the north floor (god mode):
   - a Berserker (melee only, leaps up to 192) on the south floor walks to
-    the leap, leaps the pit (g_monster_nav 2 logs it) and hits the player.
+    the leap, leaps the pit (g_monster_nav 2 logs it) and hits the player;
+    one on the north floor leaps back to the player moved to the south one.
     Stock (g_monster_nav 0) is shown for comparison: it stays on its side.
 Positions are sampled every second (listentities).
 
@@ -40,17 +41,20 @@ OUTPUT_DIR = REPO_DIR / "build" / "leap-check"
 DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
 MONSTER = "monster_berserk"
 SOUTH_SPOT = "256 -320 24 0 90 0"   # on the south floor, facing the pit and the player beyond it
+NORTH_SPOT = "256 320 24 0 270 0"   # on the north floor (the player is moved south for this one)
+PLAYER_SOUTH = "0 -320 25"
 SPAWN_MS, END_MS = 3500, 23500
 UNSET = 1e30
 
 
 def nav_file():
-    """NAV3 version 6: a node on each side of the pit, one long jump (link
-    type 1) from south to north with its traversal's start and end at the
-    pit's edges."""
+    """NAV3 version 6: a node on each side of the pit and a long jump (link
+    type 1) each way between them, with their traversals' start and end at
+    the pit's edges (the re-release's files list a gap's leaps both ways)."""
     nodes = [((0.0, -100.0, 1.0), [(1, 1, 0, 0)]),   # south floor: to node 1, long jump, traversal 0
-             ((0.0, 100.0, 1.0), [])]                # north floor
-    traversals = [((UNSET, UNSET, UNSET), (0.0, -60.0, 1.0), (0.0, 60.0, 1.0), (0.0, 0.0, 0.0))]
+             ((0.0, 100.0, 1.0), [(0, 1, 0, 1)])]    # north floor: to node 0, long jump, traversal 1
+    traversals = [((UNSET, UNSET, UNSET), (0.0, -60.0, 1.0), (0.0, 60.0, 1.0), (0.0, 0.0, 0.0)),
+                  ((UNSET, UNSET, UNSET), (0.0, 60.0, 1.0), (0.0, -60.0, 1.0), (0.0, 0.0, 0.0))]
     links = [link for _, node_links in nodes for link in node_links]
     data = struct.pack("<4sIIIIf", b"NAV3", 6, len(nodes), len(links), len(traversals), 0.8)
     first = 0
@@ -88,9 +92,11 @@ def run_server(commands, with_nav, log_name):
     return log
 
 
-def run_game(name, nav):
-    lines = ["set g_damagelog 1", f"set g_monster_nav {nav}", "map optech2_leap", 'delay 3000 "god"',
-             f'delay {SPAWN_MS} "cmd spawnentity {MONSTER} {SOUTH_SPOT}"']
+def run_game(name, nav, spot=SOUTH_SPOT, player_spot=None):
+    lines = ["set g_damagelog 1", f"set g_monster_nav {nav}", "map optech2_leap", 'delay 3000 "god"']
+    if player_spot:
+        lines.append(f'delay 3200 "teleport {player_spot}"')
+    lines.append(f'delay {SPAWN_MS} "cmd spawnentity {MONSTER} {spot}"')
     lines += [f'delay {ms} "cmd listentities monsters"' for ms in range(SPAWN_MS + 1000, END_MS, 1000)]
     lines += [f"delay {END_MS} quit"]
     with tempfile.TemporaryDirectory(prefix="opentech2-leap-") as home:
@@ -126,6 +132,11 @@ def on_north_floor(spot):
     return y > 60 and 10 < z < 40
 
 
+def on_south_floor(spot):
+    x, y, z = spot
+    return y < -60 and 10 < z < 40
+
+
 def main():
     if not MAP_FILE.exists():
         sys.exit(f"{MAP_FILE} missing: run python3 tests/maps/make_leap_map.py")
@@ -143,7 +154,7 @@ def main():
 
     log = run_server(across, True, "paths")
     leaps = re.search(leap_count, log)
-    report(bool(leaps) and int(leaps.group(1)) == 1, f"with the navigation file the mesh has its leap: {leaps.group(1) if leaps else '?'}")
+    report(bool(leaps) and int(leaps.group(1)) == 2, f"with the navigation file the mesh has its two leaps: {leaps.group(1) if leaps else '?'}")
     found = paths(log)
     if found:
         status, corners = found[0]
@@ -168,12 +179,15 @@ def main():
            (f" at ({leapt.group(1)},{leapt.group(2)},{leapt.group(3)})" if leapt else "") + f": {route_text(route)}")
     report(bool(hits), f"and hit the player ({len(hits)} hits" +
            (f", the first {hits[0] - SPAWN_MS / 1000:.1f} s after it spawned)" if hits else ")"))
+    hits, route, back_log = run_game("back", 2, NORTH_SPOT, PLAYER_SOUTH)
+    report(bool(re.search(rf"{MONSTER} leaps at", back_log)) and any(on_south_floor(spot) for spot in route) and bool(hits),
+           f"and back: from the north floor it leapt to the player on the south one ({len(hits)} hits): {route_text(route)}")
     hits, route, stock_log = run_game("stock", 0)
     across_pit = any(on_north_floor(spot) for spot in route)
     print(f"info  stock chase (g_monster_nav 0): {'got across' if across_pit else 'stayed on its side'}, {len(hits)} hits; "
           f"route {route_text(route)}")
 
-    errors = [line for line in (log + bare_log + nav_log + stock_log).splitlines()
+    errors = [line for line in (log + bare_log + nav_log + back_log + stock_log).splitlines()
               if "ERROR" in line or "crashed" in line or "nav: " in line or "isn't a navigation file" in line]
     report(not errors, "no errors or crashes" + (f" ({errors[0].strip()})" if errors else ""))
     passed = all(results)
