@@ -604,6 +604,15 @@ CL_ParseDelta(const entity_xstate_t *from, entity_xstate_t *to, int number, uint
 		to->solid = MSG_ReadShort(&net_message);
 	}
 
+	/* optech2: loop sound volume and attenuation */
+	if (bits & U_LOOPSOUND)
+	{
+		to->loop_volume = MSG_ReadByte(&net_message) / 255.0f;
+		to->loop_attenuation = MSG_ReadByte(&net_message) / 50.0f - 1;
+		Com_DPrintf("%s: entity %d loop sound volume %.2f attenuation %.2f\n", __func__, to->number,
+			to->loop_volume, to->loop_attenuation);
+	}
+
 	/* Revalidate model indexes limits */
 	if (bits & U_MODEL)
 	{

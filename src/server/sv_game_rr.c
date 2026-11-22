@@ -1874,6 +1874,23 @@ SV_RR_VisibleTo(const edict_t *shadow, const edict_t *client_shadow)
 	return rr_ge->Entity_IsVisibleToPlayer(ent, RR_GameEdictOf(client_shadow));
 }
 
+/* optech2: a shadow's looping sound volume and attenuation, from the
+   game's entity; left alone for other entities */
+void
+SV_RR_LoopSound(const edict_t *shadow, float *volume, float *attenuation)
+{
+	const rr_edict_t *ent;
+
+	if (!rr_ge || !rr_shadows || shadow < rr_shadows || shadow >= rr_shadows + rr_ge->max_edicts)
+	{
+		return;
+	}
+
+	ent = RR_GameEdictOf(shadow);
+	*volume = ent->s.loop_volume;
+	*attenuation = ent->s.loop_attenuation;
+}
+
 /* optech2: the client slot a connecting player should take, as the game
    picks it (coop: the slot of the player with that name, so they get their
    inventory back); -1 for the engine's own pick */

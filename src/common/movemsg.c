@@ -276,6 +276,13 @@ DeltaEntityBits(const entity_xstate_t *from,
 		bits |= U_ALPHA;
 	}
 
+	/* optech2: our protocol only */
+	if ((protocol == PROTOCOL_VERSION) &&
+		((to->loop_volume != from->loop_volume) || (to->loop_attenuation != from->loop_attenuation)))
+	{
+		bits |= U_LOOPSOUND;
+	}
+
 	if (to->frame != from->frame)
 	{
 		if (to->frame < 256)
@@ -651,6 +658,11 @@ MSG_DeltaEntity_Size(const entity_xstate_t *from, const entity_xstate_t *to,
 	}
 
 	if (bits & U_OLDFRAME)
+	{
+		sz += 2;
+	}
+
+	if (bits & U_LOOPSOUND)
 	{
 		sz += 2;
 	}
@@ -1485,6 +1497,13 @@ MSG_WriteDeltaEntity(const entity_xstate_t *from,
 	if ((bits & U_SOLID) && (protocol != PROTOCOL_RR22_VERSION))
 	{
 		MSG_WriteShort(msg, to->solid);
+	}
+
+	/* optech2: volume 0-1 in 255ths, attenuation -1 to 4 in 50ths */
+	if (bits & U_LOOPSOUND)
+	{
+		MSG_WriteByte(msg, (int)(Q_clamp(to->loop_volume, 0, 1) * 255.0f + 0.5f));
+		MSG_WriteByte(msg, (int)((Q_clamp(to->loop_attenuation, -1, 4) + 1) * 50.0f + 0.5f));
 	}
 }
 

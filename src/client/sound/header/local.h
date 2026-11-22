@@ -299,6 +299,25 @@ void SDL_Spatialize(channel_t *ch);
 #define     SOUND_FULLVOLUME 1.0
 #define     SOUND_LOOPATTENUATE 0.003
 
+/* optech2: a looping sound's volume (0 = full) and distance falloff from
+   its entity (re-release games: target_speaker volume, -1 = no falloff) */
+static inline float
+S_LoopVolume(const entity_xstate_t *ent)
+{
+	return (ent->loop_volume > 0) ? ent->loop_volume : 1.0f;
+}
+
+static inline float
+S_LoopDistMult(const entity_xstate_t *ent)
+{
+	if (ent->loop_attenuation < 0)
+	{
+		return 0;
+	}
+
+	return (ent->loop_attenuation > 0) ? ent->loop_attenuation * 0.001f : SOUND_LOOPATTENUATE;
+}
+
 /* number of buffers in flight (needed for ogg) */
 extern int active_buffers;
 

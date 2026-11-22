@@ -158,7 +158,8 @@ void
 SV_GetEntityState(const edict_t *svent, entity_xstate_t *state)
 {
 #ifdef DEBUG
-	if (sizeof(entity_xstate_t) != sizeof(entity_state_t) + sizeof(entity_rrstate_t))
+	/* optech2: two loop sound floats follow */
+	if (sizeof(entity_xstate_t) != sizeof(entity_state_t) + sizeof(entity_rrstate_t) + 2 * sizeof(float))
 	{
 		Sys_Error("%s: incorrect entity struct sizes\n", __func__);
 	}
@@ -166,6 +167,11 @@ SV_GetEntityState(const edict_t *svent, entity_xstate_t *state)
 	memcpy(state, &svent->s, sizeof(entity_state_t));
 	memcpy((byte *)state + sizeof(entity_state_t),
 		&svent->rrs, sizeof(entity_rrstate_t));
+
+	/* optech2: a re-release game's loop sound volume and attenuation */
+	state->loop_volume = 0;
+	state->loop_attenuation = 0;
+	SV_RR_LoopSound(svent, &state->loop_volume, &state->loop_attenuation);
 }
 
 /*

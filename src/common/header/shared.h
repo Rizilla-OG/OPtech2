@@ -1492,6 +1492,11 @@ typedef struct entity_xstate_s
 	unsigned int rr_effects;
 	unsigned int rr_mesh;
 	float rr_alpha; /* model alpha */
+
+	/* optech2: the looping sound's volume (0 = full) and attenuation
+	   (0 = the usual, -1 = none); engine side only, from re-release games */
+	float loop_volume;
+	float loop_attenuation;
 } entity_xstate_t;
 
 typedef struct

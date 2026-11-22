@@ -918,6 +918,8 @@ AL_AddLoopSounds(void)
 		{
 			ch->autoframe = s_framecount;
 			ch->end = paintedtime + sc->length;
+			ch->dist_mult = S_LoopDistMult(ent); /* optech2 */
+			ch->oal_vol = s_volume->value * S_LoopVolume(ent);
 			continue;
 		}
 
@@ -934,13 +936,13 @@ AL_AddLoopSounds(void)
 		ch->sfx = sfx;
 		ch->entnum = ent->number;
 		ch->master_vol = 1;
-		ch->dist_mult = SOUND_LOOPATTENUATE;
+		ch->dist_mult = S_LoopDistMult(ent); /* optech2: the entity's own falloff */
 		ch->end = paintedtime + sc->length;
 
 		/* it seems like looped sounds are always played at full volume
 		 * see SDL_AddLoopSounds() which calls SDL_SpatializeOrigin() with volume 255.0f
 		 * so set it to full volume (1.0 * s_volume). */
-		ch->oal_vol = s_volume->value;
+		ch->oal_vol = s_volume->value * S_LoopVolume(ent); /* optech2: and volume */
 
 		AL_PlayChannel(ch);
 	}

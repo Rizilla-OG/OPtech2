@@ -49,7 +49,6 @@
 /* Defines */
 #define SDL_PAINTBUFFER_SIZE 2048
 #define SDL_FULLVOLUME 80
-#define SDL_LOOPATTENUATE 0.003
 
 /* Globals */
 static int *snd_p;
@@ -732,7 +731,8 @@ SDL_AddLoopSounds(void)
 		}
 
 		/* find the total contribution of all sounds of this type */
-		SDL_SpatializeOrigin(org, 255.0f, SDL_LOOPATTENUATE, &left_total, &right_total);
+		/* optech2: each entity's own loop volume and falloff */
+		SDL_SpatializeOrigin(org, 255.0f * S_LoopVolume(ent), S_LoopDistMult(ent), &left_total, &right_total);
 
 		for (j = i + 1; j < cl.frame.num_entities; j++)
 		{
@@ -750,7 +750,7 @@ SDL_AddLoopSounds(void)
 				VectorCopy(ent->origin, org);
 			}
 
-			SDL_SpatializeOrigin(org, 255.0f, SDL_LOOPATTENUATE, &left, &right);
+			SDL_SpatializeOrigin(org, 255.0f * S_LoopVolume(ent), S_LoopDistMult(ent), &left, &right);
 
 			left_total += left;
 			right_total += right;

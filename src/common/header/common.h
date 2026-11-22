@@ -234,7 +234,7 @@ void Info_Print(const char *s);
 /* ReRelease network protocol */
 #define PROTOCOL_RR23_VERSION 2023
 /* Quake 2 Customized Network Release */
-#define PROTOCOL_VERSION 2026 /* optech2: was 2024; MAX_IMAGES 2048 moved the configstrings (2025), the wheel configstrings (2026) */
+#define PROTOCOL_VERSION 2027 /* optech2: was 2024; MAX_IMAGES 2048 moved the configstrings (2025), the wheel configstrings (2026), loop sound volume (2027) */
 
 /* Quake 2 originaly uses 255 as player model */
 #define QII97_PLAYER_MODEL 255
@@ -425,6 +425,7 @@ enum clc_ops_e
 #define U_INSTANCE  (1LL << 33)
 #define U_OWNER  (1LL << 34)
 #define U_OLDFRAME (1LL << 35)
+#define U_LOOPSOUND (1LL << 36) /* optech2: loop sound volume and attenuation, a byte each */
 
 /* CMD - Command text buffering and command execution */
 
