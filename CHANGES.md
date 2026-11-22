@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- The re-release bridge builds with MSVC: the caller of a message import is found with `_ReturnAddress()` there (`__builtin_return_address` is GCC/Clang only).
 - Beams get no color shell (q2arpg's elemental tracers come with one; drawn, it covered the view in the element's color), and a beam starting at our own eye (a re-release game's hitscan tracer starts where the shot does) comes out of the view weapon's muzzle (`hand` side).
 - A shell on the view weapon keeps the classic size (growing it from its center pushed it through the camera); Vulkan shells are one-sided again (two-sided showed the inside of the player's own).
 - RF_CUSTOM_LIGHT colors read as unsigned bytes (bright channels came out negative: a dark light).

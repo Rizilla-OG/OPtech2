@@ -47,6 +47,16 @@
 #endif
 #include <limits.h>
 
+/* optech2: where the game called a message-writing import from (logged for
+   unreadable messages); MSVC has its own intrinsic for it */
+#ifdef _MSC_VER
+#include <intrin.h>
+#pragma intrinsic(_ReturnAddress)
+#define RR_CALLER() _ReturnAddress()
+#else
+#define RR_CALLER() __builtin_return_address(0)
+#endif
+
 #include "header/server.h"
 #include "header/game_rerelease.h"
 
@@ -1138,49 +1148,49 @@ RR_StartWrite(const void *caller, int first_byte)
 static void
 RR_WriteChar(int c)
 {
-	RR_StartWrite(__builtin_return_address(0), c & 255);
+	RR_StartWrite(RR_CALLER(), c & 255);
 	MSG_WriteChar(&sv.multicast, c);
 }
 
 static void
 RR_WriteByte(int c)
 {
-	RR_StartWrite(__builtin_return_address(0), c & 255);
+	RR_StartWrite(RR_CALLER(), c & 255);
 	MSG_WriteByte(&sv.multicast, c);
 }
 
 static void
 RR_WriteShort(int c)
 {
-	RR_StartWrite(__builtin_return_address(0), c & 255);
+	RR_StartWrite(RR_CALLER(), c & 255);
 	MSG_WriteShort(&sv.multicast, c);
 }
 
 static void
 RR_WriteLong(int c)
 {
-	RR_StartWrite(__builtin_return_address(0), c & 255);
+	RR_StartWrite(RR_CALLER(), c & 255);
 	MSG_WriteLong(&sv.multicast, c);
 }
 
 static void
 RR_WriteFloat(float f)
 {
-	RR_StartWrite(__builtin_return_address(0), -1);
+	RR_StartWrite(RR_CALLER(), -1);
 	MSG_WriteFloat(&sv.multicast, f);
 }
 
 static void
 RR_WriteString(const char *s)
 {
-	RR_StartWrite(__builtin_return_address(0), s ? (byte)s[0] : 0);
+	RR_StartWrite(RR_CALLER(), s ? (byte)s[0] : 0);
 	MSG_WriteString(&sv.multicast, s);
 }
 
 static void
 RR_WritePosition(const float *pos)
 {
-	RR_StartWrite(__builtin_return_address(0), -1);
+	RR_StartWrite(RR_CALLER(), -1);
 
 	MSG_WritePos(&sv.multicast, pos, SV_GetRecomendedProtocol());
 }
@@ -1188,7 +1198,7 @@ RR_WritePosition(const float *pos)
 static void
 RR_WriteDir(const float *dir)
 {
-	RR_StartWrite(__builtin_return_address(0), -1);
+	RR_StartWrite(RR_CALLER(), -1);
 
 	MSG_WriteDir(&sv.multicast, dir);
 }
@@ -1196,7 +1206,7 @@ RR_WriteDir(const float *dir)
 static void
 RR_WriteAngle(float f)
 {
-	RR_StartWrite(__builtin_return_address(0), -1);
+	RR_StartWrite(RR_CALLER(), -1);
 
 	MSG_WriteAngle(&sv.multicast, f, SV_GetRecomendedProtocol());
 }
@@ -1204,7 +1214,7 @@ RR_WriteAngle(float f)
 static void
 RR_WriteEntity(const rr_edict_t *ent)
 {
-	RR_StartWrite(__builtin_return_address(0), -1);
+	RR_StartWrite(RR_CALLER(), -1);
 
 	MSG_WriteShort(&sv.multicast, ent ? RR_NumForEdict(ent) : 0);
 }
