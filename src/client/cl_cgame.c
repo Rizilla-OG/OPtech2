@@ -289,7 +289,10 @@ CG_GetClientPic(int32_t index)
 static const char *
 CG_GetClientDogtag(int32_t index)
 {
-	return "";
+	/* optech2: the re-release's player tags (tags/<name>.png, chosen in its
+	   lobby); everyone gets the default one */
+	(void)index;
+	return "default";
 }
 
 /* name of the first key bound to this command, or "" */
@@ -1202,6 +1205,62 @@ CL_CGame_CenterPrint(const char *text)
 	last_center_time = cls.realtime;
 
 	cgame->ParseCenterPrint(text, 0, replace);
+}
+
+/* optech2: the client game's notify lines (kill feed, pickups, chat):
+   true when the module draws them, so the console's own stay hidden */
+qboolean
+CL_CGame_HasNotify(void)
+{
+	return cgame && cgame->NotifyMessage;
+}
+
+/* a server print for the notify lines; the module wants one line at a time
+   without the newline */
+void
+CL_CGame_NotifyMessage(const char *text, qboolean is_chat)
+{
+	char line[1024];
+	const char *start = text;
+
+	if (!CL_CGame_HasNotify())
+	{
+		return;
+	}
+
+	while (*start)
+	{
+		const char *end = strchr(start, '\n');
+		size_t length = end ? (size_t)(end - start) : strlen(start);
+
+		if (length >= sizeof(line))
+		{
+			length = sizeof(line) - 1;
+		}
+
+		if (length)
+		{
+			memcpy(line, start, length);
+			line[length] = 0;
+			cgame->NotifyMessage(0, line, is_chat);
+		}
+
+		if (!end)
+		{
+			break;
+		}
+
+		start = end + 1;
+	}
+}
+
+void
+CL_CGame_ClearNotify(void)
+{
+	if (cgame && cgame->ClearNotify)
+	{
+		cgame->ClearNotify(0);
+	}
 }
 
 /* a configstring changed (our numbering); the module gets its own */

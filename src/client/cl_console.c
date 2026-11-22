@@ -576,7 +576,8 @@ Con_DrawNotify(void)
 
 	for (i = con.current - NUM_CON_TIMES + 1; i <= con.current; i++)
 	{
-		if (i < 0)
+		/* optech2: a client game draws its own notify lines (kill feed) */
+		if (i < 0 || CL_CGame_HasNotify())
 		{
 			continue;
 		}

@@ -1725,9 +1725,59 @@ Classic_ClientDisconnect(edict_t *ent)
 	RR_PullAll();
 }
 
+/* optech2: chat. Re-release game libraries built for the re-release
+   engine (KEX_Q2_GAME, as id ships them) leave say and say_team to the
+   engine's lobby system and answer them with "invalid game command". No
+   teams here: say_team is said in brackets, as classic games do without
+   teams. */
+static void
+RR_Say(const edict_t *ent, qboolean team)
+{
+	char text[256];
+	const char *said;
+	int client_number = (int)NUM_FOR_EDICT(ent) - 1;
+	size_t length;
+
+	if ((client_number < 0) || (client_number >= maxclients->value) || (Cmd_Argc() < 2))
+	{
+		return;
+	}
+
+	said = Cmd_Args();
+
+	/* say "text" arrives with the quotes */
+	if (*said == '"')
+	{
+		said++;
+	}
+
+	Com_sprintf(text, sizeof(text), team ? "(%s): %s" : "%s: %s",
+		svs.clients[client_number].name, said);
+
+	length = strlen(text);
+
+	if (length && (text[length - 1] == '"'))
+	{
+		text[--length] = 0;
+	}
+
+	if (length > 150)
+	{
+		text[150] = 0;
+	}
+
+	SV_BroadcastPrintf(PRINT_CHAT, "%s\n", text);
+}
+
 static void
 Classic_ClientCommand(edict_t *ent)
 {
+	if (!Q_stricmp(Cmd_Argv(0), "say") || !Q_stricmp(Cmd_Argv(0), "say_team"))
+	{
+		RR_Say(ent, !Q_stricmp(Cmd_Argv(0), "say_team"));
+		return;
+	}
+
 	rr_ge->ClientCommand(RR_GameEdictOf(ent));
 	RR_PullAll();
 }

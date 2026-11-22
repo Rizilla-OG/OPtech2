@@ -1213,6 +1213,16 @@ R_FindPic(const char *name, findimage_t find_image)
 	else
 	{
 		image = find_image(name + 1, it_pic);
+
+		/* optech2: a full path without an extension (the re-release's
+		   "/tags/<name>" player tags); .pcx finds .png and .tga too */
+		if (!image && !COM_FileExtension(name + 1)[0])
+		{
+			char pathname[MAX_QPATH];
+
+			Com_sprintf(pathname, sizeof(pathname), "%s.pcx", name + 1);
+			image = find_image(pathname, it_pic);
+		}
 	}
 
 	return image;
