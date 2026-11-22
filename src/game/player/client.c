@@ -1256,6 +1256,12 @@ InitClientPersistant(edict_t *ent)
 	client->pers.weapon = item;
 	client->pers.lastweapon = item;
 
+	/* optech2: everyone has the compass outside deathmatch, as in the re-release */
+	if (!deathmatch->value && (item = FindItem("compass")) != NULL)
+	{
+		client->pers.inventory[ITEM_INDEX(item)] = 1;
+	}
+
 	if (ctf->value)
 	{
 		/* Provide Grapple for ctf only */

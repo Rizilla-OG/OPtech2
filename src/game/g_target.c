@@ -245,11 +245,17 @@ Target_Help_Think (edict_t *ent)
 }
 
 void
-Use_Target_Help(edict_t *ent, edict_t *other /* unused */, edict_t *activator /* unused */)
+Use_Target_Help(edict_t *ent, edict_t *other, edict_t *activator)
 {
 	if (!ent)
 	{
 		return;
+	}
+
+	/* optech2: re-release flag 2 makes it set the compass's point of interest */
+	if (ent->spawnflags & 2)
+	{
+		target_poi_use(ent, other, activator);
 	}
 
 	if (level.time > TARGET_HELP_THINK_DELAY)

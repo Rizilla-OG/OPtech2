@@ -1387,6 +1387,42 @@ Cmd_Wave_f(edict_t *ent)
 
 	gi.cprintf(ent, PRINT_HIGH, "%s\n", animname, lastframe, firstframe);
 
+	/* optech2: in coop, pointing pings the spot for everyone, as the
+	   re-release (svc_poi, key 8195 + the player's number, 5 s) */
+	if ((i == GESTURE_POINT) && coop->value && !CheckFlood(ent))
+	{
+		vec3_t forward, start, end;
+		trace_t tr;
+		int n;
+
+		AngleVectors(ent->client->v_angle, forward, NULL, NULL);
+		VectorCopy(ent->s.origin, start);
+		start[2] += ent->viewheight;
+		VectorMA(start, 2048, forward, end);
+		tr = gi.trace(start, NULL, NULL, end, ent, MASK_SHOT & ~CONTENTS_WINDOW);
+
+		for (n = 1; (tr.fraction < 1.0f) && (n <= game.maxclients); n++)
+		{
+			edict_t *player = &g_edicts[n];
+
+			if (!player->inuse || !player->client)
+			{
+				continue;
+			}
+
+			gi.WriteByte(svc_poi);
+			gi.WriteShort(8195 + (int)(ent - g_edicts) - 1);
+			gi.WriteShort(5000);
+			gi.WritePosition(tr.endpos);
+			gi.WriteShort(gi.imageindex("loc_ping"));
+			gi.WriteByte(208);
+			gi.WriteByte(0);
+			gi.unicast(player, false);
+			gi.sound(player, CHAN_AUTO, gi.soundindex("misc/help_marker.wav"), 1, ATTN_NONE, 0);
+			gi.cprintf(player, PRINT_HIGH, "%s pinged a location.\n", ent->client->pers.netname);
+		}
+	}
+
 	P_SetAnimGroup(ent, animname, firstframe, lastframe, 0);
 	ent->s.frame --;
 }

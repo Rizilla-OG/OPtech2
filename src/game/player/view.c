@@ -1588,6 +1588,9 @@ ClientEndServerFrame(edict_t *ent)
 	current_client->ps_rrstats[STAT_HIT_MARKER] = (short)((current_client->hit_marker_damage > 32767) ? 32767 : current_client->hit_marker_damage);
 	current_client->hit_marker_damage = 0;
 
+	/* optech2: the compass trail, a point at a time */
+	Compass_Update(ent, false);
+
 	/* check fog changes */
 	ForceFogTransition(ent, false);
 

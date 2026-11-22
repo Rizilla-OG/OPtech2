@@ -4572,13 +4572,238 @@ SP_func_eye(edict_t *self)
 }
 
 /*
- * QUAKED target_poi (1 0 0) (-4 -4 -4) (4 4 4)
+ * QUAKED target_poi (1 0 0) (-4 -4 -4) (4 4 4) NEAREST DUMMY DYNAMIC DISABLED
  *
- * optech2: re-release "point of interest" (the objective compass). Not
- * used yet, so removed instead of being reported as unknown.
+ * optech2: re-release point of interest, where the compass points
+ * (ported from the re-release's g_target.cpp). Targeting it makes it the
+ * level's current one. "count": the stage it belongs to (only takes effect
+ * at or after the level's current stage, and moves the stage on). "team":
+ * teamed POIs act as one: activating any picks the best one (lowest
+ * "style", and the nearest with NEAREST). DUMMY: a team member that can be
+ * activated but isn't a place itself; DYNAMIC: the path picks the nearest
+ * teamed POI each time; DISABLED: off until targeted. "image": the
+ * marker's picture (default "friend").
  */
+#define SPAWNFLAG_POI_NEAREST 1
+#define SPAWNFLAG_POI_DUMMY 2
+#define SPAWNFLAG_POI_DYNAMIC 4
+#define SPAWNFLAG_POI_DISABLED 8
+
+/* how far, along a path, a POI is; huge when there's no path */
+static float
+distance_to_poi(const vec3_t start, const vec3_t end)
+{
+	optech2_path_request_t request;
+	optech2_path_info_t info;
+	vec3_t delta;
+
+	if (gi_optech2 && gi_optech2->GetPathToGoal)
+	{
+		memset(&request, 0, sizeof(request));
+		VectorCopy(start, request.start);
+		VectorCopy(end, request.goal);
+		request.move_dist = 64;
+		request.path_flags = OPTECH2_PATH_ALL;
+		request.ignore_node_flags = 1;
+		request.min_height = request.max_height = 128;
+		request.radius = 1024;
+		memset(&info, 0, sizeof(info));
+
+		if (gi_optech2->GetPathToGoal(&request, &info))
+		{
+			return info.path_dist_sqr;
+		}
+
+		if (info.return_code != OPTECH2_PATH_NO_NAV_AVAILABLE)
+		{
+			return 1e30f;
+		}
+	}
+
+	VectorSubtract(end, start, delta);
+	return DotProduct(delta, delta);
+}
+
+void
+target_poi_use(edict_t *ent, edict_t *other /* unused */, edict_t *activator)
+{
+	if (!ent)
+	{
+		return;
+	}
+
+	/* we were disabled, so remove the disable check */
+	ent->spawnflags &= ~SPAWNFLAG_POI_DISABLED;
+
+	/* early stage check */
+	if (ent->count && (level.current_poi_stage > ent->count))
+	{
+		return;
+	}
+
+	/* teamed POIs work a bit differently */
+	if (ent->team && ent->teammaster)
+	{
+		edict_t *poi_master = ent->teammaster, *poi, *dummy_fallback = NULL;
+		float best_distance = 1e30f;
+		int best_style = 0x7fffffff;
+		qboolean nearest = (poi_master->spawnflags & SPAWNFLAG_POI_NEAREST) ? true : false;
+
+		ent = NULL;
+
+		for (poi = poi_master; poi; poi = poi->teamchain)
+		{
+			float dist;
+
+			if (poi->spawnflags & SPAWNFLAG_POI_DISABLED)
+			{
+				continue;
+			}
+
+			if (poi->spawnflags & SPAWNFLAG_POI_DUMMY)
+			{
+				dummy_fallback = poi;
+				continue;
+			}
+
+			if ((poi->count && (level.current_poi_stage > poi->count)) || (poi->style > best_style))
+			{
+				continue;
+			}
+
+			dist = (activator && nearest) ? distance_to_poi(activator->s.origin, poi->s.origin) : 0;
+
+			if (nearest && ent && (dist > best_distance))
+			{
+				continue;
+			}
+
+			if (poi->style < best_style)
+			{
+				if (nearest && (dist >= 1e30f))
+				{
+					continue;
+				}
+
+				best_style = poi->style;
+				best_distance = dist;
+				ent = poi;
+				continue;
+			}
+
+			if (nearest)
+			{
+				if (dist < best_distance)
+				{
+					best_distance = dist;
+					ent = poi;
+				}
+			}
+			else
+			{
+				ent = poi; /* order of appearance */
+			}
+		}
+
+		if (!ent)
+		{
+			if (dummy_fallback && (dummy_fallback->spawnflags & SPAWNFLAG_POI_DYNAMIC))
+			{
+				ent = dummy_fallback;
+			}
+			else
+			{
+				return;
+			}
+		}
+
+		if (ent->count && (level.current_poi_stage <= ent->count))
+		{
+			level.current_poi_stage = ent->count;
+		}
+	}
+	else if (ent->count)
+	{
+		if (level.current_poi_stage <= ent->count)
+		{
+			level.current_poi_stage = ent->count;
+		}
+		else
+		{
+			return; /* not part of our current stage */
+		}
+	}
+
+	/* a dummy POI isn't a place */
+	if (!strcmp(ent->classname, "target_poi") && (ent->spawnflags & SPAWNFLAG_POI_DUMMY) &&
+		!(ent->spawnflags & SPAWNFLAG_POI_DYNAMIC))
+	{
+		return;
+	}
+
+	level.valid_poi = true;
+	VectorCopy(ent->s.origin, level.current_poi);
+	level.current_poi_image = ent->noise_index;
+	level.current_dynamic_poi = NULL;
+
+	if (!strcmp(ent->classname, "target_poi") && (ent->spawnflags & SPAWNFLAG_POI_DYNAMIC))
+	{
+		edict_t *m;
+
+		/* the dummy stays, so the path picks from its team each time */
+		for (m = ent->teammaster; m; m = m->teamchain)
+		{
+			if (m->spawnflags & SPAWNFLAG_POI_DUMMY)
+			{
+				level.current_dynamic_poi = m;
+				break;
+			}
+		}
+
+		if (!level.current_dynamic_poi)
+		{
+			gi.dprintf("can't activate poi for %s; need DUMMY in chain\n", ent->classname);
+		}
+	}
+}
+
+static void
+target_poi_setup(edict_t *self)
+{
+	edict_t *m;
+
+	if (!self->team || !self->teammaster)
+	{
+		return;
+	}
+
+	/* copy dynamic/nearest over to all teammates */
+	if (self->spawnflags & (SPAWNFLAG_POI_NEAREST | SPAWNFLAG_POI_DYNAMIC))
+	{
+		for (m = self->teammaster; m; m = m->teamchain)
+		{
+			m->spawnflags |= self->spawnflags & (SPAWNFLAG_POI_NEAREST | SPAWNFLAG_POI_DYNAMIC);
+		}
+	}
+}
+
 void
 SP_target_poi(edict_t *self)
 {
-	G_FreeEdict(self);
+	if (!self)
+	{
+		return;
+	}
+
+	if (deathmatch->value)
+	{
+		G_FreeEdict(self);
+		return;
+	}
+
+	self->noise_index = gi.imageindex(st.image ? st.image : "friend");
+	self->use = target_poi_use;
+	self->svflags |= SVF_NOCLIENT;
+	self->think = target_poi_setup;
+	self->nextthink = level.time + FRAMETIME;
 }

@@ -54,6 +54,8 @@
 #define svc_inventory 5
 #define svc_stufftext 11
 #define svc_fog 27
+#define svc_poi 30 /* optech2: point of interest (objective, ping) */
+#define svc_help_path 31 /* optech2: one point of the compass trail */
 #define svc_achievement 33
 
 /* ================================================================== */
@@ -439,6 +441,13 @@ typedef struct
 	float intermission_fade_time; /* when the fade ends and the level changes */
 	vec3_t intermission_origin;
 	vec3_t intermission_angle;
+
+	/* optech2: re-release points of interest (target_poi, the compass) */
+	qboolean valid_poi;
+	vec3_t current_poi;
+	int current_poi_image;
+	int current_poi_stage;
+	edict_t *current_dynamic_poi;
 
 	edict_t *sight_client;			     /* changed once each frame for coop games */
 
@@ -942,6 +951,9 @@ void PrecacheItem(const gitem_t *it);
 void InitItems(void);
 qboolean ItemHasValidModel(const gitem_t *item);
 void SetItemNames(void);
+void Compass_Update(edict_t *ent, qboolean first); /* optech2 */
+void P_SendLevelPOI(edict_t *ent); /* optech2 */
+void target_poi_use(edict_t *ent, edict_t *other, edict_t *activator); /* optech2 */
 gitem_t *FindItem(const char *pickup_name);
 
 /* optech2: the engine's services (g_extension.c): paths for monsters; NULL
@@ -1646,6 +1658,14 @@ struct gclient_s
 	int ammo_index;
 
 	int hit_marker_damage; /* optech2: what this player's hits did since the last frame went out */
+
+	/* optech2: the compass trail being sent (re-release) */
+	vec3_t help_poi_location;
+	int help_poi_image;
+	qboolean help_draw_points;
+	int help_draw_index;
+	int help_draw_count;
+	float help_draw_time;
 	int buttons;
 	int oldbuttons;
 	int latched_buttons;

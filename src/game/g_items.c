@@ -778,25 +778,201 @@ Drop_Radar(edict_t *ent, const gitem_t *item)
 	ValidateSelectedItem(ent->client);
 }
 
-static void
-Use_Compass(edict_t *ent, const gitem_t *item)
-{
-	int ang;
+/*
+ * optech2: the re-release's compass (ported from its g_items.cpp): a trail
+ * of markers along the path to the level's point of interest, one every
+ * 0.2 s (svc_help_path), and the point itself on screen (svc_poi).
+ */
+#define MAX_TEMP_POI_POINTS 128
+#define POI_OBJECTIVE 8192 /* the re-release's key: MAX_EDICTS */
 
-	if (!ent || !item)
+static float compass_points[MAX_CLIENTS][MAX_TEMP_POI_POINTS + 1][3];
+
+void
+P_SendLevelPOI(edict_t *ent)
+{
+	if (!level.valid_poi || !ent || !ent->client)
 	{
 		return;
 	}
 
-	ang = (int)(ent->client->v_angle[1]);
+	gi.WriteByte(svc_poi);
+	gi.WriteShort(POI_OBJECTIVE);
+	gi.WriteShort(10000);
+	gi.WritePosition(ent->client->help_poi_location);
+	gi.WriteShort(ent->client->help_poi_image);
+	gi.WriteByte(208);
+	gi.WriteByte(0);
+	gi.unicast(ent, true);
+}
 
-	if (ang < 0)
+void
+Compass_Update(edict_t *ent, qboolean first)
+{
+	gclient_t *client;
+	float (*points)[3];
+	vec3_t delta, dir;
+	int number;
+
+	if (!ent || !ent->client)
 	{
-		ang += 360;
+		return;
 	}
 
-	gi.cprintf(ent, PRINT_HIGH, "Origin: %0.0f,%0.0f,%0.0f    Dir: %d\n",
-			ent->s.origin[0], ent->s.origin[1], ent->s.origin[2], ang);
+	client = ent->client;
+	number = (int)(ent - g_edicts) - 1;
+
+	if (number < 0 || number >= MAX_CLIENTS || !client->help_draw_points ||
+		(client->help_draw_time >= level.time))
+	{
+		return;
+	}
+
+	points = compass_points[number];
+
+	/* don't draw too many points */
+	VectorSubtract(points[client->help_draw_index], ent->s.origin, delta);
+
+	if ((VectorLength(delta) > 4096) || !gi.inPHS(ent->s.origin, points[client->help_draw_index]))
+	{
+		client->help_draw_points = false;
+		return;
+	}
+
+	if (client->help_draw_index == client->help_draw_count - 1)
+	{
+		VectorSubtract(client->help_poi_location, points[client->help_draw_index], dir);
+	}
+	else
+	{
+		VectorSubtract(points[client->help_draw_index + 1], points[client->help_draw_index], dir);
+	}
+
+	VectorNormalize(dir);
+
+	gi.WriteByte(svc_help_path);
+	gi.WriteByte(first ? 1 : 0);
+	gi.WritePosition(points[client->help_draw_index]);
+	gi.WriteDir(dir);
+	gi.unicast(ent, false);
+
+	P_SendLevelPOI(ent);
+	gi.sound(ent, CHAN_AUTO, gi.soundindex("misc/help_marker.wav"), 1, ATTN_NORM, 0);
+
+	if (client->help_draw_index == client->help_draw_count - 1)
+	{
+		client->help_draw_points = false;
+		return;
+	}
+
+	client->help_draw_index++;
+	client->help_draw_time = level.time + 0.2f;
+}
+
+static void
+Use_Compass(edict_t *ent, const gitem_t *item)
+{
+	optech2_path_request_t request;
+	optech2_path_info_t info;
+	float (*points)[3];
+	gclient_t *client;
+	vec3_t forward, delta;
+	int number, i;
+
+	if (!ent || !ent->client || !item)
+	{
+		return;
+	}
+
+	client = ent->client;
+
+	if (!level.valid_poi)
+	{
+		gi.cprintf(ent, PRINT_HIGH, "No current objective.\n");
+		return;
+	}
+
+	if (level.current_dynamic_poi && level.current_dynamic_poi->use)
+	{
+		level.current_dynamic_poi->use(level.current_dynamic_poi, ent, ent);
+	}
+
+	VectorCopy(level.current_poi, client->help_poi_location);
+	client->help_poi_image = level.current_poi_image;
+
+	number = (int)(ent - g_edicts) - 1;
+
+	if (number < 0 || number >= MAX_CLIENTS || !gi_optech2 || !gi_optech2->GetPathToGoal)
+	{
+		P_SendLevelPOI(ent);
+		return;
+	}
+
+	points = compass_points[number];
+	memset(&request, 0, sizeof(request));
+	VectorCopy(ent->s.origin, request.start);
+	VectorCopy(level.current_poi, request.goal);
+	request.move_dist = 64;
+	request.path_flags = OPTECH2_PATH_ALL;
+	request.ignore_node_flags = 1;
+	request.min_height = request.max_height = 128;
+	request.radius = 1024;
+	request.points = points + 1; /* 0 is for a point in front of the player */
+	request.point_count = MAX_TEMP_POI_POINTS;
+	memset(&info, 0, sizeof(info));
+
+	if (!gi_optech2->GetPathToGoal(&request, &info) || (info.point_count <= 0))
+	{
+		P_SendLevelPOI(ent);
+		gi.sound(ent, CHAN_AUTO, gi.soundindex("misc/help_marker.wav"), 1, ATTN_NORM, 0);
+		return;
+	}
+
+	client->help_draw_points = true;
+	client->help_draw_count = (info.point_count < MAX_TEMP_POI_POINTS) ? info.point_count : MAX_TEMP_POI_POINTS;
+	client->help_draw_index = 1;
+
+	/* skip points too close to the player, so they don't backtrack */
+	for (i = 1; i < 1 + client->help_draw_count; i++)
+	{
+		VectorSubtract(points[i], ent->s.origin, delta);
+
+		if (VectorLength(delta) > 192)
+		{
+			break;
+		}
+
+		client->help_draw_index = i;
+	}
+
+	/* an extra point in front if the player faces away from the first */
+	AngleVectors(client->v_angle, forward, NULL, NULL);
+	VectorSubtract(points[client->help_draw_index], ent->s.origin, delta);
+	VectorNormalize(delta);
+
+	if (DotProduct(delta, forward) < 0.3f)
+	{
+		vec3_t eye, end;
+		trace_t tr;
+
+		VectorCopy(ent->s.origin, eye);
+		eye[2] += ent->viewheight;
+		VectorMA(ent->s.origin, 64, forward, end);
+		tr = gi.trace(eye, NULL, NULL, end, NULL, MASK_SOLID);
+
+		client->help_draw_index--;
+		client->help_draw_count++;
+
+		if (tr.fraction < 1.0f)
+		{
+			VectorMA(tr.endpos, 8, tr.plane.normal, tr.endpos);
+		}
+
+		VectorCopy(tr.endpos, points[client->help_draw_index]);
+	}
+
+	client->help_draw_time = 0;
+	Compass_Update(ent, true);
 }
 
 static void
