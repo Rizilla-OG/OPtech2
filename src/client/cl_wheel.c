@@ -222,7 +222,9 @@ Wheel_Radius(void)
 static void
 Wheel_Open(int which)
 {
-	if (!CL_CGame_Active() || (cls.state != ca_active) || (cls.key_dest != key_game))
+	/* optech2: not while frozen (intermission, a camera scene) */
+	if (!CL_CGame_Active() || (cls.state != ca_active) || (cls.key_dest != key_game) ||
+		(cl.frame.playerstate.pmove.pm_type == PM_FREEZE))
 	{
 		return;
 	}
@@ -477,7 +479,7 @@ CL_Wheel_Draw(void)
 void
 CL_Wheel_Init(void)
 {
-	cl_wheel_slowtime = Cvar_Get("cl_wheel_slowtime", "0.25", CVAR_ARCHIVE);
+	cl_wheel_slowtime = Cvar_Get("cl_wheel_slowtime", "0.1", CVAR_ARCHIVE);
 	cl_wheel_deadzone = Cvar_Get("cl_wheel_deadzone", "0.25", CVAR_ARCHIVE);
 
 	Cmd_AddCommand("+wheel", Wheel_Down_f);

@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Default keys as in the re-release's own `default.cfg`: E opens the weapon wheel and Q the powerup wheel (were the other way round), and the gamepad gets its layout: right trigger fire, left trigger or A jump, B or left stick crouch, X help, right stick center view, RB / LB the weapon / powerup wheel, D-pad left / right previous / next weapon, D-pad up wave. Wheel slow motion goes to 0.1 (`cl_wheel_slowtime`; 0.25 wasn't slow enough).
 - Fixed: the re-release's own demos (played behind the menu at startup) broke with "Illegible server message" since protocol 2027: the client read the loop sound bit in every protocol, and those demos use bit 36 for their own field. It is read only with our protocol now. New check `rr-demos` (demo1 and demo2 play 15 s each without errors).
 - FFmpeg videos play to the end: at the end of the file each decoder is drained of the frames it still holds (the last ~0.25 s were lost; Quake II 64's intro video `n64l0t.ogv` now shows 396 of its 397 frames, 6.60 s, was 6.35 s).
 - Our game: re-release `target_changelevel` flag 32 (fade out, Quake II 64's intro and level ends): the screen fades to black over 1.3 s before the level changes, as the re-release does. Re-release game libraries already did it themselves (their screen tint reaches the client).
