@@ -25,9 +25,12 @@ something unfinished; remove an entry in the commit that fixes it.
   AI. A new monster's base must be a stock one.
 - **Scripting API is small**: three events and player functions. Grow it with
   the data-driven definitions (entities, damage, think, spawn).
-- **Monster navigation, phase 4**: lifts, jumps, ladders and teleporters (and the re-release `.nav`
-  files' links for stock maps). Ledge drops are done; every walking monster may drop 256 (no
-  per-monster drop height yet).
+- **Monster navigation, phase 4**: lifts, ledge drops and the re-release
+  `.nav` files' barrier jumps are done. Left: their long jumps (gaps; the
+  re-release gives them to flyers only), ladders and teleporters (stock
+  monsters can't use either), trains and doors as lifts, a per-monster drop
+  height (every walking monster may drop 256), and `.nav` jumps onto spots
+  narrower than a monster's mesh (crates, ledges) that bots can use.
 - **`savegame` keeps the real clock**: with `cl_loadpaused` the pause starts
   only once the client has connected, so on the fixed test clock the server
   runs a frame or two after a load (a falling gib moves). Pause the local

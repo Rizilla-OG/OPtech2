@@ -898,7 +898,7 @@ mutant_jump_updown(edict_t *self)
 		return;
 	}
 
-	if (self->enemy->absmin[2] > self->absmin[2])
+	if (monster_jump_target_z(self) > self->absmin[2]) /* optech2: the path's jump, else the enemy */
 	{
 		self->monsterinfo.currentmove = &mutant_move_jump_up;
 	}

@@ -1398,6 +1398,8 @@ qboolean blind_rocket_ok(edict_t *self, vec3_t start, vec3_t right, vec3_t targe
 	vec3_t dir);
 qboolean blocked_checkplat(edict_t *self, float dist);
 qboolean blocked_checkjump(edict_t *self, float dist, float maxDown, float maxUp);
+qboolean monster_on_nav_jump(const edict_t *self); /* optech2 */
+float monster_jump_target_z(const edict_t *self); /* optech2 */
 qboolean monsterlost_checkhint(edict_t *self);
 qboolean inback(edict_t *self, edict_t *other);
 float realrange(edict_t *self, edict_t *other);

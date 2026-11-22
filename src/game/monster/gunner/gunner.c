@@ -1182,7 +1182,7 @@ gunner_jump(edict_t *self)
 
 	monster_done_dodge(self);
 
-	if (self->enemy->absmin[2] > self->absmin[2])
+	if (monster_jump_target_z(self) > self->absmin[2]) /* optech2: the path's jump, else the enemy */
 	{
 		self->monsterinfo.currentmove = &gunner_move_jump2;
 	}

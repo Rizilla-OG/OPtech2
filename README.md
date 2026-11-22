@@ -25,7 +25,7 @@ and assets keep loading and serve as test content.
   game API, id's re-release HUD, effects), player movement as game code shared with prediction, the
   re-release episodes in the Game menu, stacked mod folders, sandboxed Lua scripts, item, weapon and
   monster definitions in text files, and monster navigation (paths, three monster sizes, ledge drops,
-  lifts).
+  lifts, barrier jumps from the re-release's navigation files).
 
 Downloads (pre-releases, Windows and Linux): https://github.com/Rizilla-OG/OPtech2/releases
 
@@ -112,9 +112,11 @@ HUD, movement), see [mods/testmod](mods/testmod/README.md).
 Every map gets a navigation mesh when it loads (Recast/Detour; one per monster size, built in under
 a second, cached in `navigation/<map>.otnav` in the game folder). Walking monsters that can't walk
 straight at you follow it: around walls, off ledges up to 256 units high, and onto lifts
-(`func_plat`), which they call and ride.
+(`func_plat`), which they call and ride. With the re-release's data, the barrier jumps in its bot
+navigation files (`bots/navigation/<map>.nav`) are added too: monsters that can jump (Berserker,
+Gunner, Infantry, Mutant, Parasite) jump up onto ledges and over barriers where those files mark it.
 
-- `g_monster_nav 0` turns it off (the stock chase), `2` logs ledge drops and lift rides, `3` also
+- `g_monster_nav 0` turns it off (the stock chase), `2` logs ledge drops, lift rides and jumps, `3` also
   draws each monster's path (single player)
 - `cl_shownav 1`, `2`, `3` draw the small, medium and large mesh
 - `nav_info`, `nav_path x1 y1 z1 x2 y2 z2 [small|medium|large]`, `nav_rebuild` in the console
@@ -151,6 +153,7 @@ clock. `run_all.py --headless` runs only the checks that need no window or sound
 - `python3 tests/nav/monster_nav_check.py`: a Berserker paths around the wall to the player (and stock, to compare); hearing at 60 Hz
 - `python3 tests/maps/make_ledge_map.py`, then `tests/nav/ledge_check.py`: ledge drops, one way, not from too high; a Berserker walks off a ledge to the player
 - `python3 tests/maps/make_plat_map.py`, then `tests/nav/plat_check.py`: monsters (Berserker, Tank) ride a lift up and down to the player
+- `python3 tests/maps/make_jump_map.py`, then `tests/nav/jump_check.py`: a Berserker jumps up a ledge through a gap, using a re-release navigation file's barrier jump
 - `python3 tests/run_all.py`: all of the above
 
 ## Code scanning

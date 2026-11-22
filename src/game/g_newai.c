@@ -123,6 +123,28 @@ blocked_checkplat(edict_t *self, float dist)
 	return false;
 }
 
+/* optech2: on a path's barrier jump (from the re-release's navigation
+   files): the next corner is across the barrier */
+qboolean
+monster_on_nav_jump(const edict_t *self)
+{
+	return self && self->monsterinfo.nav_has_point &&
+		   (self->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_BARRIER_JUMP);
+}
+
+/* optech2: the height a jump aims for, to pick the jump up or down: the
+   path's next corner on a barrier jump, else the enemy's feet */
+float
+monster_jump_target_z(const edict_t *self)
+{
+	if (monster_on_nav_jump(self))
+	{
+		return self->monsterinfo.nav_move_point[2];
+	}
+
+	return self->enemy ? self->enemy->absmin[2] : self->absmin[2];
+}
+
 qboolean
 blocked_checkjump(edict_t *self, float dist, float maxDown, float maxUp)
 {
@@ -134,6 +156,14 @@ blocked_checkjump(edict_t *self, float dist, float maxDown, float maxUp)
 	if (!self)
 	{
 		return false;
+	}
+
+	/* optech2: a path's barrier jump: the path knows the jump fits
+	   (M_NavStep turns the monster across it first) */
+	if (monster_on_nav_jump(self))
+	{
+		monster_jump_start(self);
+		return true;
 	}
 
 	if (!self->enemy)

@@ -1180,6 +1180,40 @@ M_NavLift(edict_t *ent, float dist)
  * when its next corner is reached, or when a step fails. False when there's
  * no path to follow: the stock chase takes over.
  */
+/* optech2: how high a monster can jump onto a ledge or over a barrier on a
+   path: the ones with a jump of their own (they jump when blocked), as high
+   as that jump goes (the re-release's jump_height); 0: it doesn't jump */
+static float
+M_NavJumpHeight(const edict_t *ent)
+{
+	static const struct
+	{
+		const char *classname;
+		float height;
+	} jumpers[] = {
+		{"monster_berserk", 40},
+		{"monster_gunner", 40},
+		{"monster_infantry", 40},
+		{"monster_mutant", 68},
+		{"monster_parasite", 68},
+	};
+
+	if (!ent->classname || !ent->monsterinfo.blocked)
+	{
+		return 0;
+	}
+
+	for (size_t i = 0; i < sizeof(jumpers) / sizeof(jumpers[0]); i++)
+	{
+		if (!Q_stricmp(ent->classname, jumpers[i].classname))
+		{
+			return jumpers[i].height;
+		}
+	}
+
+	return 0;
+}
+
 static qboolean
 M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 {
@@ -1218,6 +1252,12 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 		request.goal[2] += goal->mins[2];
 		request.path_flags = OPTECH2_PATH_WALK | OPTECH2_PATH_WALK_OFF_LEDGE | OPTECH2_PATH_ELEVATOR;
 		request.drop_height = MONSTER_DROP_HEIGHT;
+		request.jump_height = M_NavJumpHeight(ent);
+
+		if (request.jump_height > 0)
+		{
+			request.path_flags |= OPTECH2_PATH_BARRIER_JUMP;
+		}
 		request.move_dist = dist;
 
 		/* g_monster_nav 3: draw the path until the next one (single player) */
@@ -1268,6 +1308,36 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 
 	ent->monsterinfo.nav_lift_wait_end = 0;
 	VectorSubtract(ent->monsterinfo.nav_move_point, ent->s.origin, to_point);
+
+	/* at a barrier the path jumps (its takeoff, back from the edge): face
+	   across it and jump right away (the monster's own jump, through its
+	   blocked callback); walking into the barrier first would stop the
+	   jump's forward speed against it */
+	if ((ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_BARRIER_JUMP) && ent->monsterinfo.blocked)
+	{
+		ent->ideal_yaw = vectoyaw(to_point);
+
+		if (!FacingIdeal(ent))
+		{
+			M_ChangeYaw(ent);
+			return true;
+		}
+
+		/* (facing is within 45 degrees: square up, the jump goes where it faces) */
+		ent->s.angles[YAW] = ent->ideal_yaw;
+
+		if (ent->monsterinfo.blocked(ent, dist))
+		{
+			if (g_monster_nav->value >= 2)
+			{
+				gi.dprintf("%s jumps at %.0f %.0f %.0f\n", ent->classname, ent->s.origin[0],
+					ent->s.origin[1], ent->s.origin[2]);
+			}
+
+			ent->monsterinfo.nav_retry_time = level.time + 1.5f; /* in the air: ask again once landed */
+			return true;
+		}
+	}
 
 	if (!SV_StepDirection(ent, vectoyaw(to_point), dist))
 	{
