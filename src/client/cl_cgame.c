@@ -334,6 +334,15 @@ CG_DrawChar(int x, int y, int scale, int num, bool shadow)
 static void
 CG_DrawPic(int x, int y, int w, int h, const char *name)
 {
+	/* optech2: the re-release's built-in plain white picture */
+	if (!strcmp(name, "_white"))
+	{
+		static const float white[4] = {1, 1, 1, 1};
+
+		Draw_FillColor(x, y, w, h, white);
+		return;
+	}
+
 	Draw_StretchPic(x, y, w, h, name);
 }
 
@@ -342,6 +351,24 @@ CG_DrawColorPic(int x, int y, int w, int h, const char *name, const cg_rgba_t *c
 {
 	int pic_w, pic_h;
 	vec3_t tint;
+
+	/* optech2: the re-release's built-in plain white picture, tinted: a
+	   colored, see-through box (bars, the q2arpg minimap, text backing) */
+	if (!strcmp(name, "_white"))
+	{
+		float rgba[4] = {1, 1, 1, 1};
+
+		if (color)
+		{
+			rgba[0] = color->r / 255.0f;
+			rgba[1] = color->g / 255.0f;
+			rgba[2] = color->b / 255.0f;
+			rgba[3] = color->a / 255.0f;
+		}
+
+		Draw_FillColor(x, y, w, h, rgba);
+		return;
+	}
 
 	if (!color || (color->r == 255 && color->g == 255 && color->b == 255))
 	{
