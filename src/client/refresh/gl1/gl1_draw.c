@@ -426,6 +426,21 @@ RDraw_PicScaledCol(int x, int y, const char *pic, float factor, const vec3_t col
 	R_TexEnv(GL_REPLACE);
 }
 
+/* optech2: a string in a color: the 2D buffer drawn modulated by it */
+void
+RDraw_StringScaledCol(int x, int y, float scale, const vec3_t color, const char *message)
+{
+	R_ApplyGLBuffer();
+	R_TexEnv(GL_MODULATE);
+	glColor4f(color[0], color[1], color[2], 1);
+
+	RDraw_StringScaled(x, y, scale, false, message);
+	R_ApplyGLBuffer();
+
+	glColor4f(1, 1, 1, 1);
+	R_TexEnv(GL_REPLACE);
+}
+
 /*
  * This repeats a 64*64 tile graphic to fill
  * the screen around a sized down

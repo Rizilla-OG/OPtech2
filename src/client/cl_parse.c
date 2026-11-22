@@ -2470,6 +2470,34 @@ CL_ParseLocPrint(void)
 
 	CL_LocalizeFormat(format, (const char **)args, num_args, formatted, formatted_len + 1);
 
+	/* optech2: a re-release game's center print, 4 typed out (mission
+	   objectives), 5 at once */
+	if (((flags & 7) == 4) || ((flags & 7) == 5))
+	{
+		const char *text = CL_DecodePlayerNames(formatted);
+
+		if (CL_CGame_Active())
+		{
+			CL_CGame_CenterPrint(text, (flags & 7) == 4);
+			Con_ClearNotify();
+		}
+		else
+		{
+			SCR_CenterPrint(text);
+		}
+
+		free(formatted);
+		free(message);
+
+		for (i = 0; i < num_args; i++)
+		{
+			free(args[i]);
+		}
+
+		free(args);
+		return;
+	}
+
 	if ((flags & 7) == PRINT_CHAT)
 	{
 		S_StartLocalSound("misc/talk.wav");
@@ -2647,7 +2675,7 @@ CL_ParseServerMessage(void)
 				   or the separator stays in the top-left corner */
 				if (CL_CGame_Active())
 				{
-					CL_CGame_CenterPrint(text);
+					CL_CGame_CenterPrint(text, false); /* at once, as the re-release */
 					Con_ClearNotify();
 				}
 				else

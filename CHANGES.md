@@ -4,6 +4,8 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Text in a color: renderer API 11 adds `DrawStringScaledCol` (all five renderers; GL3/GL4 through the tinting shader, Vulkan tinted quads, GL1 modulated, software by brightness). Re-release client games' colored font strings use it: q2arpg's better / worse stats show green / red.
+- Re-release games' center prints show at once, as there; only typewriter prints (mission objectives) type out. They go to the client as localized prints of level 4 (typed) or 5 (at once). q2arpg's sell confirmations no longer come up seconds late.
 - Re-release client games get the eye where it is: the view height was counted twice (our view offset has it in, the re-release keeps it apart), 22 units high, so q2arpg's health bars sank into monsters. The HUD player state now also carries the view as drawn (predicted origin, angles with kicks), so things projected onto the screen stay put while turning.
 - Re-release client games: the built-in `_white` picture draws (a colored, see-through box): bars, text backing and q2arpg's minimap were missing (`Can't find pic: _white`).
 - q2arpg (a re-release game mod) runs: built for Linux from a snapshot of its source with the stock game's build wrapper (`tools/rerelease/stock_game`, now also takes a mod's `q2rpg/` sources and VERSION), unchanged. Its HUD, XP, saves and loads work. New `q2arpg` check (skips without the snapshot in `research/q2arpg-snapshot`).

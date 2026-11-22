@@ -153,6 +153,28 @@ RE_Draw_CharScaled(int x, int y, int c, float scale)
 	}
 }
 
+/* optech2: RE_Draw_StringScaledCol's color while it draws */
+static qboolean text_tinted;
+static vec3_t text_tint;
+
+/* a palette color at the brightness of idx, in color (as RE_Draw_PicScaledCol) */
+static byte
+RE_TintedColor(byte idx, const vec3_t color)
+{
+	float lum = (0.299f * d_8to24table[idx * 4 + 0] + 0.587f * d_8to24table[idx * 4 + 1] +
+					0.114f * d_8to24table[idx * 4 + 2]) /
+				255.0f;
+	unsigned int r = (unsigned int)(255.0f * lum * color[0]);
+	unsigned int g = (unsigned int)(255.0f * lum * color[1]);
+	unsigned int b = (unsigned int)(255.0f * lum * color[2]);
+
+	r = r > 255 ? 255 : r;
+	g = g > 255 ? 255 : g;
+	b = b > 255 ? 255 : b;
+
+	return d_16to8table[((r >> 3) & 31) | (((g >> 2) & 63) << 5) | (((b >> 3) & 31) << 11)];
+}
+
 /*
 ================
 RE_Draw_TexRect
@@ -238,7 +260,7 @@ RE_Draw_TexRect(int x, int y, int w, int h, float s0, float t0, float sw, float 
 			src_pixel = source[src_x];
 			if (src_pixel != TRANSPARENT_COLOR)
 			{
-				dst[dx] = src_pixel;
+				dst[dx] = text_tinted ? RE_TintedColor(src_pixel, text_tint) : src_pixel;
 			}
 		}
 	}
@@ -539,6 +561,16 @@ RE_Draw_StringScaled(int start_x, int y, float scale, qboolean alt, const char *
 			x += 8 * scale;
 		}
 	}
+}
+
+/* optech2: a string in a color (the TrueType font; bitmap text stays plain) */
+void
+RE_Draw_StringScaledCol(int x, int y, float scale, const vec3_t color, const char *message)
+{
+	VectorCopy(color, text_tint);
+	text_tinted = true;
+	RE_Draw_StringScaled(x, y, scale, false, message);
+	text_tinted = false;
 }
 
 void

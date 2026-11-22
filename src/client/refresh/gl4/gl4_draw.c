@@ -122,6 +122,8 @@ GL4_Draw_ShutdownLocal(void)
 	free(draw_fontcodes);
 }
 
+static qboolean batch_tinted; /* optech2: see GL4_Draw_StringScaledCol */
+
 void
 GL4_DrawCurrent2Dbatch()
 {
@@ -132,7 +134,9 @@ GL4_DrawCurrent2Dbatch()
 		return;
 	}
 
-	GL4_UseProgram(gl4state.si2D.shaderProgram);
+	/* optech2: tinted text (GL4_Draw_StringScaledCol) goes through the
+	   tinting shader */
+	GL4_UseProgram(batch_tinted ? gl4state.si2Dtinted.shaderProgram : gl4state.si2D.shaderProgram);
 	GL4_Bind(lastBatchTexture);
 
 	GL4_BindVAO(vao2D);
@@ -358,6 +362,24 @@ GL4_Draw_StringScaled(int start_x, int y, float scale, qboolean alt, const char 
 			x += 8 * scale;
 		}
 	}
+}
+
+/* optech2: a string in a color, through the tinting shader */
+void
+GL4_Draw_StringScaledCol(int x, int y, float scale, const vec3_t color, const char *message)
+{
+	GL4_DrawCurrent2Dbatch();
+
+	gl4state.uniCommonData.color = HMM_Vec4(color[0], color[1], color[2], 1.0f);
+	GL4_UpdateUBOCommon();
+	batch_tinted = true;
+
+	GL4_Draw_StringScaled(x, y, scale, false, message);
+	GL4_DrawCurrent2Dbatch();
+
+	batch_tinted = false;
+	gl4state.uniCommonData.color = HMM_Vec4(1, 1, 1, 1);
+	GL4_UpdateUBOCommon();
 }
 
 gl4image_t *

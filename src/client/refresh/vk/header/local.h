@@ -177,6 +177,7 @@ void RE_Draw_Fill(int x, int y, int w, int h, int c);
 void RE_Draw_FadeScreen(void);
 void RE_Draw_FillColor(int x, int y, int w, int h, const float *rgba); /* optech2 */
 float RE_Draw_CharAdvance(void); /* optech2 */
+void RE_Draw_StringScaledCol(int x, int y, float scale, const vec3_t color, const char *message); /* optech2 */
 void RE_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte *data, int bits);
 
 qboolean RE_EndWorldRenderpass( void );

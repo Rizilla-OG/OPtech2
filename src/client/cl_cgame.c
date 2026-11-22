@@ -402,6 +402,16 @@ CG_DrawFontString(const char *str, int x, int y, int scale, const cg_rgba_t *col
 		x -= width;
 	}
 
+	/* optech2: in its color (q2arpg's better/worse stats: green / red) */
+	if (color && !(color->r == 255 && color->g == 255 && color->b == 255))
+	{
+		vec3_t tint;
+
+		VectorSet(tint, color->r / 255.0f, color->g / 255.0f, color->b / 255.0f);
+		Draw_StringScaledCol(x, y, (float)scale, tint, str);
+		return;
+	}
+
 	Draw_StringScaled(x, y, (float)scale, false, str);
 }
 
@@ -1225,7 +1235,7 @@ CL_CGame_DrawHUD(void)
 }
 
 void
-CL_CGame_CenterPrint(const char *text)
+CL_CGame_CenterPrint(const char *text, qboolean typewriter)
 {
 	static int last_center_time = -100000;
 	qboolean replace;
@@ -1251,7 +1261,10 @@ CL_CGame_CenterPrint(const char *text)
 
 	last_center_time = cls.realtime;
 
-	cgame->ParseCenterPrint(text, 0, replace);
+	/* optech2: only the re-release's typewriter prints (mission objectives)
+	   type out; the rest show at once, as there (q2arpg's sell confirmations
+	   came up seconds late) */
+	cgame->ParseCenterPrint(text, 0, replace || !typewriter);
 }
 
 /* optech2: the client game's notify lines (kill feed, pickups, chat):

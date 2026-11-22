@@ -131,7 +131,7 @@ typedef enum {
 	RESTART_PARTIAL
 } ref_restart_t;
 
-#define API_VERSION 10 /* optech2: 9 added DrawFillColor, 10 DrawCharAdvance */
+#define API_VERSION 11 /* optech2: 9 added DrawFillColor, 10 DrawCharAdvance, 11 DrawStringScaledCol */
 #define EXPORT
 #define IMPORT
 
@@ -233,6 +233,10 @@ typedef struct
 	   font's character width, 8 for the bitmap font */
 	float(EXPORT *DrawCharAdvance)(void);
 
+	/* optech2: DrawStringScaled in a color (rgb 0..1, multiplied with the
+	   font's own colors) */
+	void(EXPORT *DrawStringScaledCol)(int x, int y, float scale, const vec3_t color, const char *message);
+
 	//void	(EXPORT *AppActivate)( qboolean activate );
 } refexport_t;
 
@@ -319,6 +323,7 @@ void Draw_Fill(int x, int y, int w, int h, int c);
 void Draw_FadeScreen(void);
 void Draw_FillColor(int x, int y, int w, int h, const float *rgba); /* optech2 */
 float Draw_CharAdvance(void); /* optech2 */
+void Draw_StringScaledCol(int x, int y, float scale, const vec3_t color, const char *message); /* optech2 */
 void Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte *data, int bits);
 void R_SetPalette(const unsigned char *palette);
 void R_BeginFrame(float camera_separation);

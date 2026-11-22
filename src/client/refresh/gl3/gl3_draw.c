@@ -122,6 +122,8 @@ GL3_Draw_ShutdownLocal(void)
 	free(draw_fontcodes);
 }
 
+static qboolean batch_tinted; /* optech2: see GL3_Draw_StringScaledCol */
+
 void
 GL3_DrawCurrent2Dbatch()
 {
@@ -132,7 +134,9 @@ GL3_DrawCurrent2Dbatch()
 		return;
 	}
 
-	GL3_UseProgram(gl3state.si2D.shaderProgram);
+	/* optech2: tinted text (GL3_Draw_StringScaledCol) goes through the
+	   tinting shader */
+	GL3_UseProgram(batch_tinted ? gl3state.si2Dtinted.shaderProgram : gl3state.si2D.shaderProgram);
 	GL3_Bind(lastBatchTexture);
 
 	GL3_BindVAO(vao2D);
@@ -358,6 +362,24 @@ GL3_Draw_StringScaled(int start_x, int y, float scale, qboolean alt, const char 
 			x += 8 * scale;
 		}
 	}
+}
+
+/* optech2: a string in a color, through the tinting shader */
+void
+GL3_Draw_StringScaledCol(int x, int y, float scale, const vec3_t color, const char *message)
+{
+	GL3_DrawCurrent2Dbatch();
+
+	gl3state.uniCommonData.color = HMM_Vec4(color[0], color[1], color[2], 1.0f);
+	GL3_UpdateUBOCommon();
+	batch_tinted = true;
+
+	GL3_Draw_StringScaled(x, y, scale, false, message);
+	GL3_DrawCurrent2Dbatch();
+
+	batch_tinted = false;
+	gl3state.uniCommonData.color = HMM_Vec4(1, 1, 1, 1);
+	GL3_UpdateUBOCommon();
 }
 
 gl3image_t *
