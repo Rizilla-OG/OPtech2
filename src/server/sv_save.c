@@ -498,6 +498,16 @@ SV_Loadgame_f(void)
 
 	SV_ReadServerFile();
 
+	/* optech2: a single-player load with cl_loadpaused pauses here, before
+	   the level runs: the client used to pause only once it had connected,
+	   so the level ran a frame or two first (things in the air moved) */
+	if ((Cvar_VariableValue("maxclients") <= 1) && Cvar_VariableValue("cl_loadpaused") &&
+		!Cvar_VariableValue("paused"))
+	{
+		Cvar_Set("paused", "1");
+		sv_paused_at_load = true;
+	}
+
 	/* go to the map */
 	sv.state = ss_dead; /* don't save current level when changing */
 	SV_Map(false, svs.mapcmd, true, isautosave);

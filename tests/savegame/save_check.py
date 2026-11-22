@@ -42,7 +42,7 @@ DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
 GAME_TIMEOUT_SECONDS = 90
 SAVE_NAME = "optech2check"
 
-SETTINGS = ["+set", "vid_renderer", "soft", "+set", "r_vsync", "0", "+set", "cl_maxfps", "60",
+SETTINGS = ["+set", "fixedtime", "16667", "+set", "vid_renderer", "soft", "+set", "r_vsync", "0", "+set", "cl_maxfps", "60",
             "+set", "s_initsound", "0", "+set", "skill", "1"]
 PLAYER_SPOT = "128 -320 32 0 135 0"
 SOLDIER_SPOTS = ["-84 -108 56 0 315 0", "-200 -200 56 0 45 0", "0 -500 56 0 90 0"]

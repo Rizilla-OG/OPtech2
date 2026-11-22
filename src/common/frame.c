@@ -65,6 +65,7 @@ long long time_after_ref;
 
 // Used in the network- and input paths.
 int curtime;
+qboolean sv_paused_at_load; /* optech2: set by SV_Loadgame_f, taken by the client when it connects */
 
 #ifndef DEDICATED_ONLY
 void Key_Init(void);
@@ -449,6 +450,28 @@ Qcommon_Init(int argc, char **argv)
 
 	Com_Printf("==== OpenTech2 Initialized ====\n\n");
 	Com_Printf("*************************************\n\n");
+
+	/* optech2: the logo (doc/LOGO.md), last thing at startup */
+	{
+		static const char *logo[] = {
+			"            ,\n",
+			"            |`-.__\n",
+			"            / ' _/\n",
+			"           ****` \n",
+			"          /    } OpenTech2\n",
+			"         /  \\ /  RARG\n",
+			"     \\ /`   \\\\\\  Run Ava Run Games\n",
+			"      `\\    /_\\\\ (2026)\n",
+			"       `~~~~~``~`\n",
+		};
+
+		for (size_t i = 0; i < sizeof(logo) / sizeof(logo[0]); i++)
+		{
+			Com_Printf("%s", logo[i]);
+		}
+
+		Com_Printf("\n");
+	}
 
 	// Call the main loop
 	Qcommon_Mainloop();

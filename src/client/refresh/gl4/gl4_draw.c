@@ -288,8 +288,12 @@ GL4_Draw_CharScaled(int x, int y, int num, float scale)
 }
 
 void
-GL4_Draw_StringScaled(int x, int y, float scale, qboolean alt, const char *message)
+GL4_Draw_StringScaled(int start_x, int y, float scale, qboolean alt, const char *message)
 {
+	/* optech2: the pen moves by the font's own width, kept in a float so
+	   fractional widths don't round off */
+	float x = start_x;
+
 	while (*message)
 	{
 		unsigned value = R_NextUTF8Code(&message);
@@ -314,11 +318,7 @@ GL4_Draw_StringScaled(int x, int y, float scale, qboolean alt, const char *messa
 					q.t1 += 0.5;
 				}
 
-				xdiff = (8 - xf / font_scale) / 2;
-				if (xdiff < 0)
-				{
-					xdiff = 0;
-				}
+				xdiff = 0; /* optech2: no centering in an 8-wide cell, text runs at the font's width */
 
 				/* If the font texture is packed inside a scrap atlas,
 				 * map the 0.0-1.0 glyph coordinates into the scrap sub-region. */
@@ -337,7 +337,7 @@ GL4_Draw_StringScaled(int x, int y, float scale, qboolean alt, const char *messa
 					(q.x1 - q.x0) * scale / font_scale,
 					(q.y1 - q.y0) * scale / font_scale,
 					q.s0, q.t0, q.s1, q.t1);
-				x += Q_max(8, xf / font_scale) * scale;
+				x += xf / font_scale * scale; /* optech2: its own width, not at least 8 */
 			}
 			else
 			{
@@ -1054,4 +1054,21 @@ GL4_EndFrame(void)
 	}
 
 	GL4_SwapWindow();
+}
+
+/* optech2: how far apart text characters are at scale 1: the TrueType
+   font's width of "M" (it's monospaced for the console), 8 for the bitmap font */
+float
+GL4_Draw_CharAdvance(void)
+{
+	if (draw_fontcodes && draw_font)
+	{
+		float xf = 0, yf = 0;
+		stbtt_aligned_quad q;
+
+		stbtt_GetBakedQuad(draw_fontcodes, gl4_font_height, gl4_font_height, 'M' - 32, &xf, &yf, &q, 1);
+		return xf / (gl4_font_size / 8.0f);
+	}
+
+	return 8.0f;
 }

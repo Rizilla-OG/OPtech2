@@ -706,6 +706,23 @@ Draw_GetPicSize(int *w, int *h, const char *name)
 	}
 }
 
+/* optech2: text character width at scale 1 (8: the bitmap font's) */
+float
+Draw_CharAdvance(void)
+{
+	if (ref_active && re.DrawCharAdvance)
+	{
+		const float advance = re.DrawCharAdvance();
+
+		if (advance >= 4.0f && advance <= 16.0f)
+		{
+			return advance;
+		}
+	}
+
+	return 8.0f;
+}
+
 /* optech2: a translucent rectangle (renderers from before it draw nothing) */
 void
 Draw_FillColor(int x, int y, int w, int h, const float *rgba)

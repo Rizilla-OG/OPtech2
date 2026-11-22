@@ -630,8 +630,9 @@ Menu_DrawStringR2L(int x, int y, const char *string)
 
 	scale = SCR_GetMenuScale();
 
-	pos = SCR_CopyUtf8(string, message, Q_min(40, x / (8 * scale)));
-	Draw_StringScaled(x - 8 * scale * pos, y * scale, scale, false, message);
+	/* optech2: right-aligned at the font's width, not 8 per character */
+	pos = SCR_CopyUtf8(string, message, Q_min(40, x / (Draw_CharAdvance() * scale)));
+	Draw_StringScaled(x - Draw_CharAdvance() * scale * pos, y * scale, scale, false, message);
 }
 
 void
@@ -643,8 +644,9 @@ Menu_DrawStringR2LDark(int x, int y, const char *string)
 
 	scale = SCR_GetMenuScale();
 
-	pos = SCR_CopyUtf8(string, message, Q_min(40, x / (8 * scale)));
-	Draw_StringScaled(x - 8 * scale * pos, y * scale, scale, true, message);
+	/* optech2: right-aligned at the font's width, not 8 per character */
+	pos = SCR_CopyUtf8(string, message, Q_min(40, x / (Draw_CharAdvance() * scale)));
+	Draw_StringScaled(x - Draw_CharAdvance() * scale * pos, y * scale, scale, true, message);
 }
 
 void

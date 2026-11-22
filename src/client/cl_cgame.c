@@ -358,7 +358,7 @@ CG_SetAltTypeface(bool enabled)
 static void
 CG_DrawFontString(const char *str, int x, int y, int scale, const cg_rgba_t *color, bool shadow, int align)
 {
-	int width = (int)strlen(str) * 8 * scale;
+	int width = (int)(strlen(str) * Draw_CharAdvance() * scale); /* optech2: the font's width */
 
 	if (align == CG_ALIGN_CENTER)
 	{
@@ -377,7 +377,7 @@ CG_MeasureFontString(const char *str, int scale)
 {
 	cg_vec2_t size;
 
-	size.x = (float)(strlen(str) * 8 * scale);
+	size.x = (float)(strlen(str) * Draw_CharAdvance() * scale); /* optech2: the font's width */
 	size.y = (float)(8 * scale);
 	return size;
 }
@@ -442,7 +442,7 @@ CG_DrawBind(int32_t isplit, const char *binding, const char *purpose, int x, int
 	char text[256];
 
 	snprintf(text, sizeof(text), "[%s] %s", key[0] ? key : binding, purpose);
-	Draw_StringScaled(x - (int)strlen(text) * 4 * scale, y, (float)scale, false, text);
+	Draw_StringScaled(x - (int)(strlen(text) * Draw_CharAdvance() * 0.5f * scale), y, (float)scale, false, text);
 	return 10 * scale;
 }
 

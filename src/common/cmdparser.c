@@ -1213,6 +1213,16 @@ Cmd_ExecuteString(char *text)
 		doneWithDefaultCfg = true;
 	}
 
+	/* optech2: for a friend */
+	if (Cmd_Argc() == 1 && !Q_strcasecmp(cmd_argv[0], "runfree"))
+	{
+		Com_Printf("\n");
+		Com_Printf("\x02Run free, sweet soul.\n");
+		Com_Printf("\x02In Memory of my faithful friend.\n");
+		Com_Printf("\n");
+		return;
+	}
+
 	/* check functions */
 	for (cmd = cmd_functions; cmd; cmd = cmd->next)
 	{

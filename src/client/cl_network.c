@@ -665,13 +665,16 @@ CL_ConnectionlessPacket(void)
 		{
 			if (cl_loadpaused->value)
 			{
-				if (!cl_paused->value)
+				/* (optech2: or the server paused for this load already) */
+				if (!cl_paused->value || sv_paused_at_load)
 				{
 					paused_at_load = true;
 					Cvar_Set("paused", "1");
 				}
 			}
 		}
+
+		sv_paused_at_load = false; /* optech2: taken (or not ours) */
 
 		MSG_WriteChar(&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString(&cls.netchan.message, "new");

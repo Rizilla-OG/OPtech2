@@ -1122,16 +1122,16 @@ assets:
 	@echo "===> Add required assets"
 	${Q}mkdir -p $(BINDIR)/baseq2
 	$(MAKE) $(BINDIR)/baseq2/models/entity.dat
-	$(MAKE) $(BINDIR)/baseq2/fonts/DejaVuSansMono.ttf
+	$(MAKE) $(BINDIR)/baseq2/fonts/Hack-Regular.ttf
 
 $(BINDIR)/baseq2/models/entity.dat: stuff/models/entity.dat
 	${Q}mkdir -p $(BINDIR)/baseq2/models
 	cp stuff/models/entity.dat $(BINDIR)/baseq2/models/entity.dat
 
-# optech2: the console and text font (DejaVu Sans Mono, its license beside it)
-$(BINDIR)/baseq2/fonts/DejaVuSansMono.ttf: stuff/fonts/DejaVuSansMono.ttf
+# optech2: the console and text font (Hack, its license beside it)
+$(BINDIR)/baseq2/fonts/Hack-Regular.ttf: stuff/fonts/Hack-Regular.ttf
 	${Q}mkdir -p $(BINDIR)/baseq2/fonts
-	cp stuff/fonts/DejaVuSansMono.ttf stuff/fonts/DejaVuSansMono-LICENSE.txt $(BINDIR)/baseq2/fonts/
+	cp stuff/fonts/Hack-Regular.ttf stuff/fonts/Hack-LICENSE.txt $(BINDIR)/baseq2/fonts/
 
 # ----------
 

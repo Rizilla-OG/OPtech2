@@ -33,6 +33,44 @@ cvar_t *con_notifytime;
 cvar_t *con_style; /* optech2: 1 = a dark see-through panel, 0 = the classic picture */
 cvar_t *con_alpha; /* optech2: how solid that panel is, 0..1 */
 
+/* optech2: TrueType text is taller than Quake II's 8x8 bitmap characters
+   (its glyphs are drawn 12 units high, with descenders): with it, console
+   lines are 13 units apart and the text sits 2 units down in its line, so
+   nothing reaches into the next line. The bitmap font keeps 8 and 0. */
+static qboolean
+Con_TrueTypeFont(void)
+{
+	const char *font = Cvar_VariableString("r_ttffont");
+
+	return font && font[0];
+}
+
+static int
+Con_LinePitch(void)
+{
+	return Con_TrueTypeFont() ? 13 : 8;
+}
+
+static int
+Con_TextOffset(void)
+{
+	return Con_TrueTypeFont() ? 2 : 0;
+}
+
+/* optech2: how far apart characters are across (the TrueType font's
+   width, else the bitmap font's 8), and a column's position in pixels */
+static float
+Con_CharWidth(void)
+{
+	return Con_TrueTypeFont() ? Draw_CharAdvance() : 8.0f;
+}
+
+static int
+Con_Column(int column, float scale)
+{
+	return (int)(column * Con_CharWidth() * scale);
+}
+
 extern char key_lines[NUM_KEY_LINES][MAXCMDLINE];
 extern int edit_line;
 extern int key_linepos;
@@ -258,7 +296,7 @@ Con_CheckResize(void)
 	   bigger then MAXCMDLINE.
 	   MAXCMDLINE - 2 because 1 for the prompt and 1 for
 	   the terminating \0. */
-	width = ((int)(viddef.width / scale) / 8) - 2;
+	width = (int)((viddef.width / scale) / Con_CharWidth()) - 2; /* optech2: the font's width */
 	width = width > MAXCMDLINE - 2 ? MAXCMDLINE - 2 : width;
 
 	if (width == con.linewidth)
@@ -489,7 +527,7 @@ Con_DrawInput(void)
 	}
 	else
 	{
-		Draw_CharScaled(8 * scale, con.vislines - 22 * scale, CON_INPUT_INDICATOR, scale);
+		Draw_CharScaled(Con_Column(1, scale), con.vislines - (22 - Con_TextOffset()) * scale, CON_INPUT_INDICATOR, scale);
 		draw_icon = 1;
 	}
 
@@ -517,7 +555,7 @@ Con_DrawInput(void)
 			ch = text[i];
 		}
 
-		Draw_CharScaled(((i + 1 + draw_icon) << 3) * scale, con.vislines - 22 * scale, ch, scale);
+		Draw_CharScaled(Con_Column(i + 1 + draw_icon, scale), con.vislines - (22 - Con_TextOffset()) * scale, ch, scale);
 	}
 }
 
@@ -561,10 +599,10 @@ Con_DrawNotify(void)
 
 		for (x = 0; x < con.linewidth; x++)
 		{
-			Draw_CharScaled(((x + 1) << 3) * scale, v * scale, text[x], scale);
+			Draw_CharScaled(Con_Column(x + 1, scale), (v + Con_TextOffset()) * scale, text[x], scale);
 		}
 
-		v += 8;
+		v += Con_LinePitch();
 	}
 
 	if (cls.key_dest == key_message)
@@ -574,32 +612,36 @@ Con_DrawNotify(void)
 
 		if (chat_team)
 		{
-			Draw_StringScaled(8 * scale, v * scale, scale, false, "say_team:");
+			Draw_StringScaled(8 * scale, (v + Con_TextOffset()) * scale, scale, false, "say_team:");
 			skip = 11;
 		}
 		else
 		{
-			Draw_StringScaled(8 * scale, v * scale, scale, false, "say:");
+			Draw_StringScaled(8 * scale, (v + Con_TextOffset()) * scale, scale, false, "say:");
 			skip = 5;
 		}
 
 		s = chat_buffer;
 
-		if (chat_bufferlen > (viddef.width >> 3) - (skip + 1))
 		{
-			s += chat_bufferlen - ((viddef.width >> 3) - (skip + 1));
+			const int columns = (int)((viddef.width / scale) / Con_CharWidth()); /* optech2 */
+
+			if (chat_bufferlen > columns - (skip + 1))
+			{
+				s += chat_bufferlen - (columns - (skip + 1));
+			}
 		}
 
 		x = 0;
 
 		while (s[x])
 		{
-			Draw_CharScaled(((x + skip) << 3) * scale, v * scale, s[x], scale);
+			Draw_CharScaled(Con_Column(x + skip, scale), (v + Con_TextOffset()) * scale, s[x], scale);
 			x++;
 		}
 
-		Draw_CharScaled(((x + skip) << 3) * scale, v * scale, 10 + ((cls.realtime >> 8) & 1), scale);
-		v += 8;
+		Draw_CharScaled(Con_Column(x + skip, scale), (v + Con_TextOffset()) * scale, 10 + ((cls.realtime >> 8) & 1), scale);
+		v += Con_LinePitch();
 	}
 
 	if (v)
@@ -647,15 +689,25 @@ Con_DrawConsole(float frac)
 	   an accent line along its bottom edge; con_style 0: the classic picture) */
 	if (con_style && con_style->value)
 	{
-		/* (see-through only over a game: with none, nothing fresh is behind it) */
-		const float panel_alpha = (cls.state != ca_active) ? 1.0f : con_alpha ? Q_clamp(con_alpha->value, 0.0f, 1.0f)
-																			  : 0.82f;
+		const float panel_alpha = con_alpha ? Q_clamp(con_alpha->value, 0.0f, 1.0f) : 0.82f;
 		const float panel[4] = {0.03f, 0.04f, 0.06f, panel_alpha};
 		const float accent[4] = {0.95f, 0.55f, 0.15f, 1.0f};
 		const int edge = (int)Q_max(2.0f, 2.0f * scale);
 
-		Draw_FillColor(0, 0, viddef.width, lines - edge, panel);
-		Draw_FillColor(0, lines - edge, viddef.width, edge, accent);
+		if (cls.state == ca_active)
+		{
+			Draw_FillColor(0, 0, viddef.width, lines - edge, panel);
+			Draw_FillColor(0, lines - edge, viddef.width, edge, accent);
+		}
+		else
+		{
+			/* no game behind it (menus, loading): solid, with the plain
+			   palette fill every renderer draws the same way (the blended
+			   fill came out white there on GL4); palette 1 and 56 are the
+			   nearest to the panel's and the accent's colors */
+			Draw_Fill(0, 0, viddef.width, lines - edge, 1);
+			Draw_Fill(0, lines - edge, viddef.width, edge, 56);
+		}
 	}
 	else
 	{
@@ -694,8 +746,10 @@ Con_DrawConsole(float frac)
 	/* draw the text */
 	con.vislines = lines;
 
-	rows = (lines - 22) / 8; /* rows of text to draw; optech2: lines can be < 22, don't shift a negative */
-	y = (lines - 30 * scale) / scale;
+	/* rows of text to draw (optech2: lines can be < 22, don't shift a negative;
+	   rows are Con_LinePitch apart, the bottom one right above the input line) */
+	rows = (int)((lines / scale - 22) / Con_LinePitch()) + 1;
+	y = (lines - (22 + Con_LinePitch()) * scale) / scale;
 
 	/* draw from the bottom up */
 	if (con.display != con.current)
@@ -703,16 +757,16 @@ Con_DrawConsole(float frac)
 		/* draw arrows to show the buffer is backscrolled */
 		for (x = 0; x < con.linewidth; x += 4)
 		{
-			Draw_CharScaled(((x + 1) << 3) * scale, y * scale, '^', scale);
+			Draw_CharScaled(Con_Column(x + 1, scale), (y + Con_TextOffset()) * scale, '^', scale);
 		}
 
-		y -= 8;
+		y -= Con_LinePitch();
 		rows--;
 	}
 
 	row = con.display;
 
-	for (i = 0; i < rows; i++, y -= 8, row--)
+	for (i = 0; i < rows; i++, y -= Con_LinePitch(), row--)
 	{
 		if (row < 0)
 		{
@@ -728,7 +782,7 @@ Con_DrawConsole(float frac)
 
 		for (x = 0; x < con.linewidth; x++)
 		{
-			Draw_CharScaled(((x + 1) << 3) * scale, y * scale, text[x], scale);
+			Draw_CharScaled(Con_Column(x + 1, scale), (y + Con_TextOffset()) * scale, text[x], scale);
 		}
 	}
 

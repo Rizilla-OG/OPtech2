@@ -42,11 +42,6 @@ something unfinished; remove an entry in the commit that fixes it.
   Left: trains and doors as lifts, a per-monster drop height (every walking
   monster may drop 256), and `.nav` links onto spots narrower than a
   monster's mesh (crates, narrow ledges) that only bots can use.
-- **`savegame` keeps the real clock**: with `cl_loadpaused` the pause starts
-  only once the client has connected, so on the fixed test clock the server
-  runs a frame or two after a load (a falling gib moves). Pause the local
-  server at the start of a single-player load, then move the check to
-  `fixedtime` like the others.
 - **`cgame` check rewrites `docs/screenshots/m2_test_cgame_hud.png`** on every
   run (its particles differ each time): write it under `build/` and copy to
   `docs/` only on purpose.

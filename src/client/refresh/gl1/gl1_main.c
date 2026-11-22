@@ -2100,6 +2100,7 @@ GetRefAPI(refimport_t imp)
 	refexport.DrawFill = RDraw_Fill;
 	refexport.DrawFadeScreen = RDraw_FadeScreen;
 	refexport.DrawFillColor = RDraw_FillColor;
+	refexport.DrawCharAdvance = RDraw_CharAdvance;
 
 	refexport.DrawStretchRaw = RDraw_StretchRaw;
 

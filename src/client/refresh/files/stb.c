@@ -1313,9 +1313,9 @@ R_LoadTTFFont(const char *ttffont, int vid_height, float *r_font_size,
 	size = ri.FS_LoadFile(font_name, (void **)&data);
 
 	/* optech2: a font that isn't there (an old config's): the shipped one */
-	if (size <= 0 && ttffont[0] && strcmp(ttffont, "DejaVuSansMono"))
+	if (size <= 0 && ttffont[0] && strcmp(ttffont, "Hack-Regular"))
 	{
-		snprintf(font_name, sizeof(font_name), "fonts/DejaVuSansMono.ttf");
+		snprintf(font_name, sizeof(font_name), "fonts/Hack-Regular.ttf");
 		size = ri.FS_LoadFile(font_name, (void **)&data);
 	}
 
@@ -1393,7 +1393,9 @@ R_LoadTTFFont(const char *ttffont, int vid_height, float *r_font_size,
 		mask_idx ++;
 	}
 
-	*draw_font = R_LoadPic("pics/conchars.ttf", font_data,
+	/* optech2: not "pics/conchars.*": that name is on r_nolerp_list (the bitmap
+	   font is drawn unfiltered), and TrueType glyphs need smoothing */
+	*draw_font = R_LoadPic("pics/ttf_font", font_data,
 		*r_font_height, *r_font_height, *r_font_height, *r_font_height,
 		texture_size, it_pic, 32);
 

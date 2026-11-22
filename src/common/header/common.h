@@ -930,6 +930,7 @@ YQ2_ATTR_NORETURN void Com_Quit(void);
 #endif
 
 int Com_ServerState(void);              /* this should have just been a cvar... */
+extern qboolean sv_paused_at_load; /* optech2: the server paused itself for a single-player load */
 void Com_SetServerState(int state);
 
 unsigned Com_BlockChecksum(const void *buffer, int length);

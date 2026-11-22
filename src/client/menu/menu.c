@@ -959,7 +959,7 @@ DrawKeyBindingFunc(void *self)
 		Menu_DrawString(a->generic.x + a->generic.parent->x + RCOLUMN_OFFSET * scale,
 					    a->generic.y + a->generic.parent->y, name);
 
-		x = strlen(name) * 8;
+		x = (int)(strlen(name) * Draw_CharAdvance()); /* optech2: the font's width */
 
 		if (keys[1] != -1)
 		{
@@ -1105,7 +1105,7 @@ MultiplayerDrawKeyBindingFunc(void *self)
 		Menu_DrawString(a->generic.x + a->generic.parent->x + RCOLUMN_OFFSET * scale,
 						a->generic.y + a->generic.parent->y, name);
 
-		x = strlen(name) * 8;
+		x = (int)(strlen(name) * Draw_CharAdvance()); /* optech2: the font's width */
 
 		if (keys[1] != -1)
 		{
@@ -1296,7 +1296,7 @@ DrawControllerButtonBindingFunc(void *self)
 		Menu_DrawString(a->generic.x + a->generic.parent->x + RCOLUMN_OFFSET * scale,
 			a->generic.y + a->generic.parent->y, name);
 
-		x = strlen(name) * 8;
+		x = (int)(strlen(name) * Draw_CharAdvance()); /* optech2: the font's width */
 
 		if (keys[1] != -1)
 		{
@@ -1463,7 +1463,7 @@ DrawControllerAltButtonBindingFunc(void *self)
 		Menu_DrawString(a->generic.x + a->generic.parent->x + RCOLUMN_OFFSET * scale,
 				a->generic.y + a->generic.parent->y, name);
 
-		x = strlen(name) * 8;
+		x = (int)(strlen(name) * Draw_CharAdvance()); /* optech2: the font's width */
 
 		if (keys[1] != -1)
 		{
@@ -3160,8 +3160,8 @@ M_Credits_Draw(menuframework_s *m)
 			stringoffset = 0;
 		}
 
-		x = (viddef.width / scale - (int)strlen(credits[i]) * 8 - stringoffset *
-			 8) / 2 + stringoffset * 8;
+		/* optech2: centered at the font's width */
+		x = (viddef.width / scale - (int)(strlen(credits[i]) * Draw_CharAdvance()) - stringoffset * 8) / 2 + stringoffset * 8;
 
 		Draw_StringScaled(x * scale, y * scale, scale, bold, credits[i] + stringoffset);
 	}

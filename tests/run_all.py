@@ -16,9 +16,7 @@ Most checks start the game with "+set fixedtime 16667": every frame is one
 60 Hz tick on the engine clock, so "delay" commands land on the same tick each
 run and the check doesn't depend on how busy the machine is. Checks that time
 real speed (stress-map, network, sound) or run a separate server beside the
-client (multiplayer, packet-split, mod-stack) keep the real clock, and so
-does savegame: with cl_loadpaused the pause starts only once the client has
-connected, so on a fixed clock the server runs a frame or two after a load.
+client (multiplayer, packet-split, mod-stack) keep the real clock.
 
 Usage:
   run_all.py                 every check

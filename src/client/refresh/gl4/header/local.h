@@ -496,12 +496,13 @@ extern void GL4_Draw_PicScaledCol(int x, int y, const char *pic, float factor, c
 	const char *alttext);
 extern void GL4_Draw_StretchPic(int x, int y, int w, int h, const char *pic);
 extern void GL4_Draw_CharScaled(int x, int y, int num, float scale);
-extern void GL4_Draw_StringScaled(int x, int y, float scale, qboolean alt, const char *message);
+extern void GL4_Draw_StringScaled(int start_x, int y, float scale, qboolean alt, const char *message);
 extern void GL4_Draw_TileClear(int x, int y, int w, int h, const char *pic);
 extern void GL4_DrawFrameBufferObject(int x, int y, int w, int h, GLuint fboTexture, const float v_blend[4]);
 extern void GL4_Draw_Fill(int x, int y, int w, int h, int c);
 extern void GL4_Draw_FadeScreen(void);
 extern void GL4_Draw_FillColor(int x, int y, int w, int h, const float *rgba); /* optech2 */
+float GL4_Draw_CharAdvance(void); /* optech2 */
 extern void GL4_Draw_Flash(const float color[4], float x, float y, float w, float h);
 extern void GL4_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte *data, int bits);
 

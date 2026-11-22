@@ -171,11 +171,12 @@ void RE_Draw_PicScaled(int x, int y, const char *name, float scale, const char *
 void RE_Draw_PicScaledCol(int x, int y, const char *name, float factor, const vec3_t color, const char *alttext);
 void RE_Draw_StretchPic(int x, int y, int w, int h, const char *name);
 void RE_Draw_CharScaled(int x, int y, int num, float scale);
-void RE_Draw_StringScaled(int x, int y, float scale, qboolean alt, const char *message);
+void RE_Draw_StringScaled(int start_x, int y, float scale, qboolean alt, const char *message);
 void RE_Draw_TileClear(int x, int y, int w, int h, const char *name);
 void RE_Draw_Fill(int x, int y, int w, int h, int c);
 void RE_Draw_FadeScreen(void);
 void RE_Draw_FillColor(int x, int y, int w, int h, const float *rgba); /* optech2 */
+float RE_Draw_CharAdvance(void); /* optech2 */
 void RE_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte *data, int bits);
 
 qboolean RE_EndWorldRenderpass( void );
