@@ -59,6 +59,7 @@
 
 #include "header/server.h"
 #include "header/game_rerelease.h"
+#include "../common/header/debugdraw.h" /* optech2: the game's Draw_* calls */
 
 void SCR_DebugGraph(float value, int color);
 
@@ -1329,103 +1330,202 @@ RR_GetPathToGoal(const rr_path_request_t *request, rr_path_info_t *info)
 	return false;
 }
 
+/* optech2: the game's debug drawing (g_debug_monster_kills, info_world_text,
+   bot debugging): shapes become lines in the local debug draw store, which
+   the client draws over its view */
+static unsigned int
+RR_DrawColor(const rr_rgba_t *c)
+{
+	return ((unsigned int)c->a << 24) | ((unsigned int)c->r << 16) | ((unsigned int)c->g << 8) | c->b;
+}
+
+#define RR_DRAW_CIRCLE_SEGMENTS 24
+
+/* a ring around origin in the plane of the two axes (0 x, 1 y, 2 z) */
+static void
+RR_DrawRing(const float *origin, float radius, int axis_a, int axis_b, unsigned int color, float seconds,
+	qboolean depth_test)
+{
+	vec3_t previous, point;
+	int i;
+
+	for (i = 0; i <= RR_DRAW_CIRCLE_SEGMENTS; i++)
+	{
+		float angle = (float)i / RR_DRAW_CIRCLE_SEGMENTS * 2.0f * (float)M_PI;
+
+		VectorCopy(origin, point);
+		point[axis_a] += cosf(angle) * radius;
+		point[axis_b] += sinf(angle) * radius;
+
+		if (i > 0)
+		{
+			DebugDraw_Line(previous, point, color, seconds, depth_test);
+		}
+
+		VectorCopy(point, previous);
+	}
+}
+
+/* an arrowhead at end, pointing away from start */
+static void
+RR_DrawArrowHead(const float *start, const float *end, float size, unsigned int color, float seconds,
+	qboolean depth_test)
+{
+	vec3_t direction, right, up, back, tip;
+	int i;
+
+	VectorSubtract(end, start, direction);
+
+	if (VectorNormalize(direction) <= 0)
+	{
+		return;
+	}
+
+	PerpendicularVector(right, direction);
+	CrossProduct(direction, right, up);
+
+	for (i = 0; i < 4; i++)
+	{
+		const float *side = (i < 2) ? right : up;
+		float sign = (i % 2) ? -1.0f : 1.0f;
+
+		VectorMA(end, -size, direction, back);
+		VectorMA(back, sign * size * 0.5f, side, tip);
+		DebugDraw_Line(end, tip, color, seconds, depth_test);
+	}
+}
+
 static void
 RR_DrawLine(const float *a, const float *b, const rr_rgba_t *c, const float t, const bool d)
 {
-	(void)a;
-	(void)b;
-	(void)c;
-	(void)t;
-	(void)d;
+	DebugDraw_Line(a, b, RR_DrawColor(c), t, d);
 }
+
 static void
 RR_DrawPoint(const float *a, const float s, const rr_rgba_t *c, const float t, const bool d)
 {
-	(void)a;
-	(void)s;
-	(void)c;
-	(void)t;
-	(void)d;
+	float half = 2.0f * ((s > 1.0f) ? s : 1.0f);
+	int axis;
+
+	/* a small cross on all three axes */
+	for (axis = 0; axis < 3; axis++)
+	{
+		vec3_t from, to;
+
+		VectorCopy(a, from);
+		VectorCopy(a, to);
+		from[axis] -= half;
+		to[axis] += half;
+		DebugDraw_Line(from, to, RR_DrawColor(c), t, d);
+	}
 }
+
 static void
 RR_DrawCircle(const float *a, const float r, const rr_rgba_t *c, const float t, const bool d)
 {
-	(void)a;
-	(void)r;
-	(void)c;
-	(void)t;
-	(void)d;
+	RR_DrawRing(a, r, 0, 1, RR_DrawColor(c), t, d);
 }
+
 static void
 RR_DrawBounds(const float *a, const float *b, const rr_rgba_t *c, const float t, const bool d)
 {
-	(void)a;
-	(void)b;
-	(void)c;
-	(void)t;
-	(void)d;
+	const unsigned int color = RR_DrawColor(c);
+	vec3_t corners[8];
+	int i;
+
+	/* corner i takes x from bit 0, y from bit 1, z from bit 2 */
+	for (i = 0; i < 8; i++)
+	{
+		corners[i][0] = (i & 1) ? b[0] : a[0];
+		corners[i][1] = (i & 2) ? b[1] : a[1];
+		corners[i][2] = (i & 4) ? b[2] : a[2];
+	}
+
+	/* the 12 edges: corners that differ in exactly one bit */
+	for (i = 0; i < 8; i++)
+	{
+		int bit;
+
+		for (bit = 1; bit < 8; bit <<= 1)
+		{
+			if (!(i & bit))
+			{
+				DebugDraw_Line(corners[i], corners[i | bit], color, t, d);
+			}
+		}
+	}
 }
+
 static void
 RR_DrawSphere(const float *a, const float r, const rr_rgba_t *c, const float t, const bool d)
 {
-	(void)a;
-	(void)r;
-	(void)c;
-	(void)t;
-	(void)d;
+	const unsigned int color = RR_DrawColor(c);
+
+	RR_DrawRing(a, r, 0, 1, color, t, d);
+	RR_DrawRing(a, r, 0, 2, color, t, d);
+	RR_DrawRing(a, r, 1, 2, color, t, d);
 }
+
 static void
 RR_DrawOrientedWorldText(const float *a, const char *x, const rr_rgba_t *c, const float s, const float t, const bool d)
 {
-	(void)a;
-	(void)x;
-	(void)c;
-	(void)s;
-	(void)t;
-	(void)d;
+	(void)s; /* drawn at the console's text size */
+	DebugDraw_Text(a, x, RR_DrawColor(c), t, d);
 }
+
 static void
 RR_DrawStaticWorldText(const float *a, const float *g, const char *x, const rr_rgba_t *c, const float s, const float t, const bool d)
 {
-	(void)a;
-	(void)g;
-	(void)x;
-	(void)c;
+	(void)g; /* drawn facing the view, like oriented text */
 	(void)s;
-	(void)t;
-	(void)d;
+	DebugDraw_Text(a, x, RR_DrawColor(c), t, d);
 }
+
 static void
 RR_DrawCylinder(const float *a, const float h, const float r, const rr_rgba_t *c, const float t, const bool d)
 {
-	(void)a;
-	(void)h;
-	(void)r;
-	(void)c;
-	(void)t;
-	(void)d;
+	const unsigned int color = RR_DrawColor(c);
+	vec3_t top, bottom;
+	int i;
+
+	VectorCopy(a, top);
+	VectorCopy(a, bottom);
+	top[2] += h;
+	bottom[2] -= h;
+	RR_DrawRing(top, r, 0, 1, color, t, d);
+	RR_DrawRing(bottom, r, 0, 1, color, t, d);
+
+	for (i = 0; i < 4; i++)
+	{
+		vec3_t up, down;
+		float angle = i * 0.5f * (float)M_PI;
+
+		VectorCopy(top, up);
+		VectorCopy(bottom, down);
+		up[0] += cosf(angle) * r;
+		up[1] += sinf(angle) * r;
+		down[0] += cosf(angle) * r;
+		down[1] += sinf(angle) * r;
+		DebugDraw_Line(up, down, color, t, d);
+	}
 }
+
 static void
 RR_DrawRay(const float *a, const float *b, const float l, const float s, const rr_rgba_t *c, const float t, const bool d)
 {
-	(void)a;
-	(void)b;
-	(void)l;
-	(void)s;
-	(void)c;
-	(void)t;
-	(void)d;
+	const unsigned int color = RR_DrawColor(c);
+	vec3_t end;
+
+	VectorMA(a, l, b, end);
+	DebugDraw_Line(a, end, color, t, d);
+	RR_DrawArrowHead(a, end, (s > 2.0f) ? s : 2.0f, color, t, d);
 }
+
 static void
 RR_DrawArrow(const float *a, const float *b, const float s, const rr_rgba_t *c, const rr_rgba_t *c2, const float t, const bool d)
 {
-	(void)a;
-	(void)b;
-	(void)s;
-	(void)c;
-	(void)c2;
-	(void)t;
-	(void)d;
+	DebugDraw_Line(a, b, RR_DrawColor(c), t, d);
+	RR_DrawArrowHead(a, b, (s > 2.0f) ? s : 2.0f, RR_DrawColor(c2), t, d);
 }
 
 /* the game wrote match details (teams, scores) for the platform scoreboard;

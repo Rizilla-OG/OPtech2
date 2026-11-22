@@ -1435,6 +1435,7 @@ CLIENT_OBJS_ := \
 	src/common/clientserver.o \
 	src/common/collision.o \
 	src/common/rerelease.o \
+	src/common/debugdraw.o \
 	src/common/cmodels.o \
 	src/common/crc.o \
 	src/common/cmdparser.o \
@@ -1778,6 +1779,7 @@ SERVER_OBJS_ := \
 	src/common/clientserver.o \
 	src/common/collision.o \
 	src/common/rerelease.o \
+	src/common/debugdraw.o \
 	src/common/cmodels.o \
 	src/common/crc.o \
 	src/common/cmdparser.o \

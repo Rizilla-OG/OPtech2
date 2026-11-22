@@ -576,6 +576,7 @@ set(Client-Source
 	${COMMON_SRC_DIR}/clientserver.c
 	${COMMON_SRC_DIR}/collision.c
 	${COMMON_SRC_DIR}/rerelease.c
+	${COMMON_SRC_DIR}/debugdraw.c
 	${COMMON_SRC_DIR}/nav/nav.cpp
 	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourAlloc.cpp
 	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourAssert.cpp
@@ -703,6 +704,7 @@ set(Server-Source
 	${COMMON_SRC_DIR}/clientserver.c
 	${COMMON_SRC_DIR}/collision.c
 	${COMMON_SRC_DIR}/rerelease.c
+	${COMMON_SRC_DIR}/debugdraw.c
 	${COMMON_SRC_DIR}/nav/nav.cpp
 	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourAlloc.cpp
 	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourAssert.cpp

@@ -26,6 +26,7 @@
 
 #include "header/client.h"
 #include "../common/header/nav.h" /* optech2: cl_shownav */
+#include "../common/header/debugdraw.h" /* optech2: game debug drawing */
 #include "input/header/input.h"
 
 /* development tools for weapons */
@@ -137,12 +138,170 @@ V_ShowNavPathSegment(const float *a, const float *b, void *user)
 	}
 }
 
+/* optech2: a line the game's debug drawing asked for, dotted in its
+   color; long lines get sparser dots so a few don't take every particle */
+static void
+V_ShowDebugLine(const float *a, const float *b, unsigned int color, qboolean depth_test, void *user)
+{
+	vec3_t point;
+	float length, step, spacing;
+	int *budget = user;
+
+	if (!depth_test)
+	{
+		return; /* drawn on top of everything by V_DrawDebugOverlay */
+	}
+
+	length = sqrtf((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]) + (b[2] - a[2]) * (b[2] - a[2]));
+	spacing = (length > 256) ? length / 64 : 4;
+
+	for (step = 0; step <= length && *budget > 0; step += spacing, (*budget)--)
+	{
+		float fraction = (length > 0) ? step / length : 0;
+
+		point[0] = a[0] + (b[0] - a[0]) * fraction;
+		point[1] = a[1] + (b[1] - a[1]) * fraction;
+		point[2] = a[2] + (b[2] - a[2]) * fraction;
+		V_AddParticle(point, color | 0xff000000, ((color >> 24) & 0xff) / 255.0f);
+	}
+}
+
+/* optech2: where a world point shows on screen, for the debug overlay;
+   false behind the view */
+static qboolean
+V_ProjectDebugPoint(const float *origin, float *x, float *y)
+{
+	vec3_t forward, right, up, delta;
+	float depth;
+
+	AngleVectors(cl.refdef.viewangles, forward, right, up);
+	VectorSubtract(origin, cl.refdef.vieworg, delta);
+	depth = DotProduct(delta, forward);
+
+	if (depth < 1)
+	{
+		return false;
+	}
+
+	*x = cl.refdef.x + cl.refdef.width * 0.5f * (1 + DotProduct(delta, right) / depth / tanf(cl.refdef.fov_x * (float)M_PI / 360.0f));
+	*y = cl.refdef.y + cl.refdef.height * 0.5f * (1 - DotProduct(delta, up) / depth / tanf(cl.refdef.fov_y * (float)M_PI / 360.0f));
+	return true;
+}
+
+/* optech2: a debug line drawn without the depth test (seen through
+   walls): projected and dotted on screen, cut where it passes behind
+   the view */
+static void
+V_DrawDebugOverlayLine(const float *a, const float *b, unsigned int color, qboolean depth_test,
+	void *user)
+{
+	vec3_t forward, right, up, start, end;
+	float depth_a, depth_b, x0, y0, x1, y1, length, step, rgba[4];
+	float size = SCR_GetConsoleScale() * 2;
+	int *budget = user;
+
+	if (depth_test)
+	{
+		return; /* a particle line, V_ShowDebugLine */
+	}
+
+	AngleVectors(cl.refdef.viewangles, forward, right, up);
+	depth_a = DotProduct(a, forward) - DotProduct(cl.refdef.vieworg, forward);
+	depth_b = DotProduct(b, forward) - DotProduct(cl.refdef.vieworg, forward);
+
+	if (depth_a < 1 && depth_b < 1)
+	{
+		return;
+	}
+
+	VectorCopy(a, start);
+	VectorCopy(b, end);
+
+	/* cut the part behind the view off */
+	if (depth_a < 1)
+	{
+		VectorLerp(a, b, (1 - depth_a) / (depth_b - depth_a), start);
+	}
+	else if (depth_b < 1)
+	{
+		VectorLerp(b, a, (1 - depth_b) / (depth_a - depth_b), end);
+	}
+
+	if (!V_ProjectDebugPoint(start, &x0, &y0) || !V_ProjectDebugPoint(end, &x1, &y1))
+	{
+		return;
+	}
+
+	rgba[0] = ((color >> 16) & 0xff) / 255.0f;
+	rgba[1] = ((color >> 8) & 0xff) / 255.0f;
+	rgba[2] = (color & 0xff) / 255.0f;
+	rgba[3] = ((color >> 24) & 0xff) / 255.0f;
+	length = sqrtf((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0));
+
+	for (step = 0; step <= length && *budget > 0; step += size * 2, (*budget)--)
+	{
+		float fraction = (length > 0) ? step / length : 0;
+		float x = x0 + (x1 - x0) * fraction, y = y0 + (y1 - y0) * fraction;
+
+		if (x >= cl.refdef.x && y >= cl.refdef.y && x < cl.refdef.x + cl.refdef.width &&
+			y < cl.refdef.y + cl.refdef.height)
+		{
+			Draw_FillColor((int)x, (int)y, (int)size, (int)size, rgba);
+		}
+	}
+}
+
+/* optech2: a text the game's debug drawing placed in the world, drawn
+   centered where it shows on screen (hidden behind walls when it asks
+   for depth testing) */
+static void
+V_DrawDebugText(const float *origin, const char *message, unsigned int color, qboolean depth_test,
+	void *user)
+{
+	vec3_t rgb, delta;
+	float x, y, scale = SCR_GetConsoleScale();
+	int width;
+
+	(void)user;
+	VectorSubtract(origin, cl.refdef.vieworg, delta);
+
+	if (VectorLength(delta) > 2048 || !V_ProjectDebugPoint(origin, &x, &y))
+	{
+		return;
+	}
+
+	if (depth_test && (CM_BoxTrace(cl.refdef.vieworg, (float *)origin, vec3_origin, vec3_origin, 0,
+						   MASK_SOLID)
+							  .fraction < 1.0f))
+	{
+		return;
+	}
+
+	rgb[0] = ((color >> 16) & 0xff) / 255.0f;
+	rgb[1] = ((color >> 8) & 0xff) / 255.0f;
+	rgb[2] = (color & 0xff) / 255.0f;
+	width = (int)(strlen(message) * 8 * scale);
+	Draw_StringScaledCol((int)x - width / 2, (int)(y - 4 * scale), scale, rgb, message);
+}
+
+/* optech2: the game's debug drawing that goes on top of the view: lines
+   seen through walls and world texts */
+void
+V_DrawDebugOverlay(void)
+{
+	int budget = 20000;
+
+	DebugDraw_ForEachLine(V_DrawDebugOverlayLine, &budget);
+	DebugDraw_ForEachText(V_DrawDebugText, NULL);
+}
+
 static void
 V_ShowNav(void)
 {
 	int budget = MAX_PARTICLES - r_numparticles - 256; /* leave room for the game's own */
 
 	Nav_ForEachDebugSegment(V_ShowNavPathSegment, &budget);
+	DebugDraw_ForEachLine(V_ShowDebugLine, &budget);
 
 	if (cl_shownav->value && budget > 0)
 	{

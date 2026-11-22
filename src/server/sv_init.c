@@ -25,6 +25,7 @@
  */
 
 #include "header/server.h"
+#include "../common/header/debugdraw.h"
 #include "../common/header/nav.h" /* optech2 */
 #include <limits.h>
 
@@ -296,6 +297,7 @@ SV_SpawnServer(char *server, char *spawnpoint, server_state_t serverstate,
 	/* wipe the entire per-level structure */
 	SV_ClearBaselines();
 	memset(&sv, 0, sizeof(sv));
+	DebugDraw_Clear(); /* optech2: no debug drawing left from the last map */
 	svs.realtime = 0;
 	/* optech2: frames per second for this map (the game reads the same cvar) */
 	sv.tickrate = Q_clamp((int)sv_tickrate->value, 10, 120);

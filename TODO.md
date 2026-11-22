@@ -57,8 +57,9 @@ something unfinished; remove an entry in the commit that fixes it.
   scenes can't be skipped.
 - Multi-line localized texts get a stray space after each line break
   (`src/server/sv_translate.c` escape handling).
-- Client game module: `NotifyMessage` / `ClearNotify` (kill feed, pickups) and
-  the weapon wheel aren't wired (phase 3, in progress).
+- Debug drawing: `info_world_text` (world text) not tried on a map yet; text
+  size and the static text's angles are ignored (always console size, facing
+  the view); remote clients don't see it (kept in the local process).
 
 ## Effects (M2 step 4)
 
