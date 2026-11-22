@@ -4508,6 +4508,12 @@ static menuaction_s s_loadgame_actions[MAX_SAVESLOTS + 1]; // One for quick
 static menuframework_s s_savegame_menu;
 static menuaction_s s_savegame_actions[MAX_SAVESLOTS + 1]; // One for quick
 
+/* optech2: "Restart level" at the top of the load menu while a single
+   player game runs: the autosave made on entering the level (save0), as
+   the re-release offers when you die */
+static menuaction_s s_restart_action;
+static int s_loadgame_first_slot; /* 1 when the restart entry is first */
+
 /* DELETE SAVEGAME */
 
 static qboolean menukeyitem_delete = false;
@@ -4519,6 +4525,11 @@ PromptDeleteSaveFunc(menuframework_s *m)
 	if (item == NULL || item->type != MTYPE_ACTION)
 	{
 		return;
+	}
+
+	if (item->localdata[0] == -2)
+	{
+		return; /* optech2: restart level, nothing to delete */
 	}
 
 	if (item->localdata[0] == -1)
@@ -4682,6 +4693,37 @@ LoadGameCallback(void *self)
 }
 
 static void
+RestartLevelCallback(void *self)
+{
+	(void)self;
+	Cbuf_AddText("load save0\n");
+	M_ForceMenuOff();
+}
+
+/* a single player game runs and its level-start autosave is there */
+static qboolean
+RestartLevel_Available(void)
+{
+	fileHandle_t f;
+
+	if ((Cvar_VariableValue("maxclients") != 1) || !Com_ServerState() ||
+		Cvar_VariableValue("deathmatch") || Cvar_VariableValue("coop"))
+	{
+		return false;
+	}
+
+	FS_FOpenFile("save/save0/server.ssv", &f, true);
+
+	if (!f)
+	{
+		return false;
+	}
+
+	FS_FCloseFile(f);
+	return true;
+}
+
+static void
 LoadGame_MenuInit(void)
 {
 	int i;
@@ -4693,6 +4735,21 @@ LoadGame_MenuInit(void)
 	s_loadgame_menu.nitems = 0;
 
 	Create_Savestrings();
+
+	s_loadgame_first_slot = 0;
+
+	if (RestartLevel_Available())
+	{
+		s_restart_action.generic.type = MTYPE_ACTION;
+		s_restart_action.generic.name = "Restart level";
+		s_restart_action.generic.x = 0;
+		s_restart_action.generic.y = -12;
+		s_restart_action.generic.localdata[0] = -2;
+		s_restart_action.generic.flags = QMF_LEFT_JUSTIFY;
+		s_restart_action.generic.callback = RestartLevelCallback;
+		Menu_AddItem(&s_loadgame_menu, &s_restart_action);
+		s_loadgame_first_slot = 1;
+	}
 
 	// The quicksave slot...
 	s_loadgame_actions[0].generic.type = MTYPE_ACTION;
@@ -4786,7 +4843,9 @@ LoadGame_MenuKey(menuframework_s *m, int key)
 		return menu_move_sound;
 
 	default:
-		s_savegame_menu.cursor = s_loadgame_menu.cursor;
+		/* optech2: the save menu has no restart entry */
+		s_savegame_menu.cursor = s_loadgame_menu.cursor - s_loadgame_first_slot;
+		s_savegame_menu.cursor = s_savegame_menu.cursor < 0 ? 0 : s_savegame_menu.cursor;
 		break;
 	}
 
@@ -4798,6 +4857,12 @@ M_Menu_LoadGame_f(void)
 {
 	LoadSave_AdjustPage(0);
 	LoadGame_MenuInit();
+
+	/* optech2: restart level first, as the re-release's death menu */
+	if (s_loadgame_first_slot)
+	{
+		s_loadgame_menu.cursor = 0;
+	}
 	s_loadgame_menu.draw = Default_MenuDraw;
 	s_loadgame_menu.key  = LoadGame_MenuKey;
 
@@ -4934,7 +4999,7 @@ SaveGame_MenuKey(menuframework_s *m, int key)
 		return menu_move_sound;
 
 	default:
-		s_loadgame_menu.cursor = s_savegame_menu.cursor;
+		s_loadgame_menu.cursor = s_savegame_menu.cursor + s_loadgame_first_slot; /* optech2 */
 		break;
 	}
 

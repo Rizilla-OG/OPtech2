@@ -334,6 +334,15 @@ CG_DrawChar(int x, int y, int scale, int num, bool shadow)
 static void
 CG_DrawPic(int x, int y, int w, int h, const char *name)
 {
+	/* optech2: the re-release's built-in plain white picture */
+	if (!strcmp(name, "_white"))
+	{
+		static const float white[4] = {1, 1, 1, 1};
+
+		Draw_FillColor(x, y, w, h, white);
+		return;
+	}
+
 	Draw_StretchPic(x, y, w, h, name);
 }
 
@@ -342,6 +351,24 @@ CG_DrawColorPic(int x, int y, int w, int h, const char *name, const cg_rgba_t *c
 {
 	int pic_w, pic_h;
 	vec3_t tint;
+
+	/* optech2: the re-release's built-in plain white picture, tinted: a
+	   colored, see-through box (bars, the q2arpg minimap, text backing) */
+	if (!strcmp(name, "_white"))
+	{
+		float rgba[4] = {1, 1, 1, 1};
+
+		if (color)
+		{
+			rgba[0] = color->r / 255.0f;
+			rgba[1] = color->g / 255.0f;
+			rgba[2] = color->b / 255.0f;
+			rgba[3] = color->a / 255.0f;
+		}
+
+		Draw_FillColor(x, y, w, h, rgba);
+		return;
+	}
 
 	if (!color || (color->r == 255 && color->g == 255 && color->b == 255))
 	{
@@ -373,6 +400,16 @@ CG_DrawFontString(const char *str, int x, int y, int scale, const cg_rgba_t *col
 	else if (align == CG_ALIGN_RIGHT)
 	{
 		x -= width;
+	}
+
+	/* optech2: in its color (q2arpg's better/worse stats: green / red) */
+	if (color && !(color->r == 255 && color->g == 255 && color->b == 255))
+	{
+		vec3_t tint;
+
+		VectorSet(tint, color->r / 255.0f, color->g / 255.0f, color->b / 255.0f);
+		Draw_StringScaledCol(x, y, (float)scale, tint, str);
+		return;
 	}
 
 	Draw_StringScaled(x, y, (float)scale, false, str);
@@ -1109,7 +1146,27 @@ CL_CGame_PlayerState(cg_player_state_t *out)
 	out->pmove.pm_flags = ps->pmove.pm_flags;
 	out->pmove.pm_time = ps->pmove.pm_time;
 	out->pmove.gravity = ps->pmove.gravity;
-	out->pmove.viewheight = (int8_t)ps->viewoffset[2];
+
+	/* optech2: our view offset has the view height in it, the re-release
+	   keeps them apart (eye = origin + viewoffset + viewheight); counting it
+	   twice put the eye 22 units high, so q2arpg's health bars sank into the
+	   monsters */
+	out->pmove.viewheight = ps->rr_pmove ? (int8_t)ps->rr_viewheight : (int8_t)ps->viewoffset[2];
+	out->viewoffset[2] -= out->pmove.viewheight;
+
+	/* the view as drawn this frame (predicted, smoothed, with kicks), so
+	   what the module projects onto the screen (health bars over monsters)
+	   stays on them while turning and moving */
+	if (cls.state == ca_active && cl.refresh_prepped)
+	{
+		for (i = 0; i < 3; i++)
+		{
+			out->pmove.origin[i] = cl.refdef.vieworg[i] - out->viewoffset[i];
+			out->viewangles[i] = cl.refdef.viewangles[i];
+		}
+
+		out->pmove.origin[2] -= out->pmove.viewheight;
+	}
 
 	out->gunindex = ps->gunindex;
 	out->gunframe = ps->gunframe;
@@ -1178,7 +1235,7 @@ CL_CGame_DrawHUD(void)
 }
 
 void
-CL_CGame_CenterPrint(const char *text)
+CL_CGame_CenterPrint(const char *text, qboolean typewriter)
 {
 	static int last_center_time = -100000;
 	qboolean replace;
@@ -1204,7 +1261,10 @@ CL_CGame_CenterPrint(const char *text)
 
 	last_center_time = cls.realtime;
 
-	cgame->ParseCenterPrint(text, 0, replace);
+	/* optech2: only the re-release's typewriter prints (mission objectives)
+	   type out; the rest show at once, as there (q2arpg's sell confirmations
+	   came up seconds late) */
+	cgame->ParseCenterPrint(text, 0, replace || !typewriter);
 }
 
 /* optech2: the client game's notify lines (kill feed, pickups, chat):

@@ -980,20 +980,30 @@ RR_LocPrintNow(rr_edict_t *ent, int32_t level, const char *base, const char **ar
 
 	if ((print_level == RR_PRINT_CENTER) || (print_level == RR_PRINT_TYPEWRITER))
 	{
-		/* centerprints are localized here, as svc_centerprint has no arguments */
+		/* centerprints are localized here; they go as a localized print of
+		   level 4 (typed out: mission objectives) or 5 (at once), so the
+		   client game shows them as the re-release does */
 		char text[1024];
 
 		RR_LocalizeHere(base, args, num_args, text, sizeof(text));
 
+		if (!(level & RR_PRINT_BROADCAST) && (RR_ClientNumber(ent) < 0))
+		{
+			return;
+		}
+
+		MSG_WriteByte(&sv.multicast, svc_locprint);
+		MSG_WriteByte(&sv.multicast, print_level);
+		MSG_WriteString(&sv.multicast, text);
+		MSG_WriteByte(&sv.multicast, 0);
+
 		if (level & RR_PRINT_BROADCAST)
 		{
-			MSG_WriteByte(&sv.multicast, svc_centerprint);
-			MSG_WriteString(&sv.multicast, text);
 			SV_Multicast(vec3_origin, MULTICAST_ALL_R);
 		}
 		else
 		{
-			RR_CenterPrintNow(ent, text);
+			RR_Unicast(ent, true, 0);
 		}
 
 		return;

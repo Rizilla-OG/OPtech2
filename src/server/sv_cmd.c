@@ -803,6 +803,8 @@ SV_InitOperatorCommands(void)
 
 	Cmd_AddCommand("save", SV_Savegame_f);
 	Cmd_AddCommand("load", SV_Loadgame_f);
+	Cmd_AddCommand("autosave", SV_Autosave_f); /* optech2: re-release */
+	Cmd_AddCommand("restart_level", SV_RestartLevel_f); /* optech2: re-release */
 
 	Cmd_AddCommand("killserver", SV_KillServer_f);
 

@@ -87,6 +87,7 @@ CHECKS = [
     Check("rr-saves", "rerelease/rr_save_check.py"),
     Check("rr-prediction", "rerelease/rr_predict_check.py"),
     Check("rr-hud", "rerelease/rr_hud_check.py"),
+    Check("q2arpg", "rerelease/q2arpg_check.py"),
     Check("rr-layout", "rerelease/layout_check.py",
           arguments=(str(REPO_DIR.parent / "research" / "rerelease-stock" / "rerelease"),
                      str(REPO_DIR / "build" / "rerelease-stock-game" / "_deps" / "fmt-src" / "include"))),

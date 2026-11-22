@@ -383,12 +383,9 @@ Vk_DrawAliasFrameLerp(entity_t *currententity, dmdx_t *paliashdr, float backlerp
 	VectorScale(move, backlerp, move);
 
 	R_LerpVerts(paliashdr, currententity->frame, currententity->oldframe,
-			frontlerp, backlerp, (float*)s_lerped, move, currententity->scale, colorOnly);
-
-	VkDescriptorSet descriptorSets[] = {
-		skin->vk_texture.descriptorSet,
-		uboDescriptorSet
-	};
+		frontlerp, backlerp, (float *)s_lerped, move, currententity->scale,
+		/* optech2: 2 = a shell on the view weapon, kept from growing */
+		colorOnly ? ((currententity->flags & RF_WEAPONMODEL) ? 2 : 1) : 0);
 
 	// player configuration screen model is using the UI renderpass
 	int pidx = (r_newrefdef.rdflags & RDF_NOWORLDMODEL) ? RP_UI : RP_WORLD;
@@ -425,10 +422,16 @@ Vk_DrawAliasFrameLerp(entity_t *currententity, dmdx_t *paliashdr, float backlerp
 	uint8_t *vertData = QVk_GetVertexBuffer(vaoSize, &vbo, &vboOffset);
 	memcpy(vertData, vertList, vaoSize);
 
-	QVk_BindPipeline(&pipelines[translucentIdx][leftHandOffset]);
-	vkCmdBindDescriptorSets(vk_activeCmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-		pipelines[translucentIdx][leftHandOffset].layout, 0, 2,
-		descriptorSets, 1, &uboOffset);
+	{
+		VkDescriptorSet descriptorSets[] = {
+			skin->vk_texture.descriptorSet,
+			uboDescriptorSet};
+
+		QVk_BindPipeline(&pipelines[translucentIdx][leftHandOffset]);
+		vkCmdBindDescriptorSets(vk_activeCmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			pipelines[translucentIdx][leftHandOffset].layout, 0, 2,
+			descriptorSets, 1, &uboOffset);
+	}
 	vkCmdBindVertexBuffers(vk_activeCmdbuffer, 0, 1, &vbo, &vboOffset);
 
 	*buffer = UpdateIndexBuffer(vertIdxData, *index_pos * sizeof(uint16_t), dstOffset);

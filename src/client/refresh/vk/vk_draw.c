@@ -57,6 +57,10 @@ Draw_FreeLocal(void)
 	free(draw_fontcodes);
 }
 
+/* optech2: RE_Draw_StringScaledCol's color while it draws */
+static qboolean text_tinted;
+static vec3_t text_tint;
+
 /*
  * Draws one 8*8 graphics character with 0 being transparent.
  * It can be clipped to the top of the screen to allow the console to be
@@ -161,12 +165,26 @@ RE_Draw_StringScaled(int start_x, int y, float scale, qboolean alt, const char *
 					q.t1 = draw_font->tl + q.t1 * (draw_font->th - draw_font->tl);
 				}
 
-				QVk_DrawTexRect((float)(x + (xdiff + q.x0 / font_scale) * scale) / vid.width,
-								(float)(y + q.y0 * scale / font_scale + 8 * scale) / vid.height,
-								(q.x1 - q.x0) * scale / font_scale / vid.width,
-								(q.y1 - q.y0) * scale / font_scale / vid.height,
-								q.s0, q.t0, q.s1 - q.s0, q.t1 - q.t0,
-								&draw_font->vk_texture);
+				if (text_tinted)
+				{
+					/* optech2: RE_Draw_StringScaledCol */
+					QVk_DrawTexRectTinted((float)(x + (xdiff + q.x0 / font_scale) * scale) / vid.width,
+						(float)(y + q.y0 * scale / font_scale + 8 * scale) / vid.height,
+						(q.x1 - q.x0) * scale / font_scale / vid.width,
+						(q.y1 - q.y0) * scale / font_scale / vid.height,
+						q.s0, q.t0, q.s1 - q.s0, q.t1 - q.t0,
+						text_tint[0], text_tint[1], text_tint[2], 1.0f,
+						&draw_font->vk_texture);
+				}
+				else
+				{
+					QVk_DrawTexRect((float)(x + (xdiff + q.x0 / font_scale) * scale) / vid.width,
+						(float)(y + q.y0 * scale / font_scale + 8 * scale) / vid.height,
+						(q.x1 - q.x0) * scale / font_scale / vid.width,
+						(q.y1 - q.y0) * scale / font_scale / vid.height,
+						q.s0, q.t0, q.s1 - q.s0, q.t1 - q.t0,
+						&draw_font->vk_texture);
+				}
 				x += xf / font_scale * scale; /* optech2: its own width, not at least 8 */
 			}
 			else
@@ -188,6 +206,16 @@ RE_Draw_StringScaled(int start_x, int y, float scale, qboolean alt, const char *
 			x += 8 * scale;
 		}
 	}
+}
+
+/* optech2: a string in a color (the TrueType font; bitmap text stays plain) */
+void
+RE_Draw_StringScaledCol(int x, int y, float scale, const vec3_t color, const char *message)
+{
+	VectorCopy(color, text_tint);
+	text_tinted = true;
+	RE_Draw_StringScaled(x, y, scale, false, message);
+	text_tinted = false;
 }
 
 image_t *

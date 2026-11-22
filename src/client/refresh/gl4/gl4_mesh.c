@@ -244,7 +244,9 @@ DrawAliasFrameLerp(dmdx_t *paliashdr, entity_t* entity, vec3_t shadelight,
 	VectorScale(move, backlerp, move);
 
 	R_LerpVerts(paliashdr, entity->frame, entity->oldframe,
-			frontlerp, backlerp, (float*)s_lerped, move, entity->scale, colorOnly);
+		frontlerp, backlerp, (float *)s_lerped, move, entity->scale,
+		/* optech2: 2 = a shell on the view weapon, kept from growing */
+		colorOnly ? ((entity->flags & RF_WEAPONMODEL) ? 2 : 1) : 0);
 
 	YQ2_STATIC_ASSERT(sizeof(gl4_alias_vtx_t) == 9 * sizeof(GLfloat), "invalid gl4_alias_vtx_t size");
 

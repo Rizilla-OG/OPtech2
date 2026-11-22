@@ -420,6 +420,7 @@ extern void RDraw_Fill(int x, int y, int w, int h, int c);
 extern void RDraw_FadeScreen(void);
 extern void RDraw_FillColor(int x, int y, int w, int h, const float *rgba); /* optech2 */
 float RDraw_CharAdvance(void); /* optech2 */
+void RDraw_StringScaledCol(int x, int y, float scale, const vec3_t color, const char *message); /* optech2 */
 extern void RDraw_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte *data, int bits);
 
 /* public interface funtions */

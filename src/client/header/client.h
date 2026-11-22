@@ -530,7 +530,7 @@ void CL_CGame_NewLevel(void); /* optech2 */
 void CL_CGame_AddEffects(void); /* optech2 */
 void CL_CGame_ClearEffects(void); /* optech2 */
 void CL_CGame_DrawHUD(void);
-void CL_CGame_CenterPrint(const char *text);
+void CL_CGame_CenterPrint(const char *text, qboolean typewriter);
 qboolean CL_CGame_HasNotify(void);
 void CL_CGame_NotifyMessage(const char *text, qboolean is_chat);
 void CL_CGame_ClearNotify(void);

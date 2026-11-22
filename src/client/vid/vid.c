@@ -795,6 +795,23 @@ Draw_StringScaled(int x, int y, float scale, qboolean alt, const char *message)
 	}
 }
 
+/* optech2: text in a color; plain text with renderers from before it */
+void
+Draw_StringScaledCol(int x, int y, float scale, const vec3_t color, const char *message)
+{
+	if (ref_active)
+	{
+		if (re.DrawStringScaledCol)
+		{
+			re.DrawStringScaledCol(x, y, scale, color, message);
+		}
+		else
+		{
+			re.DrawStringScaled(x, y, scale, false, message);
+		}
+	}
+}
+
 void
 Draw_TileClear(int x, int y, int w, int h, const char *name)
 {

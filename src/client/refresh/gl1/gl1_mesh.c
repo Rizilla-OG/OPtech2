@@ -183,7 +183,9 @@ R_DrawAliasFrameLerp(entity_t *currententity, dmdx_t *paliashdr, float backlerp,
 	VectorScale(move, backlerp, move);
 
 	R_LerpVerts(paliashdr, currententity->frame, currententity->oldframe,
-			frontlerp, backlerp, (float*)s_lerped, move, currententity->scale, colorOnly);
+		frontlerp, backlerp, (float *)s_lerped, move, currententity->scale,
+		/* optech2: 2 = a shell on the view weapon, kept from growing */
+		colorOnly ? ((currententity->flags & RF_WEAPONMODEL) ? 2 : 1) : 0);
 
 	num_mesh_nodes = paliashdr->num_meshes;
 	mesh_nodes = (dmdxmesh_t *)((char*)paliashdr + paliashdr->ofs_meshes);
