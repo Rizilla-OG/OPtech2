@@ -9,7 +9,8 @@ mark them.
 
 On the dedicated server (no window):
   - with the file, the mesh has the jump, and a path from the floor up onto
-    the ledge goes through the gap,
+    the ledge goes through the gap; a medium monster (64 wide, as wide as
+    the gap) gets no path through it,
   - without it there's no jump and no path up.
 
 In the game (no window), with the player on the ledge (god mode):
@@ -142,6 +143,7 @@ def main():
 
     up = ["map optech2_jump", f"nav_path 256 -320 0 256 256 {LEDGE_HEIGHT}"]
     jump_count = r"Navigation: optech2_jump, \d+ polygons, built in \d+ ms \(.*\), \d+ drops, \d+ lifts, (\d+) jumps"
+    too_wide = ["map optech2_jump", f"nav_path 256 -320 0 256 256 {LEDGE_HEIGHT} medium"]
 
     log = run_server(up, True, "paths")
     jumps = re.search(jump_count, log)
@@ -153,6 +155,11 @@ def main():
         report(status == "found" and through_gap, f"floor up onto the ledge: {status}, jumps through the gap: {through_gap}")
     else:
         report(False, "the path up was answered")
+
+    wide_log = run_server(too_wide, True, "paths-medium")
+    wide_found = paths(wide_log)
+    report(bool(wide_found) and wide_found[0][0] != "found",
+           f"a medium monster (64 wide, the gap's width) gets no path through the gap: {wide_found[0][0] if wide_found else '?'}")
 
     bare_log = run_server(up, False, "paths-without-file")
     bare_jumps = re.search(jump_count, bare_log)
@@ -175,7 +182,7 @@ def main():
     print(f"info  stock chase (g_monster_nav 0): {'got up' if up_there else 'stayed on the floor'}, {len(hits)} hits; "
           f"route {route_text(route)}")
 
-    errors = [line for line in (log + bare_log + nav_log + stock_log).splitlines()
+    errors = [line for line in (log + wide_log + bare_log + nav_log + stock_log).splitlines()
               if "ERROR" in line or "crashed" in line or "nav: " in line or "isn't a navigation file" in line]
     report(not errors, "no errors or crashes" + (f" ({errors[0].strip()})" if errors else ""))
     passed = all(results)

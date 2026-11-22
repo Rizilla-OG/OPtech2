@@ -74,7 +74,7 @@ static const float NAV_AGENT_CLIMB = 18.0f;
 static const float NAV_MAX_SLOPE = 45.57f; /* acos(0.7) */
 static const int NAV_TILE_CELLS = 64;      /* 512 units */
 static const float NAV_CLEARANCE = 8.0f;   /* kept from walls beyond a monster's half width */
-static const int NAV_FILE_VERSION = 7;
+static const int NAV_FILE_VERSION = 8;
 static const unsigned short NAV_FLAG_WALK = 1;
 
 /* ledge drops: one-way links from a floor's edge to floor up to
@@ -994,6 +994,26 @@ FindJumps(const NavGeometry &geometry, const dtNavMeshQuery *query, int agent, s
 		if (link.end[1] - link.start[1] > NAV_JUMP_HIGH + 0.5f)
 		{
 			continue;
+		}
+
+		/* this size fits along it: its box (a unit wider, so an exact fit
+		   doesn't pass), a little above the higher end, from over the
+		   takeoff to over the landing (a jump through a gap too narrow
+		   for it would never land) */
+		{
+			float start_q[3], end_q[3];
+			const float radius = NAV_AGENTS[agent].radius + 1.0f;
+			const float mins[3] = {-radius, -radius, 0};
+			const float maxs[3] = {radius, radius, NAV_AGENTS[agent].height};
+
+			ToQuake(link.start, start_q);
+			ToQuake(link.end, end_q);
+			start_q[2] = end_q[2] = (start_q[2] > end_q[2] ? start_q[2] : end_q[2]) + NAV_AGENT_CLIMB + 1.0f;
+
+			if (CM_NavTrace(start_q, end_q, mins, maxs, NAV_SOLID, nullptr) != 1.0f)
+			{
+				continue;
+			}
 		}
 
 		link.kind = NAV_LINK_JUMP;

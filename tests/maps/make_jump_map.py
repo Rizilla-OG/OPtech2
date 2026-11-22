@@ -29,7 +29,7 @@ LEDGE_HEIGHT = 36
 GLASS_TOP = LEDGE_HEIGHT + 112
 GLASS_DEPTH = 16           # the glass stands on the ledge, y 0..16
 GAP = (-416, -352)         # x range left open in the glass
-GLASS_TEXTURE = "e1u1/window1_3"
+GLASS_TEXTURE = "e1u1/window1"
 
 
 def window_brush(mins, maxs):

@@ -677,6 +677,7 @@ typedef struct
 	qboolean nav_has_point; /* nav_move_point is valid */
 	int nav_link_type; /* optech2: how to get to nav_move_point (OPTECH2_PATH_LINK_) */
 	float nav_lift_wait_end; /* optech2: when to stop waiting for a lift (0: not waiting) */
+	float nav_jump_time; /* optech2: when it last jumped a path's barrier jump */
 } monsterinfo_t;
 
 /* this determines how long to wait after a duck to duck again.

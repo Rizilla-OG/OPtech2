@@ -1315,6 +1315,41 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 	   jump's forward speed against it */
 	if ((ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_BARRIER_JUMP) && ent->monsterinfo.blocked)
 	{
+		const float since_jump = level.time - ent->monsterinfo.nav_jump_time;
+
+		/* landed up there (the old path still names the jump): it made it */
+		if (ent->monsterinfo.nav_jump_time > 0 && since_jump >= 1.0f &&
+			ent->s.origin[2] + ent->mins[2] >= ent->monsterinfo.nav_move_point[2] - STEPSIZE)
+		{
+			ent->monsterinfo.nav_jump_time = 0;
+			ent->monsterinfo.nav_retry_time = 0;
+			return false;
+		}
+
+		/* just jumped: keep asking for the jump until it's in the air (its
+		   jump animation only takes over on a later frame) */
+		if (ent->monsterinfo.nav_jump_time > 0 && since_jump < 1.0f)
+		{
+			ent->monsterinfo.blocked(ent, dist);
+			return true;
+		}
+
+		/* back at the same jump soon after jumping: it didn't make it (a
+		   blocked landing, another monster): the stock chase for a while */
+		if (ent->monsterinfo.nav_jump_time > 0 && since_jump < 4.0f)
+		{
+			if (g_monster_nav->value >= 2)
+			{
+				gi.dprintf("%s gives up a jump at %.0f %.0f %.0f\n", ent->classname, ent->s.origin[0],
+					ent->s.origin[1], ent->s.origin[2]);
+			}
+
+			ent->monsterinfo.nav_jump_time = 0;
+			ent->monsterinfo.nav_has_point = false;
+			ent->monsterinfo.nav_retry_time = level.time + 5.0f;
+			return false;
+		}
+
 		ent->ideal_yaw = vectoyaw(to_point);
 
 		if (!FacingIdeal(ent))
@@ -1334,6 +1369,7 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 					ent->s.origin[1], ent->s.origin[2]);
 			}
 
+			ent->monsterinfo.nav_jump_time = level.time;
 			ent->monsterinfo.nav_retry_time = level.time + 1.5f; /* in the air: ask again once landed */
 			return true;
 		}
