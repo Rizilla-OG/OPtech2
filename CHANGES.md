@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Re-release client games: the chat line being typed goes to the module (`CL_GetTextInput`, with a blinking cursor), which draws it under its notify lines; the engine's own `say:` line stays hidden then. The HUD's low-ammo warning uses the count the game gives each weapon (`CL_GetWarnAmmoCount`, from the weapon wheel's list; was always the default 5).
 - Re-release games pick the client slot a connecting player takes (`ClientChooseSlot`, never called before): in coop a player who comes back gets the slot that has their name, and with it their inventory and place; the host gets slot 1.
 - Re-release games' per-player entities (`SVF_INSTANCED`: in coop, an item one player took stays for the others): each client's frame leaves out the ones the game's `Entity_IsVisibleToPlayer` says it shouldn't see (they were sent to everyone, so a taken item still showed to the player who took it).
 - Re-release damage indicators (`svc_damage`, only logged before): an arc around the crosshair toward where each hit came from, red for health, white for armor only, green for the power shield, thicker for bigger hits, fading in a second.

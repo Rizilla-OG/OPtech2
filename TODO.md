@@ -57,6 +57,9 @@ something unfinished; remove an entry in the commit that fixes it.
   scenes can't be skipped.
 - Multi-line localized texts get a stray space after each line break
   (`src/server/sv_translate.c` escape handling).
+- Re-release `CS_CD_LOOP_COUNT` (map music loop count, "0" on Quake II 64
+  maps) reaches the client but isn't used: its meaning isn't known (the
+  original's cd_loopcount switched to track 11 after that many loops).
 - Re-release pathfinding: requests carry no mover size, so every monster
   gets the player-sized mesh (a Tank may be sent through a gap only a soldier
   fits); the re-release's own nodes have the same limit.

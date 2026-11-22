@@ -64,6 +64,19 @@ Wheel_Field(const char *text, int n, int fallback)
 	return (n == 0 && *text) ? atoi(text) : fallback;
 }
 
+/* optech2: the ammo count under which the HUD warns for a weapon wheel
+   slot (CS_WHEEL_WEAPONS field 6); 0 when the game gives none */
+int
+CL_Wheel_WarnAmmo(int weapon_slot)
+{
+	if (weapon_slot < 0 || weapon_slot >= MAX_WHEEL_ITEMS)
+	{
+		return 0;
+	}
+
+	return Wheel_Field(cl.configstrings[CS_WHEEL_WEAPONS + weapon_slot], 6, 0);
+}
+
 static int
 Wheel_SortSlots(const void *a, const void *b)
 {

@@ -541,6 +541,7 @@ int CL_CGame_WheelPowerup(int powerup_index);
 /* optech2: cl_wheel.c, the re-release's weapon and powerup wheels */
 void CL_Wheel_Init(void);
 void CL_Wheel_Draw(void);
+int CL_Wheel_WarnAmmo(int weapon_slot); /* optech2 */
 qboolean CL_Wheel_Mouse(float dx, float dy);
 qboolean CL_Wheel_IsOpen(void);
 void CL_CGame_ConfigString(int index, const char *text);

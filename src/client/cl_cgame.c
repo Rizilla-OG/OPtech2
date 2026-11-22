@@ -435,13 +435,25 @@ CG_FontLineHeight(int scale)
 static bool
 CG_GetTextInput(const char **msg, bool *is_team)
 {
-	return false;
+	/* optech2: the chat line being typed, with a blinking cursor; the
+	   module draws it under its notify lines */
+	static char input[MAXCMDLINE + 2];
+
+	if (cls.key_dest != key_message)
+	{
+		return false;
+	}
+
+	Com_sprintf(input, sizeof(input), "%s%c", chat_buffer, ((cls.realtime >> 8) & 1) ? '_' : ' ');
+	*msg = input;
+	*is_team = chat_team;
+	return true;
 }
 
 static int32_t
 CG_GetWarnAmmoCount(int32_t weapon_id)
 {
-	return 0;
+	return CL_Wheel_WarnAmmo(weapon_id); /* optech2: from the weapon wheel's list */
 }
 
 /* the localized text of a "$key" (localization/loc_<language>.txt), with

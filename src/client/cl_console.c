@@ -606,7 +606,8 @@ Con_DrawNotify(void)
 		v += Con_LinePitch();
 	}
 
-	if (cls.key_dest == key_message)
+	/* optech2: a client game draws the chat line it gets (CL_GetTextInput) */
+	if ((cls.key_dest == key_message) && !CL_CGame_HasNotify())
 	{
 		int skip;
 		char *s;
