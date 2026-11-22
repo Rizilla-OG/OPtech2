@@ -637,7 +637,11 @@ CL_RefreshCmd(void)
 
 	// Update time for prediction; optech2: slowed with the game while a
 	// wheel is open, so the player slows down too, not just the world
-	ms = (int)(cls.nframetime * 1000.0f * CL_Wheel_TimeScale() + 0.5f);
+	{
+		const float slow = CL_Wheel_TimeScale();
+
+		ms = (slow < 1) ? (int)(cls.nframetime * 1000.0f * slow + 0.5f) : (int)(cls.nframetime * 1000.0f);
+	}
 
 	if (ms > 250)
 	{

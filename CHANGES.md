@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Fixed: player commands rounded their time up even without slow motion (since the slow motion change), which shifted the timing of every command (the monster-defs check's railgun got two shots off instead of three). Rounding only applies while slowed now.
 - `g_skip_cameras 1` (off by default, as in the re-release): every camera scene can be skipped with any button, not only the ones the map marks skippable (re-release `hackflags` 64: Quake II 64's intro and `command`); for the end-of-level flybys (`cargo`, `comm`, `conduits`, `station`, `storage`; their `hackflags` 128 isn't used by the re-release). A skip counts from 2 s after the scene starts (was 2 s into the level, so a held key skipped an end-of-level camera at once).
 - Wheel slow motion slows the player too: movement commands use the slowed time (the world slowed but the player moved at full speed, so it hardly showed). Camera scenes: the help computer doesn't open during an intermission or camera scene, and the player's buttons still reach the game there, so the skippable Quake II 64 intro camera sees a key press.
 - Quake II 64's camera scenes: a skippable camera (re-release `hackflags` 64, the intro) ends when a player presses any button after 2 s; our game reads the `hackflags` key now. No crosshair and no weapon or powerup wheel while the player is frozen (intermission, camera scenes), as in the re-release.
