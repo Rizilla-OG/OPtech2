@@ -133,6 +133,48 @@ monster_on_nav_jump(const edict_t *self)
 			   (self->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_LONG_JUMP));
 }
 
+/* optech2: a monster whose path takes a teleporter (the re-release's
+   navigation files mark them): teleporters send it on, others ignore
+   monsters as before */
+qboolean
+monster_on_nav_teleport(const edict_t *self)
+{
+	return self && (self->svflags & SVF_MONSTER) && self->monsterinfo.nav_has_point &&
+		   (self->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_TELEPORT);
+}
+
+/* optech2: sends such a monster to dest, as a teleporter sends a player
+   (anything in the way there dies), facing where dest faces */
+void
+monster_nav_teleport(edict_t *self, const edict_t *dest)
+{
+	if (!self || !dest)
+	{
+		return;
+	}
+
+	gi.unlinkentity(self);
+	VectorCopy(dest->s.origin, self->s.origin);
+	VectorCopy(dest->s.origin, self->s.old_origin);
+	self->s.origin[2] += 10;
+	VectorClear(self->velocity);
+	self->s.angles[YAW] = dest->s.angles[YAW];
+	self->ideal_yaw = dest->s.angles[YAW];
+	self->s.event = EV_OTHER_TELEPORT;
+	KillBox(self);
+	gi.linkentity(self);
+
+	/* a new path from here */
+	self->monsterinfo.nav_has_point = false;
+	self->monsterinfo.nav_retry_time = 0;
+
+	if (g_monster_nav && g_monster_nav->value >= 2)
+	{
+		gi.dprintf("%s teleports to %.0f %.0f %.0f\n", self->classname, self->s.origin[0], self->s.origin[1],
+			self->s.origin[2]);
+	}
+}
+
 /* optech2: a path's leap across a gap: at the jump's takeoff frame, the
    speed that lands it on nav_leap_target (high enough to clear the far
    lip, a little long so it lands past the edge). False when it isn't

@@ -1180,6 +1180,72 @@ M_NavLift(edict_t *ent, float dist)
  * when its next corner is reached, or when a step fails. False when there's
  * no path to follow: the stock chase takes over.
  */
+/* optech2: on a path's ladder, going up (off the ground while it climbs) */
+static qboolean
+M_NavClimbing(const edict_t *ent)
+{
+	return ent->monsterinfo.nav_has_point && (ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_LADDER) &&
+		   (ent->monsterinfo.nav_move_point[2] > ent->s.origin[2] + ent->mins[2] - STEPSIZE);
+}
+
+/* optech2: climbs a path's ladder: at its foot (the path gives the link once
+   the monster is there), up at a steady speed and pressed toward the top,
+   then over the lip onto the floor at the top. Stock monsters have no climb:
+   they rise with their run animation. False when the ladder goes down
+   (walk off it like a ledge) or it's up already. */
+static qboolean
+M_NavClimb(edict_t *ent)
+{
+	const float feet = ent->s.origin[2] + ent->mins[2];
+	vec3_t across;
+	float distance;
+
+	if (ent->monsterinfo.nav_move_point[2] <= feet + STEPSIZE && ent->groundentity)
+	{
+		return false;
+	}
+
+	VectorSubtract(ent->monsterinfo.nav_move_point, ent->s.origin, across);
+	across[2] = 0;
+	distance = VectorNormalize(across);
+
+	if (distance < 1.0f)
+	{
+		vec3_t angles = {0, ent->s.angles[YAW], 0};
+
+		AngleVectors(angles, across, NULL, NULL);
+	}
+	else
+	{
+		ent->ideal_yaw = vectoyaw(across);
+		M_ChangeYaw(ent);
+	}
+
+	if (ent->monsterinfo.nav_move_point[2] > feet + STEPSIZE)
+	{
+		/* (starting: on the ground, or not rising at climbing speed yet) */
+		if ((ent->groundentity || ent->velocity[2] < 100.0f) && g_monster_nav->value >= 2)
+		{
+			gi.dprintf("%s climbs a ladder at %.0f %.0f %.0f\n", ent->classname, ent->s.origin[0],
+				ent->s.origin[1], ent->s.origin[2]);
+		}
+
+		/* climbing */
+		VectorScale(across, 40.0f, ent->velocity);
+		ent->velocity[2] = 200.0f;
+	}
+	else
+	{
+		/* at the top: over the lip */
+		VectorScale(across, 150.0f, ent->velocity);
+		ent->velocity[2] = Q_max(ent->velocity[2], 60.0f);
+	}
+
+	ent->groundentity = NULL;
+	ent->monsterinfo.nav_retry_time = level.time + 0.3f; /* keep this link until it's up */
+	return true;
+}
+
 /* optech2: the monsters with a jump of their own (they jump when blocked):
    how high they jump onto a ledge or over a barrier on a path (the
    re-release's jump_height) and how far they leap across a gap (takeoff to
@@ -1222,7 +1288,7 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 	vec3_t to_point;
 
 	if (!gi_optech2 || !gi_optech2->GetPathToGoalSized || !g_monster_nav || !g_monster_nav->value ||
-		(ent->flags & (FL_FLY | FL_SWIM)) || !ent->groundentity)
+		(ent->flags & (FL_FLY | FL_SWIM)) || (!ent->groundentity && !M_NavClimbing(ent)))
 	{
 		return false;
 	}
@@ -1252,7 +1318,15 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 		request.start[2] += ent->mins[2]; /* the feet */
 		VectorCopy(goal->s.origin, request.goal);
 		request.goal[2] += goal->mins[2];
-		request.path_flags = OPTECH2_PATH_WALK | OPTECH2_PATH_WALK_OFF_LEDGE | OPTECH2_PATH_ELEVATOR;
+		request.path_flags = OPTECH2_PATH_WALK | OPTECH2_PATH_WALK_OFF_LEDGE | OPTECH2_PATH_ELEVATOR |
+							 OPTECH2_PATH_TELEPORT;
+
+		/* player-sized monsters climb ladders */
+		if (Q_max(Q_max(-ent->mins[0], ent->maxs[0]), Q_max(-ent->mins[1], ent->maxs[1])) <= 16.5f &&
+			ent->maxs[2] - ent->mins[2] <= 56.5f)
+		{
+			request.path_flags |= OPTECH2_PATH_LADDER;
+		}
 		request.drop_height = MONSTER_DROP_HEIGHT;
 
 		{
@@ -1316,6 +1390,12 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 
 	ent->monsterinfo.nav_lift_wait_end = 0;
 	VectorSubtract(ent->monsterinfo.nav_move_point, ent->s.origin, to_point);
+
+	/* a ladder up: climb it */
+	if ((ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_LADDER) && M_NavClimb(ent))
+	{
+		return true;
+	}
 
 	/* at a barrier the path jumps or a gap it leaps (its takeoff, back from
 	   the edge): face across it and jump right away (the monster's own
@@ -1400,8 +1480,10 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 
 	if (!SV_StepDirection(ent, vectoyaw(to_point), dist))
 	{
-		/* at a ledge the path drops from: step off it */
-		if ((ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_WALK_OFF_LEDGE) && M_NavWalkOff(ent, to_point, dist))
+		/* at a ledge the path drops from (or a ladder it goes down): step off it */
+		if (((ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_WALK_OFF_LEDGE) ||
+				(ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_LADDER)) &&
+			M_NavWalkOff(ent, to_point, dist))
 		{
 			return true;
 		}
@@ -1426,7 +1508,8 @@ M_MoveToGoal(edict_t *ent, float dist)
 
 	goal = ent->goalentity;
 
-	if (!ent->groundentity && !(ent->flags & (FL_FLY | FL_SWIM)))
+	/* (optech2: or climbing a path's ladder) */
+	if (!ent->groundentity && !(ent->flags & (FL_FLY | FL_SWIM)) && !M_NavClimbing(ent))
 	{
 		return;
 	}
@@ -1442,7 +1525,9 @@ M_MoveToGoal(edict_t *ent, float dist)
 	   straight at it instead of following the 8-way chase directions
 	   (the zig-zag). If that step fails, use the stock chase for 5 s. */
 	if (goal && ((ent->monsterinfo.bad_move_time <= level.time) || (ent->monsterinfo.aiflags & AI_CHARGING)) &&
-		!(ent->monsterinfo.nav_has_point && (ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_ELEVATOR)))
+		!(ent->monsterinfo.nav_has_point && ((ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_ELEVATOR) ||
+												(ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_LADDER) ||
+												(ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_TELEPORT))))
 	{
 		trace_t straightTrace;
 

@@ -74,7 +74,7 @@ static const float NAV_AGENT_CLIMB = 18.0f;
 static const float NAV_MAX_SLOPE = 45.57f; /* acos(0.7) */
 static const int NAV_TILE_CELLS = 64;      /* 512 units */
 static const float NAV_CLEARANCE = 8.0f;   /* kept from walls beyond a monster's half width */
-static const int NAV_FILE_VERSION = 9;
+static const int NAV_FILE_VERSION = 10;
 static const unsigned short NAV_FLAG_WALK = 1;
 
 /* ledge drops: one-way links from a floor's edge to floor up to
@@ -114,6 +114,15 @@ static const unsigned short NAV_FLAG_LEAP_SHORT = NAV_FLAG_LIFT << 3; /* up to N
 static const unsigned short NAV_FLAG_LEAP_LONG = NAV_FLAG_LIFT << 4;  /* up to NAV_LEAP_LONG */
 static const float NAV_LEAP_SHORT = 192.0f;
 static const float NAV_LEAP_LONG = 320.0f;
+
+/* ladders (only in the smallest size's mesh: player-sized monsters climb)
+   and teleporters from the same files: one-way links from a ladder's foot
+   to its top (or back down) and from a teleporter to where it sends you.
+   A teleport costs next to nothing however far it goes. */
+static const unsigned short NAV_FLAG_LADDER = NAV_FLAG_LIFT << 5;
+static const unsigned short NAV_FLAG_TELEPORT = NAV_FLAG_LIFT << 6;
+static const unsigned char NAV_AREA_TELEPORT = 4;
+static const float NAV_TELEPORT_COST = 0.01f;
 
 /* monster sizes: half its width and its height. A monster uses the
    smallest one it fits (Nav_AgentFor) */
@@ -168,13 +177,20 @@ struct NavLift
 	float travel;
 };
 
-/* a barrier jump, or a long jump (leap), from the re-release's navigation
-   file, Quake coordinates */
+/* a link from the re-release's navigation file, Quake coordinates */
+enum NavJumpKind
+{
+	NAV_JUMP_BARRIER,
+	NAV_JUMP_LEAP,
+	NAV_JUMP_LADDER,
+	NAV_JUMP_TELEPORT
+};
+
 struct NavJump
 {
 	float start[3];
 	float end[3];
-	bool leap;
+	NavJumpKind kind;
 };
 
 struct NavGeometry
@@ -279,7 +295,9 @@ enum NavLinkKind
 	NAV_LINK_DROP,
 	NAV_LINK_LIFT,
 	NAV_LINK_JUMP,
-	NAV_LINK_LEAP
+	NAV_LINK_LEAP,
+	NAV_LINK_LADDER,
+	NAV_LINK_TELEPORT
 };
 
 struct NavLink
@@ -546,6 +564,16 @@ TileData(const NavTile &tile, int agent, const std::vector<NavLink> &links, int 
 				link_dirs.push_back(0);
 				break;
 			}
+			case NAV_LINK_LADDER:
+				link_flags.push_back(NAV_FLAG_LADDER);
+				link_areas.push_back(NAV_AREA_JUMP);
+				link_dirs.push_back(0);
+				break;
+			case NAV_LINK_TELEPORT:
+				link_flags.push_back(NAV_FLAG_TELEPORT);
+				link_areas.push_back(NAV_AREA_TELEPORT);
+				link_dirs.push_back(0);
+				break;
 			default:
 				link_flags.push_back(NavDropFlag(-rise));
 				link_areas.push_back(NAV_AREA_DROP);
@@ -855,10 +883,10 @@ FindLifts(const NavGeometry &geometry, const dtNavMeshQuery *query, int agent, s
      origins     12: one per node
      links        6: target node (short), type (byte), flags (byte), traversal (short, 0xffff: none)
      traversals  48: funnel, start, end, ladder plane (36 without the plane before version 4)
-   then an entity count and 30 bytes each, not used here. Only the barrier
-   jumps (types 5 and 11, the second placed by hand) and long jumps (1 and
-   8) are taken; jumps start and end at their traversal's points, else at
-   the two nodes. */
+   then an entity count and 30 bytes each, not used here. Taken: barrier
+   jumps (types 5 and 11, the second placed by hand), long jumps (1 and 8),
+   ladders (10) and teleporters (2); they start and end at their
+   traversal's points, else at the two nodes. */
 static unsigned nav_release_checksum; /* of the file, 0 without one: part of the cache's checksum */
 
 static float
@@ -885,7 +913,8 @@ NavReadU16(const unsigned char *data)
 static void
 NavReadReleaseJumps(std::vector<NavJump> &jumps)
 {
-	static const int LINK_LONG_JUMP = 1, LINK_BARRIER_JUMP = 5, LINK_MANUAL_LONG_JUMP = 8, LINK_MANUAL_BARRIER_JUMP = 11;
+	static const int LINK_LONG_JUMP = 1, LINK_TELEPORT = 2, LINK_BARRIER_JUMP = 5, LINK_MANUAL_LONG_JUMP = 8,
+					 LINK_LADDER = 10, LINK_MANUAL_BARRIER_JUMP = 11;
 	char path[128];
 	void *buffer = nullptr;
 
@@ -935,15 +964,31 @@ NavReadReleaseJumps(std::vector<NavJump> &jumps)
 			const unsigned traversal = NavReadU16(link + 4);
 			NavJump jump;
 
-			const bool barrier = (link[2] == LINK_BARRIER_JUMP || link[2] == LINK_MANUAL_BARRIER_JUMP);
-			const bool leap = (link[2] == LINK_LONG_JUMP || link[2] == LINK_MANUAL_LONG_JUMP);
-
-			if ((!barrier && !leap) || target >= node_count)
+			if (target >= node_count)
 			{
 				continue;
 			}
 
-			jump.leap = leap;
+			if (link[2] == LINK_BARRIER_JUMP || link[2] == LINK_MANUAL_BARRIER_JUMP)
+			{
+				jump.kind = NAV_JUMP_BARRIER;
+			}
+			else if (link[2] == LINK_LONG_JUMP || link[2] == LINK_MANUAL_LONG_JUMP)
+			{
+				jump.kind = NAV_JUMP_LEAP;
+			}
+			else if (link[2] == LINK_LADDER)
+			{
+				jump.kind = NAV_JUMP_LADDER;
+			}
+			else if (link[2] == LINK_TELEPORT)
+			{
+				jump.kind = NAV_JUMP_TELEPORT;
+			}
+			else
+			{
+				continue;
+			}
 
 			for (int k = 0; k < 3; k++)
 			{
@@ -1004,7 +1049,24 @@ NavFloorAtHeight(const dtNavMeshQuery *query, const dtQueryFilter &filter, const
 	return false;
 }
 
-/* the barrier and long jumps that start and end on this size's floor, as links */
+/* the floor nearest a point, at its height (within below_up), up to reach
+   sideways; false if there's none */
+static bool
+NavFloorNear(const dtNavMeshQuery *query, const dtQueryFilter &filter, const float *point_q, float reach,
+	float below_up, float *on_floor_r)
+{
+	const float extents[3] = {reach, below_up, reach};
+	float point_r[3];
+	dtPolyRef ref = 0;
+
+	ToRecast(point_q, point_r);
+
+	return dtStatusSucceed(query->findNearestPoly(point_r, extents, &filter, &ref, on_floor_r)) && ref &&
+		fabsf(on_floor_r[1] - point_r[1]) <= below_up;
+}
+
+/* the links from the re-release's navigation file that start and end on
+   this size's floor */
 static void
 FindJumps(const NavGeometry &geometry, const dtNavMeshQuery *query, int agent, std::vector<NavLink> &links)
 {
@@ -1015,6 +1077,28 @@ FindJumps(const NavGeometry &geometry, const dtNavMeshQuery *query, int agent, s
 
 	for (const NavJump &jump : geometry.jumps)
 	{
+		/* a ladder (player-sized monsters only) or a teleporter: its ends'
+		   nearest floor, nothing to fit. A ladder's top can be a way back
+		   from its shaft; a teleporter's node is on its pad, above the floor */
+		if (jump.kind == NAV_JUMP_LADDER || jump.kind == NAV_JUMP_TELEPORT)
+		{
+			const bool ladder = (jump.kind == NAV_JUMP_LADDER);
+			const float far_reach = ladder ? reach + 64.0f : reach;
+			const float height = ladder ? NAV_AGENT_CLIMB : 40.0f;
+			NavLink link;
+
+			if ((ladder && agent != 0) || !NavFloorNear(query, filter, jump.start, far_reach, height, link.start) ||
+				!NavFloorNear(query, filter, jump.end, far_reach, height, link.end))
+			{
+				continue;
+			}
+
+			link.kind = jump.kind == NAV_JUMP_LADDER ? NAV_LINK_LADDER : NAV_LINK_TELEPORT;
+			links.push_back(link);
+			continue;
+		}
+
+		const bool leap = (jump.kind == NAV_JUMP_LEAP);
 		float forward[3] = {jump.end[0] - jump.start[0], jump.end[1] - jump.start[1], 0};
 		const float length = sqrtf(forward[0] * forward[0] + forward[1] * forward[1]);
 		const float backward[3] = {length > 0 ? -forward[0] / length : 0, length > 0 ? -forward[1] / length : 0, 0};
@@ -1028,14 +1112,14 @@ FindJumps(const NavGeometry &geometry, const dtNavMeshQuery *query, int agent, s
 		   far in as reach goes, a leap's right past the gap, it's far
 		   enough already) */
 		if (!NavFloorAtHeight(query, filter, jump.start, backward, reach, false, link.start) ||
-			!NavFloorAtHeight(query, filter, jump.end, forward, reach, !jump.leap, link.end))
+			!NavFloorAtHeight(query, filter, jump.end, forward, reach, !leap, link.end))
 		{
 			continue;
 		}
 
 		/* up to what the best jumpers reach: a barrier jump's height, a
 		   leap's length (and a low step up at its far side) */
-		if (jump.leap)
+		if (leap)
 		{
 			const float across = sqrtf((link.end[0] - link.start[0]) * (link.end[0] - link.start[0]) +
 				(link.end[2] - link.start[2]) * (link.end[2] - link.start[2]));
@@ -1070,7 +1154,7 @@ FindJumps(const NavGeometry &geometry, const dtNavMeshQuery *query, int agent, s
 			}
 		}
 
-		link.kind = jump.leap ? NAV_LINK_LEAP : NAV_LINK_JUMP;
+		link.kind = leap ? NAV_LINK_LEAP : NAV_LINK_JUMP;
 		links.push_back(link);
 	}
 }
@@ -1594,7 +1678,9 @@ NavLinkCount(int agent, NavLinkKind kind)
 
 			const NavLinkKind found = (poly->flags & NAV_FLAG_LIFT) ? NAV_LINK_LIFT :
 				(poly->flags & (NAV_FLAG_JUMP_LOW | NAV_FLAG_JUMP_HIGH)) ? NAV_LINK_JUMP :
-				(poly->flags & (NAV_FLAG_LEAP_SHORT | NAV_FLAG_LEAP_LONG)) ? NAV_LINK_LEAP : NAV_LINK_DROP;
+				(poly->flags & (NAV_FLAG_LEAP_SHORT | NAV_FLAG_LEAP_LONG)) ? NAV_LINK_LEAP :
+				(poly->flags & NAV_FLAG_LADDER) ? NAV_LINK_LADDER :
+				(poly->flags & NAV_FLAG_TELEPORT) ? NAV_LINK_TELEPORT : NAV_LINK_DROP;
 
 			count += (found == kind);
 		}
@@ -1617,10 +1703,11 @@ NavPrintInfo(void)
 			NavPolygonCount(a));
 	}
 
-	Com_Printf("Navigation: %s, %d polygons, %s in %d ms (%s), %d drops, %d lifts, %d jumps, %d leaps\n",
-		nav_mapname, NavPolygonCount(0), nav_from_cache ? "loaded" : "built", nav_build_msec, sizes,
-		NavLinkCount(0, NAV_LINK_DROP), NavLinkCount(0, NAV_LINK_LIFT), NavLinkCount(0, NAV_LINK_JUMP),
-		NavLinkCount(0, NAV_LINK_LEAP));
+	Com_Printf("Navigation: %s, %d polygons, %s in %d ms (%s), %d drops, %d lifts, %d jumps, %d leaps, "
+		"%d ladders, %d teleporters\n", nav_mapname, NavPolygonCount(0), nav_from_cache ? "loaded" : "built",
+		nav_build_msec, sizes, NavLinkCount(0, NAV_LINK_DROP), NavLinkCount(0, NAV_LINK_LIFT),
+		NavLinkCount(0, NAV_LINK_JUMP), NavLinkCount(0, NAV_LINK_LEAP), NavLinkCount(0, NAV_LINK_LADDER),
+		NavLinkCount(0, NAV_LINK_TELEPORT));
 }
 
 /* the size a monster of this half width and height uses: the smallest it
@@ -1729,8 +1816,9 @@ NavFindPath(int agent, const float *start, const float *goal, float (*points)[3]
 	}
 
 	filter.setIncludeFlags(NAV_FLAG_WALK | NavDropFlags(NAV_MAX_DROP) | NAV_FLAG_LIFT | NAV_FLAG_JUMP_LOW |
-		NAV_FLAG_JUMP_HIGH | NAV_FLAG_LEAP_SHORT | NAV_FLAG_LEAP_LONG); /* every link too */
+		NAV_FLAG_JUMP_HIGH | NAV_FLAG_LEAP_SHORT | NAV_FLAG_LEAP_LONG | NAV_FLAG_LADDER | NAV_FLAG_TELEPORT); /* every link too */
 	filter.setAreaCost(NAV_AREA_LIFT, NAV_LIFT_COST);
+	filter.setAreaCost(NAV_AREA_TELEPORT, NAV_TELEPORT_COST);
 	ToRecast(start, start_r);
 	ToRecast(goal, goal_r);
 
@@ -1949,8 +2037,11 @@ Nav_GetPathToGoalSized(const optech2_path_request_t *request, optech2_path_info_
 	filter.setIncludeFlags(NAV_FLAG_WALK |
 		((request->path_flags & OPTECH2_PATH_WALK_OFF_LEDGE) ? NavDropFlags(request->drop_height) : 0) |
 		((request->path_flags & OPTECH2_PATH_ELEVATOR) ? NAV_FLAG_LIFT : 0) |
-		NavJumpFlags(request));
+		NavJumpFlags(request) |
+		((request->path_flags & OPTECH2_PATH_LADDER) ? NAV_FLAG_LADDER : 0) |
+		((request->path_flags & OPTECH2_PATH_TELEPORT) ? NAV_FLAG_TELEPORT : 0));
 	filter.setAreaCost(NAV_AREA_LIFT, NAV_LIFT_COST);
+	filter.setAreaCost(NAV_AREA_TELEPORT, NAV_TELEPORT_COST);
 	ToRecast(request->start, start_r);
 	ToRecast(request->goal, goal_r);
 
@@ -2043,12 +2134,22 @@ Nav_GetPathToGoalSized(const optech2_path_request_t *request, optech2_path_info_
 		info->link_type = (link_flags & NAV_FLAG_LIFT) ? OPTECH2_PATH_LINK_ELEVATOR :
 			(link_flags & (NAV_FLAG_JUMP_LOW | NAV_FLAG_JUMP_HIGH)) ? OPTECH2_PATH_LINK_BARRIER_JUMP :
 			(link_flags & (NAV_FLAG_LEAP_SHORT | NAV_FLAG_LEAP_LONG)) ? OPTECH2_PATH_LINK_LONG_JUMP :
+			(link_flags & NAV_FLAG_LADDER) ? OPTECH2_PATH_LINK_LADDER :
+			(link_flags & NAV_FLAG_TELEPORT) ? OPTECH2_PATH_LINK_TELEPORT :
 			OPTECH2_PATH_LINK_WALK_OFF_LEDGE;
 	}
 
 	memcpy(info->first_move_point, corners[next], sizeof(info->first_move_point));
 	memcpy(info->second_move_point, corners[next + 1 < corner_count ? next + 1 : next],
 		sizeof(info->second_move_point));
+
+	/* a teleporter: step onto it (the link's start), not toward where it
+	   sends you; that's the point after */
+	if (info->link_type == OPTECH2_PATH_LINK_TELEPORT)
+	{
+		memcpy(info->first_move_point, corners[next - 1], sizeof(info->first_move_point));
+		memcpy(info->second_move_point, corners[next], sizeof(info->second_move_point));
+	}
 
 	/* at the end: the goal, or as close as the mesh gets */
 	if (Distance(request->start, corners[corner_count - 1]) <= (request->move_dist > 16.0f ? request->move_dist : 16.0f))

@@ -1404,6 +1404,8 @@ qboolean blocked_checkjump(edict_t *self, float dist, float maxDown, float maxUp
 qboolean monster_on_nav_jump(const edict_t *self); /* optech2 */
 float monster_jump_target_z(const edict_t *self); /* optech2 */
 qboolean monster_nav_leap_velocity(edict_t *self); /* optech2 */
+qboolean monster_on_nav_teleport(const edict_t *self); /* optech2 */
+void monster_nav_teleport(edict_t *self, const edict_t *dest); /* optech2 */
 qboolean monsterlost_checkhint(edict_t *self);
 qboolean inback(edict_t *self, edict_t *other);
 float realrange(edict_t *self, edict_t *other);

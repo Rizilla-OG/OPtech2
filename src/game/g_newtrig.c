@@ -60,8 +60,14 @@ trigger_teleport_touch(edict_t *self, edict_t *other, const cplane_t *plane /* u
 		return;
 	}
 
-	if (!(other->client))
+	if (!other->client)
 	{
+		/* optech2: a monster whose path takes this teleporter */
+		if (monster_on_nav_teleport(other))
+		{
+			monster_nav_teleport(other, G_Find(NULL, FOFS(targetname), self->target));
+		}
+
 		return;
 	}
 

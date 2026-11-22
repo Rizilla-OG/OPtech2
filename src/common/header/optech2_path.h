@@ -34,6 +34,8 @@
 #define OPTECH2_PATH_LONG_JUMP 0x08 /* jump over gaps */
 #define OPTECH2_PATH_BARRIER_JUMP 0x10 /* jump over low barriers */
 #define OPTECH2_PATH_ELEVATOR 0x20 /* ride lifts */
+#define OPTECH2_PATH_LADDER 0x40 /* optech2: climb ladders */
+#define OPTECH2_PATH_TELEPORT 0x80 /* optech2: take teleporters */
 #define OPTECH2_PATH_ALL 0xffffffffu
 
 /* PathReturnCode */
@@ -58,6 +60,8 @@
 #define OPTECH2_PATH_LINK_LONG_JUMP 2
 #define OPTECH2_PATH_LINK_BARRIER_JUMP 3
 #define OPTECH2_PATH_LINK_ELEVATOR 4
+#define OPTECH2_PATH_LINK_LADDER 5 /* optech2: climb to first_move_point (or climb down: walk off) */
+#define OPTECH2_PATH_LINK_TELEPORT 6 /* optech2: step onto first_move_point, the teleporter */
 
 typedef struct
 {

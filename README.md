@@ -115,9 +115,10 @@ straight at you follow it: around walls, off ledges up to 256 units high, and on
 (`func_plat`), which they call and ride. With the re-release's data, the barrier jumps in its bot
 navigation files (`bots/navigation/<map>.nav`) are added too: monsters that can jump (Berserker,
 Gunner, Infantry, Mutant, Parasite) jump up onto ledges, over barriers and across gaps where those
-files mark it.
+files mark it; player-sized monsters climb their ladders, and any walking monster takes their
+teleporters when its path goes through one.
 
-- `g_monster_nav 0` turns it off (the stock chase), `2` logs ledge drops, lift rides and jumps, `3` also
+- `g_monster_nav 0` turns it off (the stock chase), `2` logs ledge drops, lift rides, jumps, climbs and teleports, `3` also
   draws each monster's path (single player)
 - `cl_shownav 1`, `2`, `3` draw the small, medium and large mesh
 - `nav_info`, `nav_path x1 y1 z1 x2 y2 z2 [small|medium|large]`, `nav_rebuild` in the console
@@ -156,6 +157,7 @@ clock. `run_all.py --headless` runs only the checks that need no window or sound
 - `python3 tests/maps/make_plat_map.py`, then `tests/nav/plat_check.py`: monsters (Berserker, Tank) ride a lift up and down to the player
 - `python3 tests/maps/make_jump_map.py`, then `tests/nav/jump_check.py`: a Berserker jumps up a ledge through a gap, using a re-release navigation file's barrier jump
 - `python3 tests/maps/make_leap_map.py`, then `tests/nav/leap_check.py`: a Berserker leaps a pit, using a re-release navigation file's long jump
+- `python3 tests/maps/make_ladder_map.py`, then `tests/nav/ladder_check.py`: a Berserker climbs a ladder to a balcony and takes a teleporter into a vault
 - `python3 tests/run_all.py`: all of the above
 
 ## Code scanning
