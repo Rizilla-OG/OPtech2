@@ -28,14 +28,17 @@ something unfinished; remove an entry in the commit that fixes it.
 - **Monster navigation, phase 4**: lifts, jumps, ladders and teleporters (and the re-release `.nav`
   files' links for stock maps). Ledge drops are done; every walking monster may drop 256 (no
   per-monster drop height yet).
-- **`damage` check: the HyperBlaster at 60 Hz** lands 27-28 of 31 bolts on the
-  supertank (18.1-18.7 damage per cell, 10 Hz: 20.6), just over the 10%
-  limit. Also with the build from before the navigation work, so not a
-  regression from it; it passed earlier the same day. The supertank moves
-  while the test fires on a wall-clock schedule: make it deterministic.
-- **Two checks are timing-sensitive under load**: `lift` (standing miss
-  percentile) and `tickrate` (chaingun ammo at 60 Hz) failed once while the
-  machine was busy, and pass when run alone. Make them robust to load.
+- **`savegame` keeps the real clock**: with `cl_loadpaused` the pause starts
+  only once the client has connected, so on the fixed test clock the server
+  runs a frame or two after a load (a falling gib moves). Pause the local
+  server at the start of a single-player load, then move the check to
+  `fixedtime` like the others.
+- **`cgame` check rewrites `docs/screenshots/m2_test_cgame_hud.png`** on every
+  run (its particles differ each time): write it under `build/` and copy to
+  `docs/` only on purpose.
+- **GL3/GL4 report every texture as having alpha**: solid and alpha formats
+  are both `GL_RGBA`, so `GL3_Upload32`/`GL4_Upload32` always return true.
+  Only `imagelist` shows it; return whether a pixel below 255 alpha was seen.
 
 ## Re-release support
 
