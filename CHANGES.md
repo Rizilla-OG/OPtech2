@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Fixed: the re-release's own demos (played behind the menu at startup) broke with "Illegible server message" since protocol 2027: the client read the loop sound bit in every protocol, and those demos use bit 36 for their own field. It is read only with our protocol now. New check `rr-demos` (demo1 and demo2 play 15 s each without errors).
 - FFmpeg videos play to the end: at the end of the file each decoder is drained of the frames it still holds (the last ~0.25 s were lost; Quake II 64's intro video `n64l0t.ogv` now shows 396 of its 397 frames, 6.60 s, was 6.35 s).
 - Our game: re-release `target_changelevel` flag 32 (fade out, Quake II 64's intro and level ends): the screen fades to black over 1.3 s before the level changes, as the re-release does. Re-release game libraries already did it themselves (their screen tint reaches the client).
 - Localized texts: escapes in the re-release's localization file are taken out properly (`\n` a line break, `\"` and `\\` the character); the backslash used to turn into a space, so multi-line texts had a stray space at each line break.

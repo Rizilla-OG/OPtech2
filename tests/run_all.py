@@ -89,6 +89,7 @@ CHECKS = [
     Check("rr-hud", "rerelease/rr_hud_check.py"),
     Check("rr-debugdraw", "rerelease/rr_debugdraw_check.py"),
     Check("rr-paths", "rerelease/rr_path_check.py"),
+    Check("rr-demos", "rerelease/rr_demo_check.py"),
     Check("q2arpg", "rerelease/q2arpg_check.py"),
     Check("rr-layout", "rerelease/layout_check.py",
           arguments=(str(REPO_DIR.parent / "research" / "rerelease-stock" / "rerelease"),

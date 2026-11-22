@@ -604,8 +604,9 @@ CL_ParseDelta(const entity_xstate_t *from, entity_xstate_t *to, int number, uint
 		to->solid = MSG_ReadShort(&net_message);
 	}
 
-	/* optech2: loop sound volume and attenuation */
-	if (bits & U_LOOPSOUND)
+	/* optech2: loop sound volume and attenuation; our protocol only (the
+	   re-release's demos use bit 36 for their own field) */
+	if ((bits & U_LOOPSOUND) && (cls.serverProtocol == PROTOCOL_VERSION))
 	{
 		to->loop_volume = MSG_ReadByte(&net_message) / 255.0f;
 		to->loop_attenuation = MSG_ReadByte(&net_message) / 50.0f - 1;
