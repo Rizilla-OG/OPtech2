@@ -1407,6 +1407,7 @@ CLIENT_OBJS_ := \
 	src/client/cl_prediction.o \
 	src/client/cl_screen.o \
 	src/client/cl_cgame.o \
+	src/client/cl_wheel.o \
 	src/client/cl_stats.o \
 	src/client/cl_tempentities.o \
 	src/client/cl_view.o \
@@ -1427,6 +1428,7 @@ CLIENT_OBJS_ := \
 	src/common/argproc.o \
 	src/common/clientserver.o \
 	src/common/collision.o \
+	src/common/rerelease.o \
 	src/common/cmodels.o \
 	src/common/crc.o \
 	src/common/cmdparser.o \
@@ -1769,6 +1771,7 @@ SERVER_OBJS_ := \
 	src/common/argproc.o \
 	src/common/clientserver.o \
 	src/common/collision.o \
+	src/common/rerelease.o \
 	src/common/cmodels.o \
 	src/common/crc.o \
 	src/common/cmdparser.o \

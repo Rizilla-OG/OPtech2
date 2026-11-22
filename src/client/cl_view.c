@@ -642,6 +642,7 @@ CL_PrepRefresh(void)
 
 	/* optech2: client game module of the game library, if it has one */
 	CL_CGame_Load();
+	CL_CGame_ClearNotify(); /* optech2: no kill feed from the last level */
 	CL_CGame_NewLevel(); /* optech2: per-level HUD string slots */
 	CL_CGame_RegisterEffects(); /* optech2: models are freed between levels */
 

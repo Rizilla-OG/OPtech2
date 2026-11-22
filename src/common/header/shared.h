@@ -1399,7 +1399,15 @@ typedef enum
 #define CS_ITEMS (CS_SHADOWLIGHTS + MAX_SHADOW_LIGHTS)
 #define CS_PLAYERSKINS (CS_ITEMS + MAX_ITEMS)
 #define CS_GENERAL (CS_PLAYERSKINS + MAX_CLIENTS)
-#define MAX_CONFIGSTRINGS (CS_GENERAL + MAX_GENERAL)
+/* optech2: the re-release's weapon and powerup wheels (see the re-release
+   game.h for the formats), its music loop count and game style */
+#define MAX_WHEEL_ITEMS 32
+#define CS_WHEEL_WEAPONS (CS_GENERAL + MAX_GENERAL)
+#define CS_WHEEL_AMMO (CS_WHEEL_WEAPONS + MAX_WHEEL_ITEMS)
+#define CS_WHEEL_POWERUPS (CS_WHEEL_AMMO + MAX_WHEEL_ITEMS)
+#define CS_CD_LOOP_COUNT (CS_WHEEL_POWERUPS + MAX_WHEEL_ITEMS)
+#define CS_GAME_STYLE (CS_CD_LOOP_COUNT + 1)
+#define MAX_CONFIGSTRINGS (CS_GAME_STYLE + 1)
 
 /* Originally was 64 as MAX_QPATH */
 #define MAX_CONFIGSTRING 128
@@ -1542,6 +1550,17 @@ typedef struct
 	int rdflags;                /* refdef flags */
 
 	short stats[MAX_XSTATS];     /* fast status bar updates */
+
+	/* optech2: the re-release movement state, from servers running a
+	   re-release game library (engine only, not in any game API) */
+	qboolean rr_pmove; /* the fields below are valid */
+	int rr_pm_type; /* the re-release pmtype_t */
+	unsigned short rr_pm_flags; /* all 16 re-release pm_flags */
+	unsigned short rr_pm_time; /* milliseconds */
+	int rr_viewheight; /* view height, apart from viewoffset */
+	vec3_t rr_origin; /* exact: re-release movement doesn't snap to 1/8 */
+	vec3_t rr_velocity;
+	vec3_t rr_delta_angles; /* exact too (degrees) */
 } player_xstate_t;
 
 /* Fog */

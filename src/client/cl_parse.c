@@ -1163,6 +1163,31 @@ CL_ParsePlayerstate(frame_t *oldframe, frame_t *newframe, int protocol)
 		team_id = MSG_ReadByte(&net_message);
 		Com_DPrintf("%s: team id %d\n", __func__, team_id);
 	}
+
+	/* optech2: re-release movement state (our protocol, re-release games) */
+	if ((flags & PS_RR_PMOVE) && (protocol == PROTOCOL_VERSION))
+	{
+		state->rr_pmove = true;
+		state->rr_pm_type = MSG_ReadByte(&net_message);
+		state->rr_pm_flags = (unsigned short)MSG_ReadShort(&net_message);
+		state->rr_pm_time = (unsigned short)MSG_ReadShort(&net_message);
+		state->rr_viewheight = MSG_ReadChar(&net_message);
+
+		for (group = 0; group < 3; group++)
+		{
+			state->rr_origin[group] = MSG_ReadFloat(&net_message);
+		}
+
+		for (group = 0; group < 3; group++)
+		{
+			state->rr_velocity[group] = MSG_ReadFloat(&net_message);
+		}
+
+		for (group = 0; group < 3; group++)
+		{
+			state->rr_delta_angles[group] = MSG_ReadFloat(&net_message);
+		}
+	}
 }
 
 static void
@@ -2356,6 +2381,40 @@ CL_LocalizeFormat(const char *format, const char **args, int num_args, char *out
 	SV_LocalizeFormat(format, args, num_args, out, out_size);
 }
 
+/* optech2: re-release games name players "##P<slot>" in prints (decoded
+   by the client, the re-release's lobby names); the slot's name here */
+static const char *
+CL_DecodePlayerNames(const char *text)
+{
+	static char decoded[2048];
+	size_t used = 0;
+
+	if (!strstr(text, "##P"))
+	{
+		return text;
+	}
+
+	while (*text && (used < sizeof(decoded) - 1))
+	{
+		if (!strncmp(text, "##P", 3) && (text[3] >= '0') && (text[3] <= '9'))
+		{
+			char *end;
+			long slot = strtol(text + 3, &end, 10);
+			const char *name = ((slot >= 0) && (slot < MAX_CLIENTS) && cl.clientinfo[slot].name[0]) ? cl.clientinfo[slot].name : "player";
+
+			used += Q_strlcpy(decoded + used, name, sizeof(decoded) - used);
+			used = used < sizeof(decoded) - 1 ? used : sizeof(decoded) - 1;
+			text = end;
+			continue;
+		}
+
+		decoded[used++] = *text++;
+	}
+
+	decoded[used] = 0;
+	return decoded;
+}
+
 static void
 CL_ParseLocPrint(void)
 {
@@ -2411,14 +2470,25 @@ CL_ParseLocPrint(void)
 
 	CL_LocalizeFormat(format, (const char **)args, num_args, formatted, formatted_len + 1);
 
-	if (flags == PRINT_CHAT)
+	if ((flags & 7) == PRINT_CHAT)
 	{
 		S_StartLocalSound("misc/talk.wav");
 		con.ormask = 128;
 	}
 
-	Com_Printf("%s", formatted);
-	con.ormask = 0;
+	{
+		const char *text = CL_DecodePlayerNames(formatted);
+
+		Com_Printf("%s", text);
+		con.ormask = 0;
+
+		/* optech2: the client game's notify lines (16: the re-release's
+		   PRINT_NO_NOTIFY) */
+		if (!(flags & 16))
+		{
+			CL_CGame_NotifyMessage(text, (flags & 7) == PRINT_CHAT);
+		}
+	}
 
 	/* clean message */
 	free(formatted);
@@ -2543,21 +2613,33 @@ CL_ParseServerMessage(void)
 					break;
 				}
 
-				if (i == PRINT_CHAT)
+				if ((i & 7) == PRINT_CHAT)
 				{
 					S_StartLocalSound("misc/talk.wav");
 					con.ormask = 128;
 				}
 
 				/* optech2: re-release maps and games send "$key" texts */
-				Com_Printf("%s", SV_LocalizationMessage(MSG_ReadString(&net_message), NULL));
-				con.ormask = 0;
+				{
+					const char *text = CL_DecodePlayerNames(
+						SV_LocalizationMessage(MSG_ReadString(&net_message), NULL));
+
+					Com_Printf("%s", text);
+					con.ormask = 0;
+
+					/* the client game's notify lines (16: PRINT_NO_NOTIFY) */
+					if (!(i & 16))
+					{
+						CL_CGame_NotifyMessage(text, (i & 7) == PRINT_CHAT);
+					}
+				}
 				break;
 
 			case svc_centerprint:
 			{
 				/* optech2: localize "$key" texts (re-release map messages) */
-				const char *text = SV_LocalizationMessage(MSG_ReadString(&net_message), NULL);
+				const char *text = CL_DecodePlayerNames(
+					SV_LocalizationMessage(MSG_ReadString(&net_message), NULL));
 
 				/* optech2: a client game module shows center prints itself
 				   and echoes them to the console between separator lines,

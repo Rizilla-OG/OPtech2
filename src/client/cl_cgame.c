@@ -268,7 +268,10 @@ CG_ServerFrame(void)
 static int32_t
 CG_ServerProtocol(void)
 {
-	return cls.serverProtocol;
+	/* optech2: 0 while reconnecting (a level change); the client game takes
+	   anything up to 34 for an old server and remaps the HUD's configstring
+	   numbers, out of range for ours ("Bad stat_string index") */
+	return cls.serverProtocol ? cls.serverProtocol : PROTOCOL_VERSION;
 }
 
 static const char *
@@ -286,7 +289,10 @@ CG_GetClientPic(int32_t index)
 static const char *
 CG_GetClientDogtag(int32_t index)
 {
-	return "";
+	/* optech2: the re-release's player tags (tags/<name>.png, chosen in its
+	   lobby); everyone gets the default one */
+	(void)index;
+	return "default";
 }
 
 /* name of the first key bound to this command, or "" */
@@ -863,6 +869,14 @@ CL_CGame_ParseTempEntity(int type)
 	return cgame_fx && cgame_fx->ParseTempEntity(type);
 }
 
+/* optech2: a re-release library's player movement (its client game
+   module's Pmove, on a re-release pmove_t), or NULL */
+CL_RR_Pmove_t
+CL_CGame_RRPmove(void)
+{
+	return cgame ? (CL_RR_Pmove_t)cgame->Pmove : NULL;
+}
+
 /* the game library's own player movement for prediction, if it has one */
 static void
 CL_CGame_FindPmove(void)
@@ -921,13 +935,17 @@ CL_CGame_Load(void)
 	{
 #if defined(_WIN32)
 		const char *game_library_name = "game.dll";
+		const char *rerelease_library_name = "game_x64.dll";
 #elif defined(__APPLE__)
 		const char *game_library_name = "game.dylib";
+		const char *rerelease_library_name = "game_x64.dylib";
 #else
 		const char *game_library_name = "game.so";
+		const char *rerelease_library_name = "game_x64.so";
 #endif
 
-		/* the game library of the game folders, like the server's */
+		/* the game library of the game folders, like the server's: in each
+		   folder ours first, then a re-release one (game API 2023) */
 		while ((path = FS_NextPath(path)))
 		{
 			FILE *f;
@@ -935,10 +953,25 @@ CL_CGame_Load(void)
 			snprintf(name, sizeof(name), "%s/%s", path, game_library_name);
 			f = Q_fopen(name, "rb");
 
+			if (!f)
+			{
+				snprintf(name, sizeof(name), "%s/%s", path, rerelease_library_name);
+				f = Q_fopen(name, "rb");
+			}
+
 			if (f)
 			{
 				fclose(f);
 				CL_CGame_Open(name);
+
+				if (cgame_library)
+				{
+					/* optech2: which one, for logs and checks */
+					const char *base = strrchr(name, '/');
+
+					Com_Printf("client game: library %s\n", base ? base + 1 : name);
+				}
+
 				break; /* the first game library found is the game's */
 			}
 		}
@@ -1174,12 +1207,118 @@ CL_CGame_CenterPrint(const char *text)
 	cgame->ParseCenterPrint(text, 0, replace);
 }
 
+/* optech2: the client game's notify lines (kill feed, pickups, chat):
+   true when the module draws them, so the console's own stay hidden */
+qboolean
+CL_CGame_HasNotify(void)
+{
+	return cgame && cgame->NotifyMessage;
+}
+
+/* a server print for the notify lines; the module wants one line at a time
+   without the newline */
+void
+CL_CGame_NotifyMessage(const char *text, qboolean is_chat)
+{
+	char line[1024];
+	const char *start = text;
+
+	if (!CL_CGame_HasNotify())
+	{
+		return;
+	}
+
+	while (*start)
+	{
+		const char *end = strchr(start, '\n');
+		size_t length = end ? (size_t)(end - start) : strlen(start);
+
+		if (length >= sizeof(line))
+		{
+			length = sizeof(line) - 1;
+		}
+
+		if (length)
+		{
+			memcpy(line, start, length);
+			line[length] = 0;
+			cgame->NotifyMessage(0, line, is_chat);
+		}
+
+		if (!end)
+		{
+			break;
+		}
+
+		start = end + 1;
+	}
+}
+
+void
+CL_CGame_ClearNotify(void)
+{
+	if (cgame && cgame->ClearNotify)
+	{
+		cgame->ClearNotify(0);
+	}
+}
+
+/* optech2: the weapon and powerup wheels (cl_wheel.c) ask the module what
+   the player has; false without a re-release client game */
+qboolean
+CL_CGame_WheelWeapons(uint32_t *owned, int *active)
+{
+	cg_player_state_t ps;
+
+	if (!cgame || !cl.frame.valid || !cgame->GetOwnedWeaponWheelWeapons ||
+		!cgame->GetActiveWeaponWheelWeapon)
+	{
+		return false;
+	}
+
+	CL_CGame_PlayerState(&ps);
+	*owned = cgame->GetOwnedWeaponWheelWeapons(&ps);
+	*active = cgame->GetActiveWeaponWheelWeapon(&ps);
+	return true;
+}
+
+int
+CL_CGame_WheelAmmo(int ammo_index)
+{
+	cg_player_state_t ps;
+
+	if (!cgame || !cl.frame.valid || !cgame->GetWeaponWheelAmmoCount || (ammo_index < 0))
+	{
+		return 0;
+	}
+
+	CL_CGame_PlayerState(&ps);
+	return cgame->GetWeaponWheelAmmoCount(&ps, ammo_index);
+}
+
+int
+CL_CGame_WheelPowerup(int powerup_index)
+{
+	cg_player_state_t ps;
+
+	if (!cgame || !cl.frame.valid || !cgame->GetPowerupWheelCount)
+	{
+		return 0;
+	}
+
+	CL_CGame_PlayerState(&ps);
+	return cgame->GetPowerupWheelCount(&ps, powerup_index);
+}
+
 /* a configstring changed (our numbering); the module gets its own */
 void
 CL_CGame_ConfigString(int index, const char *text)
 {
-	if (cgame && cgame->ParseConfigString)
+	int rr = P_ConvertConfigStringTo(index, PROTOCOL_RR22_VERSION);
+
+	/* optech2: only the ones the re-release has (CS_AIRACCEL, the wheels) */
+	if (cgame && cgame->ParseConfigString && (rr >= 0))
 	{
-		cgame->ParseConfigString(P_ConvertConfigStringTo(index, PROTOCOL_RR22_VERSION), text);
+		cgame->ParseConfigString(rr, text);
 	}
 }

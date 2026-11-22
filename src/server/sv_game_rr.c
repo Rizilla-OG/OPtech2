@@ -73,10 +73,6 @@ static int rr_extra_configstrings_count;
 static void RR_SetAsidePending(void);
 static void RR_RestorePending(void);
 
-/* the game's csurface_t for each map surface, built per map */
-static rr_csurface_t *rr_surfaces;
-static int rr_surfaces_count;
-static rr_csurface_t rr_null_surface;
 
 /* ======================================================================= */
 
@@ -367,80 +363,10 @@ RR_WorldSync(edict_t *shadow)
 
 /* traces */
 
-static void
-RR_BuildSurfaces(void)
-{
-	int i, count;
-
-	if (rr_surfaces)
-	{
-		Z_Free(rr_surfaces);
-		rr_surfaces = NULL;
-	}
-
-	count = CM_MapSurfacesNum();
-	rr_surfaces_count = count;
-
-	if (count <= 0)
-	{
-		return;
-	}
-
-	rr_surfaces = Z_Malloc(count * sizeof(*rr_surfaces));
-
-	for (i = 0; i < count; i++)
-	{
-		const mapsurface_t *surface = CM_MapSurfaces(i);
-
-		Q_strlcpy(rr_surfaces[i].name, surface->rname, sizeof(rr_surfaces[i].name));
-		rr_surfaces[i].flags = (uint32_t)surface->c.flags;
-		rr_surfaces[i].value = 0;
-		rr_surfaces[i].id = (uint32_t)(i + 1);
-		Q_strlcpy(rr_surfaces[i].material, surface->c.material,
-			sizeof(rr_surfaces[i].material));
-	}
-}
-
-static rr_csurface_t *
-RR_ConvertSurface(const csurface_t *surface)
-{
-	const mapsurface_t *first;
-	ptrdiff_t index;
-
-	if (!surface || !rr_surfaces)
-	{
-		return &rr_null_surface;
-	}
-
-	first = CM_MapSurfaces(0);
-	index = (const mapsurface_t *)surface - first;
-
-	if ((index < 0) || (index >= rr_surfaces_count))
-	{
-		return &rr_null_surface;
-	}
-
-	return &rr_surfaces[index];
-}
-
 static rr_trace_t
 RR_ConvertTrace(const trace_t *trace)
 {
-	rr_trace_t result;
-
-	memset(&result, 0, sizeof(result));
-	result.allsolid = trace->allsolid;
-	result.startsolid = trace->startsolid;
-	result.fraction = trace->fraction;
-	VectorCopy(trace->endpos, result.endpos);
-	memcpy(&result.plane, &trace->plane, sizeof(result.plane));
-	result.surface = RR_ConvertSurface(trace->surface);
-	result.contents = (uint32_t)trace->contents;
-	result.ent = trace->ent ? RR_GameEdictOf(trace->ent) : NULL;
-	result.plane2 = result.plane;
-	result.surface2 = NULL;
-
-	return result;
+	return RR_TraceFromClassic(trace, trace->ent ? RR_GameEdictOf(trace->ent) : NULL);
 }
 
 static rr_trace_t
@@ -1579,13 +1505,7 @@ Classic_Shutdown(void)
 	rr_shadow_clients = NULL;
 	rr_shadow_count = 0;
 
-	if (rr_surfaces)
-	{
-		Z_Free(rr_surfaces);
-	}
-
-	rr_surfaces = NULL;
-	rr_surfaces_count = 0;
+	RR_FreeSurfaces();
 	RR_FreeExtraConfigStrings();
 	SV_WorldSyncEdict = NULL;
 	sv_rerelease_game = false;
@@ -1597,7 +1517,6 @@ Classic_SpawnEntities(const char *mapname, char *entstring, const char *spawnpoi
 {
 	/* a new map: every shadow starts unlinked and empty */
 	memset(rr_shadows, 0, rr_shadow_count * sizeof(*rr_shadows));
-	RR_BuildSurfaces();
 
 	rr_ge->SpawnEntities(mapname, entstring, spawnpoint);
 	RR_PullAll();
@@ -1738,6 +1657,36 @@ Classic_ReadLevel(const char *filename)
 	RR_PullAll();
 }
 
+/* SV_BuildClientFrame: the client's re-release movement state */
+void
+SV_RR_FillPlayerState(int edict_number, player_xstate_t *ps)
+{
+	const rr_edict_t *ent;
+	const rr_pmove_state_t *pmove;
+
+	if (!rr_ge || (edict_number < 1) || (edict_number >= rr_shadow_count))
+	{
+		return;
+	}
+
+	ent = RR_EdictNum(edict_number);
+
+	if (!ent->client)
+	{
+		return;
+	}
+
+	pmove = &ent->client->ps.pmove;
+	ps->rr_pmove = true;
+	ps->rr_pm_type = pmove->pm_type;
+	ps->rr_pm_flags = pmove->pm_flags;
+	ps->rr_pm_time = pmove->pm_time;
+	ps->rr_viewheight = pmove->viewheight;
+	VectorCopy(pmove->origin, ps->rr_origin);
+	VectorCopy(pmove->velocity, ps->rr_velocity);
+	VectorCopy(pmove->delta_angles, ps->rr_delta_angles);
+}
+
 /* the game may refuse a save (intermission, deathmatch, dead player...) */
 qboolean
 SV_RR_CanSave(void)
@@ -1776,9 +1725,59 @@ Classic_ClientDisconnect(edict_t *ent)
 	RR_PullAll();
 }
 
+/* optech2: chat. Re-release game libraries built for the re-release
+   engine (KEX_Q2_GAME, as id ships them) leave say and say_team to the
+   engine's lobby system and answer them with "invalid game command". No
+   teams here: say_team is said in brackets, as classic games do without
+   teams. */
+static void
+RR_Say(const edict_t *ent, qboolean team)
+{
+	char text[256];
+	const char *said;
+	int client_number = (int)NUM_FOR_EDICT(ent) - 1;
+	size_t length;
+
+	if ((client_number < 0) || (client_number >= maxclients->value) || (Cmd_Argc() < 2))
+	{
+		return;
+	}
+
+	said = Cmd_Args();
+
+	/* say "text" arrives with the quotes */
+	if (*said == '"')
+	{
+		said++;
+	}
+
+	Com_sprintf(text, sizeof(text), team ? "(%s): %s" : "%s: %s",
+		svs.clients[client_number].name, said);
+
+	length = strlen(text);
+
+	if (length && (text[length - 1] == '"'))
+	{
+		text[--length] = 0;
+	}
+
+	if (length > 150)
+	{
+		text[150] = 0;
+	}
+
+	SV_BroadcastPrintf(PRINT_CHAT, "%s\n", text);
+}
+
 static void
 Classic_ClientCommand(edict_t *ent)
 {
+	if (!Q_stricmp(Cmd_Argv(0), "say") || !Q_stricmp(Cmd_Argv(0), "say_team"))
+	{
+		RR_Say(ent, !Q_stricmp(Cmd_Argv(0), "say_team"));
+		return;
+	}
+
 	rr_ge->ClientCommand(RR_GameEdictOf(ent));
 	RR_PullAll();
 }
@@ -1787,30 +1786,8 @@ static void
 Classic_ClientThink(edict_t *ent, usercmd_t *cmd)
 {
 	rr_usercmd_t rr_cmd;
-	int i;
 
-	memset(&rr_cmd, 0, sizeof(rr_cmd));
-	rr_cmd.msec = cmd->msec;
-	rr_cmd.buttons = cmd->buttons & (RR_BUTTON_ATTACK | RR_BUTTON_USE | RR_BUTTON_ANY);
-
-	/* jump and crouch are buttons there, upmove here */
-	if (cmd->upmove > 0)
-	{
-		rr_cmd.buttons |= RR_BUTTON_JUMP;
-	}
-	else if (cmd->upmove < 0)
-	{
-		rr_cmd.buttons |= RR_BUTTON_CROUCH;
-	}
-
-	for (i = 0; i < 3; i++)
-	{
-		rr_cmd.angles[i] = (float)SHORT2ANGLE(cmd->angles[i]);
-	}
-
-	rr_cmd.forwardmove = cmd->forwardmove;
-	rr_cmd.sidemove = cmd->sidemove;
-	rr_cmd.server_frame = (uint32_t)sv.framenum;
+	RR_ConvertUsercmd(cmd, &rr_cmd, (uint32_t)sv.framenum);
 
 	RR_PushPings();
 	rr_ge->ClientThink(RR_GameEdictOf(ent), &rr_cmd);

@@ -85,6 +85,8 @@ CHECKS = [
     # re-release game library (API 2023) on base1; builds id's stock game first
     Check("rr-game", "rerelease/rr_game_check.py"),
     Check("rr-saves", "rerelease/rr_save_check.py"),
+    Check("rr-prediction", "rerelease/rr_predict_check.py"),
+    Check("rr-hud", "rerelease/rr_hud_check.py"),
     Check("rr-layout", "rerelease/layout_check.py",
           arguments=(str(REPO_DIR.parent / "research" / "rerelease-stock" / "rerelease"),
                      str(REPO_DIR / "build" / "rerelease-stock-game" / "_deps" / "fmt-src" / "include"))),

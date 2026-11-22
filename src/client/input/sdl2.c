@@ -1776,6 +1776,12 @@ IN_Move(usercmd_t *cmd)
 	old_mouse_x = mouse_x;
 	old_mouse_y = mouse_y;
 
+	/* optech2: an open weapon wheel takes the mouse, not the view */
+	if ((mouse_x || mouse_y) && CL_Wheel_Mouse(mouse_x, mouse_y))
+	{
+		mouse_x = mouse_y = 0;
+	}
+
 	if (mouse_x || mouse_y)
 	{
 		if (!exponential_speedup->value)

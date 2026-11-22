@@ -234,7 +234,7 @@ void Info_Print(const char *s);
 /* ReRelease network protocol */
 #define PROTOCOL_RR23_VERSION 2023
 /* Quake 2 Customized Network Release */
-#define PROTOCOL_VERSION 2025 /* optech2: was 2024; MAX_IMAGES 2048 moved the configstrings */
+#define PROTOCOL_VERSION 2026 /* optech2: was 2024; MAX_IMAGES 2048 moved the configstrings (2025), the wheel configstrings (2026) */
 
 /* Quake 2 originaly uses 255 as player model */
 #define QII97_PLAYER_MODEL 255
@@ -343,6 +343,7 @@ enum clc_ops_e
 #define PS_MOREBITS (1 << 15)
 #define PS_DAMAGE_BLEND (1 << 16)
 #define PS_TEAM_ID (1 << 17)
+#define PS_RR_PMOVE (1 << 18) /* optech2: our protocol: re-release movement state (type, flags, time, view height) */
 
 /*============================================== */
 
@@ -856,6 +857,7 @@ void FS_FCloseFile(fileHandle_t f);
 int FS_Read(void *buffer, int size, fileHandle_t f);
 int FS_FRead(void *buffer, int size, int count, fileHandle_t f);
 void CM_ReadPortalState(fileHandle_t f);
+int CM_NumAreaPortals(void);
 void CL_WriteConfiguration(void);
 
 // returns the filename used to open f, but (if opened from pack) in correct case

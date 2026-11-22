@@ -319,6 +319,13 @@ CM_WritePortalState(FILE *f)
  * Reads the portal state from a savegame file
  * and recalculates the area connections
  */
+/* optech2: how many bytes CM_WritePortalState writes, in qbooleans */
+int
+CM_NumAreaPortals(void)
+{
+	return cmod ? cmod->numareaportals : 0;
+}
+
 void
 CM_ReadPortalState(fileHandle_t f)
 {

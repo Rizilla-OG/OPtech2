@@ -1793,6 +1793,7 @@ SCR_UpdateScreen(void)
 			if (CL_CGame_Active())
 			{
 				CL_CGame_DrawHUD();
+				CL_Wheel_Draw(); /* optech2: the weapon and powerup wheels */
 				SCR_DrawSpeed();
 			}
 			else

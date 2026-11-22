@@ -178,18 +178,62 @@ P_ConvertConfigStringFrom(int i, int protocol)
 		}
 		else if (i >= CS_WHEEL_WEAPONS_RR22DEMO && i < MAX_CONFIGSTRINGS_RR22DEMO)
 		{
-			/* Skip unknown configs */
-			i = CS_SKIP;
+			/* optech2: the wheels, loop count and game style, same order */
+			i += CS_WHEEL_WEAPONS - CS_WHEEL_WEAPONS_RR22DEMO;
 		}
 	}
 
 	return i;
 }
 
+/* optech2: ours to the re-release's layout (a re-release game library and
+   its client game); -1 where it has no slot */
+static int
+P_ConvertConfigStringToRR(int i)
+{
+	static const struct
+	{
+		int ours, rr, count;
+	} ranges[] = {
+		{CS_NAME, 0, CS_STATUSBAR_END}, /* name ... statusbar: same */
+		{CS_AIRACCEL, CS_AIRACCEL_RR22DEMO, 1},
+		{CS_MAXCLIENTS, CS_MAXCLIENTS_RR22DEMO, 1},
+		{CS_MAPCHECKSUM, CS_MAPCHECKSUM_RR22DEMO, 1},
+		{CS_MODELS, CS_MODELS_RR22DEMO, CS_SOUNDS_RR22DEMO - CS_MODELS_RR22DEMO},
+		{CS_SOUNDS, CS_SOUNDS_RR22DEMO, CS_IMAGES_RR22DEMO - CS_SOUNDS_RR22DEMO},
+		{CS_IMAGES, CS_IMAGES_RR22DEMO, CS_LIGHTS_RR22DEMO - CS_IMAGES_RR22DEMO},
+		{CS_LIGHTS, CS_LIGHTS_RR22DEMO, CS_SHADOWLIGHTS_RR22DEMO - CS_LIGHTS_RR22DEMO},
+		{CS_SHADOWLIGHTS, CS_SHADOWLIGHTS_RR22DEMO, CS_ITEMS_RR22DEMO - CS_SHADOWLIGHTS_RR22DEMO},
+		{CS_ITEMS, CS_ITEMS_RR22DEMO, CS_PLAYERSKINS_RR22DEMO - CS_ITEMS_RR22DEMO},
+		{CS_PLAYERSKINS, CS_PLAYERSKINS_RR22DEMO, CS_GENERAL_RR22DEMO - CS_PLAYERSKINS_RR22DEMO},
+		{CS_GENERAL, CS_GENERAL_RR22DEMO, CS_WHEEL_WEAPONS_RR22DEMO - CS_GENERAL_RR22DEMO},
+		{CS_WHEEL_WEAPONS, CS_WHEEL_WEAPONS_RR22DEMO, MAX_CONFIGSTRINGS_RR22DEMO - CS_WHEEL_WEAPONS_RR22DEMO},
+	};
+	size_t r;
+
+	for (r = 0; r < sizeof(ranges) / sizeof(ranges[0]); r++)
+	{
+		int ours_end = ranges[r].ours + ranges[r].count;
+
+		/* our ranges may be smaller than the re-release's */
+		if ((i >= ranges[r].ours) && (i < ours_end))
+		{
+			return ranges[r].rr + (i - ranges[r].ours);
+		}
+	}
+
+	return -1;
+}
+
 /* Convert from current protocol from internal */
 int
 P_ConvertConfigStringTo(int i, int protocol)
 {
+	if (IS_QIIRR_PROTOCOL(protocol))
+	{
+		return P_ConvertConfigStringToRR(i);
+	}
+
 	if (IS_QII97_PROTOCOL(protocol))
 	{
 		if (i >= CS_MODELS && i < CS_SOUNDS)
@@ -257,6 +301,11 @@ P_ConvertConfigStringTo(int i, int protocol)
 					__func__, i);
 				return i;
 			}
+		}
+		else if (i >= CS_WHEEL_WEAPONS)
+		{
+			/* optech2: no wheels in the old protocol */
+			return CS_SKIP;
 		}
 		else if (i >= CS_GENERAL && i < MAX_CONFIGSTRINGS)
 		{

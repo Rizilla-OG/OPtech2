@@ -27,6 +27,7 @@
 
 #include <math.h>
 #include "header/client.h"
+#include "../common/header/rerelease.h" /* optech2: re-release movement */
 #include "sound/header/local.h" /* optech2: underwater sound */
 
 void
@@ -46,9 +47,43 @@ CL_CheckPredictionError(void)
 	frame = cls.netchan.incoming_acknowledged;
 	frame &= (CMD_BACKUP - 1);
 
+	/* optech2: paused (console or menu in single player): no prediction
+	   ran, so there is nothing to compare; keep the server's position for
+	   when it resumes instead of counting old predictions as misses */
+	if (cl_paused->value)
+	{
+		VectorCopy(cl.frame.origin, cl.predicted_origins[frame]);
+
+		if (cl.frame.playerstate.rr_pmove)
+		{
+			int i;
+
+			for (i = 0; i < 3; i++)
+			{
+				cl.predicted_origins[frame][i] =
+					(int)lroundf(cl.frame.playerstate.rr_origin[i] * 8);
+			}
+		}
+
+		return;
+	}
+
 	/* compare what the server returned with what we had predicted it to be */
 	VectorSubtract(cl.frame.origin,
 			cl.predicted_origins[frame], delta);
+
+	/* optech2: a re-release game: its exact position, rounded as the
+	   prediction rounds (the 1/8 one is truncated, so 24.1249 is 24.0) */
+	if (cl.frame.playerstate.rr_pmove)
+	{
+		int i;
+
+		for (i = 0; i < 3; i++)
+		{
+			delta[i] = (int)lroundf(cl.frame.playerstate.rr_origin[i] * 8) -
+					   cl.predicted_origins[frame][i];
+		}
+	}
 
 	/* save the prediction error for interpolation */
 	len = abs(delta[0]) + abs(delta[1]) + abs(delta[2]);
@@ -67,10 +102,37 @@ CL_CheckPredictionError(void)
 		{
 			Com_Printf("prediction miss on %i: %i\n", cl.frame.serverframe,
 					delta[0] + delta[1] + delta[2]);
+
+			/* optech2: each axis, in 1/8 units */
+			if (cl_showmiss->value > 1)
+			{
+				Com_Printf("  server %i %i %i predicted %i %i %i\n",
+					cl.frame.origin[0], cl.frame.origin[1], cl.frame.origin[2],
+					cl.predicted_origins[frame][0], cl.predicted_origins[frame][1],
+					cl.predicted_origins[frame][2]);
+
+				if (cl.frame.playerstate.rr_pmove)
+				{
+					Com_Printf("  exact %.4f %.4f %.4f\n", cl.frame.playerstate.rr_origin[0],
+						cl.frame.playerstate.rr_origin[1], cl.frame.playerstate.rr_origin[2]);
+				}
+			}
 		}
 
 		VectorCopy(cl.frame.origin,
 				cl.predicted_origins[frame]);
+
+		/* optech2: a re-release game: store its exact position, rounded as
+		   above, or a second frame acking the same command (no new command
+		   sent in between) compares the exact one to the truncated one */
+		if (cl.frame.playerstate.rr_pmove)
+		{
+			for (i = 0; i < 3; i++)
+			{
+				cl.predicted_origins[frame][i] =
+					(int)lroundf(cl.frame.playerstate.rr_origin[i] * 8);
+			}
+		}
 
 		/* save for error itnerpolation */
 		for (i = 0; i < 3; i++)
@@ -145,8 +207,8 @@ CL_PredictionTraceEntity(const struct edict_s *traced)
 }
 
 static void
-CL_ClipMoveToEntities(vec3_t start, vec3_t mins, vec3_t maxs,
-		vec3_t end, trace_t *tr)
+CL_ClipMoveToEntities(const vec3_t start, const vec3_t mins, const vec3_t maxs,
+	const vec3_t end, trace_t *tr, int contentmask, qboolean skip_players)
 {
 	int i;
 
@@ -169,6 +231,13 @@ CL_ClipMoveToEntities(vec3_t start, vec3_t mins, vec3_t maxs,
 		}
 
 		if (ent->number == cl.playernum + 1)
+		{
+			continue;
+		}
+
+		/* optech2: re-release movement may pass through other players */
+		if (skip_players && (ent->number >= 1) && (ent->number <= MAX_CLIENTS) &&
+			cl.configstrings[CS_PLAYERSKINS + ent->number - 1][0])
 		{
 			continue;
 		}
@@ -221,7 +290,7 @@ CL_ClipMoveToEntities(vec3_t start, vec3_t mins, vec3_t maxs,
 			}
 
 			trace = CM_TransformedBoxTrace(start, end,
-				mins, maxs, headnode, MASK_PLAYERSOLID,
+				mins, maxs, headnode, contentmask,
 				origin, angles);
 		}
 
@@ -258,7 +327,7 @@ CL_PMTrace(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end)
 	}
 
 	/* check all other solid models */
-	CL_ClipMoveToEntities(start, mins, maxs, end, &t);
+	CL_ClipMoveToEntities(start, mins, maxs, end, &t, MASK_PLAYERSOLID, false);
 
 	return t;
 }
@@ -336,6 +405,164 @@ CL_UpdateUnderwaterSound(const vec3_t vieworg)
 /*
  * Sets cl.predicted_origin and cl.predicted_angles
  */
+/*
+ * optech2: prediction for re-release game libraries, with the library's
+ * own player movement (re-release pmove_t, float state), so the client
+ * moves the player exactly as the server does.
+ */
+static char cl_rr_world; /* stands for the world entity in prediction traces */
+
+static rr_trace_t
+CL_RR_PMTrace(const float *start, const float *mins, const float *maxs,
+	const float *end, const rr_edict_t *passent, uint32_t contentmask)
+{
+	trace_t t;
+	vec3_t zero = {0, 0, 0};
+
+	(void)passent; /* always the player, skipped by number */
+
+	if (!mins)
+	{
+		mins = zero;
+	}
+
+	if (!maxs)
+	{
+		maxs = zero;
+	}
+
+	t = CM_BoxTrace(start, end, mins, maxs, 0, (int)contentmask);
+	/* the world: the movement code takes "no entity" as "not on the
+	   ground", so it needs something (never read, only compared) */
+	t.ent = (struct edict_s *)&cl_rr_world;
+
+	CL_ClipMoveToEntities(start, mins, maxs, end, &t, (int)contentmask,
+		!(contentmask & RR_CONTENTS_PLAYER));
+
+	return RR_TraceFromClassic(&t, (rr_edict_t *)t.ent);
+}
+
+static rr_trace_t
+CL_RR_PMClip(const float *start, const float *mins, const float *maxs,
+	const float *end, uint32_t contentmask)
+{
+	trace_t t;
+	vec3_t zero = {0, 0, 0};
+
+	t = CM_BoxTrace(start, end, mins ? mins : zero, maxs ? maxs : zero, 0, (int)contentmask);
+	return RR_TraceFromClassic(&t, (rr_edict_t *)&cl_rr_world);
+}
+
+static uint32_t
+CL_RR_PMPointContents(const float *point)
+{
+	return (uint32_t)CL_PMpointcontents(point);
+}
+
+static void
+CL_PredictMovementRR(CL_RR_Pmove_t rr_pmove)
+{
+	const player_xstate_t *ps = &cl.frame.playerstate;
+	int ack, current, i;
+	rr_pmove_t pm;
+	float old_z;
+
+	ack = cls.netchan.incoming_acknowledged;
+	current = cls.netchan.outgoing_sequence;
+
+	/* if we are too far out of date, just freeze */
+	if (current - ack >= CMD_BACKUP)
+	{
+		if (cl_showmiss->value)
+		{
+			Com_Printf("exceeded CMD_BACKUP\n");
+		}
+
+		return;
+	}
+
+	/* the state the server sent, back in the re-release's units */
+	memset(&pm, 0, sizeof(pm));
+	pm.s.pm_type = ps->rr_pm_type;
+	pm.s.pm_flags = ps->rr_pm_flags;
+	pm.s.pm_time = ps->rr_pm_time;
+	pm.s.gravity = ps->pmove.gravity;
+	pm.s.viewheight = (int8_t)ps->rr_viewheight;
+
+	for (i = 0; i < 3; i++)
+	{
+		pm.s.origin[i] = ps->rr_origin[i];
+		pm.s.velocity[i] = ps->rr_velocity[i];
+		pm.s.delta_angles[i] = ps->rr_delta_angles[i];
+		pm.viewoffset[i] = ps->viewoffset[i];
+	}
+
+	/* the server sent the view offset with the view height in it */
+	pm.viewoffset[2] -= ps->rr_viewheight;
+
+	pm.trace = CL_RR_PMTrace;
+	pm.clip = CL_RR_PMClip;
+	pm.pointcontents = CL_RR_PMPointContents;
+	pm.player = NULL; /* traces skip the player by number */
+
+	predicted_time = 0;
+
+	/* run the commands the server hasn't answered yet */
+	while (++ack <= current)
+	{
+		const usercmd_t *cmd;
+		int frame;
+
+		frame = ack & (CMD_BACKUP - 1);
+		cmd = &cl.cmds[frame];
+
+		if (!cmd->msec)
+		{
+			continue;
+		}
+
+		RR_ConvertUsercmd(cmd, &pm.cmd, 0);
+		pm.touch.num = 0;
+		rr_pmove(&pm);
+
+		/* the server pushes the player along with the lift under them */
+		{
+			const entity_xstate_t *ground = CL_PredictionTraceEntity((const struct edict_s *)pm.groundentity);
+			vec3_t velocity;
+
+			if (ground && CL_MoverVelocity(ground, velocity))
+			{
+				VectorMA(pm.s.origin, cmd->msec * 0.001f, velocity, pm.s.origin);
+			}
+
+			predicted_time += cmd->msec * 0.001f;
+		}
+
+		/* for the prediction error check, in 1/8 units like the server's */
+		for (i = 0; i < 3; i++)
+		{
+			cl.predicted_origins[frame][i] = (int)lroundf(pm.s.origin[i] * 8);
+		}
+	}
+
+	predicted_time = 0;
+
+	/* stairs: smooth a step up while walking */
+	old_z = cl.predicted_origin[2];
+
+	if ((pm.s.pm_flags & RR_PMF_ON_GROUND) &&
+		((pm.s.origin[2] - old_z) > 0.125f) && ((pm.s.origin[2] - old_z) <= 18.0f) &&
+		((pm.s.velocity[0] != 0) || (pm.s.velocity[1] != 0)))
+	{
+		cl.predicted_step = pm.s.origin[2] - old_z;
+		cl.predicted_step_time = cls.realtime - (int)(cls.nframetime * 500);
+	}
+
+	VectorCopy(pm.s.velocity, cl.predicted_velocity);
+	VectorCopy(pm.s.origin, cl.predicted_origin);
+	VectorCopy(pm.viewangles, cl.predicted_angles);
+}
+
 void
 CL_PredictMovement(void)
 {
@@ -369,6 +596,21 @@ CL_PredictMovement(void)
 			cl.predicted_velocity[i] = cl.frame.playerstate.pmove.velocity[i] * 0.125f;
 		}
 
+		return;
+	}
+
+	/* optech2: a re-release game: its own movement on its own state */
+	if (cl.frame.playerstate.rr_pmove && CL_CGame_RRPmove())
+	{
+		static qboolean announced;
+
+		if (!announced)
+		{
+			Com_Printf("client game: re-release movement for prediction\n");
+			announced = true;
+		}
+
+		CL_PredictMovementRR(CL_CGame_RRPmove());
 		return;
 	}
 
