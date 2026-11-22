@@ -55,7 +55,8 @@ jobs:
           # Public runners come with 4 CPUs.
           sed -i 's|WITH_AVCODEC:=yes|WITH_AVCODEC:=no|g' Makefile
           set -e  # optech2: a failed renderer used to skip the assets (fonts, yq2.cfg) silently
-          make -j4
+          # optech2: what the package ships (pakextract needs zlib, which the build env lacks)
+          make -j4 config client server game ref_gl1 ref_gl3 ref_gles3 ref_soft ref_vk ref_gl4 assets
           make -j4 ref_gles1
       - name: Create testbuild package
         shell: bash
