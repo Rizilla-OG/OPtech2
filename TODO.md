@@ -79,5 +79,7 @@ something unfinished; remove an entry in the commit that fixes it.
 
 ## Builds and releases
 
+- TrueType console text looks blocky in GL4 at small window sizes (800x600, con_textscale 0.8); Vulkan draws it smoothly since 2026-11-22. Check the GL renderers' font sampling.
+
 - Website (`docs/`): no screenshots yet of the barrier jumps, leaps, ladders,
   teleporters or the new console.
