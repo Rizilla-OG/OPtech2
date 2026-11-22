@@ -516,6 +516,35 @@ G_RunFrame(void)
 	/* exit intermissions */
 	if (level.exitintermission)
 	{
+		/* optech2: re-release target_changelevel flag 32 (Quake II 64):
+		   fade to black over 1.3 s, then change the level */
+		if (level.intermission_fade)
+		{
+			if (!level.intermission_fade_time)
+			{
+				level.intermission_fade_time = level.time + 1.3f;
+			}
+
+			if (level.time < level.intermission_fade_time)
+			{
+				float alpha = 1.0f - (level.intermission_fade_time - level.time - 0.3f);
+
+				alpha = (alpha < 0) ? 0 : ((alpha > 1) ? 1 : alpha);
+
+				for (i = 0; i < maxclients->value; i++)
+				{
+					gclient_t *client = &game.clients[i];
+
+					client->ps.blend[0] = client->ps.blend[1] = client->ps.blend[2] = 0;
+					client->ps.blend[3] = alpha;
+				}
+
+				return;
+			}
+
+			level.intermission_fade = 0;
+		}
+
 		ExitLevel();
 		return;
 	}

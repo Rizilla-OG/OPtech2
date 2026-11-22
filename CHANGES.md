@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Our game: re-release `target_changelevel` flag 32 (fade out, Quake II 64's intro and level ends): the screen fades to black over 1.3 s before the level changes, as the re-release does. Re-release game libraries already did it themselves (their screen tint reaches the client).
 - Localized texts: escapes in the re-release's localization file are taken out properly (`\n` a line break, `\"` and `\\` the character); the backslash used to turn into a space, so multi-line texts had a stray space at each line break.
 - The weapon and powerup wheels take a gamepad: while one is open the right stick points at its items (the cursor goes where the stick leans and stays on the last item when it comes back to the middle) instead of turning. Bind a button to open them, e.g. `bind SHOULDR_RIGHT +wheel` and `bind SHOULDR_LEFT +wheel2`.
 - Slow motion while a weapon or powerup wheel is open, as in the re-release: in single player, game time (server and client) runs at `cl_wheel_slowtime` (default 0.25; the re-release's own speed isn't known) while drawing and input keep their pace. Also while a re-release game asks for slow time (`SERVER_FLAG_SLOW_TIME`, its help computer).

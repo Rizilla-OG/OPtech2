@@ -499,6 +499,8 @@ static const savefield_t savefields_level[] = {
 	{"intermissiontime", offsetof(level_locals_t, intermissiontime), sizeof(((level_locals_t *)0)->intermissiontime), SF_RAW},
 	{"changemap", offsetof(level_locals_t, changemap), sizeof(((level_locals_t *)0)->changemap), SF_STRING},
 	{"exitintermission", offsetof(level_locals_t, exitintermission), sizeof(((level_locals_t *)0)->exitintermission), SF_RAW},
+	{"intermission_fade", offsetof(level_locals_t, intermission_fade), sizeof(((level_locals_t *)0)->intermission_fade), SF_RAW},
+	{"intermission_fade_time", offsetof(level_locals_t, intermission_fade_time), sizeof(((level_locals_t *)0)->intermission_fade_time), SF_RAW},
 	{"intermission_origin", offsetof(level_locals_t, intermission_origin), sizeof(((level_locals_t *)0)->intermission_origin), SF_RAW},
 	{"intermission_angle", offsetof(level_locals_t, intermission_angle), sizeof(((level_locals_t *)0)->intermission_angle), SF_RAW},
 	{"sight_client", offsetof(level_locals_t, sight_client), sizeof(((level_locals_t *)0)->sight_client), SF_EDICT},

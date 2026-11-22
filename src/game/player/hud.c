@@ -110,6 +110,10 @@ BeginIntermission(const edict_t *targ)
 		return; /* already activated */
 	}
 
+	/* optech2: re-release target_changelevel flag 32: fade out first */
+	level.intermission_fade = (targ->spawnflags & SPAWNFLAG_CHANGELEVEL_FADE_OUT) ? 1 : 0;
+	level.intermission_fade_time = 0;
+
 	if (deathmatch->value && ctf->value)
 	{
 		CTFCalcScores();

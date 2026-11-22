@@ -52,7 +52,6 @@ something unfinished; remove an entry in the commit that fixes it.
 ## Re-release support
 
 - Last ~0.25 s of FFmpeg videos is cut: the decoder isn't drained at end of file.
-- `target_changelevel` flag 32 (fade out) isn't done.
 - Quake II 64: `hackflags` key ignored (monster/camera behaviour), camera
   scenes can't be skipped.
 - Re-release `CS_CD_LOOP_COUNT` (map music loop count, "0" on Quake II 64

@@ -101,6 +101,7 @@
 
 /* optech2: re-release target_changelevel spawnflags */
 #define SPAWNFLAG_CHANGELEVEL_NO_END_OF_UNIT 16 /* no end-of-unit screen */
+#define SPAWNFLAG_CHANGELEVEL_FADE_OUT 32 /* fade to black before leaving (Quake II 64) */
 #define SPAWNFLAG_CHANGELEVEL_IMMEDIATE_LEAVE 64 /* with 16: leave at once */
 
 /* memory tags to allow dynamic memory to be cleaned up */
@@ -428,6 +429,8 @@ typedef struct
 	float intermissiontime; /* time the intermission was started */
 	const char *changemap;
 	int exitintermission;
+	int intermission_fade; /* optech2: fade to black before the level changes (not saved) */
+	float intermission_fade_time; /* when the fade ends and the level changes */
 	vec3_t intermission_origin;
 	vec3_t intermission_angle;
 
