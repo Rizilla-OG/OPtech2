@@ -1,6 +1,6 @@
 # optech2: builds id's stock re-release game library (quake2-rerelease-dll,
-# which ships only an MSVC project) natively on Linux, out of tree, without
-# touching its source. Gives game_x64.so exporting GetGameAPI + GetCGameAPI.
+# which ships only an MSVC project), or a mod made from it (q2arpg), natively
+# on Linux, out of tree, without touching its source. Gives game_x64.so exporting GetGameAPI + GetCGameAPI.
 #
 #   cmake -S tools/rerelease/stock_game -B <build dir> \
 #     -DRR_SOURCE_DIR=<quake2-rerelease-dll>/rerelease -DCMAKE_BUILD_TYPE=Release
@@ -28,13 +28,20 @@ FetchContent_MakeAvailable(jsoncpp fmt)
 
 file(GLOB GAME_SOURCES
 	${RR_SOURCE_DIR}/*.cpp ${RR_SOURCE_DIR}/bots/*.cpp ${RR_SOURCE_DIR}/ctf/*.cpp
-	${RR_SOURCE_DIR}/rogue/*.cpp ${RR_SOURCE_DIR}/xatrix/*.cpp)
+	${RR_SOURCE_DIR}/rogue/*.cpp ${RR_SOURCE_DIR}/xatrix/*.cpp
+	${RR_SOURCE_DIR}/q2rpg/*.cpp) # q2arpg's own code (none in the stock game)
 
 add_library(game SHARED ${GAME_SOURCES})
 set_target_properties(game PROPERTIES OUTPUT_NAME game_x64 PREFIX ""
 	CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
 target_include_directories(game PRIVATE ${RR_SOURCE_DIR})
 target_compile_definitions(game PRIVATE KEX_Q2_GAME NO_FMT_SOURCE)
+
+# q2arpg: its version from the VERSION file next to the rerelease folder
+if(EXISTS "${RR_SOURCE_DIR}/../VERSION")
+	file(STRINGS "${RR_SOURCE_DIR}/../VERSION" RR_MOD_VERSION LIMIT_COUNT 1)
+	target_compile_definitions(game PRIVATE Q2RPG_VERSION="${RR_MOD_VERSION}")
+endif()
 target_compile_options(game PRIVATE -w
 	-include ${CMAKE_CURRENT_SOURCE_DIR}/../linux_game_prelude.h)
 target_link_libraries(game PRIVATE jsoncpp_static fmt::fmt)
