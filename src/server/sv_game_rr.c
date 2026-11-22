@@ -1857,6 +1857,23 @@ SV_RR_FillPlayerState(int edict_number, player_xstate_t *ps)
 	VectorCopy(pmove->delta_angles, ps->rr_delta_angles);
 }
 
+/* optech2: an entity the game shows each player on their own (SVF_INSTANCED:
+   coop items a player already took stay for the others); false if this
+   client shouldn't see it */
+qboolean
+SV_RR_VisibleTo(const edict_t *shadow, const edict_t *client_shadow)
+{
+	rr_edict_t *ent;
+
+	if (!rr_ge || !rr_ge->Entity_IsVisibleToPlayer || !(shadow->svflags & RR_SVF_INSTANCED))
+	{
+		return true;
+	}
+
+	ent = RR_GameEdictOf(shadow);
+	return rr_ge->Entity_IsVisibleToPlayer(ent, RR_GameEdictOf(client_shadow));
+}
+
 /* the game may refuse a save (intermission, deathmatch, dead player...) */
 qboolean
 SV_RR_CanSave(void)

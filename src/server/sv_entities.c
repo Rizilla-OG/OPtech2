@@ -731,6 +731,12 @@ SV_BuildClientFrame(client_t *client)
 			continue;
 		}
 
+		/* optech2: a re-release game's per-player entities (coop items) */
+		if (!SV_RR_VisibleTo(ent, clent))
+		{
+			continue;
+		}
+
 		/* ignore ents without visible models unless they have an effect */
 		if (!ent->s.modelindex && !ent->s.effects &&
 			!ent->s.sound && !ent->s.event &&
