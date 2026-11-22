@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- A code of conduct (`CODE_OF_CONDUCT.md`, adapted from Contributor Covenant 3.0) with an email for reports; CONTRIBUTING.md links to it.
 - Project page: the wheels work in every game now.
 - The weapon and powerup wheels work with our own game library too (they needed a re-release game): it sends what each wheel holds (`CS_WHEEL_WEAPONS` / `_AMMO` / `_POWERUPS`, set at map start; slots also assigned at load so saves loaded from the menu work), the player's weapons, ammo and powerups in the re-release stat layout (stats 32-47, ammo counts 9 bits and powerups 2 bits each; the re-release's 12 ammo types keep their counts first, extra ones from mods show none), the weapon in hand, and takes `use_index` / `use_index_only`. Power Screen and Power Shield sit on the powerup wheel as on/off items. `rr-game` check pins `cl_run 0` (the shipped `yq2.cfg` turns running on, so the walk went off a ledge before the jump).
 - Project page: Vulkan ships in every download now, Windows too.
