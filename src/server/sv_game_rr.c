@@ -1600,10 +1600,23 @@ RR_ServerFrame(void)
 	return (uint32_t)sv.framenum;
 }
 
+#ifndef DEDICATED_ONLY
+int IN_SetClipboardText(const char *s);
+#endif
+
+/* optech2: the game's "where" command puts the player's position on the
+   clipboard; on this machine (a local game), not a dedicated server's */
 static void
 RR_SendToClipBoard(const char *text)
 {
+#ifndef DEDICATED_ONLY
+	if (text && !dedicated->value)
+	{
+		IN_SetClipboardText(text);
+	}
+#else
 	(void)text;
+#endif
 }
 
 /* info strings */

@@ -956,6 +956,14 @@ T_Damage(edict_t *targ, edict_t *inflictor, edict_t *attacker, vec3_t dir,
 			level.time, attacker ? attacker->classname : "none", targ->classname, damage, take, mod);
 	}
 
+	/* optech2: hit markers, as the re-release: what a player's hit did to
+	   something alive (health, armor and power armor), this frame */
+	if ((targ != attacker) && attacker && attacker->client && (targ->health > 0) &&
+		!(targ->svflags & SVF_DEADMONSTER) && (mod != MOD_TARGET_LASER))
+	{
+		attacker->client->hit_marker_damage += take + psave + asave;
+	}
+
 	/* do the damage */
 	if (take)
 	{

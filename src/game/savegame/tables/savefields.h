@@ -405,6 +405,7 @@ static const savefield_t savefields_client[] = {
 	{"showradar", offsetof(gclient_t, showradar), sizeof(((gclient_t *)0)->showradar), SF_RAW},
 	{"showhelpicon", offsetof(gclient_t, showhelpicon), sizeof(((gclient_t *)0)->showhelpicon), SF_RAW},
 	{"ammo_index", offsetof(gclient_t, ammo_index), sizeof(((gclient_t *)0)->ammo_index), SF_RAW},
+	{"hit_marker_damage", offsetof(gclient_t, hit_marker_damage), sizeof(((gclient_t *)0)->hit_marker_damage), SF_RAW},
 	{"buttons", offsetof(gclient_t, buttons), sizeof(((gclient_t *)0)->buttons), SF_RAW},
 	{"oldbuttons", offsetof(gclient_t, oldbuttons), sizeof(((gclient_t *)0)->oldbuttons), SF_RAW},
 	{"latched_buttons", offsetof(gclient_t, latched_buttons), sizeof(((gclient_t *)0)->latched_buttons), SF_RAW},

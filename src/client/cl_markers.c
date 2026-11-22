@@ -39,6 +39,13 @@ typedef struct
 	int start; /* cls.realtime when it showed up */
 } help_arrow_t;
 
+#define HIT_MARKER_STAT 50 /* re-release STAT_HIT_MARKER: damage landed this frame */
+#define HIT_MARKER_LIFE_MS 250
+
+static int hit_marker_frame; /* the server frame last checked */
+static int hit_marker_start; /* cls.realtime of the last hit */
+static int hit_marker_damage;
+
 #define MAX_DAMAGE_ARCS 16
 #define DAMAGE_ARC_LIFE_MS 1000
 #define DAMAGE_HEALTH 0x20 /* svc_damage type bits, beside 5 bits of damage / 3 */
@@ -253,6 +260,63 @@ CL_Markers_AddEntities(void)
 }
 
 /* points of interest, on screen */
+/* optech2: hit markers: four short ticks around the crosshair when the
+   player's attack lands (the game's STAT_HIT_MARKER), bigger for bigger
+   hits, gone in a quarter second */
+static void
+CL_Markers_DrawHitMarker(void)
+{
+	float center_x = cl.refdef.x + cl.refdef.width * 0.5f;
+	float center_y = cl.refdef.y + cl.refdef.height * 0.5f;
+	float scale = SCR_GetHUDScale();
+	float rgba[4] = {1.0f, 1.0f, 1.0f, 0};
+	float gap, length, dot;
+	int age, i;
+
+	if (!CL_CGame_Active() || !cl.frame.valid)
+	{
+		return;
+	}
+
+	if (cl.frame.serverframe != hit_marker_frame)
+	{
+		int damage = cl.frame.playerstate.stats[HIT_MARKER_STAT];
+
+		hit_marker_frame = cl.frame.serverframe;
+
+		if (damage > 0)
+		{
+			hit_marker_start = cls.realtime;
+			hit_marker_damage = damage;
+		}
+	}
+
+	age = cls.realtime - hit_marker_start;
+
+	if (!hit_marker_damage || age < 0 || age >= HIT_MARKER_LIFE_MS)
+	{
+		return;
+	}
+
+	rgba[3] = 1.0f - (float)age / HIT_MARKER_LIFE_MS;
+	gap = 6 * scale;
+	length = (4 + ((hit_marker_damage > 100) ? 100 : hit_marker_damage) / 20.0f) * scale;
+	dot = scale;
+
+	/* the four diagonals, out from the crosshair */
+	for (i = 0; i < 4; i++)
+	{
+		float dx = (i & 1) ? 1.0f : -1.0f, dy = (i & 2) ? 1.0f : -1.0f;
+		float step;
+
+		for (step = 0; step < length; step += dot)
+		{
+			Draw_FillColor((int)(center_x + dx * (gap + step)), (int)(center_y + dy * (gap + step)),
+				(int)(dot * 2), (int)(dot * 2), rgba);
+		}
+	}
+}
+
 void
 CL_Markers_Draw(void)
 {
@@ -260,6 +324,7 @@ CL_Markers_Draw(void)
 	int i;
 
 	CL_Markers_DrawDamage();
+	CL_Markers_DrawHitMarker();
 
 	for (i = 0; i < MAX_POIS; i++)
 	{

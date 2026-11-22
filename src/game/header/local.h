@@ -1645,6 +1645,7 @@ struct gclient_s
 
 	int ammo_index;
 
+	int hit_marker_damage; /* optech2: what this player's hits did since the last frame went out */
 	int buttons;
 	int oldbuttons;
 	int latched_buttons;
@@ -2127,6 +2128,7 @@ void PMenu_Select(edict_t *ent);
 #define STAT_POWERUP_INFO_START 41
 #define NUM_POWERUP_STATS 3
 #define STAT_ACTIVE_WHEEL_WEAPON 47
+#define STAT_HIT_MARKER 50 /* damage the player landed this frame (hit markers) */
 #define WHEEL_AMMO_MAX 12 /* ammo counts that fit the ammo stats */
 #define WHEEL_POWERUP_MAX 23 /* powerup counts that fit the powerup stats */
 #define AMMO_VALUE_INFINITE 511

@@ -1583,6 +1583,11 @@ ClientEndServerFrame(edict_t *ent)
 	current_player = ent;
 	current_client = ent->client;
 
+	/* optech2: hit markers: what this player's hits did since the last
+	   frame went out (shots fire between frames, as commands come in) */
+	current_client->ps_rrstats[STAT_HIT_MARKER] = (short)((current_client->hit_marker_damage > 32767) ? 32767 : current_client->hit_marker_damage);
+	current_client->hit_marker_damage = 0;
+
 	/* check fog changes */
 	ForceFogTransition(ent, false);
 
