@@ -673,11 +673,22 @@ Cmd_Use_f(edict_t *ent)
 	}
 
 	s = gi.args();
-	it = FindItem(s);
 
-	if (!it)
+	/* optech2: the weapon and powerup wheels pick an item by its index */
+	if (!Q_stricmp(gi.argv(0), "use_index") || !Q_stricmp(gi.argv(0), "use_index_only"))
 	{
-		it = FindItemByClassname(s);
+		int item_index = (int)strtol(s, NULL, 10);
+
+		it = ((item_index > 0) && (item_index < itemlist_len)) ? &itemlist[item_index] : NULL;
+	}
+	else
+	{
+		it = FindItem(s);
+
+		if (!it)
+		{
+			it = FindItemByClassname(s);
+		}
 	}
 
 	if (!it)
@@ -2468,7 +2479,8 @@ ClientCommand(edict_t *ent)
 		return;
 	}
 
-	if (Q_stricmp(cmd, "use") == 0)
+	if ((Q_stricmp(cmd, "use") == 0) || (Q_stricmp(cmd, "use_index") == 0) ||
+		(Q_stricmp(cmd, "use_index_only") == 0)) /* optech2: from the wheels */
 	{
 		Cmd_Use_f(ent);
 	}

@@ -374,6 +374,9 @@ typedef struct gitem_s
 
 	const char *gives; /* optech2: ammo pickups add to this item instead (its pickup name) */
 	weapon_def_t weapon; /* optech2: weapon numbers from the item definition */
+	int weapon_wheel_index; /* optech2: slot on the weapon wheel (CS_WHEEL_WEAPONS), -1 for none */
+	int ammo_wheel_index; /* optech2: slot in the wheel's ammo table (CS_WHEEL_AMMO), -1 for none */
+	int powerup_wheel_index; /* optech2: slot on the powerup wheel (CS_WHEEL_POWERUPS), -1 for none */
 } gitem_t;
 
 /* this structure is left intact through an entire game
@@ -2101,6 +2104,20 @@ void PMenu_Select(edict_t *ent);
 #define STAT_CTF_MATCH 29
 #define STAT_CTF_ID_VIEW_COLOR 30
 #define STAT_CTF_TEAMINFO 31
+
+/* optech2: weapon and powerup wheel stats, laid out as the re-release
+   client game reads them (ammo counts packed 9 bits each, powerup
+   counts 2 bits each) */
+#define STAT_WEAPONS_OWNED_1 32
+#define STAT_WEAPONS_OWNED_2 33
+#define STAT_AMMO_INFO_START 34
+#define NUM_AMMO_STATS 7
+#define STAT_POWERUP_INFO_START 41
+#define NUM_POWERUP_STATS 3
+#define STAT_ACTIVE_WHEEL_WEAPON 47
+#define WHEEL_AMMO_MAX 12 /* ammo counts that fit the ammo stats */
+#define WHEEL_POWERUP_MAX 23 /* powerup counts that fit the powerup stats */
+#define AMMO_VALUE_INFINITE 511
 
 #define CONFIG_CTF_MATCH (CS_AIRACCEL - 1)
 #define CONFIG_CTF_TEAMINFO (CS_AIRACCEL - 2)

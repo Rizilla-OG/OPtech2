@@ -4737,6 +4737,8 @@ SP_item_foodcube(edict_t *self)
 	self->classname = "foodcube";
 }
 
+static void SetWheelItems(qboolean send_configstrings);
+
 void
 InitItems(void)
 {
@@ -4982,6 +4984,9 @@ InitItems(void)
 	Defs_LoadMonsters();
 
 	itemlist_len = num_items;
+
+	/* optech2: wheel slots, also for a save loaded without a map spawn */
+	SetWheelItems(false);
 }
 
 qboolean
@@ -5004,6 +5009,149 @@ ItemHasValidModel(const gitem_t *item)
 /*
  * Called by worldspawn
  */
+/*
+ * optech2: the weapon and powerup wheels. Tells clients which items each
+ * wheel holds (configstrings in the re-release layout: item, icon, ammo
+ * slot, ...); G_SetStats sends what the player has of them.
+ */
+static qboolean
+Wheel_IsPowerArmor(const gitem_t *it)
+{
+	return (it->flags & IT_ARMOR) && it->use;
+}
+
+static qboolean
+Wheel_IsPowerup(const gitem_t *it)
+{
+	if (it->flags & (IT_WEAPON | IT_NOT_GIVEABLE))
+	{
+		return false;
+	}
+
+	return (it->flags & IT_POWERUP) || Wheel_IsPowerArmor(it);
+}
+
+static void
+SetWheelItems(qboolean send_configstrings)
+{
+	/* the re-release's ammo types go first, so they keep a count when
+	   mods add more than the ammo stats hold */
+	static const char *const stock_ammo[] = {
+		"ammo_bullets", "ammo_shells", "ammo_rockets", "ammo_grenades",
+		"ammo_cells", "ammo_slugs", "ammo_magslug", "ammo_trap",
+		"ammo_flechettes", "ammo_tesla", "ammo_disruptor", "ammo_prox"};
+	int ammo_count = 0, weapon_count = 0, powerup_count = 0;
+	int pass, i, k;
+
+	for (i = 0; i < itemlist_len; i++)
+	{
+		itemlist[i].weapon_wheel_index = -1;
+		itemlist[i].ammo_wheel_index = -1;
+		itemlist[i].powerup_wheel_index = -1;
+	}
+
+	for (pass = 0; pass < 2; pass++)
+	{
+		for (i = 0; i < itemlist_len && ammo_count < WHEEL_AMMO_MAX; i++)
+		{
+			gitem_t *it = &itemlist[i];
+			qboolean stock = false;
+
+			if (!(it->flags & IT_AMMO) || (it->ammo_wheel_index >= 0) || !it->classname)
+			{
+				continue;
+			}
+
+			for (k = 0; k < (int)(sizeof(stock_ammo) / sizeof(stock_ammo[0])); k++)
+			{
+				if (!Q_stricmp(it->classname, stock_ammo[k]))
+				{
+					stock = true;
+				}
+			}
+
+			if (stock != (pass == 0))
+			{
+				continue;
+			}
+
+			if (send_configstrings)
+			{
+				gi.configstring(CS_WHEEL_AMMO + ammo_count,
+					va("%d|%d", i, it->icon ? gi.imageindex(it->icon) : 0));
+			}
+
+			it->ammo_wheel_index = ammo_count++;
+		}
+	}
+
+	for (i = 0; i < itemlist_len; i++)
+	{
+		gitem_t *it = &itemlist[i];
+		const gitem_t *ammo;
+		int min_ammo;
+
+		if (!(it->flags & IT_WEAPON) || !it->pickup_name || (weapon_count >= MAX_WHEEL_ITEMS))
+		{
+			continue;
+		}
+
+		ammo = it->ammo ? FindItem(it->ammo) : NULL;
+		min_ammo = (it->flags & IT_AMMO) ? 1 : it->quantity;
+
+		/* item|icon|ammo slot|min ammo|powerup wheel|sort|warn|droppable */
+		if (send_configstrings)
+		{
+			gi.configstring(CS_WHEEL_WEAPONS + weapon_count,
+				va("%d|%d|%d|%d|0|%d|0|%d", i, it->icon ? gi.imageindex(it->icon) : 0,
+					ammo ? ammo->ammo_wheel_index : -1, min_ammo, weapon_count, it->drop ? 1 : 0));
+		}
+
+		it->weapon_wheel_index = weapon_count++;
+	}
+
+	for (i = 0; i < itemlist_len; i++)
+	{
+		gitem_t *it = &itemlist[i];
+
+		if (!Wheel_IsPowerup(it) || !it->pickup_name || (powerup_count >= WHEEL_POWERUP_MAX))
+		{
+			continue;
+		}
+
+		/* item|icon|on-off|sort|droppable|ammo slot */
+		if (send_configstrings)
+		{
+			gi.configstring(CS_WHEEL_POWERUPS + powerup_count,
+				va("%d|%d|%d|%d|%d|-1", i, it->icon ? gi.imageindex(it->icon) : 0,
+					Wheel_IsPowerArmor(it) ? 1 : 0, powerup_count, it->drop ? 1 : 0));
+		}
+
+		it->powerup_wheel_index = powerup_count++;
+	}
+
+	if (!send_configstrings)
+	{
+		return;
+	}
+
+	/* clear slots a bigger item list (an earlier map's mods) left */
+	for (k = ammo_count; k < MAX_WHEEL_ITEMS; k++)
+	{
+		gi.configstring(CS_WHEEL_AMMO + k, "");
+	}
+
+	for (k = weapon_count; k < MAX_WHEEL_ITEMS; k++)
+	{
+		gi.configstring(CS_WHEEL_WEAPONS + k, "");
+	}
+
+	for (k = powerup_count; k < MAX_WHEEL_ITEMS; k++)
+	{
+		gi.configstring(CS_WHEEL_POWERUPS + k, "");
+	}
+}
+
 void
 SetItemNames(void)
 {
@@ -5022,6 +5170,8 @@ SetItemNames(void)
 	body_armor_index = ITEM_INDEX(FindItem("Body Armor"));
 	power_screen_index = ITEM_INDEX(FindItem("Power Screen"));
 	power_shield_index = ITEM_INDEX(FindItem("Power Shield"));
+
+	SetWheelItems(true);
 }
 
 void

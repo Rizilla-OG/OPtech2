@@ -38,6 +38,7 @@ MOD_NAME = "rrstock"
 
 # what the player does; delays in ms after the map starts loading
 SCRIPT = """set cheats 1
+set cl_run 0
 map base1
 delay 3000 "rr_edicts"
 delay 3100 "spawn monster_soldier"

@@ -491,6 +491,89 @@ G_SetStats_SelectedItem(gclient_t *cl)
 		gi.imageindex(it->icon) : 0;
 }
 
+/*
+ * optech2: packs a small count into the stats as the re-release does
+ * (bits_per_value bits each, little-endian across the 16-bit stats)
+ */
+static void
+G_SetPackedStat(short *start, int stat_count, int bits_per_value, int id, int value)
+{
+	int bit_offset = bits_per_value * id;
+	int byte = bit_offset / 8;
+	int bit_shift = bit_offset % 8;
+	unsigned int mask = ((1u << bits_per_value) - 1) << bit_shift;
+	unsigned char bytes[2 * 8];
+	unsigned int word;
+
+	if ((stat_count > 8) || (byte + 2 > stat_count * 2))
+	{
+		return;
+	}
+
+	memcpy(bytes, start, stat_count * 2);
+	word = bytes[byte] | (bytes[byte + 1] << 8);
+	word = (word & ~mask) | (((unsigned int)value << bit_shift) & mask);
+	bytes[byte] = word & 0xff;
+	bytes[byte + 1] = (word >> 8) & 0xff;
+	memcpy(start, bytes, stat_count * 2);
+}
+
+/* optech2: what the player has for the weapon and powerup wheels */
+static void
+G_SetWheelStats(edict_t *ent)
+{
+	gclient_t *client = ent->client;
+	const gitem_t *active;
+	unsigned int owned = 0;
+	int i;
+
+	memset(&client->ps_rrstats[STAT_AMMO_INFO_START], 0, sizeof(short) * NUM_AMMO_STATS);
+	memset(&client->ps_rrstats[STAT_POWERUP_INFO_START], 0, sizeof(short) * NUM_POWERUP_STATS);
+
+	for (i = 0; i < itemlist_len; i++)
+	{
+		const gitem_t *it = &itemlist[i];
+		int count = client->pers.inventory[i];
+
+		if ((it->weapon_wheel_index >= 0) && (count > 0))
+		{
+			owned |= 1u << it->weapon_wheel_index;
+		}
+
+		if (it->ammo_wheel_index >= 0)
+		{
+			int value = ((int)dmflags->value & DF_INFINITE_AMMO) ? AMMO_VALUE_INFINITE : ((count < 0) ? 0 : ((count > AMMO_VALUE_INFINITE - 1) ? AMMO_VALUE_INFINITE - 1 : count));
+
+			G_SetPackedStat(&client->ps_rrstats[STAT_AMMO_INFO_START], NUM_AMMO_STATS, 9,
+				it->ammo_wheel_index, value);
+		}
+
+		if (it->powerup_wheel_index >= 0)
+		{
+			int value;
+
+			if ((it->flags & IT_ARMOR) && it->use)
+			{
+				/* power armor: 2 on, 1 off */
+				value = (count <= 0) ? 0 : ((ent->flags & FL_POWER_ARMOR) ? 2 : 1);
+			}
+			else
+			{
+				value = (count < 0) ? 0 : ((count > 3) ? 3 : count);
+			}
+
+			G_SetPackedStat(&client->ps_rrstats[STAT_POWERUP_INFO_START], NUM_POWERUP_STATS, 2,
+				it->powerup_wheel_index, value);
+		}
+	}
+
+	client->ps_rrstats[STAT_WEAPONS_OWNED_1] = (short)(owned & 0xffff);
+	client->ps_rrstats[STAT_WEAPONS_OWNED_2] = (short)(owned >> 16);
+
+	active = client->newweapon ? client->newweapon : client->pers.weapon;
+	client->ps_rrstats[STAT_ACTIVE_WHEEL_WEAPON] = active ? active->weapon_wheel_index : -1;
+}
+
 void
 G_SetStats(edict_t *ent)
 {
@@ -847,6 +930,8 @@ G_SetStats(edict_t *ent)
 	{
 		ent->client->ps_rrstats[STAT_SPECTATOR] = 0;
 	}
+
+	G_SetWheelStats(ent);
 }
 
 void
