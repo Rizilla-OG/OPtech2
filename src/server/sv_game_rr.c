@@ -59,6 +59,7 @@
 
 #include "header/server.h"
 #include "header/game_rerelease.h"
+#include "../common/header/nav.h" /* optech2: GetPathToGoal */
 #include "../common/header/debugdraw.h" /* optech2: the game's Draw_* calls */
 
 void SCR_DebugGraph(float value, int color);
@@ -788,6 +789,7 @@ RR_RestorePending(void)
 }
 
 static cvar_t *sv_rr_msglog; /* 1: log every message the game sends */
+static cvar_t *sv_rr_pathlog; /* optech2: 1: log every path the game asks for */
 
 static void
 RR_LogMessage(const char *how, const char *note)
@@ -1321,13 +1323,61 @@ RR_BotFollowActor(const rr_edict_t *bot, const rr_edict_t *actor)
 	return 0;
 }
 
+/* optech2: the game's pathfinding (its monsters' M_NavPathToGoal, the
+   compass, g_debug_monster_kills) on our navigation mesh: the request and
+   answer are the re-release's, field for field, in our own types. Paths
+   are for a player-sized mover, as the re-release's own nodes are. */
 static bool
 RR_GetPathToGoal(const rr_path_request_t *request, rr_path_info_t *info)
 {
-	(void)request;
-	info->numPathPoints = 0;
-	info->returnCode = RR_PATH_NO_NAV_AVAILABLE;
-	return false;
+	optech2_path_request_t nav_request;
+	optech2_path_info_t nav_info;
+	int found;
+
+	memset(&nav_request, 0, sizeof(nav_request));
+	VectorCopy(request->start, nav_request.start);
+	VectorCopy(request->goal, nav_request.goal);
+	nav_request.path_flags = request->pathFlags;
+	nav_request.move_dist = request->moveDist;
+	nav_request.draw_time = request->debugging.drawTime;
+	nav_request.ignore_node_flags = request->nodeSearch.ignoreNodeFlags ? 1 : 0;
+	nav_request.min_height = request->nodeSearch.minHeight;
+	nav_request.max_height = request->nodeSearch.maxHeight;
+	nav_request.radius = request->nodeSearch.radius;
+	nav_request.drop_height = request->traversals.dropHeight;
+	nav_request.jump_height = request->traversals.jumpHeight;
+	nav_request.points = request->pathPoints.array;
+	nav_request.point_count = request->pathPoints.array ? request->pathPoints.count : 0;
+
+	/* the re-release's long jumps carry no distance: allow the longest
+	   leap the navigation knows */
+	if (request->pathFlags & OPTECH2_PATH_LONG_JUMP)
+	{
+		nav_request.leap_distance = 320;
+	}
+
+	memset(&nav_info, 0, sizeof(nav_info));
+	found = Nav_GetPathToGoal(&nav_request, &nav_info);
+
+	info->numPathPoints = nav_info.point_count;
+	info->pathDistSqr = nav_info.path_dist_sqr;
+	VectorCopy(nav_info.first_move_point, info->firstMovePoint);
+	VectorCopy(nav_info.second_move_point, info->secondMovePoint);
+
+	/* our ladder and teleporter links aren't in the re-release's list:
+	   walk to them */
+	info->pathLinkType = (nav_info.link_type > OPTECH2_PATH_LINK_ELEVATOR) ? OPTECH2_PATH_LINK_WALK : nav_info.link_type;
+	info->returnCode = nav_info.return_code;
+
+	if (sv_rr_pathlog && sv_rr_pathlog->value)
+	{
+		Com_Printf("rr_path %.0f %.0f %.0f -> %.0f %.0f %.0f: code %d, %d points, next %.0f %.0f %.0f\n",
+			request->start[0], request->start[1], request->start[2], request->goal[0], request->goal[1],
+			request->goal[2], info->returnCode, info->numPathPoints, info->firstMovePoint[0],
+			info->firstMovePoint[1], info->firstMovePoint[2]);
+	}
+
+	return found != 0;
 }
 
 /* optech2: the game's debug drawing (g_debug_monster_kills, info_world_text,
@@ -2126,6 +2176,7 @@ SV_RR_Connect(void *game_export)
 	SV_WorldSyncEdict = RR_WorldSync;
 	Cmd_AddCommand("rr_edicts", RR_Edicts_f);
 	sv_rr_msglog = Cvar_Get("sv_rr_msglog", "0", 0);
+	sv_rr_pathlog = Cvar_Get("sv_rr_pathlog", "0", 0);
 
 	/* may change maxclients etc. before Init */
 	if (rr_ge->PreInit)

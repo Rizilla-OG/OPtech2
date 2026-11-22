@@ -57,6 +57,9 @@ something unfinished; remove an entry in the commit that fixes it.
   scenes can't be skipped.
 - Multi-line localized texts get a stray space after each line break
   (`src/server/sv_translate.c` escape handling).
+- Re-release pathfinding: requests carry no mover size, so every monster
+  gets the player-sized mesh (a Tank may be sent through a gap only a soldier
+  fits); the re-release's own nodes have the same limit.
 - Debug drawing: `info_world_text` (world text) not tried on a map yet; text
   size and the static text's angles are ignored (always console size, facing
   the view); remote clients don't see it (kept in the local process).
