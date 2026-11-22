@@ -1163,6 +1163,31 @@ CL_ParsePlayerstate(frame_t *oldframe, frame_t *newframe, int protocol)
 		team_id = MSG_ReadByte(&net_message);
 		Com_DPrintf("%s: team id %d\n", __func__, team_id);
 	}
+
+	/* optech2: re-release movement state (our protocol, re-release games) */
+	if ((flags & PS_RR_PMOVE) && (protocol == PROTOCOL_VERSION))
+	{
+		state->rr_pmove = true;
+		state->rr_pm_type = MSG_ReadByte(&net_message);
+		state->rr_pm_flags = (unsigned short)MSG_ReadShort(&net_message);
+		state->rr_pm_time = (unsigned short)MSG_ReadShort(&net_message);
+		state->rr_viewheight = MSG_ReadChar(&net_message);
+
+		for (group = 0; group < 3; group++)
+		{
+			state->rr_origin[group] = MSG_ReadFloat(&net_message);
+		}
+
+		for (group = 0; group < 3; group++)
+		{
+			state->rr_velocity[group] = MSG_ReadFloat(&net_message);
+		}
+
+		for (group = 0; group < 3; group++)
+		{
+			state->rr_delta_angles[group] = MSG_ReadFloat(&net_message);
+		}
+	}
 }
 
 static void

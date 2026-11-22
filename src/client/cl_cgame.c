@@ -863,6 +863,14 @@ CL_CGame_ParseTempEntity(int type)
 	return cgame_fx && cgame_fx->ParseTempEntity(type);
 }
 
+/* optech2: a re-release library's player movement (its client game
+   module's Pmove, on a re-release pmove_t), or NULL */
+CL_RR_Pmove_t
+CL_CGame_RRPmove(void)
+{
+	return cgame ? (CL_RR_Pmove_t)cgame->Pmove : NULL;
+}
+
 /* the game library's own player movement for prediction, if it has one */
 static void
 CL_CGame_FindPmove(void)
@@ -921,13 +929,17 @@ CL_CGame_Load(void)
 	{
 #if defined(_WIN32)
 		const char *game_library_name = "game.dll";
+		const char *rerelease_library_name = "game_x64.dll";
 #elif defined(__APPLE__)
 		const char *game_library_name = "game.dylib";
+		const char *rerelease_library_name = "game_x64.dylib";
 #else
 		const char *game_library_name = "game.so";
+		const char *rerelease_library_name = "game_x64.so";
 #endif
 
-		/* the game library of the game folders, like the server's */
+		/* the game library of the game folders, like the server's: in each
+		   folder ours first, then a re-release one (game API 2023) */
 		while ((path = FS_NextPath(path)))
 		{
 			FILE *f;
@@ -935,10 +947,25 @@ CL_CGame_Load(void)
 			snprintf(name, sizeof(name), "%s/%s", path, game_library_name);
 			f = Q_fopen(name, "rb");
 
+			if (!f)
+			{
+				snprintf(name, sizeof(name), "%s/%s", path, rerelease_library_name);
+				f = Q_fopen(name, "rb");
+			}
+
 			if (f)
 			{
 				fclose(f);
 				CL_CGame_Open(name);
+
+				if (cgame_library)
+				{
+					/* optech2: which one, for logs and checks */
+					const char *base = strrchr(name, '/');
+
+					Com_Printf("client game: library %s\n", base ? base + 1 : name);
+				}
+
 				break; /* the first game library found is the game's */
 			}
 		}

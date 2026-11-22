@@ -346,6 +346,7 @@ void *SV_RR_GameImport(void);
 game_export_t *SV_RR_Connect(void *game_export);
 void SV_RR_PrepFrame(void);
 qboolean SV_RR_CanSave(void);
+void SV_RR_FillPlayerState(int edict_number, player_xstate_t *ps);
 
 /* optech2: true while the level being left is saved (gamemap) */
 extern qboolean sv_level_transition;

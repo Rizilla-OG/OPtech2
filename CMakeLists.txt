@@ -574,6 +574,7 @@ set(Client-Source
 	${COMMON_SRC_DIR}/argproc.c
 	${COMMON_SRC_DIR}/clientserver.c
 	${COMMON_SRC_DIR}/collision.c
+	${COMMON_SRC_DIR}/rerelease.c
 	${COMMON_SRC_DIR}/nav/nav.cpp
 	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourAlloc.cpp
 	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourAssert.cpp
@@ -678,6 +679,7 @@ set(Client-Header
 	${CLIENT_SRC_DIR}/vid/header/stb_image_write.h
 	${CLIENT_SRC_DIR}/vid/header/vid.h
 	${COMMON_SRC_DIR}/header/common.h
+	${COMMON_SRC_DIR}/header/rerelease.h
 	${COMMON_SRC_DIR}/header/crc.h
 	${COMMON_SRC_DIR}/header/files.h
 	${COMMON_SRC_DIR}/header/glob.h
@@ -699,6 +701,7 @@ set(Server-Source
 	${COMMON_SRC_DIR}/argproc.c
 	${COMMON_SRC_DIR}/clientserver.c
 	${COMMON_SRC_DIR}/collision.c
+	${COMMON_SRC_DIR}/rerelease.c
 	${COMMON_SRC_DIR}/nav/nav.cpp
 	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourAlloc.cpp
 	${COMMON_SRC_DIR}/nav/recast/Detour/Source/DetourAssert.cpp
@@ -772,6 +775,7 @@ set(Server-Source
 
 set(Server-Header
 	${COMMON_SRC_DIR}/header/common.h
+	${COMMON_SRC_DIR}/header/rerelease.h
 	${COMMON_SRC_DIR}/header/crc.h
 	${COMMON_SRC_DIR}/header/files.h
 	${COMMON_SRC_DIR}/header/glob.h
@@ -797,6 +801,7 @@ set(Pakextract-Source
 
 set(Pakextract-Header
 	${COMMON_SRC_DIR}/header/common.h
+	${COMMON_SRC_DIR}/header/rerelease.h
 	${COMMON_SRC_DIR}/header/glob.h
 	${COMMON_SRC_DIR}/header/shared.h
 	)
@@ -808,6 +813,7 @@ set(Viewer-Source
 
 set(Viewer-Header
 	${COMMON_SRC_DIR}/header/common.h
+	${COMMON_SRC_DIR}/header/rerelease.h
 	${COMMON_SRC_DIR}/header/files.h
 	${COMMON_SRC_DIR}/header/shared.h
 	)

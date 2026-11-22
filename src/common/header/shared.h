@@ -1542,6 +1542,17 @@ typedef struct
 	int rdflags;                /* refdef flags */
 
 	short stats[MAX_XSTATS];     /* fast status bar updates */
+
+	/* optech2: the re-release movement state, from servers running a
+	   re-release game library (engine only, not in any game API) */
+	qboolean rr_pmove; /* the fields below are valid */
+	int rr_pm_type; /* the re-release pmtype_t */
+	unsigned short rr_pm_flags; /* all 16 re-release pm_flags */
+	unsigned short rr_pm_time; /* milliseconds */
+	int rr_viewheight; /* view height, apart from viewoffset */
+	vec3_t rr_origin; /* exact: re-release movement doesn't snap to 1/8 */
+	vec3_t rr_velocity;
+	vec3_t rr_delta_angles; /* exact too (degrees) */
 } player_xstate_t;
 
 /* Fog */

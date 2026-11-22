@@ -285,9 +285,31 @@ SV_WritePlayerstateToClient(client_frame_t *from, client_frame_t *to,
 
 	pflags |= PS_WEAPONINDEX;
 
+	/* optech2: re-release movement state, when it changed */
+	if ((protocol == PROTOCOL_VERSION) && ps->rr_pmove &&
+		(!ops->rr_pmove || (ps->rr_pm_type != ops->rr_pm_type) ||
+			(ps->rr_pm_flags != ops->rr_pm_flags) || (ps->rr_pm_time != ops->rr_pm_time) ||
+			(ps->rr_viewheight != ops->rr_viewheight) ||
+			!VectorCompare(ps->rr_origin, ops->rr_origin) ||
+			!VectorCompare(ps->rr_velocity, ops->rr_velocity) ||
+			!VectorCompare(ps->rr_delta_angles, ops->rr_delta_angles)))
+	{
+		pflags |= PS_RR_PMOVE;
+	}
+
+	if (pflags & 0xffff0000)
+	{
+		pflags |= PS_MOREBITS;
+	}
+
 	/* write it */
 	MSG_WriteByte(msg, svc_playerinfo);
-	MSG_WriteShort(msg, pflags);
+	MSG_WriteShort(msg, pflags & 0xffff);
+
+	if (pflags & PS_MOREBITS)
+	{
+		MSG_WriteShort(msg, (pflags >> 16) & 0xffff);
+	}
 
 	/* write the pmove_state_t */
 	if (pflags & PS_M_TYPE)
@@ -426,6 +448,29 @@ SV_WritePlayerstateToClient(client_frame_t *from, client_frame_t *to,
 			{
 				MSG_WriteShort(msg, ps->stats[i]);
 			}
+		}
+	}
+
+	if (pflags & PS_RR_PMOVE)
+	{
+		MSG_WriteByte(msg, ps->rr_pm_type);
+		MSG_WriteShort(msg, ps->rr_pm_flags);
+		MSG_WriteShort(msg, ps->rr_pm_time);
+		MSG_WriteChar(msg, ps->rr_viewheight);
+
+		for (group = 0; group < 3; group++)
+		{
+			MSG_WriteFloat(msg, ps->rr_origin[group]);
+		}
+
+		for (group = 0; group < 3; group++)
+		{
+			MSG_WriteFloat(msg, ps->rr_velocity[group]);
+		}
+
+		for (group = 0; group < 3; group++)
+		{
+			MSG_WriteFloat(msg, ps->rr_delta_angles[group]);
 		}
 	}
 }
@@ -656,6 +701,14 @@ SV_BuildClientFrame(client_t *client)
 	{
 		memcpy(&frame->ps.stats, &clent->client->ps_rrstats,
 			sizeof(clent->client->ps_rrstats));
+	}
+
+	/* optech2: a re-release game's movement state, or none */
+	frame->ps.rr_pmove = false;
+
+	if (sv_rerelease_game)
+	{
+		SV_RR_FillPlayerState(NUM_FOR_EDICT(clent), &frame->ps);
 	}
 
 	fatpvs = SV_FatPVS(org, &fatpvs_size);

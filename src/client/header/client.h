@@ -512,6 +512,10 @@ void CL_SetSky(void);
 void CL_PrepRefresh(void);
 
 /* optech2: client game modules (cl_cgame.c) */
+/* optech2: the client game module's re-release player movement (cl_cgame.c) */
+typedef void (*CL_RR_Pmove_t)(void *pmove);
+CL_RR_Pmove_t CL_CGame_RRPmove(void);
+
 void CL_LocalizeFormat(const char *format, const char **args, int num_args, char *out, size_t out_size);
 void CL_CGame_Load(void);
 void CL_CGame_Unload(void);

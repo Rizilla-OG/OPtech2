@@ -343,6 +343,7 @@ enum clc_ops_e
 #define PS_MOREBITS (1 << 15)
 #define PS_DAMAGE_BLEND (1 << 16)
 #define PS_TEAM_ID (1 << 17)
+#define PS_RR_PMOVE (1 << 18) /* optech2: our protocol: re-release movement state (type, flags, time, view height) */
 
 /*============================================== */
 
