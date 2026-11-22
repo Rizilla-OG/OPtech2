@@ -25,7 +25,7 @@
     limits for mappers and modders, a multi-threaded renderer and per-pixel lighting with real-time shadows,
     while staying playable on modest hardware. Stock Quake II maps and assets keep working as test content.</p>
   <div class="buttons">
-    <a class="btn primary" href="https://github.com/Rizilla-OG/OPtech2/releases/tag/m2-preview-2">Download M2 preview</a>
+    <a class="btn primary" href="https://github.com/Rizilla-OG/OPtech2/releases/tag/m2-preview-3">Download M2 preview</a>
     <a class="btn ghost" href="roadmap.html">Roadmap</a>
     <a class="btn ghost" href="https://github.com/Rizilla-OG/OPtech2">View on GitHub</a>
   </div>
@@ -79,7 +79,8 @@
         <p>Client game module, shared movement code, data-driven definitions, mod stacking, monster navigation,
           animation system and an in-game editor for entities and lights. Done so far: the client game module
           with its HUD and effects, player movement as game code, stacked mod folders, Lua scripts, item, weapon and
-          monster definitions, and monster navigation.</p>
+          monster definitions, monster navigation, re-release game libraries (id's own and mods built on it) with
+          their movement, HUD, kill feed and weapon wheels, and a modern console.</p>
       </li>
       <li class="milestone later">
         <span class="id">M3</span><h3>Multi-threaded renderer</h3><span class="status">PLANNED</span>
@@ -104,9 +105,32 @@
     <h2>M2 so far</h2>
     <p class="lead">M2 moves what a mod might change out of the engine and into game code or data files. In the
       M2 preview: the HUD, player movement and every effect the server triggers come from the game library, mods
-      stack and bring their own scripts and definitions, monsters find their way to you, and the re-release's
-      episodes are playable from the menu.</p>
+      stack and bring their own scripts and definitions, monsters find their way to you, the re-release's
+      episodes are playable from the menu, and game libraries built for the re-release run unchanged.</p>
     <div class="features">
+      <div class="feature">
+        <h3>Re-release game libraries</h3>
+        <p>Game libraries built for the 2023 re-release (its game API, <code>game_x64</code>) load and play:
+          id's own game code and mods built on it, such as the loot mod q2arpg. Saves, loads and level changes
+          use the game's own save files, and the client predicts with the library's movement code, so it moves
+          exactly like the server.</p>
+      </div>
+      <div class="feature">
+        <h3>Wheels, kill feed, chat</h3>
+        <p>Hold Q for the weapon wheel, E for powerups: point with the mouse, let go to switch. Re-release games
+          draw their kill feed and chat, and colored text works in every renderer. Default keys are WASD.
+          Autosaves and "Restart level" (the load menu, on death) work as in the re-release.</p>
+      </div>
+      <div class="feature">
+        <h3>A modern console</h3>
+        <p>A dark see-through panel with text in Hack, a TrueType font, laid out like a terminal, with keys that
+          repeat while typing. <code>con_style 0</code> brings back the classic one.</p>
+      </div>
+      <div class="feature">
+        <h3>Vulkan built by default</h3>
+        <p>The Vulkan renderer is now part of the default build and the Linux download (<code>vid_renderer vk</code>),
+          with its own screenshot check and see-through 2D drawing like the OpenGL renderers.</p>
+      </div>
       <div class="feature">
         <h3>Re-release episodes</h3>
         <p>With the 2023 re-release data, the Game menu lists Quake II, The Reckoning, Ground Zero, Call of the
@@ -146,6 +170,33 @@
       </div>
     </div>
     <div class="gallery" style="margin-top:16px">
+      <figure class="wide">
+        <a href="assets/img/q2arpg-vendor.jpg"><img src="assets/img/q2arpg-vendor.jpg" width="1280" height="720" loading="lazy"
+          alt="A vendor menu listing guns with rarity, damage and price, over a Quake II base room"></a>
+        <figcaption>q2arpg, a re-release game mod, running unchanged: its vendor, minimap and stat colors are
+          drawn by the mod's own client game.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/weapon-wheel.jpg"><img src="assets/img/weapon-wheel.jpg" width="1280" height="720" loading="lazy"
+          alt="A ring of weapon icons around the screen center, the pointed one named in the middle"></a>
+        <figcaption>The weapon wheel (hold Q): weapons in a ring, the pointed one's name and ammo in the
+          middle.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/kill-feed.jpg"><img src="assets/img/kill-feed.jpg" width="1280" height="720" loading="lazy"
+          alt="A chat line in the top-left corner and a mission objective in the middle of the screen"></a>
+        <figcaption>Chat and the kill feed in the top-left corner, drawn by the re-release client game.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/q2arpg-minimap.jpg"><img src="assets/img/q2arpg-minimap.jpg" width="1280" height="720" loading="lazy"
+          alt="A large see-through map overlay showing explored rooms"></a>
+        <figcaption>q2arpg's minimap: see-through boxes from the client game, which used to go missing.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/console.jpg"><img src="assets/img/console.jpg" width="1600" height="900" loading="lazy"
+          alt="A dark see-through console over the game, text in a clean monospaced font"></a>
+        <figcaption>The new console: see-through panel, Hack font, terminal layout.</figcaption>
+      </figure>
       <figure class="wide">
         <a href="assets/img/q64-complex.jpg"><img src="assets/img/q64-complex.jpg" width="1600" height="900" loading="lazy"
           alt="A Quake II 64 level: a riveted metal room with a blue lit window ahead"></a>
@@ -383,8 +434,9 @@
           online play through Steam, so it can't connect to OpenTech2 and OpenTech2 can't join its games. Everyone
           who plays together needs OpenTech2.</p>
         <p>What does carry over is the re-release's <em>data</em>: if you own it, point OpenTech2 at its
-          <code>rerelease</code> folder to get its episodes, texts and videos. Re-release mods (their
-          <code>game_x64.dll</code>) don't load yet either; making them load unchanged is planned for M2.</p>
+          <code>rerelease</code> folder to get its episodes, texts and videos. Re-release game libraries (a mod
+          folder's <code>game_x64.dll</code>, or <code>game_x64.so</code> built for Linux) load too, but
+          multiplayer still means everyone runs OpenTech2.</p>
       </details>
       <details>
         <summary>Where are my saves and settings?</summary>
@@ -407,13 +459,13 @@
     <div class="two-col">
       <div>
         <h3>Play</h3>
-        <p>Download the <a href="https://github.com/Rizilla-OG/OPtech2/releases/tag/m2-preview-2">M2 preview</a> for
+        <p>Download the <a href="https://github.com/Rizilla-OG/OPtech2/releases/tag/m2-preview-3">M2 preview</a> for
           Windows (64 or 32 bit) or Linux x86_64, an interim build of the modding work so far. You need the Quake II
           game data (Steam or GOG, the folder holding <code>baseq2</code>).</p>
         <pre><code>Windows:  OpenTech2.exe -datadir "C:\Path\To\Quake 2"
 Linux:    ./OpenTech2 -datadir "/path/to/Quake 2"</code></pre>
-        <p class="note">The Linux build needs SDL3 and OpenAL. Network protocol and save format changed in M1:
-          OpenTech2 does not join stock Quake II servers.</p>
+        <p class="note">The Linux build needs SDL3 and OpenAL. The network protocol changed again in this preview:
+          it does not join servers from earlier previews or stock Quake II.</p>
       </div>
       <div>
         <h3>Build</h3>
@@ -456,6 +508,10 @@ cmake --workflow --preset default</code></pre>
             its load, memory, temperatures and clocks. Bind it to a key: <code>bind F11 "toggle cl_perf"</code>.</td></tr>
           <tr><td><code>-datadir ".../Quake 2/rerelease"</code></td><td>On the command line: plays the
             re-release data, with all five episodes in the Game menu.</td></tr>
+          <tr><td>Hold <code>Q</code> / <code>E</code></td><td>Weapon wheel / powerup wheel in re-release games:
+            point with the mouse, let go to switch.</td></tr>
+          <tr><td><code>con_style 0</code> / <code>r_ttffont ""</code></td><td>The classic console picture / the
+            classic bitmap font.</td></tr>
           <tr><td><code>cl_predict_movers 0</code> / <code>1</code></td><td>Turns smooth lift riding off and on, to
             see the difference on any elevator.</td></tr>
           <tr><td><code>sv_tickrate 10</code> to <code>120</code></td><td>Server frames per second (default 60,

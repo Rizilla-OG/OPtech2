@@ -25,7 +25,11 @@ and assets keep loading and serve as test content.
   game API, id's re-release HUD, effects), player movement as game code shared with prediction, the
   re-release episodes in the Game menu, stacked mod folders, sandboxed Lua scripts, item, weapon and
   monster definitions in text files, and monster navigation (paths, three monster sizes, ledge drops,
-  lifts, barrier jumps from the re-release's navigation files).
+  lifts, jumps, leaps, ladders and teleporters from the re-release's navigation files), re-release
+  game libraries (game API 2023: id's game and mods built on it, such as q2arpg) with their saves,
+  level changes and movement prediction, weapon and powerup wheels (hold Q / E), kill feed and chat,
+  colored text, autosave and Restart level, WASD default keys, a modern console (see-through panel,
+  Hack TrueType font), and the Vulkan renderer in the default build. Network protocol 2026.
 
 Downloads (pre-releases, Windows and Linux): https://github.com/Rizilla-OG/OPtech2/releases
 
@@ -52,7 +56,12 @@ build/release/OpenTech2 -datadir "<path to Quake 2>/rerelease"
 ```
 
 The Game menu then lists Quake II, The Reckoning, Ground Zero, Call of the Machine and Quake II 64,
-each starting with its own intro. Re-release mods with their own game library don't load yet.
+each starting with its own intro.
+
+Game libraries built for the re-release (its game API 2023) load too: a game or mod folder with
+`game_x64.so` (`game_x64.dll` on Windows) and no `game.so` gets it, for both server and client game.
+Saves, loads and level changes use the game's own save files. `tools/rerelease/stock_game` builds
+id's stock game for Linux.
 
 ## Map tools
 
