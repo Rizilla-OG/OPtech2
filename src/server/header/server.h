@@ -305,6 +305,8 @@ void SV_CleanLevelFileName(char *savename);
 void SV_WriteServerFile(qboolean autosave);
 void SV_Loadgame_f(void);
 void SV_Savegame_f(void);
+void SV_Autosave_f(void); /* optech2 */
+void SV_RestartLevel_f(void); /* optech2 */
 
 /* high level object sorting to reduce interaction tests */
 void SV_ClearWorld(void);

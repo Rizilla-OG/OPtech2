@@ -593,3 +593,53 @@ SV_Savegame_f(void)
 	Com_Printf("Done.\n");
 }
 
+/*
+ * optech2: the re-release engine's "autosave" (a map's target_autosave
+ * runs it): a save to the autosave slot, save0, in single player when the
+ * game allows it
+ */
+void
+SV_Autosave_f(void)
+{
+	if ((sv.state != ss_game) || dedicated->value || (maxclients->value != 1) ||
+		Cvar_VariableValue("deathmatch") || Cvar_VariableValue("coop"))
+	{
+		return;
+	}
+
+	if (SV_GetPlayerStats(CL_EDICT(&svs.clients[0]))[STAT_HEALTH] <= 0)
+	{
+		return;
+	}
+
+	if (sv_rerelease_game && !SV_RR_CanSave())
+	{
+		return;
+	}
+
+	SV_WriteLevelFile();
+	SV_WriteServerFile(false);
+	SV_CopySaveGame("current", "save0");
+	Com_Printf("Autosaved.\n");
+}
+
+/*
+ * optech2: the re-release engine's "restart_level" (its games run it when
+ * the level should start over): the autosave slot again
+ */
+void
+SV_RestartLevel_f(void)
+{
+	fileHandle_t f;
+
+	FS_FOpenFile("save/save0/server.ssv", &f, true);
+
+	if (!f)
+	{
+		Com_Printf("restart_level: no autosave to restart from\n");
+		return;
+	}
+
+	FS_FCloseFile(f);
+	Cbuf_AddText("load save0\n");
+}

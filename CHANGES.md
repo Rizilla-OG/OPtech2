@@ -4,6 +4,8 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Re-release games: the engine commands their libraries use for saves. `autosave` (maps' target_autosave) saves to the autosave slot (save0) in single player when the game allows; `restart_level` loads it. The load menu puts "Restart level" first while a single player game runs (it opens on death), loading the level's autosave as the re-release's death menu does. `rr-saves` checks both (screenshot `m2_rr_restart_level_menu.png`).
+- Shells on small models also grow from the model's center by about their push, so a flat shard's edges are covered too.
 - Color shells (quad damage, the re-release's gold cash glow) stand off small models in proportion: 4 units from 48 units up, less below, so a flat armor shard isn't two plates floating off its sides. Vulkan draws shells two-sided.
 - Re-release games: a save loads while the player is dead (the "can the game save" check had gone into loadgame too: "can't save while dead"). `rr-saves` checks it.
 - Text in a color: renderer API 11 adds `DrawStringScaledCol` (all five renderers; GL3/GL4 through the tinting shader, Vulkan tinted quads, GL1 modulated, software by brightness). Re-release client games' colored font strings use it: q2arpg's better / worse stats show green / red.
