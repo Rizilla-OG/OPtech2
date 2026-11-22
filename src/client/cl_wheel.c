@@ -318,6 +318,28 @@ Wheel_Aim_f(void)
 }
 
 /* the wheel takes the mouse while it is open */
+/* optech2: a gamepad stick (x, y in -1..1) points at the open wheel's
+   items: the cursor goes where the stick leans, and stays on the last item
+   when the stick comes back to the middle; false when no wheel is open */
+qboolean
+CL_Wheel_Stick(float x, float y)
+{
+	if (wheel_open < 0)
+	{
+		return false;
+	}
+
+	if ((x * x + y * y) > 0.25f * 0.25f)
+	{
+		const float radius = Wheel_Radius();
+
+		wheel_cursor[0] = x * radius;
+		wheel_cursor[1] = y * radius;
+	}
+
+	return true;
+}
+
 qboolean
 CL_Wheel_Mouse(float dx, float dy)
 {

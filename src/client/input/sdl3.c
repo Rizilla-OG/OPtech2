@@ -1665,6 +1665,13 @@ IN_GamepadMove(usercmd_t *cmd)
 	joy.right.x = joystick_right_x * normalize_sdl_axis;
 	joy.right.y = joystick_right_y * normalize_sdl_axis;
 
+	/* optech2: while a weapon or powerup wheel is open the right stick
+	   points at its items instead of turning */
+	if (CL_Wheel_Stick(joy.right.x, joy.right.y))
+	{
+		joy.right.x = joy.right.y = 0.0f;
+	}
+
 	IN_UpdateExtraSpeed(cls.rframetime, outer_threshold, &joy);
 
 	if (joy.left.x || joy.left.y)
