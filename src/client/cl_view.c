@@ -166,10 +166,10 @@ V_ShowDebugLine(const float *a, const float *b, unsigned int color, qboolean dep
 	}
 }
 
-/* optech2: where a world point shows on screen, for the debug overlay;
-   false behind the view */
-static qboolean
-V_ProjectDebugPoint(const float *origin, float *x, float *y)
+/* optech2: where a world point shows on screen (the debug overlay,
+   markers); false behind the view */
+qboolean
+V_ProjectToScreen(const float *origin, float *x, float *y)
 {
 	vec3_t forward, right, up, delta;
 	float depth;
@@ -227,7 +227,7 @@ V_DrawDebugOverlayLine(const float *a, const float *b, unsigned int color, qbool
 		VectorLerp(b, a, (1 - depth_b) / (depth_a - depth_b), end);
 	}
 
-	if (!V_ProjectDebugPoint(start, &x0, &y0) || !V_ProjectDebugPoint(end, &x1, &y1))
+	if (!V_ProjectToScreen(start, &x0, &y0) || !V_ProjectToScreen(end, &x1, &y1))
 	{
 		return;
 	}
@@ -265,7 +265,7 @@ V_DrawDebugText(const float *origin, const char *message, unsigned int color, qb
 	(void)user;
 	VectorSubtract(origin, cl.refdef.vieworg, delta);
 
-	if (VectorLength(delta) > 2048 || !V_ProjectDebugPoint(origin, &x, &y))
+	if (VectorLength(delta) > 2048 || !V_ProjectToScreen(origin, &x, &y))
 	{
 		return;
 	}

@@ -2293,6 +2293,7 @@ CL_ParsePOI(void)
 
 	Com_DPrintf("%s: key %d, time %d, image %d, color %d, flags %d at %.2fx%.2fx%.2f\n",
 		__func__, key, time, image, color, flags, pos[0], pos[1], pos[2]);
+	CL_Markers_POI(key, time, pos, image, color, flags); /* optech2: drawn on screen */
 }
 
 static void
@@ -2307,6 +2308,7 @@ CL_ParseHelpPath(void)
 
 	Com_DPrintf("%s: start %d at %.2fx%.2fx%.2f, direction %.2fx%.2fx%.2f\n",
 		__func__, start, pos[0], pos[1], pos[2], dir[0], dir[1], dir[2]);
+	CL_Markers_HelpPath(start != 0, pos, dir); /* optech2: the compass trail's arrows */
 }
 
 static void

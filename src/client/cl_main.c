@@ -444,6 +444,7 @@ CL_ClearState(void)
 	CL_ClearEffects();
 	CL_ClearTEnts();
 	CL_CGame_ClearEffects(); /* optech2 */
+	CL_Markers_Clear(); /* optech2 */
 
 	/* wipe the entire cl structure */
 	memset(&cl, 0, sizeof(cl));

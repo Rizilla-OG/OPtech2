@@ -1117,6 +1117,7 @@ CL_AddEntities(void)
 	CL_AddDLights();
 	CL_AddLightStyles();
 	CL_AddShadowLights();
+	CL_Markers_AddEntities(); /* optech2: the compass trail */
 }
 
 /*

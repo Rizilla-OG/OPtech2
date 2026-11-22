@@ -1788,6 +1788,7 @@ SCR_UpdateScreen(void)
 
 			V_RenderView(separation[i]);
 			V_DrawDebugOverlay(); /* optech2: the game's debug drawing on top of the view */
+			CL_Markers_Draw(); /* optech2: points of interest */
 
 			/* optech2: a client game module draws the HUD, layouts,
 			   inventory and center prints itself */
