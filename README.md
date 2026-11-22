@@ -121,7 +121,10 @@ straight at you follow it: around walls, off ledges up to 256 units high, and on
 
 ## Checks
 
-All checks use a temporary HOME, so your own config and saves are never touched.
+All checks use a temporary HOME, so your own config and saves are never touched. Most run on a fixed
+clock (`+set fixedtime 16667`: every frame is one 60 Hz tick), so they play out the same way on every run
+and finish faster than real time; the ones that time real speed or run a separate server keep the real
+clock. `run_all.py --headless` runs only the checks that need no window or sound device.
 
 - `python3 tests/screenshots/screenshot_check.py`: fixed viewpoints vs. reference images
 - `python3 tests/benchmark/benchmark.py`: timedemo against the saved baseline
@@ -149,6 +152,19 @@ All checks use a temporary HOME, so your own config and saves are never touched.
 - `python3 tests/maps/make_ledge_map.py`, then `tests/nav/ledge_check.py`: ledge drops, one way, not from too high; a Berserker walks off a ledge to the player
 - `python3 tests/maps/make_plat_map.py`, then `tests/nav/plat_check.py`: monsters (Berserker, Tank) ride a lift up and down to the player
 - `python3 tests/run_all.py`: all of the above
+
+## Code scanning
+
+Every push to `main` runs CodeQL and cppcheck (full rule set) on GitHub; both are clean, with bundled
+libraries (Recast/Detour, Lua, miniz, stb, glad, volk, pl_mpeg, minimp3, HandmadeMath) left out. To run
+the same scans locally before pushing:
+
+- `tools/ci/run_cppcheck.sh`: no output means clean (cppcheck 2.13 or newer)
+- `tools/ci/run_codeql.sh`: builds into `build/codeql` and lists the results (needs the CodeQL CLI)
+
+The pre-commit hook (`git config core.hooksPath .githooks`) runs cppcheck on the staged source files and
+stops the commit on a finding. `tools/nightly_check.sh` builds, runs every check and cppcheck, reads the GitHub CI and alert state and
+writes a report to `build/nightly/`; it can run from a systemd user timer and skips while a game is running.
 
 ## License
 

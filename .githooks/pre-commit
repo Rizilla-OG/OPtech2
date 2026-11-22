@@ -18,8 +18,26 @@ if git diff --cached --name-only -- 'src/game/header/*.h' 'src/common/header/sha
 	fi
 fi
 files=$(git diff --cached --name-only --diff-filter=ACM -- 'src/*.c' 'src/*.h' ':!src/client/refresh/*/*_shaders.c' ':!src/game/savegame/tables/savefields.h' ':!src/game/rerelease/*' ':!src/game/lua/*' ':!src/common/nav/recast/*')
-[ -z "$files" ] && exit 0
-git clang-format --staged --quiet -- $files >/dev/null
-echo "$files" | while IFS= read -r f; do
-	git add "$f"
-done
+if [ -n "$files" ]; then
+	git clang-format --staged --quiet -- $files >/dev/null
+	echo "$files" | while IFS= read -r f; do
+		git add "$f"
+	done
+fi
+
+# optech2: cppcheck the staged source files like CI does (tools/ci/run_cppcheck.sh);
+# any finding stops the commit. Bundled libraries are left out, as in CI.
+# Skip once with: OPTECH2_SKIP_CPPCHECK=1 git commit ...
+[ -n "$OPTECH2_SKIP_CPPCHECK" ] && exit 0
+if ! command -v cppcheck >/dev/null 2>&1; then
+	echo "pre-commit: cppcheck not found, skipping the cppcheck step" >&2
+	exit 0
+fi
+sources=$(git diff --cached --name-only --diff-filter=ACM -- 'src/*.c' 'src/*.cpp' ':!src/game/lua/*' ':!src/common/nav/recast/*' ':!src/common/unzip/*' ':!src/client/refresh/vk/volk/*' ':!src/client/refresh/*/glad*/*')
+[ -z "$sources" ] && exit 0
+findings=$(tools/ci/run_cppcheck.sh $sources)
+if [ -n "$findings" ]; then
+	echo "pre-commit: cppcheck found problems in the staged files:" >&2
+	echo "$findings" >&2
+	exit 1
+fi
