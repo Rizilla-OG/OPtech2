@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Project page: Vulkan ships in every download now, Windows too.
 - Builds ship `yq2.cfg` (the default keys: WASD, Q weapon wheel, E powerup wheel) in `baseq2/`, where the engine runs it after `default.cfg`; before, it stayed in `stuff/` (CMake) or `misc/` (Windows packages), so fresh installs got the old keys. Windows CI: the Vulkan renderer builds (the header path named the wrong folder), it builds only what the package ships (pakextract needs zlib, missing there), and a failed build stops the job instead of silently skipping the assets (font, key file).
 - Project page: a "New in M2 preview 3" section of its own, its screenshots retaken at 2560x1440 with OpenGL 3 (were 1280x720 software renderer), wheel, vendor and console shown full width.
 - Project page and README: M2 preview 3 (re-release game libraries and q2arpg, wheels, kill feed and chat, the modern console, Vulkan in the default build), new screenshots, download links to `m2-preview-3`.
