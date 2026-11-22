@@ -421,6 +421,7 @@ InitGame(void)
 	sv_gravity = gi.cvar("sv_gravity", "800", 0);
 	sv_tickrate = gi.cvar("sv_tickrate", "60", CVAR_SERVERINFO | CVAR_LATCH); /* optech2 */
 	g_damagelog = gi.cvar("g_damagelog", "0", 0); /* optech2: 1 = print every hit (tests) */
+	g_skip_cameras = gi.cvar("g_skip_cameras", "0", CVAR_ARCHIVE); /* optech2: off, as the re-release */
 	g_monster_nav = gi.cvar("g_monster_nav", "1", 0); /* optech2: monsters follow the navigation mesh */
 	g_monster_freeze = gi.cvar("g_monster_freeze", "0", 0); /* optech2: monsters stand still, for tests */
 	sv_stopspeed = gi.cvar("sv_stopspeed", "100", 0);

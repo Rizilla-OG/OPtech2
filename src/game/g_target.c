@@ -1712,8 +1712,10 @@ update_target_camera_think(edict_t *self)
 	qboolean skip = false;
 
 	/* optech2: a skippable camera (re-release hackflags 64, Quake II 64's
-	   intro) ends when a player presses any button, after 2 seconds */
-	if ((self->hackflags & HACKFLAG_SKIPPABLE) && (level.time > 2.0f))
+	   intro; any camera with g_skip_cameras 1) ends when a player presses
+	   any button, 2 seconds after the scene started */
+	if (((self->hackflags & HACKFLAG_SKIPPABLE) || g_skip_cameras->value) &&
+		(level.time > self->timestamp + 2.0f))
 	{
 		int i;
 
@@ -1850,6 +1852,8 @@ use_target_camera(edict_t *self, edict_t *other, edict_t *activator)
 	{
 		return;
 	}
+
+	self->timestamp = level.time; /* optech2: when the scene started, for skipping */
 
 	if (self->sounds)
 	{
