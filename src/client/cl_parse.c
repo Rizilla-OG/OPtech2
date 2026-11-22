@@ -2373,6 +2373,7 @@ CL_ParseDamage(void)
 			(damage_type & 0x40) >> 6,
 			(damage_type & 0x80) >> 7,
 			direction[0], direction[1], direction[2]);
+		CL_Markers_Damage(damage_type, direction); /* optech2: an arc toward the hit */
 	}
 }
 
