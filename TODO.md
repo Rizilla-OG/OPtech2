@@ -6,19 +6,30 @@ something unfinished; remove an entry in the commit that fixes it.
 ## Code quality
 
 - **`cl_perf` overlay is Linux-only, GPU stats AMD-only** (`src/client/cl_stats.c`
-  reads `/proc` and amdgpu's sysfs). Fine as a developer tool; needs Windows
-  (PDH / DXGI) and other GPU vendors, or a clear "unavailable" for each value.
-- **Video decoder carries our changes inside `src/client/cinema/avdecode.h`**
-  (repeat-frame packets, threads, silence at the end, buffer helper). Yamagi
-  updates to that file will conflict; move our parts out or send them upstream.
+  reads `/proc` and amdgpu's sysfs). Plan for one look on every platform:
+  1. Split it: the overlay (layout and drawing, no OS code) and a stats layer
+     per platform filling one shared record; a value a platform can't give
+     shows a dim "-" in a fixed row, the layout never changes. First step:
+     Linux only, same values, nothing visible changes.
+  2. GPU frame time from the renderer itself (GL timer queries, Vulkan
+     timestamp queries): works on every vendor and OS, the main GPU number;
+     vendor load/VRAM/temperatures become extras where available.
+  3. Windows stats layer: `GetProcessTimes` / `GetSystemTimes`, thread times,
+     `GetProcessMemoryInfo`, DXGI `QueryVideoMemoryInfo` for VRAM (any
+     vendor); test in Wine and CI.
+  4. macOS stats layer: `getrusage` / `host_statistics`, `task_info`,
+     `task_threads`; CI compiles it, nobody here can run it.
+  Linux extras: NVML for NVIDIA load/VRAM beside amdgpu's sysfs.
+  Look: a compact panel in the top right corner, in a smaller font, instead
+  of covering the top half of the screen.
 - **`func_eye` and `target_poi` are stand-ins** (`src/game/g_misc.c`): the eyes
   don't turn to the player, objective markers are removed instead of shown.
 - **Re-release content fixes have no common home**: Quake II 64 changelevel
   flags, Q2Game.kpf / localization paths, map key handling. Fold them into the
-  data-driven definitions (M2) when those exist.
+  data-driven definitions.
 - **`tests/run_all.py` isn't on CI yet**: add `run_all.py --headless` to the
-  Linux workflow (needs the game data, so probably a self-hosted runner).
-
+  Linux workflow (needs the game data, so probably a self-hosted runner; the
+  nightly check runs it locally meanwhile).
 - **Definitions are numbers only**: weapons take numbers for the ten stock
   weapons and hand grenades (not fire rate, not the mission pack weapons);
   monsters take health, mass, skin, scale and damage, not speed, attacks or
@@ -26,10 +37,11 @@ something unfinished; remove an entry in the commit that fixes it.
 - **Scripting API is small**: three events and player functions. Grow it with
   the data-driven definitions (entities, damage, think, spawn).
 - **Monster navigation, phase 4**: lifts, ledge drops and the re-release
-  `.nav` files' barrier and long jumps, ladders and teleporters are done (monsters
-  climb with their run animation: no climb animation). Left: trains and doors as lifts, a per-monster drop
-  height (every walking monster may drop 256), and `.nav` jumps onto spots
-  narrower than a monster's mesh (crates, ledges) that bots can use.
+  `.nav` files' barrier and long jumps, ladders and teleporters are done
+  (monsters climb with their run animation: there's no climb animation).
+  Left: trains and doors as lifts, a per-monster drop height (every walking
+  monster may drop 256), and `.nav` links onto spots narrower than a
+  monster's mesh (crates, narrow ledges) that only bots can use.
 - **`savegame` keeps the real clock**: with `cl_loadpaused` the pause starts
   only once the client has connected, so on the fixed test clock the server
   runs a frame or two after a load (a falling gib moves). Pause the local
@@ -65,12 +77,16 @@ something unfinished; remove an entry in the commit that fixes it.
 
 ## Prediction
 
-- Jumping on a moving lift still misses a tick around takeoff and landing
-  (client and server disagree for a tick on standing); standing is fine.
+- Jumping on a moving lift could miss a tick around takeoff and landing
+  (client and server disagreeing for a tick). The `lift` check on the fixed
+  test clock now shows under a unit both standing and jumping; confirm in play
+  at a real frame rate before dropping this.
 
 ## Builds and releases
 
-- Windows: the game library now has C++ (re-release HUD code) and new files;
-  not built on Windows yet. Makefile executable names still `quake2.exe`.
-- Website (`docs/`): the M2 screenshots in `docs/screenshots/` aren't on the
-  page yet.
+- **Vulkan renderer isn't tested or shipped** (needed for M3 renderer work): CI
+  compiles `ref_vk`, but the default preset has `VK_RENDERER OFF`, no check
+  renders with it, and m2-preview-2 shipped without it. Turn it on in the
+  preset, add a Vulkan pass to the screenshot check, ship `ref_vk` in releases.
+- Website (`docs/`): no screenshots yet of the barrier jumps, leaps, ladders,
+  teleporters or the new console.

@@ -251,6 +251,16 @@ GL3_Draw_CharScaled(int x, int y, int num, float scale)
 		return; /* space */
 	}
 
+	/* optech2: with a TrueType font, its letters, digits and signs (the
+	   bitmap font keeps the special characters) */
+	if (draw_fontcodes && draw_font && (num & 127) > 32 && (num & 127) < 127)
+	{
+		const char text[2] = {(char)(num & 127), '\0'};
+
+		GL3_Draw_StringScaled(x, y, scale, (num & 128) != 0, text);
+		return;
+	}
+
 	if (y <= -8)
 	{
 		return; /* totally off screen */
@@ -939,6 +949,13 @@ GL3_Draw_FadeScreen(void)
 {
 	float color[4] = {0, 0, 0, 0.6f};
 	GL3_Draw_Flash(color, 0, 0, vid.width, vid.height);
+}
+
+/* optech2: a rectangle in a color, blended by its alpha */
+void
+GL3_Draw_FillColor(int x, int y, int w, int h, const float *rgba)
+{
+	GL3_Draw_Flash(rgba, x, y, w, h);
 }
 
 void

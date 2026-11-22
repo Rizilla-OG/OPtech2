@@ -1768,6 +1768,7 @@ GetRefAPI(refimport_t imp)
 	refexport.DrawTileClear = RE_Draw_TileClear;
 	refexport.DrawFill = RE_Draw_Fill;
 	refexport.DrawFadeScreen= RE_Draw_FadeScreen;
+	refexport.DrawFillColor = RE_Draw_FillColor;
 
 	refexport.DrawStretchRaw = RE_Draw_StretchRaw;
 

@@ -131,7 +131,7 @@ typedef enum {
 	RESTART_PARTIAL
 } ref_restart_t;
 
-#define	API_VERSION		8
+#define API_VERSION 9 /* optech2: 9 added DrawFillColor */
 #define EXPORT
 #define IMPORT
 
@@ -226,6 +226,9 @@ typedef struct
 	void 	(EXPORT *DrawPicScaledCol) (int x, int y, const char *pic, float factor,
 		const vec3_t color, const char *alttext);
 
+	/* optech2: a rectangle in a color, blended by its alpha (rgba 0..1) */
+	void(EXPORT *DrawFillColor)(int x, int y, int w, int h, const float *rgba);
+
 	//void	(EXPORT *AppActivate)( qboolean activate );
 } refexport_t;
 
@@ -310,6 +313,7 @@ void Draw_StringScaled(int x, int y, float scale, qboolean alt, const char *mess
 void Draw_TileClear(int x, int y, int w, int h, const char *name);
 void Draw_Fill(int x, int y, int w, int h, int c);
 void Draw_FadeScreen(void);
+void Draw_FillColor(int x, int y, int w, int h, const float *rgba); /* optech2 */
 void Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte *data, int bits);
 void R_SetPalette(const unsigned char *palette);
 void R_BeginFrame(float camera_separation);

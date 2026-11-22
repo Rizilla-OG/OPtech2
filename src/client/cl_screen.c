@@ -52,6 +52,7 @@ cvar_t *scr_drawall;
 
 cvar_t *r_hudscale; /* named for consistency with R1Q2 */
 cvar_t *r_consolescale;
+cvar_t *con_textscale; /* optech2: console text size against the automatic scale */
 cvar_t *r_menuscale;
 
 typedef struct
@@ -501,6 +502,7 @@ SCR_Init(void)
 	scr_drawall = Cvar_Get("scr_drawall", "0", 0);
 	r_hudscale = Cvar_Get("r_hudscale", "-1", CVAR_ARCHIVE);
 	r_consolescale = Cvar_Get("r_consolescale", "-1", CVAR_ARCHIVE);
+	con_textscale = Cvar_Get("con_textscale", "0.8", CVAR_ARCHIVE);
 	r_menuscale = Cvar_Get("r_menuscale", "-1", CVAR_ARCHIVE);
 
 	/* register our commands */
@@ -1961,7 +1963,11 @@ SCR_GetConsoleScale(void)
 	}
 	else if (r_consolescale->value < 0)
 	{
-		scale = SCR_GetDefaultScale();
+		/* optech2: the automatic scale times con_textscale (smaller text
+		   than the menus by default; TrueType text scales smoothly) */
+		const float text = (con_textscale && con_textscale->value > 0) ? con_textscale->value : 1.0f;
+
+		scale = Q_max(1.0f, SCR_GetDefaultScale() * text);
 	}
 	else
 	{

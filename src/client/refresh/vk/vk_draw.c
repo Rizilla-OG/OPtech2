@@ -80,6 +80,16 @@ RE_Draw_CharScaled(int x, int y, int num, float scale)
 		return; /* space */
 	}
 
+	/* optech2: with a TrueType font, its letters, digits and signs (the
+	   bitmap font keeps the special characters) */
+	if (draw_fontcodes && draw_font && (num & 127) > 32 && (num & 127) < 127)
+	{
+		const char text[2] = {(char)(num & 127), '\0'};
+
+		RE_Draw_StringScaled(x, y, scale, (num & 128) != 0, text);
+		return;
+	}
+
 	if (y <= -8)
 	{
 		return; /* totally off screen */
@@ -439,6 +449,22 @@ RE_Draw_FadeScreen(void)
 	QVk_DrawColorRect(
 		0.0f, 0.0f, 1.0f, 1.0f,
 		0.f, 0.f, 0.f, .8f,
+		RP_UI);
+}
+
+/* optech2: a rectangle in a color, blended by its alpha */
+void
+RE_Draw_FillColor(int x, int y, int w, int h, const float *rgba)
+{
+	if (!vk_frameStarted)
+	{
+		return;
+	}
+
+	QVk_DrawColorRect(
+		(float)x / vid.width, (float)y / vid.height,
+		(float)w / vid.width, (float)h / vid.height,
+		rgba[0], rgba[1], rgba[2], rgba[3],
 		RP_UI);
 }
 

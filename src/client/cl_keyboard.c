@@ -1375,12 +1375,17 @@ Key_Event(int key, qboolean down, qboolean special)
 		abort_cinematic = cls.realtime;
 	}
 
-	/* Ignore most autorepeats */
+	/* Ignore most autorepeats (optech2: none while typing in the console or
+	   a chat line: arrows, Delete, Home/End... repeat like in any text field) */
 	if (down)
 	{
 		key_repeats[key]++;
 
-		if ((key != K_BACKSPACE) &&
+		const qboolean typing = ((cls.key_dest == key_console) || (cls.key_dest == key_message)) &&
+								(key != K_CONSOLE) && (key != K_ESCAPE) && (key != K_ENTER) && (key != K_KP_ENTER);
+
+		if (!typing &&
+			(key != K_BACKSPACE) &&
 			(key != K_PAUSE) &&
 			(key != K_PGUP) &&
 			(key != K_KP_PGUP) &&

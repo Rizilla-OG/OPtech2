@@ -79,6 +79,16 @@ RE_Draw_CharScaled(int x, int y, int c, float scale)
 		return;
 	}
 
+	/* optech2: with a TrueType font, its letters, digits and signs (the
+	   bitmap font keeps the special characters) */
+	if (draw_fontcodes && draw_font && (c & 127) > 32 && (c & 127) < 127)
+	{
+		const char text[2] = {(char)(c & 127), '\0'};
+
+		RE_Draw_StringScaled(x, y, scale, (c & 128) != 0, text);
+		return;
+	}
+
 	if (y <= -8)
 	{
 		return; /* totally off screen */
@@ -775,6 +785,65 @@ RE_Draw_Fill(int x, int y, int w, int h, int c)
 	for (v = 0 ; v < h; v++, dest += vid_buffer_width)
 	{
 		memset(dest, c, w);
+	}
+}
+
+/* optech2: a rectangle in a color; 8-bit, so its alpha is a 4x4 ordered
+   dither: that share of the pixels takes the palette's nearest color */
+void
+RE_Draw_FillColor(int x, int y, int w, int h, const float *rgba)
+{
+	static const byte bayer[4][4] = {{0, 8, 2, 10}, {12, 4, 14, 6}, {3, 11, 1, 9}, {15, 7, 13, 5}};
+	const int level = (int)(rgba[3] * 16.0f + 0.5f);
+	int r, g, b, u, v;
+	pixel_t color;
+
+	if (x < 0)
+	{
+		w += x;
+		x = 0;
+	}
+
+	if (y < 0)
+	{
+		h += y;
+		y = 0;
+	}
+
+	if (x + w > vid_buffer_width)
+	{
+		w = vid_buffer_width - x;
+	}
+
+	if (y + h > vid_buffer_height)
+	{
+		h = vid_buffer_height - y;
+	}
+
+	if (w <= 0 || h <= 0 || level <= 0 || !d_16to8table)
+	{
+		return;
+	}
+
+	r = ((int)(rgba[0] * 255.0f) >> 3) & 31;
+	g = ((int)(rgba[1] * 255.0f) >> 2) & 63;
+	b = ((int)(rgba[2] * 255.0f) >> 3) & 31;
+	color = d_16to8table[r | (g << 5) | (b << 11)];
+
+	VID_DamageBuffer(x, y);
+	VID_DamageBuffer(x + w, y + h);
+
+	for (v = y; v < y + h; v++)
+	{
+		pixel_t *row = vid_buffer + (size_t)vid_buffer_width * v;
+
+		for (u = x; u < x + w; u++)
+		{
+			if (bayer[v & 3][u & 3] < level)
+			{
+				row[u] = color;
+			}
+		}
 	}
 }
 

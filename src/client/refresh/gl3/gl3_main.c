@@ -2243,6 +2243,7 @@ GetRefAPI(refimport_t imp)
 	exports.DrawTileClear = GL3_Draw_TileClear;
 	exports.DrawFill = GL3_Draw_Fill;
 	exports.DrawFadeScreen = GL3_Draw_FadeScreen;
+	exports.DrawFillColor = GL3_Draw_FillColor;
 
 	exports.DrawStretchRaw = GL3_Draw_StretchRaw;
 	exports.SetPalette = GL3_SetPalette;

@@ -30,6 +30,8 @@
 
 console_t con;
 cvar_t *con_notifytime;
+cvar_t *con_style; /* optech2: 1 = a dark see-through panel, 0 = the classic picture */
+cvar_t *con_alpha; /* optech2: how solid that panel is, 0..1 */
 
 extern char key_lines[NUM_KEY_LINES][MAXCMDLINE];
 extern int edit_line;
@@ -328,6 +330,8 @@ Con_Init(void)
 
 	/* register our commands */
 	con_notifytime = Cvar_Get("con_notifytime", "3", 0);
+	con_style = Cvar_Get("con_style", "1", CVAR_ARCHIVE);
+	con_alpha = Cvar_Get("con_alpha", "0.82", CVAR_ARCHIVE);
 
 	Cmd_AddCommand("toggleconsole", Con_ToggleConsole_f);
 	Cmd_AddCommand("togglechat", Con_ToggleChat_f);
@@ -639,9 +643,25 @@ Con_DrawConsole(float frac)
 		lines = viddef.height;
 	}
 
-	/* draw the background */
-	Draw_StretchPic(0, -viddef.height + lines, viddef.width,
+	/* draw the background (optech2: by default a dark see-through panel with
+	   an accent line along its bottom edge; con_style 0: the classic picture) */
+	if (con_style && con_style->value)
+	{
+		/* (see-through only over a game: with none, nothing fresh is behind it) */
+		const float panel_alpha = (cls.state != ca_active) ? 1.0f : con_alpha ? Q_clamp(con_alpha->value, 0.0f, 1.0f)
+																			  : 0.82f;
+		const float panel[4] = {0.03f, 0.04f, 0.06f, panel_alpha};
+		const float accent[4] = {0.95f, 0.55f, 0.15f, 1.0f};
+		const int edge = (int)Q_max(2.0f, 2.0f * scale);
+
+		Draw_FillColor(0, 0, viddef.width, lines - edge, panel);
+		Draw_FillColor(0, lines - edge, viddef.width, edge, accent);
+	}
+	else
+	{
+		Draw_StretchPic(0, -viddef.height + lines, viddef.width,
 			viddef.height, "conback");
+	}
 	SCR_AddDirtyPoint(0, 0);
 	SCR_AddDirtyPoint(viddef.width - 1, lines - 1);
 

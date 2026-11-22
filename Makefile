@@ -1122,10 +1122,16 @@ assets:
 	@echo "===> Add required assets"
 	${Q}mkdir -p $(BINDIR)/baseq2
 	$(MAKE) $(BINDIR)/baseq2/models/entity.dat
+	$(MAKE) $(BINDIR)/baseq2/fonts/DejaVuSansMono.ttf
 
 $(BINDIR)/baseq2/models/entity.dat: stuff/models/entity.dat
 	${Q}mkdir -p $(BINDIR)/baseq2/models
 	cp stuff/models/entity.dat $(BINDIR)/baseq2/models/entity.dat
+
+# optech2: the console and text font (DejaVu Sans Mono, its license beside it)
+$(BINDIR)/baseq2/fonts/DejaVuSansMono.ttf: stuff/fonts/DejaVuSansMono.ttf
+	${Q}mkdir -p $(BINDIR)/baseq2/fonts
+	cp stuff/fonts/DejaVuSansMono.ttf stuff/fonts/DejaVuSansMono-LICENSE.txt $(BINDIR)/baseq2/fonts/
 
 # ----------
 

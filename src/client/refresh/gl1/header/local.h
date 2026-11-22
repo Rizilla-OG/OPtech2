@@ -418,6 +418,7 @@ extern void RDraw_StringScaled(int x, int y, float scale, qboolean alt, const ch
 extern void RDraw_TileClear(int x, int y, int w, int h, const char *pic);
 extern void RDraw_Fill(int x, int y, int w, int h, int c);
 extern void RDraw_FadeScreen(void);
+extern void RDraw_FillColor(int x, int y, int w, int h, const float *rgba); /* optech2 */
 extern void RDraw_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte *data, int bits);
 
 /* public interface funtions */

@@ -1205,6 +1205,20 @@ else() # single-config, like normal Makefiles
 endif()
 target_link_libraries(game ${yquake2LinkerFlags})
 
+# optech2: the console and text font beside the game library (DejaVu Sans
+# Mono, its license with it), like the Makefile's assets target
+if(isMultiConfig)
+	set(OPTECH2_FONT_DIR ${CMAKE_BINARY_DIR}/release/$<CONFIG>/baseq2/fonts)
+else()
+	set(OPTECH2_FONT_DIR ${CMAKE_BINARY_DIR}/release/baseq2/fonts)
+endif()
+add_custom_command(TARGET game POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${OPTECH2_FONT_DIR}
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different
+		${CMAKE_SOURCE_DIR}/stuff/fonts/DejaVuSansMono.ttf
+		${CMAKE_SOURCE_DIR}/stuff/fonts/DejaVuSansMono-LICENSE.txt
+		${OPTECH2_FONT_DIR})
+
 if(${GL1_RENDERER})
 
 # Build the GL1 dynamic library

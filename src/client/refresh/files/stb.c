@@ -1311,6 +1311,14 @@ R_LoadTTFFont(const char *ttffont, int vid_height, float *r_font_size,
 	snprintf(font_name, sizeof(font_name), "fonts/%s.ttf", ttffont);
 
 	size = ri.FS_LoadFile(font_name, (void **)&data);
+
+	/* optech2: a font that isn't there (an old config's): the shipped one */
+	if (size <= 0 && ttffont[0] && strcmp(ttffont, "DejaVuSansMono"))
+	{
+		snprintf(font_name, sizeof(font_name), "fonts/DejaVuSansMono.ttf");
+		size = ri.FS_LoadFile(font_name, (void **)&data);
+	}
+
 	if (size <= 0)
 	{
 		return;

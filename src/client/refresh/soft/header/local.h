@@ -510,6 +510,7 @@ void	RE_Draw_CharScaled (int x, int y, int c, float scale);
 void	RE_Draw_TileClear (int x, int y, int w, int h, const char *name);
 void	RE_Draw_Fill (int x, int y, int w, int h, int c);
 void	RE_Draw_FadeScreen (void);
+void RE_Draw_FillColor(int x, int y, int w, int h, const float *rgba); /* optech2 */
 
 extern byte d_8to24table[256 * 4];
 extern byte *d_16to8table;

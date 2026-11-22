@@ -283,7 +283,7 @@ R_InitCvar(void)
 	r_videos_unfiltered = ri.Cvar_Get("r_videos_unfiltered", "0", CVAR_ARCHIVE);
 	r_fixsurfsky = ri.Cvar_Get("r_fixsurfsky", "0", CVAR_ARCHIVE);
 	/* font should looks good with 8 pixels size */
-	r_ttffont = ri.Cvar_Get("r_ttffont", "RussoOne-Regular", CVAR_ARCHIVE);
+	r_ttffont = ri.Cvar_Get("r_ttffont", "DejaVuSansMono", CVAR_ARCHIVE); /* optech2: shipped in baseq2/fonts; "" = the bitmap font */
 	vid_fullscreen = ri.Cvar_Get("vid_fullscreen", "0", CVAR_ARCHIVE);
 	vid_gamma = ri.Cvar_Get("vid_gamma", "1.0", CVAR_ARCHIVE);
 	viewsize = ri.Cvar_Get("viewsize", "100", CVAR_ARCHIVE);

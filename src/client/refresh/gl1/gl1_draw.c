@@ -130,6 +130,16 @@ RDraw_CharScaled(int x, int y, int num, float scale)
 		return; /* space */
 	}
 
+	/* optech2: with a TrueType font, its letters, digits and signs (the
+	   bitmap font keeps the special characters) */
+	if (draw_fontcodes && draw_font && (num & 127) > 32 && (num & 127) < 127)
+	{
+		const char text[2] = {(char)(num & 127), '\0'};
+
+		RDraw_StringScaled(x, y, scale, (num & 128) != 0, text);
+		return;
+	}
+
 	if (y <= -8)
 	{
 		return; /* totally off screen */
@@ -550,6 +560,28 @@ RDraw_FadeScreen(void)
 
 	glDisableClientState( GL_VERTEX_ARRAY );
 
+	glColor4f(1, 1, 1, 1);
+	glEnable(GL_TEXTURE_2D);
+	glDisable(GL_BLEND);
+}
+
+/* optech2: a rectangle in a color, blended by its alpha */
+void
+RDraw_FillColor(int x, int y, int w, int h, const float *rgba)
+{
+	R_ApplyGLBuffer(); // draw what's under it first
+	glEnable(GL_BLEND);
+	glDisable(GL_TEXTURE_2D);
+	glColor4f(rgba[0], rgba[1], rgba[2], rgba[3]);
+	GLfloat vtx[] = {
+		x, y,
+		x + w, y,
+		x + w, y + h,
+		x, y + h};
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(2, GL_FLOAT, 0, vtx);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	glDisableClientState(GL_VERTEX_ARRAY);
 	glColor4f(1, 1, 1, 1);
 	glEnable(GL_TEXTURE_2D);
 	glDisable(GL_BLEND);

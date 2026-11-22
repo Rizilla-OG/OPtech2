@@ -706,6 +706,16 @@ Draw_GetPicSize(int *w, int *h, const char *name)
 	}
 }
 
+/* optech2: a translucent rectangle (renderers from before it draw nothing) */
+void
+Draw_FillColor(int x, int y, int w, int h, const float *rgba)
+{
+	if (ref_active && re.DrawFillColor)
+	{
+		re.DrawFillColor(x, y, w, h, rgba);
+	}
+}
+
 void
 Draw_StretchPic(int x, int y, int w, int h, const char *name)
 {

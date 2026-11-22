@@ -2204,6 +2204,7 @@ GetRefAPI(refimport_t imp)
 	exports.DrawTileClear = GL4_Draw_TileClear;
 	exports.DrawFill = GL4_Draw_Fill;
 	exports.DrawFadeScreen = GL4_Draw_FadeScreen;
+	exports.DrawFillColor = GL4_Draw_FillColor;
 
 	exports.DrawStretchRaw = GL4_Draw_StretchRaw;
 	exports.SetPalette = GL4_SetPalette;
