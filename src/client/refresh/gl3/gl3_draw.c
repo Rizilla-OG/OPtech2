@@ -656,10 +656,11 @@ GL3_ApplyBloomPass(GLuint sceneTex, int w, int h)
 	}
 
 	/* playable default value */
-	float threshold = 0.75f;
 	GLint locThreshold = glGetUniformLocation(gl3state.si2DbloomBright.shaderProgram, "threshold");
 	if (locThreshold != -1)
 	{
+		float threshold = 0.75f;
+
 		glUniform1f(locThreshold, threshold);
 	}
 

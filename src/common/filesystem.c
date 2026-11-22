@@ -1965,13 +1965,10 @@ FS_AddKPFpack(void)
 static void
 FS_AddDirToSearchPath(char *dir, qboolean create)
 {
-	const char *file;
 	char path[MAX_OSPATH];
-	char *tmp;
 	int i, j, k;
 	fsPack_t *pack = NULL;
 	fsSearchPath_t *search;
-	qboolean nextpak;
 	size_t len = strlen(dir);
 
 	// The directory must not end with an /. It would
@@ -2061,14 +2058,14 @@ FS_AddDirToSearchPath(char *dir, qboolean create)
 			// Sort out numbered paks. This is as inefficient as
 			// it can be, but it doesn't matter. This is done only
 			// once at client or game startup.
-			nextpak = false;
+			qboolean nextpak = false;
 
 			for (k = 0; k < MAX_PAKS; k++)
 			{
 				// basename() may alter the given string.
 				// We need to work around that...
-				tmp = strdup(list.data[j]);
-				file = basename(tmp);
+				char *tmp = strdup(list.data[j]);
+				const char *file = basename(tmp);
 
 				Com_sprintf(path, sizeof(path), "pak%d.%s", k, fs_packtypes[i].suffix);
 

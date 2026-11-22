@@ -809,7 +809,7 @@ Mod_Load2QBSP_IBSP46_SolveTexVec(const vec3_t p0, const vec3_t p1,
 {
 	double a[3][4];
 	vec3_t dp1, dp2, normal;
-	int i, j, pivot;
+	int i, j;
 
 	VectorSubtract(p1, p0, dp1);
 	VectorSubtract(p2, p0, dp2);
@@ -832,7 +832,7 @@ Mod_Load2QBSP_IBSP46_SolveTexVec(const vec3_t p0, const vec3_t p1,
 
 	for (i = 0; i < 3; i++)
 	{
-		pivot = i;
+		int pivot = i;
 		for (j = i + 1; j < 3; j++)
 		{
 			if (fabs(a[j][i]) > fabs(a[pivot][i]))
@@ -1068,7 +1068,7 @@ Mod_Load2QBSP_IBSP46_LEAFS(byte *outbuf, dheader_t *outheader,
 
 	for (i = 0; i < count; i++)
 	{
-		int j, brush_index, brushleaf_index, shader_index;
+		int j;
 		int firstleafface, numleaffaces, face_index;
 		int firstleafbrush, numleafbrushes, leafbrush_index;
 
@@ -1155,8 +1155,10 @@ Mod_Load2QBSP_IBSP46_LEAFS(byte *outbuf, dheader_t *outheader,
 
 		for (leafbrush_index = 0; leafbrush_index < numleafbrushes; leafbrush_index++)
 		{
-			brushleaf_index = firstleafbrush + leafbrush_index;
-			brush_index = LittleLong(in_leafbrush[brushleaf_index]);
+			int brushleaf_index = firstleafbrush + leafbrush_index;
+			int brush_index = LittleLong(in_leafbrush[brushleaf_index]);
+			int shader_index;
+
 			if ((brush_index < 0) || (brush_index >= count_brush))
 			{
 				Com_Error(ERR_DROP, "%s: Incorrect brush index %d > %d",
@@ -1872,7 +1874,6 @@ Mod_Load2QBSP_IBSP46_Fix(const char *name, maptype_t maptype, const lump_t *lump
 		if (type == 2)
 		{
 			int width, height, cell_x, cell_y, step_x, step_y;
-			size_t base_vertex;
 
 			width = LittleLong(surface->patch_width);
 			height = LittleLong(surface->patch_height);
@@ -1888,7 +1889,7 @@ Mod_Load2QBSP_IBSP46_Fix(const char *name, maptype_t maptype, const lump_t *lump
 			{
 				for (cell_x = 0; cell_x < (width - 1) / 2; cell_x++)
 				{
-					base_vertex = out_vertex;
+					size_t base_vertex = out_vertex;
 					for (step_y = 0; step_y <= BSP46_PATCH_STEPS; step_y++)
 					{
 						for (step_x = 0; step_x <= BSP46_PATCH_STEPS; step_x++, out_vertex++)

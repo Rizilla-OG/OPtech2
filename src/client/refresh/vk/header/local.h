@@ -155,7 +155,7 @@ void R_DrawAlphaSurfaces(void);
 void RE_InitParticleTexture(void);
 void Draw_InitLocal(void);
 void Draw_FreeLocal(void);
-void R_RotateForEntity(entity_t *e, float *mvMatrix);
+void R_RotateForEntity(const entity_t *e, float *mvMatrix);
 
 void EmitWaterPolys(const msurface_t *fa, image_t *texture,
 				   const float *modelMatrix, const float *color,
@@ -184,7 +184,7 @@ struct image_s *RE_RegisterSkin (const char *name);
 image_t *Vk_LoadPic(const char *name, byte *pic, int width, int realwidth,
 		    int height, int realheight, size_t data_size, imagetype_t type,
 		    int bits);
-image_t	*Vk_FindImage (const char *name, imagetype_t type);
+image_t *Vk_FindImage(const char *originname, imagetype_t type);
 void Vk_Scrap_Upload(void);
 void Vk_TextureMode(const char *string);
 void Vk_LmapTextureMode(const char *string);
@@ -206,11 +206,11 @@ void RE_SetSky(const char *name, float rotate, int autorotate, const vec3_t axis
 void RE_EndRegistration (void);
 
 void Mat_Identity(float *matrix);
-void Mat_Mul(float *m1, float *m2, float *res);
+void Mat_Mul(const float *m1, const float *m2, float *res);
 void Mat_Translate(float *matrix, float x, float y, float z);
 void Mat_Rotate(float *matrix, float deg, float x, float y, float z);
 void Mat_Scale(float *matrix, float x, float y, float z);
-void Mat_Perspective(float *matrix, float *correction_matrix, float fovy, float aspect, float zNear, float zFar);
+void Mat_Perspective(float *matrix, const float *correction_matrix, float fovy, float aspect, float zNear, float zFar);
 void Mat_Ortho(float *matrix, float left, float right, float bottom, float top, float zNear, float zFar);
 
 typedef struct

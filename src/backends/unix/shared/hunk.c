@@ -172,6 +172,7 @@ Hunk_Free(void *base)
 {
 	if (base)
 	{
+		// cppcheck-suppress constVariablePointer ; optech2: munmap takes a non-const pointer
 		byte *m;
 
 		m = ((byte *)base) - sizeof(size_t);

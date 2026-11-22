@@ -3293,13 +3293,13 @@ QVk_BindPipeline(qvkpipeline_t *pipeline)
 {
 	if (vk_state.current_pipeline != pipeline->pl)
 	{
-		float postConstants[PUSH_CONSTANT_FRAGMENT_SIZE] = {0};
-
 		vkCmdBindPipeline(vk_activeCmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->pl);
 		vk_state.current_pipeline = pipeline->pl;
 		if (vk_state.current_renderpass != RP_WORLD_WARP &&
 			pipeline != &vk_postprocessPipeline)
 		{
+			float postConstants[PUSH_CONSTANT_FRAGMENT_SIZE] = {0};
+
 			if (vk_state.current_renderpass == RP_WORLD)
 			{
 				postConstants[PUSH_CONSTANT_FOG_INDEX + 0] = r_newrefdef.fog.red / 255.f;

@@ -230,16 +230,14 @@ static void calculate_bounds(Model *model)
 static void decode_frame(Model *model, size_t offset, int frame, int vertex_count)
 {
 	int vertex;
-	float scale[3] = {
-		LittleFloat(*((float *)(model->data + offset))),
-		LittleFloat(*((float *)(model->data + offset + 4))),
-		LittleFloat(*((float *)(model->data + offset + 8)))
-	};
-	float translate[3] = {
-		LittleFloat(*((float *)(model->data + offset + 12))),
-		LittleFloat(*((float *)(model->data + offset + 16))),
-		LittleFloat(*((float *)(model->data + offset + 20)))
-	};
+	const float scale[3] = {
+		LittleFloat(Q_ReadFloat(model->data + offset)),
+		LittleFloat(Q_ReadFloat(model->data + offset + 4)),
+		LittleFloat(Q_ReadFloat(model->data + offset + 8))};
+	const float translate[3] = {
+		LittleFloat(Q_ReadFloat(model->data + offset + 12)),
+		LittleFloat(Q_ReadFloat(model->data + offset + 16)),
+		LittleFloat(Q_ReadFloat(model->data + offset + 20))};
 	VectorCopy(scale, model->frame_scales[frame]);
 	VectorCopy(translate, model->frame_translates[frame]);
 	for (vertex = 0; vertex < vertex_count; ++vertex)
@@ -438,22 +436,19 @@ static int load_flex_skeleton(Model *model, size_t offset, int32_t block_size, c
 		{
 			JointPose *pose = &model->joint_poses[(size_t)frame * (size_t)model->skeleton_cluster_count + (size_t)cluster];
 			VectorSet(pose->origin,
-					LittleFloat(*((float *)(model->data + cursor))),
-					LittleFloat(*((float *)(model->data + cursor + 4))),
-					LittleFloat(*((float *)(model->data + cursor + 8)))
-			);
+				LittleFloat(Q_ReadFloat(model->data + cursor)),
+				LittleFloat(Q_ReadFloat(model->data + cursor + 4)),
+				LittleFloat(Q_ReadFloat(model->data + cursor + 8)));
 			cursor += 12;
 			VectorSet(pose->direction,
-					LittleFloat(*((float *)(model->data + cursor))),
-					LittleFloat(*((float *)(model->data + cursor + 4))),
-					LittleFloat(*((float *)(model->data + cursor + 8)))
-			);
+				LittleFloat(Q_ReadFloat(model->data + cursor)),
+				LittleFloat(Q_ReadFloat(model->data + cursor + 4)),
+				LittleFloat(Q_ReadFloat(model->data + cursor + 8)));
 			cursor += 12;
 			VectorSet(pose->up,
-					LittleFloat(*((float *)(model->data + cursor))),
-					LittleFloat(*((float *)(model->data + cursor + 4))),
-					LittleFloat(*((float *)(model->data + cursor + 8)))
-			);
+				LittleFloat(Q_ReadFloat(model->data + cursor)),
+				LittleFloat(Q_ReadFloat(model->data + cursor + 4)),
+				LittleFloat(Q_ReadFloat(model->data + cursor + 8)));
 			cursor += 12;
 		}
 	}

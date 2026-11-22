@@ -618,7 +618,7 @@ void CL_BigTeleportParticles(const vec3_t org);
 void CL_RocketTrail(const vec3_t start, const vec3_t end, centity_t *old);
 void CL_DiminishingTrail(const vec3_t start, const vec3_t end, centity_t *old, int flags);
 void CL_FlyEffect(centity_t *ent, const vec3_t origin);
-void CL_BfgParticles(entity_t *ent);
+void CL_BfgParticles(const entity_t *ent);
 void CL_HologramParticles(const vec3_t org, float radius);
 void CL_AddParticles(void);
 void CL_EntityEvent(entity_xstate_t *ent);

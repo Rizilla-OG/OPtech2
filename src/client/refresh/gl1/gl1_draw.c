@@ -71,7 +71,7 @@ Scrap_Update(void)
 
 	for (texnum = 0; texnum < MAX_SCRAPS; texnum++)
 	{
-		unsigned *scrap_texels;
+		const unsigned *scrap_texels;
 
 		scrap_texels = Scrap_Upload(texnum);
 		if (scrap_texels)

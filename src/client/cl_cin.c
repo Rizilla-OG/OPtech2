@@ -368,7 +368,7 @@ SCR_ReadNextMPGFrame(void)
 		/* load enough sound data for single frame*/
 		while (cin.audio_pos < count && cin.s_channels > 0)
 		{
-			plm_samples_t *samples;
+			const plm_samples_t *samples;
 			short *audiobuffer;
 
 			samples = plm_decode_audio(cin.plm_video);

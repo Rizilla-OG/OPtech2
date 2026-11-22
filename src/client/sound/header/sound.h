@@ -40,9 +40,9 @@ void S_StartSound(vec3_t origin, int entnum, int entchannel,
 		struct sfx_s *sfx, float fvol, float attenuation,
 		float timeofs);
 
-void S_StartLocalSound(const char *sound);
-void S_RawSamples(int samples, int rate, int width, int channels,
-		const byte *data, float volume);
+void S_StartLocalSound(const char *sound_name);
+void S_RawSamples(int samples, int rate, int width, int raw_channels,
+	const byte *data, float volume);
 void S_StopAllSounds(void);
 void S_Update(vec3_t origin, vec3_t forward, vec3_t right, vec3_t up);
 void S_Activate(qboolean active);

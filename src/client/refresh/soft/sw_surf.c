@@ -179,7 +179,7 @@ R_DrawSurface
 ===============
 */
 static void
-R_DrawSurface (drawsurf_t *drawsurf, light_t *blocklights, const light_t *blocklight_max)
+R_DrawSurface(drawsurf_t *drawsurf, light_t *lights, const light_t *lights_max)
 {
 	byte	*basetptr;
 	int		smax, tmax, twidth;
@@ -230,9 +230,9 @@ R_DrawSurface (drawsurf_t *drawsurf, light_t *blocklights, const light_t *blockl
 
 	for (u=0 ; u<r_numhblocks; u++)
 	{
-		r_lightptr = blocklights + u * 3;
+		r_lightptr = lights + u * 3;
 
-		if (r_lightptr >= blocklight_max)
+		if (r_lightptr >= lights_max)
 		{
 			r_outoflights = true;
 			continue;

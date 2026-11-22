@@ -240,7 +240,7 @@ Mod_CTCLoadFrames(const char *mod_name, const dctc_header_t *input,
 		daliasxframe_t *frame = (daliasxframe_t *)((byte *)pheader +
 			pheader->ofs_frames + (size_t)i * pheader->framesize);
 		dmdx_vert_t *posed_vertices;
-		int j, completed;
+		int j;
 
 		Mod_CTCKeyMatrix((const ctc_frame_key_t *)frame_data,
 			root_transform);
@@ -249,7 +249,8 @@ Mod_CTCLoadFrames(const char *mod_name, const dctc_header_t *input,
 		{
 			memset(temp->bone_ready, 0,
 				(size_t)input->num_bones * sizeof(*temp->bone_ready));
-			completed = 0;
+			int completed = 0;
+
 			while (completed < input->num_bones)
 			{
 				qboolean progress = false;
@@ -514,7 +515,7 @@ Mod_LoadModel_CTC(const char *mod_name, const void *buffer, int modfilelen)
 	ctc_temp_data_t temp = { 0 };
 	const byte *src = buffer;
 	void *extradata = NULL;
-	size_t file_size, framesize, frame_key_count, cursor, num_weights = 0;
+	size_t file_size, framesize, frame_key_count, num_weights = 0;
 	size_t animation_frame_count = 0;
 	int i;
 
@@ -841,7 +842,7 @@ Mod_LoadModel_CTC(const char *mod_name, const void *buffer, int modfilelen)
 			}
 		}
 
-		cursor = (size_t)input.ofs_skeletal;
+		size_t cursor = (size_t)input.ofs_skeletal;
 		{
 			const ctc_skeletal_data_t *skeletal =
 				(const ctc_skeletal_data_t *)(src + cursor);

@@ -82,12 +82,6 @@ jobs:
           --suppress=missingInclude:src/client/input/sdl3.c \
           --suppress=constParameterCallback --inline-suppr \
           --include=tools/ci/cppcheck_shims.h \
-          --suppress=constVariablePointer --suppress=constParameterPointer \
-          --suppress=constVariable --suppress=constParameter --suppress=variableScope \
-          --suppress=funcArgNamesDifferent --suppress=funcArgNamesDifferentUnnamed \
-          --suppress=unusedStructMember --suppress=invalidPointerCast \
-          --suppress=shadowVariable --suppress=shadowArgument --suppress=shadowFunction \
-          --suppress=unreadVariable:src/client/menu/menu.c \
           --suppress=uninitMemberVarNoCtor:src/game/rerelease/game.h \
           -i src/common/nav/recast -i src/game/lua -i src/common/unzip \
           -i src/client/refresh/vk/volk -i src/client/refresh/gl1/glad-gles1 \
@@ -97,9 +91,6 @@ jobs:
         # optech2: the build sets YQ2ARCH; this runner has no SDL3 headers (built WITH_SDL3=no).
         # Callback parameters can't be const (the pointer type is fixed), and game.h is the
         # re-release API struct, filled by the engine, so it has no constructor.
-        # Style-only rules are off: nearly all hits are in stock Yamagi code, and
-        # editing it for style makes upstream merges harder. invalidPointerCast:
-        # the build uses -fno-strict-aliasing. Menu layouts step y past the last item.
         # optech2: bundled libraries are skipped above; filter in case headers pull them in
         python3 tools/ci/filter_sarif.py cppcheck_results.sarif
     - name: Upload SARIF to GitHub Code Scanning

@@ -836,8 +836,8 @@ GL4_Add3DdrawCmdToBatch(const mvtx_t* verts, int numVerts, GLenum drawMode, gl4d
 	{
 		case GL_TRIANGLE_FAN:
 		{
-			const GLushort verts = (GLushort)(numVerts - 1);
-			for (GLushort i = 1; i < verts; ++i)
+			const GLushort fan_triangles = (GLushort)(numVerts - 1);
+			for (GLushort i = 1; i < fan_triangles; ++i)
 			{
 				GLushort *add = da_addn_uninit(idxBuf, 3);
 
@@ -849,8 +849,8 @@ GL4_Add3DdrawCmdToBatch(const mvtx_t* verts, int numVerts, GLenum drawMode, gl4d
 		}
 		case GL_TRIANGLE_STRIP:
 		{
-			GLushort i, verts = (GLushort)(numVerts - 2);
-			for (i = 1; i < verts; i += 2)
+			GLushort i, strip_count = (GLushort)(numVerts - 2);
+			for (i = 1; i < strip_count; i += 2)
 			{
 				// add two triangles at once, because the vertex order is different
 				// for odd vs even triangles
@@ -865,7 +865,7 @@ GL4_Add3DdrawCmdToBatch(const mvtx_t* verts, int numVerts, GLenum drawMode, gl4d
 				add[5] = nextVtxIdx + i + 1;
 			}
 			// add remaining triangle, if any
-			if (i < verts + 1)
+			if (i < strip_count + 1)
 			{
 				GLushort *add = da_addn_uninit(idxBuf, 3);
 
@@ -2168,53 +2168,53 @@ GL4_EndWorldRenderpass( void )
 Q2_DLL_EXPORTED refexport_t
 GetRefAPI(refimport_t imp)
 {
-	refexport_t re = {0};
+	refexport_t exports = {0};
 
 	ri = imp;
 
-	re.api_version = API_VERSION;
-	re.framework_version = GL4_GetSDLVersion();
+	exports.api_version = API_VERSION;
+	exports.framework_version = GL4_GetSDLVersion();
 
-	re.Init = GL4_Init;
-	re.Shutdown = GL4_Shutdown;
-	re.PrepareForWindow = GL4_PrepareForWindow;
-	re.InitContext = GL4_InitContext;
-	re.GetDrawableSize = GL4_GetDrawableSize;
-	re.ShutdownContext = GL4_ShutdownContext;
-	re.IsVSyncActive = GL4_IsVsyncActive;
+	exports.Init = GL4_Init;
+	exports.Shutdown = GL4_Shutdown;
+	exports.PrepareForWindow = GL4_PrepareForWindow;
+	exports.InitContext = GL4_InitContext;
+	exports.GetDrawableSize = GL4_GetDrawableSize;
+	exports.ShutdownContext = GL4_ShutdownContext;
+	exports.IsVSyncActive = GL4_IsVsyncActive;
 
-	re.BeginRegistration = GL4_BeginRegistration;
-	re.RegisterModel = GL4_RegisterModel;
-	re.RegisterSkin = GL4_RegisterSkin;
+	exports.BeginRegistration = GL4_BeginRegistration;
+	exports.RegisterModel = GL4_RegisterModel;
+	exports.RegisterSkin = GL4_RegisterSkin;
 
-	re.SetSky = GL4_SetSky;
-	re.EndRegistration = GL4_EndRegistration;
+	exports.SetSky = GL4_SetSky;
+	exports.EndRegistration = GL4_EndRegistration;
 
-	re.RenderFrame = GL4_RenderFrame;
+	exports.RenderFrame = GL4_RenderFrame;
 
-	re.DrawFindPic = GL4_Draw_FindPic;
-	re.DrawGetPicSize = GL4_Draw_GetPicSize;
+	exports.DrawFindPic = GL4_Draw_FindPic;
+	exports.DrawGetPicSize = GL4_Draw_GetPicSize;
 
-	re.DrawPicScaled = GL4_Draw_PicScaled;
-	re.DrawPicScaledCol = GL4_Draw_PicScaledCol;
-	re.DrawStretchPic = GL4_Draw_StretchPic;
+	exports.DrawPicScaled = GL4_Draw_PicScaled;
+	exports.DrawPicScaledCol = GL4_Draw_PicScaledCol;
+	exports.DrawStretchPic = GL4_Draw_StretchPic;
 
-	re.DrawCharScaled = GL4_Draw_CharScaled;
-	re.DrawStringScaled = GL4_Draw_StringScaled;
-	re.DrawTileClear = GL4_Draw_TileClear;
-	re.DrawFill = GL4_Draw_Fill;
-	re.DrawFadeScreen = GL4_Draw_FadeScreen;
+	exports.DrawCharScaled = GL4_Draw_CharScaled;
+	exports.DrawStringScaled = GL4_Draw_StringScaled;
+	exports.DrawTileClear = GL4_Draw_TileClear;
+	exports.DrawFill = GL4_Draw_Fill;
+	exports.DrawFadeScreen = GL4_Draw_FadeScreen;
 
-	re.DrawStretchRaw = GL4_Draw_StretchRaw;
-	re.SetPalette = GL4_SetPalette;
+	exports.DrawStretchRaw = GL4_Draw_StretchRaw;
+	exports.SetPalette = GL4_SetPalette;
 
-	re.BeginFrame = GL4_BeginFrame;
-	re.EndWorldRenderpass = GL4_EndWorldRenderpass;
-	re.EndFrame = GL4_EndFrame;
+	exports.BeginFrame = GL4_BeginFrame;
+	exports.EndWorldRenderpass = GL4_EndWorldRenderpass;
+	exports.EndFrame = GL4_EndFrame;
 
-	// Tell the client that we're unsing the
+	// Tell the client that we'exports unsing the
 	// new renderer restart API.
 	ri.Vid_RequestRestart(RESTART_NO);
 
-	return re;
+	return exports;
 }

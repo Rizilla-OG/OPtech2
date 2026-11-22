@@ -498,7 +498,7 @@ extern void R_RecursiveWorldNode(entity_t *currententity, mnode_t *node, int cli
 extern void R_TransformFrustum(vec3_t modelorg, vec3_t vright, vec3_t vup, vec3_t vpn);
 extern void R_MarkLeaves(const model_t *r_worldmodel);
 extern void R_SetClusters(const model_t *r_worldmodel, const vec3_t r_origin);
-extern void R_PushDlights(refdef_t *r_newrefdef, mnode_t *nodes, int lightframecount,
+extern void R_PushDlights(refdef_t *newrefdef, mnode_t *nodes, int lightframecount,
 	msurface_t *surfaces);
 extern struct image_s *R_TextureAnimation(const entity_t *currententity,
 	const mtexinfo_t *tex);
@@ -513,8 +513,8 @@ extern void R_BuildLMPolygonFromSurface(model_t *currentmodel, msurface_t *fa,
 
 /* Mesh logic */
 extern qboolean R_CullAliasModel(const model_t *currentmodel, vec3_t bbox[8], entity_t *e);
-extern void R_LerpVerts(const dmdx_t *pheader, int frame, int oldframe, float frontlerp,
-	float backlerp, float *lerp, const float move[3], const float *scale,
+extern void R_LerpVerts(const dmdx_t *paliashdr, int frame, int oldframe, float frontlerp,
+	float backlerp, float *lerp, const float base_move[3], const float *scale,
 	qboolean colorOnly);
 extern void R_ConvertNormalMDL(byte in_normal, signed char *normal);
 extern vec4_t *R_VertBufferRealloc(size_t num);
@@ -534,7 +534,7 @@ extern void R_ApplyModelLight(const model_t *model, const entity_t *currententit
 	vec3_t shadelight, vec3_t lightspot, const byte *lightdata);
 extern void R_SetCacheState(msurface_t *surf, const refdef_t *refdef);
 extern void R_BuildLightMap(const msurface_t *surf, byte *dest, int stride,
-	const refdef_t *r_newrefdef, float modulate, const byte *gammatable,
+	const refdef_t *refdef, float modulate, const byte *gammatable,
 	const byte *minlight);
 extern void R_InitTemporaryLMBuffer(void);
 extern void R_FreeTemporaryLMBuffer(void);
@@ -548,7 +548,7 @@ extern float R_GetNearValue(void);
 extern float R_GetFarValue(const model_t *r_worldmodel);
 extern void R_MakeSkyVec(float s, float t, int axis, mvtx_t* vert,
 	const model_t *r_worldmodel, float sky_min, float sky_max);
-extern void R_FlowingScroll(const refdef_t *r_newrefdef, int flags,
+extern void R_FlowingScroll(const refdef_t *newrefdef, int flags,
 	float *sscroll, float *tscroll);
 
 /* GL only code */

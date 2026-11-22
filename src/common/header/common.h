@@ -660,8 +660,8 @@ void NET_Shutdown(void);
 
 void NET_Config(qboolean multiplayer);
 
-qboolean NET_GetPacket(netsrc_t sock, netadr_t *net_from,
-		sizebuf_t *net_message);
+qboolean NET_GetPacket(netsrc_t sock, netadr_t *from_address,
+	sizebuf_t *message_buffer);
 void NET_SendPacket(netsrc_t sock, int length, const void *data, netadr_t to);
 
 qboolean NET_CompareAdr(netadr_t a, netadr_t b);
@@ -734,7 +734,7 @@ extern sizebuf_t net_message;
 extern byte net_message_buffer[MAX_MSGLEN];
 
 void Netchan_Init(void);
-void Netchan_Setup(netsrc_t sock, netchan_t *chan, netadr_t adr, int qport);
+void Netchan_Setup(netsrc_t sock, netchan_t *chan, netadr_t adr, int chan_qport);
 
 qboolean Netchan_NeedReliable(const netchan_t *chan);
 void Netchan_Transmit(netchan_t *chan, int length, const byte *data);
@@ -1024,7 +1024,7 @@ int Sys_Rename(const char *from, const char *to);
 void Sys_RemoveDir(const char *path);
 long long Sys_Microseconds(void);
 unsigned int Sys_ProcessId(void); /* optech2: for seeding per-process values */
-void Sys_Nanosleep(int);
+void Sys_Nanosleep(int nanosec);
 void *Sys_GetProcAddress(void *handle, const char *sym);
 void Sys_FreeLibrary(void *handle);
 void *Sys_LoadLibrary(const char *path, const char *sym, void **handle);

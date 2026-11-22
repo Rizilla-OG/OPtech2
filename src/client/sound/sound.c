@@ -295,7 +295,7 @@ S_GetVolume(const byte *data, int sound_length, int width, double *sound_volume)
 }
 
 static void
-S_GetStatistics(const byte *data, int sound_length, int width, int channels,
+S_GetStatistics(const byte *data, int sound_length, int width, int num_channels,
 	double sound_volume, int *begin_length, int *end_length,
 	int *attack_length, int *fade_length)
 {
@@ -354,7 +354,7 @@ S_GetStatistics(const byte *data, int sound_length, int width, int channels,
 		}
 		while (sound_data < sound_end && abs(sound_sample) < sound_treshold);
 		/* delay_data == (short *)(data + info.dataofs) */
-		*begin_length = (sound_data - delay_data) / channels;
+		*begin_length = (sound_data - delay_data) / num_channels;
 		delay_data = sound_data;
 
 		/* attack calculate */
@@ -365,7 +365,7 @@ S_GetStatistics(const byte *data, int sound_length, int width, int channels,
 		}
 		while (sound_data < sound_end && abs(sound_sample) < audio_max);
 		/* fade_data == delay_data */
-		*attack_length = (sound_data - delay_data) / channels;
+		*attack_length = (sound_data - delay_data) / num_channels;
 		fade_data = sound_data;
 
 		/* end calculate */
@@ -376,7 +376,7 @@ S_GetStatistics(const byte *data, int sound_length, int width, int channels,
 			sound_sample = LittleShort(*sound_data);
 		}
 		while (sound_data > fade_data && abs(sound_sample) < sound_treshold);
-		*end_length = (sound_end -  sound_data) / channels;
+		*end_length = (sound_end - sound_data) / num_channels;
 		sound_end = sound_data;
 
 		/* fade calculate */
@@ -386,7 +386,7 @@ S_GetStatistics(const byte *data, int sound_length, int width, int channels,
 			sound_sample = LittleShort(*sound_data);
 		}
 		while (sound_data > fade_data && abs(sound_sample) < audio_max);
-		*fade_length = (sound_end - sound_data) / channels;
+		*fade_length = (sound_end - sound_data) / num_channels;
 	}
 	else if (width == 1)
 	{
@@ -407,7 +407,7 @@ S_GetStatistics(const byte *data, int sound_length, int width, int channels,
 		}
 		while (sound_data < sound_end && abs(sound_sample) < sound_treshold);
 		/* delay_data == (short *)(data + info.dataofs) */
-		*begin_length = (sound_data - delay_data) / channels;
+		*begin_length = (sound_data - delay_data) / num_channels;
 		delay_data = sound_data;
 
 		/* attack calculate */
@@ -419,7 +419,7 @@ S_GetStatistics(const byte *data, int sound_length, int width, int channels,
 		}
 		while (sound_data < sound_end && abs(sound_sample) < audio_max);
 		/* fade_data == delay_data */
-		*attack_length = (sound_data - delay_data) / channels;
+		*attack_length = (sound_data - delay_data) / num_channels;
 		fade_data = sound_data;
 
 		/* end calculate */
@@ -431,7 +431,7 @@ S_GetStatistics(const byte *data, int sound_length, int width, int channels,
 			sound_sample = *sound_data << 8;
 		}
 		while (sound_data > fade_data && abs(sound_sample) < sound_treshold);
-		*end_length = (sound_end -  sound_data) / channels;
+		*end_length = (sound_end - sound_data) / num_channels;
 		sound_end = sound_data;
 
 		/* fade calculate */
@@ -442,7 +442,7 @@ S_GetStatistics(const byte *data, int sound_length, int width, int channels,
 			sound_sample = *sound_data << 8;
 		}
 		while (sound_data > fade_data && abs(sound_sample) < audio_max);
-		*fade_length = (sound_end - sound_data) / channels;
+		*fade_length = (sound_end - sound_data) / num_channels;
 	}
 }
 
@@ -1382,7 +1382,7 @@ S_StartSound(vec3_t origin, int entnum, int entchannel, sfx_t *sfx,
  * system.
  */
 void
-S_StartLocalSound(const char *sound)
+S_StartLocalSound(const char *sound_name)
 {
 	sfx_t *sfx;
 
@@ -1391,11 +1391,11 @@ S_StartLocalSound(const char *sound)
 		return;
 	}
 
-	sfx = S_RegisterSound(sound);
+	sfx = S_RegisterSound(sound_name);
 
 	if (!sfx)
 	{
-		Com_Printf("%s: can't cache %s\n", __func__, sound);
+		Com_Printf("%s: can't cache %s\n", __func__, sound_name);
 		return;
 	}
 
@@ -1486,7 +1486,7 @@ S_BuildSoundList(int *sounds)
  */
 void
 S_RawSamples(int samples, int rate, int width,
-		int channels, const byte *data, float volume)
+	int raw_channels, const byte *data, float volume)
 {
 	if (sound_started == SS_NOT)
 	{
@@ -1501,14 +1501,14 @@ S_RawSamples(int samples, int rate, int width,
 #if USE_OPENAL
 	if (sound_started == SS_OAL)
 	{
-		AL_RawSamples(samples, rate, width, channels, data, volume);
+		AL_RawSamples(samples, rate, width, raw_channels, data, volume);
 	}
 	else
 #endif
 	{
 		if (sound_started == SS_SDL)
 		{
-			SDL_RawSamples(samples, rate, width, channels, data, volume);
+			SDL_RawSamples(samples, rate, width, raw_channels, data, volume);
 		}
 	}
 }

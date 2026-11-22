@@ -1721,8 +1721,8 @@ void
 ReadLevel(const char *filename)
 {
 	/* optech2: tagged format schemas */
-	schemafield_t *level_schema = NULL, *edict_schema = NULL;
-	int level_schema_count = 0, edict_schema_count = 0;
+	schemafield_t *edict_schema = NULL;
+	int edict_schema_count = 0;
 	int entnum;
 	FILE *f;
 	int i;
@@ -1754,7 +1754,8 @@ ReadLevel(const char *filename)
 
 	if (i == LEVEL_FILE_TAGGED)
 	{
-		level_schema = SG_ReadSchema(f, savefields_level, ARRLEN(savefields_level),
+		int level_schema_count = 0;
+		schemafield_t *level_schema = SG_ReadSchema(f, savefields_level, ARRLEN(savefields_level),
 			&level_schema_count, "level");
 		SG_ReadRecord(f, &level, level_schema, level_schema_count, TAG_LEVEL, NULL);
 		free(level_schema);

@@ -170,7 +170,7 @@ int GL4_PrepareForWindow(void)
 {
 	// Mkay, let's try to load the libGL,
 	const char *libgl;
-	cvar_t *gl4_libgl = ri.Cvar_Get("gl4_libgl", "", CVAR_ARCHIVE);
+	const cvar_t *gl4_libgl = ri.Cvar_Get("gl4_libgl", "", CVAR_ARCHIVE);
 
 	if (strlen(gl4_libgl->string) == 0)
 	{

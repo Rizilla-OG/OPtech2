@@ -445,7 +445,6 @@ RE_Draw_FadeScreen(void)
 void
 RE_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte *data, int bits)
 {
-	byte *image_scaled = NULL;
 	unsigned *raw_image32;
 
 	if (!vk_frameStarted)
@@ -470,6 +469,8 @@ RE_Draw_StretchRaw(int x, int y, int w, int h, int cols, int rows, const byte *d
 	}
 	else
 	{
+		byte *image_scaled = NULL;
+
 		if (r_retexturing->value)
 		{
 			// triple scaling

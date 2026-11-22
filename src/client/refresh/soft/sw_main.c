@@ -1115,7 +1115,7 @@ Render the map
 ================
 */
 static void
-R_EdgeDrawing(entity_t *currententity)
+R_EdgeDrawing(const entity_t *currententity)
 {
 	if ( r_newrefdef.rdflags & RDF_NOWORLDMODEL )
 	{
@@ -1174,7 +1174,6 @@ R_CalcPalette(void)
 	int		i, j;
 	float	alpha, one_minus_alpha, v_blend[4];
 	vec3_t	premult;
-	int		v;
 
 	R_CombineBlendWithFog(v_blend, false);
 
@@ -1208,7 +1207,7 @@ R_CalcPalette(void)
 	{
 		for (j=0 ; j<3 ; j++)
 		{
-			v = premult[j] + one_minus_alpha * in[j];
+			int v = premult[j] + one_minus_alpha * in[j];
 			if (v > 255)
 				v = 255;
 			out[j] = v;
@@ -2137,7 +2136,7 @@ point math used in R_ScanEdges() overflows at width 2048 !!
 char shift_size;
 
 static void
-RE_CopyFrame(Uint32 *pixels, int pitch, SDL_Rect *rect)
+RE_CopyFrame(Uint32 *pixels, int pitch, const SDL_Rect *rect)
 {
 	const unsigned *sdl_palette;
 
@@ -2147,7 +2146,7 @@ RE_CopyFrame(Uint32 *pixels, int pitch, SDL_Rect *rect)
 	if (pitch == vid_buffer_width)
 	{
 		Uint32 *dst;
-		byte *src;
+		const byte *src;
 
 		dst = pixels;
 		src = vid_buffer + rect->y * vid_buffer_width;
@@ -2186,7 +2185,8 @@ RE_CopyFrame(Uint32 *pixels, int pitch, SDL_Rect *rect)
 static int
 RE_BufferDifferenceStart(int vmin, int vmax)
 {
-	int *front_buffer, *back_buffer;
+	const int *front_buffer;
+	int *back_buffer;
 	const int *back_max;
 
 	back_buffer = (int*)(swap_frames[0] + vmin);
@@ -2205,7 +2205,8 @@ RE_BufferDifferenceStart(int vmin, int vmax)
 static size_t
 RE_BufferDifferenceEnd(int vmin, int vmax)
 {
-	int *front_buffer, *back_buffer;
+	const int *front_buffer;
+	int *back_buffer;
 	const int *back_min;
 
 	back_buffer = (int*)(swap_frames[0] + vmax);

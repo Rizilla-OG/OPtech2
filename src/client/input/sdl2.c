@@ -913,14 +913,14 @@ IN_Update(void)
 					/* Note that the SDL_SCANCODEs are SDL_SCANCODE_1, _2, ..., _9, SDL_SCANCODE_0
 					 * while in ASCII it's '0', '1', ..., '9' => handle 0 and 1-9 separately
 					 * (quake2 uses the ASCII values for those keys) */
-					int key = '0'; /* implicitly handles SDL_SCANCODE_0 */
+					int number_key = '0'; /* implicitly handles SDL_SCANCODE_0 */
 
 					if (sc <= SDL_SCANCODE_9)
 					{
-						key = '1' + (sc - SDL_SCANCODE_1);
+						number_key = '1' + (sc - SDL_SCANCODE_1);
 					}
 
-					Key_Event(key, down, false);
+					Key_Event(number_key, down, false);
 				}
 				else
 				{
@@ -947,15 +947,15 @@ IN_Update(void)
 					}
 					else
 					{
-						int key = IN_TranslateSDLtoQ2Key(kc);
-						if(key == 0)
+						int translated_key = IN_TranslateSDLtoQ2Key(kc);
+						if (translated_key == 0)
 						{
 							// fallback to scancodes if we don't know the keycode
-							key = IN_TranslateScancodeToQ2Key(sc);
+							translated_key = IN_TranslateScancodeToQ2Key(sc);
 						}
-						if(key != 0)
+						if (translated_key != 0)
 						{
-							Key_Event(key, down, true);
+							Key_Event(translated_key, down, true);
 						}
 						else
 						{
@@ -1463,12 +1463,13 @@ static float
 IN_FlickStick(thumbstick_t stick, float axial_deadzone)
 {
 	static qboolean is_flicking;
-	static float last_stick_angle;
-	thumbstick_t processed = stick;
 	float angle_change = 0;
 
 	if (IN_StickMagnitude(stick) > Q_min(joy_flick_threshold->value, 1.0f))	// flick!
 	{
+		static float last_stick_angle;
+		thumbstick_t processed = stick;
+
 		// Snap-to-axis only if player just started to flick. With x < 0.4,
 		// f(x)=1-(1-x)^2 → < 0.64; this might mean a "tap" to the stick, so
 		// treat it as a possible attempt to turn 90º / 180º.
@@ -1591,7 +1592,7 @@ IN_UpdateStickLayout(joystate_t *joy)
 }
 
 static qboolean
-IN_CrossedThreshold(joystate_t *joy, float outer_threshold)
+IN_CrossedThreshold(const joystate_t *joy, float outer_threshold)
 {
 	const float magnitude = Q_magnitude(*joy->yaw, *joy->pitch);
 	return (magnitude >= outer_threshold);
@@ -2538,7 +2539,7 @@ IN_Controller_Init(qboolean notify_user)
 	SDL_Joystick *joystick = NULL;
 	SDL_bool is_controller = SDL_FALSE;
 
-	cvar_t *cvar = Cvar_Get("in_initjoy", "1", CVAR_NOSET);
+	const cvar_t *cvar = Cvar_Get("in_initjoy", "1", CVAR_NOSET);
 	joy_num = (int)cvar->value;
 	if (joy_num < 1) return;
 

@@ -170,13 +170,13 @@ Netchan_OutOfBandPrint(int net_socket, netadr_t adr, char *format, ...)
  * called to open a channel to a remote system
  */
 void
-Netchan_Setup(netsrc_t sock, netchan_t *chan, netadr_t adr, int qport)
+Netchan_Setup(netsrc_t sock, netchan_t *chan, netadr_t adr, int chan_qport)
 {
 	memset(chan, 0, sizeof(*chan));
 
 	chan->sock = sock;
 	chan->remote_address = adr;
-	chan->qport = qport;
+	chan->qport = chan_qport;
 	chan->last_received = curtime;
 	chan->incoming_sequence = 0;
 	chan->outgoing_sequence = 1;

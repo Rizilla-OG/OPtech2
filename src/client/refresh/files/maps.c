@@ -313,7 +313,7 @@ Mod_CalcSurfaceExtents(const int *surfedges, int numsurfedges, mvertex_t *vertex
 	msurface_t *s)
 {
 	double mins[2], maxs[2];
-	mtexinfo_t *tex;
+	const mtexinfo_t *tex;
 	int i;
 
 	mins[0] = mins[1] = 999999;
@@ -324,7 +324,7 @@ Mod_CalcSurfaceExtents(const int *surfedges, int numsurfedges, mvertex_t *vertex
 	for (i = 0; i < s->numedges; i++)
 	{
 		int e, j;
-		mvertex_t *v;
+		const mvertex_t *v;
 
 		if ((s->firstedge + i) >= numsurfedges)
 		{
@@ -567,7 +567,7 @@ Mod_PointInLeaf(const vec3_t p, mnode_t *node)
 	while (1)
 	{
 		float d;
-		cplane_t *plane;
+		const cplane_t *plane;
 
 		if (node->contents != CONTENTS_NODE)
 		{

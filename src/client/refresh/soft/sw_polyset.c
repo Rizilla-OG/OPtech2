@@ -172,19 +172,19 @@ R_DrawTriangle(const entity_t *currententity, const finalvert_t *a, const finalv
 
 static void
 R_PushEdgesSpan(int u, int v, int count,
-		pixel_t* d_ptex, int d_sfrac, int d_tfrac, light3_t d_light, zvalue_t d_zi)
+	pixel_t *d_ptex, int span_sfrac, int span_tfrac, light3_t span_light, zvalue_t span_zi)
 {
 	d_pedgespanpackage->u = u;
 	d_pedgespanpackage->v = v;
 	d_pedgespanpackage->count = count;
 	d_pedgespanpackage->ptex = d_ptex;
 
-	d_pedgespanpackage->sfrac = d_sfrac;
-	d_pedgespanpackage->tfrac = d_tfrac;
+	d_pedgespanpackage->sfrac = span_sfrac;
+	d_pedgespanpackage->tfrac = span_tfrac;
 
 	// FIXME: need to clamp l, s, t, at both ends?
-	memcpy(d_pedgespanpackage->light, d_light, sizeof(light3_t));
-	d_pedgespanpackage->zi = d_zi;
+	memcpy(d_pedgespanpackage->light, span_light, sizeof(light3_t));
+	d_pedgespanpackage->zi = span_zi;
 
 	d_pedgespanpackage++;
 }

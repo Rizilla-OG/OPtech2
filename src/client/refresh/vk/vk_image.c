@@ -753,7 +753,7 @@ Vk_TextureMode(const char *string)
 
 	Q_strlcpy(prev_mode, string, sizeof(prev_mode));
 
-	vk_current_sampler = i;
+	vk_current_sampler = modes[i].samplerType; // optech2: from the table, not its index
 
 	vkDeviceWaitIdle(vk_device.logical);
 
@@ -829,7 +829,7 @@ Vk_LmapTextureMode(const char *string)
 
 	Q_strlcpy(prev_mode, string, sizeof(prev_mode));
 
-	vk_current_lmap_sampler = i;
+	vk_current_lmap_sampler = modes[i].samplerType; // optech2: from the table, not its index
 
 	vkDeviceWaitIdle(vk_device.logical);
 	for (j = 0; j < MAX_LIGHTMAPS * 2; j++)

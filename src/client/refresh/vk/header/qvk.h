@@ -311,7 +311,7 @@ extern PFN_vkSetMoltenVKConfigurationMVK qvkSetMoltenVKConfigurationMVK;
 #endif
 
 // The Interface Functions (tm)
-void		QVk_SetWindow(SDL_Window*);
+void QVk_SetWindow(SDL_Window *window);
 qboolean	QVk_Init(void);
 void		QVk_PostInit(void);
 void		QVk_GetDrawableSize(int *width, int *height);

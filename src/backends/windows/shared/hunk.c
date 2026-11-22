@@ -54,7 +54,7 @@ Hunk_Begin(int maxsize)
 void *
 Hunk_Alloc(int size)
 {
-	void *buf;
+	const void *buf;
 
 	/* round to cacheline */
 	size = (size + 31) & ~31;

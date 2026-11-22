@@ -424,13 +424,12 @@ CL_PredictMovement(void)
 		{
 			const entity_xstate_t *ground = CL_PredictionTraceEntity(pm.groundentity);
 			vec3_t velocity;
-			int i;
 
 			if (ground && CL_MoverVelocity(ground, velocity))
 			{
 				/* in 1/8 units; the fraction carries over to the next
 				   command, so many short commands don't lose it */
-				for (i = 0; i < 3; i++)
+				for (int i = 0; i < 3; i++)
 				{
 					int whole;
 

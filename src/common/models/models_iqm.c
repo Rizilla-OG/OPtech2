@@ -48,6 +48,8 @@
 #define IQM_UBYTE 1
 #define IQM_FLOAT 7
 
+/* optech2: the file's layout; every field stays, read or not */
+// cppcheck-suppress-begin unusedStructMember
 typedef struct
 {
 	char magic[16];
@@ -65,6 +67,7 @@ typedef struct
 	unsigned int num_comment, ofs_comment;
 	unsigned int num_extensions, ofs_extensions;
 } iqm_header_t;
+// cppcheck-suppress-end unusedStructMember
 
 typedef struct
 {
@@ -279,7 +282,6 @@ IQM_BuildSkinMatrices(const char *mod_name, const iqm_header_t *header,
 	const iqm_joint_t *joints;
 	iqm_matrix_t *bind_world, *inverse_bind, *skin, *pose_world;
 	unsigned int j;
-	int f;
 
 	joints = (const iqm_joint_t *)(buffer + header->ofs_joints);
 
@@ -333,7 +335,7 @@ IQM_BuildSkinMatrices(const char *mod_name, const iqm_header_t *header,
 		poses = (const iqm_pose_t *)(buffer + header->ofs_poses);
 		framedata = (const unsigned short *)(buffer + header->ofs_frames);
 
-		for (f = 0; f < num_out_frames; f++)
+		for (int f = 0; f < num_out_frames; f++)
 		{
 			for (j = 0; j < header->num_poses; j++)
 			{
@@ -569,10 +571,10 @@ Mod_LoadModel_IQM(const char *mod_name, const void *buffer, int modfilelen)
 	{
 		if (texcoords)
 		{
-			const float *uv = (const float *)(data + texcoords->offset) + i * 2;
+			const byte *uv = data + texcoords->offset + (size_t)i * 2 * sizeof(float);
 
-			st[i].s = LittleFloat(uv[0]) * pheader->skinwidth;
-			st[i].t = LittleFloat(uv[1]) * pheader->skinheight;
+			st[i].s = LittleFloat(Q_ReadFloat(uv)) * pheader->skinwidth;
+			st[i].t = LittleFloat(Q_ReadFloat(uv + sizeof(float))) * pheader->skinheight;
 		}
 		else
 		{
@@ -594,24 +596,24 @@ Mod_LoadModel_IQM(const char *mod_name, const void *buffer, int modfilelen)
 	{
 		for (i = 0; i < header.num_vertexes; i++)
 		{
-			const float *in_position = (const float *)(data + positions->offset) + i * 3;
+			const byte *in_position = data + positions->offset + (size_t)i * 3 * sizeof(float);
 			dmdx_vert_t *out = vertx + (size_t)f * header.num_vertexes + i;
 			vec3_t position, normal;
 			int n;
 
 			for (n = 0; n < 3; n++)
 			{
-				position[n] = LittleFloat(in_position[n]);
+				position[n] = LittleFloat(Q_ReadFloat(in_position + n * sizeof(float)));
 				normal[n] = 0;
 			}
 
 			if (normals)
 			{
-				const float *in_normal = (const float *)(data + normals->offset) + i * 3;
+				const byte *in_normal = data + normals->offset + (size_t)i * 3 * sizeof(float);
 
 				for (n = 0; n < 3; n++)
 				{
-					normal[n] = LittleFloat(in_normal[n]);
+					normal[n] = LittleFloat(Q_ReadFloat(in_normal + n * sizeof(float)));
 				}
 			}
 

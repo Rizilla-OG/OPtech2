@@ -495,7 +495,7 @@ NET_IsLocalAddress(netadr_t adr)
 /* ============================================================================= */
 
 static qboolean
-NET_GetLoopPacket(netsrc_t sock, netadr_t *net_from, sizebuf_t *net_message)
+NET_GetLoopPacket(netsrc_t sock, netadr_t *from_address, sizebuf_t *message_buffer)
 {
 	int i;
 	loopback_t *loop;
@@ -515,10 +515,10 @@ NET_GetLoopPacket(netsrc_t sock, netadr_t *net_from, sizebuf_t *net_message)
 	i = loop->get & (MAX_LOOPBACK - 1);
 	loop->get++;
 
-	memcpy(net_message->data, loop->msgs[i].data, loop->msgs[i].datalen);
-	net_message->cursize = loop->msgs[i].datalen;
-	memset(net_from, 0, sizeof(*net_from));
-	net_from->type = NA_LOOPBACK;
+	memcpy(message_buffer->data, loop->msgs[i].data, loop->msgs[i].datalen);
+	message_buffer->cursize = loop->msgs[i].datalen;
+	memset(from_address, 0, sizeof(*from_address));
+	from_address->type = NA_LOOPBACK;
 	return true;
 }
 
@@ -540,7 +540,7 @@ NET_SendLoopPacket(netsrc_t sock, int length, const void *data, netadr_t to)
 /* ============================================================================= */
 
 qboolean
-NET_GetPacket(netsrc_t sock, netadr_t *net_from, sizebuf_t *net_message)
+NET_GetPacket(netsrc_t sock, netadr_t *from_address, sizebuf_t *message_buffer)
 {
 	int ret;
 	struct sockaddr_storage from;
@@ -549,7 +549,7 @@ NET_GetPacket(netsrc_t sock, netadr_t *net_from, sizebuf_t *net_message)
 	int protocol;
 	int err;
 
-	if (NET_GetLoopPacket(sock, net_from, net_message))
+	if (NET_GetLoopPacket(sock, from_address, message_buffer))
 	{
 		return true;
 	}
@@ -576,11 +576,11 @@ NET_GetPacket(netsrc_t sock, netadr_t *net_from, sizebuf_t *net_message)
 
 		fromlen = sizeof(from);
 		memset(&from, 0, fromlen);
-		ret = recvfrom(net_socket, (char *)net_message->data,
-				net_message->maxsize, 0, (struct sockaddr *)&from,
-				&fromlen);
+		ret = recvfrom(net_socket, (char *)message_buffer->data,
+			message_buffer->maxsize, 0, (struct sockaddr *)&from,
+			&fromlen);
 
-		SockadrToNetadr(&from, net_from);
+		SockadrToNetadr(&from, from_address);
 
 		if (ret == -1)
 		{
@@ -594,31 +594,31 @@ NET_GetPacket(netsrc_t sock, netadr_t *net_from, sizebuf_t *net_message)
 			if (err == WSAEMSGSIZE)
 			{
 				Com_Printf("Warning:  Oversize packet from %s\n",
-						NET_AdrToString(*net_from));
+					NET_AdrToString(*from_address));
 				continue;
 			}
 
 			if (dedicated->value) /* let dedicated servers continue after errors */
 			{
 				Com_Printf("%s: %s from %s\n", NET_ErrorString(),
-						__func__, NET_AdrToString(*net_from));
+					__func__, NET_AdrToString(*from_address));
 			}
 			else
 			{
 				Com_Printf("%s: %s from %s",
-						__func__, NET_ErrorString(), NET_AdrToString(*net_from));
+					__func__, NET_ErrorString(), NET_AdrToString(*from_address));
 			}
 
 			continue;
 		}
 
-		if (ret == net_message->maxsize)
+		if (ret == message_buffer->maxsize)
 		{
-			Com_Printf("Oversize packet from %s\n", NET_AdrToString(*net_from));
+			Com_Printf("Oversize packet from %s\n", NET_AdrToString(*from_address));
 			continue;
 		}
 
-		net_message->cursize = ret;
+		message_buffer->cursize = ret;
 		return true;
 	}
 

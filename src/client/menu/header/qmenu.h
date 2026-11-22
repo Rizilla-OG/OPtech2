@@ -151,23 +151,23 @@ void M_ForceMenuOff(void);
 void M_PushMenu(menuframework_s* menu);
 
 void Field_InitState(menufield_s *f, const char *s, int len, int vislen);
-void Field_ResetCursor(menuframework_s *m);
+void Field_ResetCursor(const menuframework_s *m);
 qboolean Field_Key(menufield_s *field, int key);
 
 void Menu_AddItem(menuframework_s *menu, void *item);
 void Menu_AdjustCursor(menuframework_s *menu, int dir);
 void Menu_Center(menuframework_s *menu);
 void Menu_Draw(menuframework_s *menu);
-void *Menu_ItemAtCursor(menuframework_s *m);
-qboolean Menu_SelectItem(menuframework_s *s);
+void *Menu_ItemAtCursor(const menuframework_s *m);
+qboolean Menu_SelectItem(const menuframework_s *s);
 void Menu_SetStatusBar(menuframework_s *menu, const char *string);
-qboolean Menu_SlideItem(menuframework_s *s, int dir);
+qboolean Menu_SlideItem(const menuframework_s *s, int dir);
 
 void Menu_DrawCharacter(int cx, int cy, int num);
-void Menu_DrawString(int, int, const char *);
-void Menu_DrawStringDark(int, int, const char *);
-void Menu_DrawStringR2L(int, int, const char *);
-void Menu_DrawStringR2LDark(int, int, const char *);
+void Menu_DrawString(int x, int y, const char *string);
+void Menu_DrawStringDark(int x, int y, const char *string);
+void Menu_DrawStringR2L(int x, int y, const char *string);
+void Menu_DrawStringR2LDark(int x, int y, const char *string);
 
 typedef struct
 {

@@ -478,7 +478,7 @@ CM_PointLeafnum_r(const vec3_t p, int num)
 {
 	float d;
 	cnode_t *node;
-	cplane_t *plane;
+	const cplane_t *plane;
 
 	if (!cmod->numnodes)
 	{
@@ -677,7 +677,7 @@ CM_ClipBoxToBrush(vec3_t mins, vec3_t maxs, vec3_t p1,
 	float enterfrac, leavefrac;
 	const cplane_t *clipplane;
 	qboolean getout, startout;
-	cplane_t *plane;
+	const cplane_t *plane;
 	float d1, d2;
 	float dist;
 	vec3_t ofs;
@@ -832,9 +832,9 @@ CM_TestBoxInBrush(vec3_t mins, vec3_t maxs, vec3_t p1,
 		trace_t *trace, const cbrush_t *brush)
 {
 	int i, j;
-	cplane_t *plane;
+	const cplane_t *plane;
 	vec3_t ofs;
-	cbrushside_t *side;
+	const cbrushside_t *side;
 
 	if (!brush->numsides || !cmod->map_brushsides)
 	{
@@ -1018,8 +1018,8 @@ CM_TestInLeaf(int leafnum)
 static void
 CM_RecursiveHullCheck(int num, float p1f, float p2f, const vec3_t p1, const vec3_t p2)
 {
-	cnode_t *node;
-	cplane_t *plane;
+	const cnode_t *node;
+	const cplane_t *plane;
 	float t1, t2, offset;
 	float frac, frac2;
 	float idist;
@@ -1797,14 +1797,14 @@ CMod_LoadEntityString(const char *name, const char **map_entitystring, int *nume
 }
 
 static void
-CM_ModFree(model_t *cmod)
+CM_ModFree(model_t *model)
 {
-	if (cmod->extradata && cmod->extradatasize)
+	if (model->extradata && model->extradatasize)
 	{
-		Hunk_Free(cmod->extradata);
+		Hunk_Free(model->extradata);
 	}
 
-	memset(cmod, 0, sizeof(model_t));
+	memset(model, 0, sizeof(model_t));
 }
 
 void
@@ -2350,7 +2350,7 @@ typedef struct
 static void
 CM_BaseWinding(const cplane_t *plane, cm_winding_t *w)
 {
-	double normal[3] = {plane->normal[0], plane->normal[1], plane->normal[2]};
+	const double normal[3] = {plane->normal[0], plane->normal[1], plane->normal[2]};
 	double up[3] = {0, 0, 0}, right[3], origin[3], length, dot;
 	int axis = 0, i;
 

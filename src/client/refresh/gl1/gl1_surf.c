@@ -841,7 +841,7 @@ R_DrawInlineBModel(const entity_t *currententity, const model_t *currentmodel)
 	/* draw texture */
 	for (i = 0; i < currentmodel->nummodelsurfaces; i++, psurf++)
 	{
-		cplane_t *pplane;
+		const cplane_t *pplane;
 		float dot;
 
 		/* find which side of the node we are on */
@@ -1025,7 +1025,7 @@ R_GetBrushesLighting(void)
 	int i, k;
 	vec3_t mins, maxs;
 	msurface_t *surf;
-	cplane_t *pplane;
+	const cplane_t *pplane;
 	float dot;
 
 	if (!gl_config.multitexture || !r_drawentities->value || r_flashblend->value)
@@ -1035,7 +1035,7 @@ R_GetBrushesLighting(void)
 
 	for (i = 0; i < r_newrefdef.num_entities; i++)
 	{
-		entity_t *currententity = &r_newrefdef.entities[i];
+		const entity_t *currententity = &r_newrefdef.entities[i];
 
 		if (currententity->flags & RF_BEAM)
 		{

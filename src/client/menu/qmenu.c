@@ -272,7 +272,7 @@ Field_Draw(menufield_s *f)
 }
 
 void
-Field_ResetCursor(menuframework_s *m)
+Field_ResetCursor(const menuframework_s *m)
 {
 	menucommon_s *item = Menu_ItemAtCursor(m);
 
@@ -804,7 +804,7 @@ Menu_StartPopup(menupopup_s *pup, const char *string, int lifetime)
 }
 
 void *
-Menu_ItemAtCursor(menuframework_s *m)
+Menu_ItemAtCursor(const menuframework_s *m)
 {
 	if ((m->cursor < 0) || (m->cursor >= m->nitems))
 	{
@@ -815,7 +815,7 @@ Menu_ItemAtCursor(menuframework_s *m)
 }
 
 qboolean
-Menu_SelectItem(menuframework_s *s)
+Menu_SelectItem(const menuframework_s *s)
 {
 	menucommon_s *item = (menucommon_s *)Menu_ItemAtCursor(s);
 
@@ -836,7 +836,7 @@ Menu_SetStatusBar(menuframework_s *menu, const char *string)
 }
 
 qboolean
-Menu_SlideItem(menuframework_s *s, int dir)
+Menu_SlideItem(const menuframework_s *s, int dir)
 {
 	menucommon_s *item = (menucommon_s *)Menu_ItemAtCursor(s);
 

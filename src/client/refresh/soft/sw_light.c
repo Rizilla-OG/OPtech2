@@ -54,13 +54,13 @@ RI_PushDlights(const model_t *model)
  * Combine and scale multiple lightmaps into the 8.8 format in blocklights
  */
 void
-RI_BuildLightMap(drawsurf_t* drawsurf, const refdef_t *r_newrefdef,
+RI_BuildLightMap(const drawsurf_t *drawsurf, const refdef_t *newrefdef,
 	float modulate)
 {
 	int smax, tmax;
 	int size;
 	const light_t *max_light;
-	msurface_t *surf;
+	const msurface_t *surf;
 
 	surf = drawsurf->surf;
 
@@ -86,7 +86,7 @@ RI_BuildLightMap(drawsurf_t* drawsurf, const refdef_t *r_newrefdef,
 	max_light = blocklights + size * 3;
 
 	R_BuildLightMap(surf, bblocklights, smax * 4,
-		r_newrefdef, modulate, NULL, NULL);
+		newrefdef, modulate, NULL, NULL);
 
 	/* bound, invert, and shift */
 	if (sw_colorlight->value == 0)

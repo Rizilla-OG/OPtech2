@@ -17,7 +17,7 @@ extern int skin_count, iskin, yrotate, xrotate, zrotate, imesh, zdist, irender;
 struct image_s* find_image(const char *name, imagetype_t type);
 void Animate(int start, int end, int *frame, float *interp);
 void RenderFrameItp(int n, float interp, const dmdx_t *mod);
-struct image_s * insert_skin(const char *name, byte *data, int width, int realwidth,
+struct image_s *insert_skin(const char *name, const byte *data, int width, int realwidth,
 	int height, int realheight, size_t size, imagetype_t type, int bits);
 byte* image_load(const char* name, int *w, int *h, int *b);
 void keyboard(unsigned char key, int x, int y);

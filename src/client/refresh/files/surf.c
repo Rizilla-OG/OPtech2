@@ -804,9 +804,9 @@ R_RecursiveWorldNode(entity_t *currententity, mnode_t *node, int clipflags,
 	vec3_t acceptpt, rejectpt;
 	int c, side, sidebit;
 	msurface_t *surf;
-	cplane_t *plane;
+	const cplane_t *plane;
 	mleaf_t *pleaf;
-	model_t *model;
+	const model_t *model;
 	float dot;
 
 	if (node->contents == CONTENTS_SOLID)

@@ -341,7 +341,7 @@ Key_GetMenuKey(int key)
 const char *
 Default_MenuKey(menuframework_s *m, int key)
 {
-	const char *sound;
+	const char *sound_name;
 	menucommon_s *item;
 	int menu_key;
 
@@ -363,7 +363,7 @@ Default_MenuKey(menuframework_s *m, int key)
 		}
 	}
 
-	sound = NULL;
+	sound_name = NULL;
 
 	switch (menu_key)
 	{
@@ -376,39 +376,39 @@ Default_MenuKey(menuframework_s *m, int key)
 			Field_ResetCursor(m);
 			m->cursor--;
 			Menu_AdjustCursor(m, -1);
-			sound = menu_move_sound;
+			sound_name = menu_move_sound;
 			break;
 
 		case K_DOWNARROW:
 			Field_ResetCursor(m);
 			m->cursor++;
 			Menu_AdjustCursor(m, 1);
-			sound = menu_move_sound;
+			sound_name = menu_move_sound;
 			break;
 
 		case K_LEFTARROW:
 			if (Menu_SlideItem(m, -1))
 			{
-				sound = menu_move_sound;
+				sound_name = menu_move_sound;
 			}
 			break;
 
 		case K_RIGHTARROW:
 			if (Menu_SlideItem(m, 1))
 			{
-				sound = menu_move_sound;
+				sound_name = menu_move_sound;
 			}
 			break;
 
 		case K_ENTER:
 			if (Menu_SelectItem(m))
 			{
-				sound = menu_move_sound;
+				sound_name = menu_move_sound;
 			}
 			break;
 	}
 
-	return sound;
+	return sound_name;
 }
 
 void
@@ -1692,7 +1692,7 @@ Stick_MenuInit(void)
 
 	s_stk_threshold_slider.generic.name = "outer thresh";
 	s_stk_threshold_slider.generic.x = 0;
-	s_stk_threshold_slider.generic.y = (y += 14);
+	s_stk_threshold_slider.generic.y = y + 14;
 	s_stk_threshold_slider.cvar = "joy_outer_threshold";
 	s_stk_threshold_slider.minvalue = 0.0f;
 	s_stk_threshold_slider.maxvalue = 0.30f;
@@ -1983,7 +1983,7 @@ Gyro_MenuInit(void)
 
 	s_calibrate_gyro.generic.type = MTYPE_ACTION;
 	s_calibrate_gyro.generic.x = 0;
-	s_calibrate_gyro.generic.y = (y += 15);
+	s_calibrate_gyro.generic.y = y + 15;
 	s_calibrate_gyro.generic.name = "calibrate";
 	s_calibrate_gyro.generic.callback = CalibrateGyroFunc;
 
@@ -2270,7 +2270,7 @@ Joy_MenuInit(void)
 
 	s_joy_customize_alt_buttons_action.generic.type = MTYPE_ACTION;
 	s_joy_customize_alt_buttons_action.generic.x = 0;
-	s_joy_customize_alt_buttons_action.generic.y = (y += 10);
+	s_joy_customize_alt_buttons_action.generic.y = y + 10;
 	s_joy_customize_alt_buttons_action.generic.name = "custom. alt buttons";
 	s_joy_customize_alt_buttons_action.generic.callback = CustomizeControllerAltButtonsFunc;
 	Menu_AddItem(&s_joy_menu, (void *)&s_joy_customize_alt_buttons_action);
@@ -2712,7 +2712,7 @@ Options_MenuInit(void)
 
 	s_options_console_action.generic.type = MTYPE_ACTION;
 	s_options_console_action.generic.x = 0;
-	s_options_console_action.generic.y = (y += 10);
+	s_options_console_action.generic.y = y + 10;
 	s_options_console_action.generic.name = "go to console";
 	s_options_console_action.generic.callback = ConsoleFunc;
 
@@ -4329,7 +4329,7 @@ EpisodeSelectFunc(void *self)
 static void
 Game_MenuInit(void)
 {
-	int y, episode;
+	int y;
 
 	Mods_NamesInit();
 	LevelSelect_NamesInit();
@@ -4409,7 +4409,7 @@ Game_MenuInit(void)
 		   entry each, then the skill choice; the items below move down */
 		int shift = s_episode_count * 10 - 40;
 
-		for (episode = 0; episode < s_episode_count; episode++)
+		for (int episode = 0; episode < s_episode_count; episode++)
 		{
 			menuaction_s *action = &s_episode_actions[episode];
 
@@ -4648,7 +4648,7 @@ LoadSave_AdjustPage(int dir)
 
 	for (i = 0; i < MAX_SAVEPAGES; i++)
 	{
-		char *str;
+		const char *str;
 		str = va("%c%d%c",
 				i == m_loadsave_page ? '[' : ' ',
 				i + 1,
@@ -6025,7 +6025,7 @@ DMOptions_MenuInit(void)
 
 		s_no_spheres_box.generic.type = MTYPE_SPINCONTROL;
 		s_no_spheres_box.generic.x = 0;
-		s_no_spheres_box.generic.y = y += 10;
+		s_no_spheres_box.generic.y = y + 10;
 		s_no_spheres_box.generic.name = "remove spheres";
 		s_no_spheres_box.generic.callback = DMFlagCallback;
 		s_no_spheres_box.itemnames = yes_no_names;
@@ -6051,7 +6051,7 @@ DMOptions_MenuInit(void)
 
 		s_no_nukes_box.generic.type = MTYPE_SPINCONTROL;
 		s_no_nukes_box.generic.x = 0;
-		s_no_nukes_box.generic.y = y += 10;
+		s_no_nukes_box.generic.y = y + 10;
 		s_no_nukes_box.generic.name = "techs off";
 		s_no_nukes_box.generic.callback = DMFlagCallback;
 		s_no_nukes_box.itemnames = yes_no_names;
@@ -6233,7 +6233,7 @@ DownloadOptions_MenuInit(void)
 
 	s_allow_download_sounds_box.generic.type = MTYPE_SPINCONTROL;
 	s_allow_download_sounds_box.generic.x = 0;
-	s_allow_download_sounds_box.generic.y = y += 10;
+	s_allow_download_sounds_box.generic.y = y + 10;
 	s_allow_download_sounds_box.generic.name = "sounds";
 	s_allow_download_sounds_box.generic.callback = DownloadCallback;
 	s_allow_download_sounds_box.itemnames = yes_no_names;
@@ -6374,7 +6374,6 @@ static void
 SelectedModelSkin(const char **mdl, const char **img)
 {
 	int mi = s_player_model_box.curvalue;
-	int si = s_player_skin_box.curvalue;
 
 	if (mdl)
 	{
@@ -6392,6 +6391,8 @@ SelectedModelSkin(const char **mdl, const char **img)
 		{
 			*mdl = s_modelname.data[mi];
 		}
+
+		int si = s_player_skin_box.curvalue;
 
 		if (img && si >= 0 && si < s_skinnames[mi].num)
 		{

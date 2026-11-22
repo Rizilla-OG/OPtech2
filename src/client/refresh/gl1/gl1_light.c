@@ -32,7 +32,7 @@ vec3_t lightspot;
 byte minlight[256];
 
 static void
-R_RenderDlight(dlight_t *light)
+R_RenderDlight(const dlight_t *light)
 {
 	const float rad = light->intensity * 0.35;
 	int i, j, clr[3];

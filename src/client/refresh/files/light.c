@@ -118,7 +118,7 @@ R_RecursiveLightPoint(const msurface_t *surfaces, const mnode_t *node,
 {
 	float		front, back, frac;
 	int			side;
-	cplane_t	*plane;
+	const cplane_t *plane;
 	vec3_t		mid;
 	const msurface_t	*surf;
 	int			s, t, ds, dt;
@@ -444,8 +444,8 @@ R_SetCacheState(msurface_t *surf, const refdef_t *refdef)
 }
 
 static void
-R_AddDynamicLights(const msurface_t *surf, const refdef_t *r_newrefdef,
-	float *s_blocklights)
+R_AddDynamicLights(const msurface_t *surf, const refdef_t *newrefdef,
+	float *blocklights)
 {
 	int lnum;
 	int smax, tmax;
@@ -453,12 +453,12 @@ R_AddDynamicLights(const msurface_t *surf, const refdef_t *r_newrefdef,
 	smax = (surf->extents[0] >> surf->lmshift) + 1;
 	tmax = (surf->extents[1] >> surf->lmshift) + 1;
 
-	for (lnum = 0; lnum < r_newrefdef->num_dlights; lnum++)
+	for (lnum = 0; lnum < newrefdef->num_dlights; lnum++)
 	{
 		float ftacc, fdist, frad, fminlight;
 		vec3_t impact, local;
 		float *plightdest;
-		dlight_t *dl;
+		const dlight_t *dl;
 		int t, i;
 
 		if (!DLIGHT_MASK_HAS(surf->dlightbits, lnum))
@@ -466,7 +466,7 @@ R_AddDynamicLights(const msurface_t *surf, const refdef_t *r_newrefdef,
 			continue; /* not lit by this light */
 		}
 
-		dl = &r_newrefdef->dlights[lnum];
+		dl = &newrefdef->dlights[lnum];
 		frad = dl->intensity;
 		fdist = DotProduct(dl->origin, surf->plane->normal) -
 				surf->plane->dist;
@@ -493,7 +493,7 @@ R_AddDynamicLights(const msurface_t *surf, const refdef_t *r_newrefdef,
 		local[1] = DotProduct(impact, surf->lmvecs[1]) +
 			surf->lmvecs[1][3] - surf->texturemins[1];
 
-		plightdest = s_blocklights;
+		plightdest = blocklights;
 
 		for (t = 0, ftacc = 0; t < tmax; t++, ftacc += (1 << surf->lmshift))
 		{
@@ -749,7 +749,7 @@ R_StoreLightMap(byte *dest, int stride, int smax, int tmax, const byte *gammatab
  * Combine and scale multiple lightmaps into the floating format in blocklights
  */
 void
-R_BuildLightMap(const msurface_t *surf, byte *dest, int stride, const refdef_t *r_newrefdef,
+R_BuildLightMap(const msurface_t *surf, byte *dest, int stride, const refdef_t *refdef,
 	float modulate, const byte *gammatable, const byte *minlight)
 {
 	int smax, tmax;
@@ -814,7 +814,7 @@ R_BuildLightMap(const msurface_t *surf, byte *dest, int stride, const refdef_t *
 			for (i = 0; i < 3; i++)
 			{
 				scale[i] = modulate *
-						   r_newrefdef->lightstyles[surf->styles[maps]].rgb[i];
+						   refdef->lightstyles[surf->styles[maps]].rgb[i];
 			}
 
 			if ((scale[0] == 1.0F) &&
@@ -861,7 +861,7 @@ R_BuildLightMap(const msurface_t *surf, byte *dest, int stride, const refdef_t *
 			for (i = 0; i < 3; i++)
 			{
 				scale[i] = modulate *
-						   r_newrefdef->lightstyles[surf->styles[maps]].rgb[i];
+						   refdef->lightstyles[surf->styles[maps]].rgb[i];
 			}
 
 			if ((scale[0] == 1.0F) &&
@@ -895,14 +895,14 @@ R_BuildLightMap(const msurface_t *surf, byte *dest, int stride, const refdef_t *
 	/* add all the dynamic lights */
 	if (surf->dlightframe == r_framecount)
 	{
-		R_AddDynamicLights(surf, r_newrefdef, s_blocklights);
+		R_AddDynamicLights(surf, refdef, s_blocklights);
 	}
 
 	R_StoreLightMap(dest, stride, smax, tmax, gammatable, minlight);
 }
 
 static void
-R_MarkSurfaceLights(dlight_t *light, int lightIndex, const mnode_t *node, int lightframecount,
+R_MarkSurfaceLights(const dlight_t *light, int lightIndex, const mnode_t *node, int lightframecount,
 	msurface_t *surfaces)
 {
 	msurface_t	*surf;
@@ -954,7 +954,7 @@ static void
 R_MarkLights(dlight_t *light, int lightIndex, mnode_t *node, int lightframecount,
 	msurface_t *surfaces)
 {
-	cplane_t	*splitplane;
+	const cplane_t *splitplane;
 	float		dist;
 	int			intensity;
 
@@ -990,15 +990,16 @@ R_MarkLights(dlight_t *light, int lightIndex, mnode_t *node, int lightframecount
 		surfaces);
 }
 
-void R_PushDlights(refdef_t *r_newrefdef, mnode_t *nodes, int lightframecount,
+void
+R_PushDlights(refdef_t *newrefdef, mnode_t *nodes, int lightframecount,
 	msurface_t *surfaces)
 {
 	dlight_t *l;
 	int i;
 
-	l = r_newrefdef->dlights;
+	l = newrefdef->dlights;
 
-	for (i = 0; i < r_newrefdef->num_dlights; i++, l++)
+	for (i = 0; i < newrefdef->num_dlights; i++, l++)
 	{
 		R_MarkLights(l, i, nodes, lightframecount, surfaces);
 	}

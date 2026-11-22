@@ -425,6 +425,17 @@ int BigLong(int l);
 int LittleLong(int l);
 float BigFloat(float l);
 float LittleFloat(float l);
+
+/* optech2: a float from any address (file data, int lists), without
+   reading through a float pointer that may be unaligned or alias an int */
+static inline float
+Q_ReadFloat(const void *data)
+{
+	float value;
+
+	memcpy(&value, data, sizeof(value));
+	return value;
+}
 int64_t BigLongLong(int64_t l);
 int64_t LittleLongLong(int64_t l);
 

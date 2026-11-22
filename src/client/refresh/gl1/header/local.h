@@ -216,7 +216,7 @@ void R_DrawSkyBox(void);
 
 image_t *R_LoadPic(const char *name, byte *pic, int width, int realwidth,
 		int height, int realheight, size_t data_size, imagetype_t type, int bits);
-image_t *R_FindImage(const char *name, imagetype_t type);
+image_t *R_FindImage(const char *originname, imagetype_t type);
 void R_TextureMode(const char *string);
 void R_ImageList_f(void);
 

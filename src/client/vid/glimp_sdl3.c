@@ -675,7 +675,7 @@ GLimp_InitGraphics(int fullscreen, int *pwidth, int *pheight)
 	flags = Glimp_DetermineHighDPISupport(flags);
 
 	/* Mkay, now the hard work. Let's create the window. */
-	cvar_t *gl_msaa_samples = Cvar_Get("r_msaa_samples", "0", CVAR_ARCHIVE);
+	const cvar_t *gl_msaa_samples = Cvar_Get("r_msaa_samples", "0", CVAR_ARCHIVE);
 
 	while (1)
 	{

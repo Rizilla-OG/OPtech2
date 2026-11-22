@@ -95,8 +95,8 @@ R_DrawAliasDrawCommands(const entity_t *currententity, int *order, const int *or
 				int idx[3];
 
 				/* texture coordinates come from the draw list */
-				tex[0] = ((float *)order)[0];
-				tex[1] = ((float *)order)[1];
+				tex[0] = Q_ReadFloat(order + 0);
+				tex[1] = Q_ReadFloat(order + 1);
 
 				index_xyz = order[2];
 				order += 3;
@@ -249,7 +249,7 @@ R_DrawAliasShadowCommand(const entity_t *currententity, int *order, const int *o
 }
 
 static void
-R_DrawAliasShadow(entity_t *currententity, dmdx_t *paliashdr, int posenum,
+R_DrawAliasShadow(const entity_t *currententity, dmdx_t *paliashdr, int posenum,
 	vec4_t *s_lerped, vec3_t shadevector)
 {
 	// Don't do stencil test on unsupported stereo modes

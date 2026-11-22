@@ -29,6 +29,8 @@
 #include <math.h>
 
 /* bone controllers */
+/* optech2: the file's layout; every field stays, read or not */
+// cppcheck-suppress-begin unusedStructMember
 typedef struct
 {
 	int bone;	/* -1 == 0 */
@@ -38,6 +40,7 @@ typedef struct
 	int rest;	/* byte index value at rest */
 	int index;	/* 0-3 user set controller, 4 mouth */
 } hlmdl_bonecontroller_t;
+// cppcheck-suppress-end unusedStructMember
 
 typedef float bonematrix_t[3][4];
 

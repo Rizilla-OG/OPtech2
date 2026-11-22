@@ -149,7 +149,8 @@ R_RecursiveClipBPoly(entity_t *currententity, bedge_t *pedges, mnode_t *pnode, m
 {
 	bedge_t		*psideedges[2], *pnextedge;
 	int		i, side, lastside;
-	cplane_t	*splitplane, tplane;
+	const cplane_t *splitplane;
+	cplane_t tplane;
 	mvertex_t	*pvert, *plastvert, *ptvert;
 	mvertex_t	*prevclipvert = NULL;
 
@@ -325,7 +326,7 @@ R_DrawSolidClippedSubmodelPolygons(entity_t *currententity, const model_t *curre
 
 	for (i = 0; i < numsurfaces; i++, psurf++)
 	{
-		cplane_t *pplane;
+		const cplane_t *pplane;
 		bedge_t  *pbedge;
 		vec_t    dot;
 		int      j;
@@ -413,7 +414,7 @@ R_DrawSubmodelPolygons(entity_t *currententity, int clipflags, mnode_t *topnode)
 	/* draw texture */
 	for (i = 0; i < currentmodel->nummodelsurfaces; i++, psurf++)
 	{
-		cplane_t *pplane;
+		const cplane_t *pplane;
 		float dot;
 
 		/* find which side of the node we are on */

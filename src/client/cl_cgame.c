@@ -562,7 +562,7 @@ static void
 FX_GetState(optech2_fx_state_t *state)
 {
 	frame_t *oldframe;
-	player_xstate_t *ps, *ops;
+	const player_xstate_t *ps, *ops;
 	int i;
 
 	state->time = cl.time;
@@ -896,13 +896,6 @@ CL_CGame_FindPmove(void)
 void
 CL_CGame_Load(void)
 {
-#if defined(_WIN32)
-	const char *game_library_name = "game.dll";
-#elif defined(__APPLE__)
-	const char *game_library_name = "game.dylib";
-#else
-	const char *game_library_name = "game.so";
-#endif
 	GetCGameAPI_t entry;
 	const char *path = NULL;
 	char name[MAX_OSPATH];
@@ -926,6 +919,14 @@ CL_CGame_Load(void)
 	}
 	else
 	{
+#if defined(_WIN32)
+		const char *game_library_name = "game.dll";
+#elif defined(__APPLE__)
+		const char *game_library_name = "game.dylib";
+#else
+		const char *game_library_name = "game.so";
+#endif
+
 		/* the game library of the game folders, like the server's */
 		while ((path = FS_NextPath(path)))
 		{
@@ -1147,7 +1148,6 @@ void
 CL_CGame_CenterPrint(const char *text)
 {
 	static int last_center_time = -100000;
-	int on_screen_msec;
 	qboolean replace;
 
 	if (!cgame || !cgame->ParseCenterPrint)
@@ -1164,8 +1164,8 @@ CL_CGame_CenterPrint(const char *text)
 	   queue, so the first isn't lost. */
 	{
 		int since_last = cls.realtime - last_center_time;
+		int on_screen_msec = (int)(Cvar_VariableValue("scr_centertime") * 1000) + 1000; /* + typing */
 
-		on_screen_msec = (int)(Cvar_VariableValue("scr_centertime") * 1000) + 1000; /* + typing */
 		replace = (since_last >= 200) && (since_last < on_screen_msec);
 	}
 

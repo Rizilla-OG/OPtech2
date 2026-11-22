@@ -108,7 +108,7 @@ PFN_vkSetMoltenVKConfigurationMVK qvkSetMoltenVKConfigurationMVK;
 #endif
 
 void
-R_RotateForEntity(entity_t *e, float *mvMatrix)
+R_RotateForEntity(const entity_t *e, float *mvMatrix)
 {
 	Mat_Rotate(mvMatrix, -e->angles[2], 1.f, 0.f, 0.f);
 	Mat_Rotate(mvMatrix, -e->angles[0], 0.f, 1.f, 0.f);
@@ -121,7 +121,7 @@ R_DrawSpriteModel(entity_t *currententity, const model_t *currentmodel)
 {
 	float alpha = 1.0F;
 	vec3_t point, scale;
-	dsprframe_t *frame;
+	const dsprframe_t *frame;
 	float *up, *right;
 	dsprite_t *psprite;
 	image_t *skin = NULL;
@@ -486,7 +486,7 @@ Vk_DrawParticles_Worker(size_t start, size_t end, void *user)
 static void
 Vk_DrawParticles(int num_particles, const particle_t particles[])
 {
-	vk_pvertex *currentvertex;
+	const vk_pvertex *currentvertex;
 	vec3_t up, right;
 
 	if (!num_particles)
@@ -691,35 +691,35 @@ void Mat_Identity(float *matrix)
 	matrix[15] = 1.f;
 }
 
-void Mat_Mul(float *m1, float *m2, float *res)
+void
+Mat_Mul(const float *m1, const float *m2, float *res)
 {
-	float mul[16] = { m1[0] * m2[0] + m1[1] * m2[4] + m1[2] * m2[8] + m1[3] * m2[12],
-					  m1[0] * m2[1] + m1[1] * m2[5] + m1[2] * m2[9] + m1[3] * m2[13],
-					  m1[0] * m2[2] + m1[1] * m2[6] + m1[2] * m2[10] + m1[3] * m2[14],
-					  m1[0] * m2[3] + m1[1] * m2[7] + m1[2] * m2[11] + m1[3] * m2[15],
-					  m1[4] * m2[0] + m1[5] * m2[4] + m1[6] * m2[8] + m1[7] * m2[12],
-					  m1[4] * m2[1] + m1[5] * m2[5] + m1[6] * m2[9] + m1[7] * m2[13],
-					  m1[4] * m2[2] + m1[5] * m2[6] + m1[6] * m2[10] + m1[7] * m2[14],
-					  m1[4] * m2[3] + m1[5] * m2[7] + m1[6] * m2[11] + m1[7] * m2[15],
-					  m1[8] * m2[0] + m1[9] * m2[4] + m1[10] * m2[8] + m1[11] * m2[12],
-					  m1[8] * m2[1] + m1[9] * m2[5] + m1[10] * m2[9] + m1[11] * m2[13],
-					  m1[8] * m2[2] + m1[9] * m2[6] + m1[10] * m2[10] + m1[11] * m2[14],
-					  m1[8] * m2[3] + m1[9] * m2[7] + m1[10] * m2[11] + m1[11] * m2[15],
-					  m1[12] * m2[0] + m1[13] * m2[4] + m1[14] * m2[8] + m1[15] * m2[12],
-					  m1[12] * m2[1] + m1[13] * m2[5] + m1[14] * m2[9] + m1[15] * m2[13],
-					  m1[12] * m2[2] + m1[13] * m2[6] + m1[14] * m2[10] + m1[15] * m2[14],
-					  m1[12] * m2[3] + m1[13] * m2[7] + m1[14] * m2[11] + m1[15] * m2[15]
-	};
+	const float mul[16] = {m1[0] * m2[0] + m1[1] * m2[4] + m1[2] * m2[8] + m1[3] * m2[12],
+		m1[0] * m2[1] + m1[1] * m2[5] + m1[2] * m2[9] + m1[3] * m2[13],
+		m1[0] * m2[2] + m1[1] * m2[6] + m1[2] * m2[10] + m1[3] * m2[14],
+		m1[0] * m2[3] + m1[1] * m2[7] + m1[2] * m2[11] + m1[3] * m2[15],
+		m1[4] * m2[0] + m1[5] * m2[4] + m1[6] * m2[8] + m1[7] * m2[12],
+		m1[4] * m2[1] + m1[5] * m2[5] + m1[6] * m2[9] + m1[7] * m2[13],
+		m1[4] * m2[2] + m1[5] * m2[6] + m1[6] * m2[10] + m1[7] * m2[14],
+		m1[4] * m2[3] + m1[5] * m2[7] + m1[6] * m2[11] + m1[7] * m2[15],
+		m1[8] * m2[0] + m1[9] * m2[4] + m1[10] * m2[8] + m1[11] * m2[12],
+		m1[8] * m2[1] + m1[9] * m2[5] + m1[10] * m2[9] + m1[11] * m2[13],
+		m1[8] * m2[2] + m1[9] * m2[6] + m1[10] * m2[10] + m1[11] * m2[14],
+		m1[8] * m2[3] + m1[9] * m2[7] + m1[10] * m2[11] + m1[11] * m2[15],
+		m1[12] * m2[0] + m1[13] * m2[4] + m1[14] * m2[8] + m1[15] * m2[12],
+		m1[12] * m2[1] + m1[13] * m2[5] + m1[14] * m2[9] + m1[15] * m2[13],
+		m1[12] * m2[2] + m1[13] * m2[6] + m1[14] * m2[10] + m1[15] * m2[14],
+		m1[12] * m2[3] + m1[13] * m2[7] + m1[14] * m2[11] + m1[15] * m2[15]};
 
 	memcpy(res, mul, sizeof(float) * 16);
 }
 
 void Mat_Translate(float *matrix, float x, float y, float z)
 {
-	float t[16] = { 1.f, 0.f, 0.f, 0.f,
-					0.f, 1.f, 0.f, 0.f,
-					0.f, 0.f, 1.f, 0.f,
-					  x,   y,   z, 1.f };
+	const float t[16] = {1.f, 0.f, 0.f, 0.f,
+		0.f, 1.f, 0.f, 0.f,
+		0.f, 0.f, 1.f, 0.f,
+		x, y, z, 1.f};
 
 	Mat_Mul(matrix, t, matrix);
 }
@@ -732,7 +732,7 @@ void Mat_Rotate(float *matrix, float deg, float x, float y, float z)
 	vec3_t r = { x, y, z };
 	VectorNormalize(r);
 
-	float rot[16] = {(double)r[0] * r[0] * cd + c, (double)r[1] * r[0] * cd + r[2] * s, (double)r[0] * r[2] * cd - r[1] * s, 0.f,
+	const float rot[16] = {(double)r[0] * r[0] * cd + c, (double)r[1] * r[0] * cd + r[2] * s, (double)r[0] * r[2] * cd - r[1] * s, 0.f,
 		(double)r[0] * r[1] * cd - r[2] * s, (double)r[1] * r[1] * cd + c, (double)r[1] * r[2] * cd + r[0] * s, 0.f,
 		(double)r[0] * r[2] * cd + r[1] * s, (double)r[1] * r[2] * cd - r[0] * s, (double)r[2] * r[2] * cd + c, 0.f,
 		0.f, 0.f, 0.f, 1.f};
@@ -742,16 +742,16 @@ void Mat_Rotate(float *matrix, float deg, float x, float y, float z)
 
 void Mat_Scale(float *matrix, float x, float y, float z)
 {
-	float s[16] = {   x, 0.f, 0.f, 0.f,
-					0.f,   y, 0.f, 0.f,
-					0.f, 0.f,   z, 0.f,
-					0.f, 0.f, 0.f, 1.f
-	};
+	const float s[16] = {x, 0.f, 0.f, 0.f,
+		0.f, y, 0.f, 0.f,
+		0.f, 0.f, z, 0.f,
+		0.f, 0.f, 0.f, 1.f};
 
 	Mat_Mul(matrix, s, matrix);
 }
 
-void Mat_Perspective(float *matrix, float *correction_matrix, float fovy, float aspect,
+void
+Mat_Perspective(float *matrix, const float *correction_matrix, float fovy, float aspect,
 	float zNear, float zFar)
 {
 	float xmin, xmax, ymin, ymax;
@@ -1104,7 +1104,7 @@ R_SetVulkan2D(const VkViewport* viewport, const VkRect2D* scissor)
 }
 
 static void
-R_SetLightLevel(entity_t *currententity)
+R_SetLightLevel(const entity_t *currententity)
 {
 	vec3_t shadelight = {0};
 

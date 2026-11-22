@@ -527,7 +527,7 @@ extern void GL4_BindLightmap(int lightmapnum);
 extern gl4image_t *GL4_LoadPic(const char *name, byte *pic, int width, int realwidth,
                                int height, int realheight, size_t data_size,
                                imagetype_t type, int bits);
-extern gl4image_t *GL4_FindImage(const char *name, imagetype_t type);
+extern gl4image_t *GL4_FindImage(const char *originname, imagetype_t type);
 extern gl4image_t *GL4_RegisterSkin(const char *name);
 extern void GL4_ShutdownImages(void);
 extern void GL4_FreeUnusedImages(void);

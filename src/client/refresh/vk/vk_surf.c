@@ -634,11 +634,10 @@ DrawTextureChains(const entity_t *currententity)
 	}
 }
 
-
 static void
 Vk_RenderLightmappedPoly(msurface_t *surf, float alpha,
-		const entity_t *currententity, VkDescriptorSet *uboDescriptorSet,
-		uint32_t *uboOffset)
+	const entity_t *currententity, VkDescriptorSet *uboDescriptorSet,
+	const uint32_t *uboOffset)
 {
 	int		map;
 	image_t *image = R_TextureAnimation(currententity, surf->texinfo);
@@ -818,7 +817,7 @@ R_DrawInlineBModel(const entity_t *currententity, const model_t *currentmodel,
 	/* draw texture */
 	for (i = 0; i < currentmodel->nummodelsurfaces; i++, psurf++)
 	{
-		cplane_t *pplane;
+		const cplane_t *pplane;
 		float dot;
 
 		/* find which side of the node we are on */

@@ -675,7 +675,7 @@ RE_Draw_TileClear (int x, int y, int w, int h, const char *name)
 	const byte *psrc;
 	pixel_t *pdest;
 	int i, j, x2;
-	image_t *pic;
+	const image_t *pic;
 
 	if (x < 0)
 	{

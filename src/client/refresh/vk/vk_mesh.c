@@ -268,8 +268,8 @@ Vk_DrawAliasFrameLerpCommands(int *order, const int *order_end, float alpha,
 				}
 
 				// texture coordinates come from the draw list
-				vertList[*vertIdx].texCoord[0] = ((float *)order)[0];
-				vertList[*vertIdx].texCoord[1] = ((float *)order)[1];
+				vertList[*vertIdx].texCoord[0] = Q_ReadFloat(order + 0);
+				vertList[*vertIdx].texCoord[1] = Q_ReadFloat(order + 1);
 
 				/* unpack normal */
 				for(i = 0; i < 3; i++)

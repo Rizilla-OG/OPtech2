@@ -130,8 +130,8 @@ DrawAliasFrameLerpCommands(dmdx_t *paliashdr, entity_t* entity, vec3_t shadeligh
 				float l;
 
 				/* texture coordinates come from the draw list */
-				cur->texCoord[0] = ((float *) order)[0];
-				cur->texCoord[1] = ((float *) order)[1];
+				cur->texCoord[0] = Q_ReadFloat(order + 0);
+				cur->texCoord[1] = Q_ReadFloat(order + 1);
 
 				index_xyz = order[2];
 

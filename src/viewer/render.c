@@ -26,11 +26,11 @@ Com_Printf (const char *msg, ...)
 }
 
 void
-Com_DPrintf (const char *msg, ...)
+Com_DPrintf(const char *fmt, ...)
 {
 	va_list argptr;
-	va_start(argptr, msg);
-	vprintf(msg, argptr);
+	va_start(argptr, fmt);
+	vprintf(fmt, argptr);
 	va_end(argptr);
 }
 
@@ -46,11 +46,11 @@ Sys_Error(const char *error, ...)
 }
 
 void
-Com_Error(int error_code, const char *error, ...)
+Com_Error(int code, const char *fmt, ...)
 {
 	va_list argptr;
-	va_start(argptr, error);
-	vprintf(error, argptr);
+	va_start(argptr, fmt);
+	vprintf(fmt, argptr);
 	va_end(argptr);
 
 	exit (0);

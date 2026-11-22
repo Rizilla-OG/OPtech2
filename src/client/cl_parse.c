@@ -1715,7 +1715,7 @@ CL_LoadClientinfo(clientinfo_t *ci, char *s)
 		if (pos)
 		{
 			const dmdxframegroup_t *frames;
-			int num, i;
+			int num;
 
 			memcpy(pos + 1, "tris.md2", sizeof("tris.md2"));
 
@@ -1723,7 +1723,7 @@ CL_LoadClientinfo(clientinfo_t *ci, char *s)
 
 			if (frames)
 			{
-				for (i = 0; i < num; i++)
+				for (int i = 0; i < num; i++)
 				{
 					if (!strcmp(frames[i].name, "stand") ||
 					    !strcmp(frames[i].name, "idle"))

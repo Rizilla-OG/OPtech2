@@ -79,10 +79,10 @@ static LpfContext lpf_context;
 static qboolean lpf_is_enabled;
 
 static void
-lpf_initialize(LpfContext* lpf_context, float gain_hf, int target_frequency)
+lpf_initialize(LpfContext *lpf, float gain_hf, int target_frequency)
 {
 	assert(target_frequency > 0);
-	assert(lpf_context);
+	assert(lpf);
 
 	float g;
 	float cw;
@@ -111,15 +111,15 @@ lpf_initialize(LpfContext* lpf_context, float gain_hf, int target_frequency)
 			(g * g * (1.0F - (cw * cw))))) / (1.0F - g);
 	}
 
-	lpf_context->a = a;
-	lpf_context->gain_hf = gain_hf;
-	lpf_context->is_history_initialized = false;
+	lpf->a = a;
+	lpf->gain_hf = gain_hf;
+	lpf->is_history_initialized = false;
 }
 
 static void
-lpf_update_samples(LpfContext* lpf_context,int sample_count, portable_samplepair_t* samples)
+lpf_update_samples(LpfContext *lpf, int sample_count, portable_samplepair_t *samples)
 {
-	assert(lpf_context);
+	assert(lpf);
 	assert(sample_count >= 0);
 	assert(samples);
 
@@ -133,12 +133,12 @@ lpf_update_samples(LpfContext* lpf_context,int sample_count, portable_samplepair
 		return;
 	}
 
-	a = lpf_context->a;
-	history = lpf_context->history;
+	a = lpf->a;
+	history = lpf->history;
 
-	if (!lpf_context->is_history_initialized)
+	if (!lpf->is_history_initialized)
 	{
-		lpf_context->is_history_initialized = true;
+		lpf->is_history_initialized = true;
 
 		for (s = 0; s < 2; ++s)
 		{
@@ -1020,7 +1020,7 @@ SDL_Cache(sfx_t *sfx, const wavinfo_t *info, byte *data, short volume,
  * and cinematic playback.
  */
 void
-SDL_RawSamples(int samples, int rate, int width, int channels, const byte *data, float volume)
+SDL_RawSamples(int samples, int rate, int width, int num_channels, const byte *data, float volume)
 {
 	float scale;
 	int dst;
@@ -1031,7 +1031,7 @@ SDL_RawSamples(int samples, int rate, int width, int channels, const byte *data,
 	scale = (float)rate / sound.speed;
 	intVolume = (int)(256 * volume);
 
-	if ((channels == 2) && (width == 2))
+	if ((num_channels == 2) && (width == 2))
 	{
 		for (i = 0; ; i++)
 		{
@@ -1048,7 +1048,7 @@ SDL_RawSamples(int samples, int rate, int width, int channels, const byte *data,
 			s_rawsamples[dst].right = ((short *)data)[src * 2 + 1] * intVolume;
 		}
 	}
-	else if ((channels == 1) && (width == 2))
+	else if ((num_channels == 1) && (width == 2))
 	{
 		for (i = 0; ; i++)
 		{
@@ -1065,7 +1065,7 @@ SDL_RawSamples(int samples, int rate, int width, int channels, const byte *data,
 			s_rawsamples[dst].right = ((short *)data)[src] * intVolume;
 		}
 	}
-	else if ((channels == 2) && (width == 1))
+	else if ((num_channels == 2) && (width == 1))
 	{
 		intVolume *= 256;
 
@@ -1086,7 +1086,7 @@ SDL_RawSamples(int samples, int rate, int width, int channels, const byte *data,
 				(((byte *)data)[src * 2 + 1] - 128) * intVolume;
 		}
 	}
-	else if ((channels == 1) && (width == 1))
+	else if ((num_channels == 1) && (width == 1))
 	{
 		intVolume *= 256;
 

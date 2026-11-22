@@ -42,7 +42,7 @@ extern cvar_t	*sw_custom_particles;
 ** it pays off in clean and easy to understand code.
 */
 static void
-R_DrawParticle(particle_t *pparticle, int level)
+R_DrawParticle(const particle_t *pparticle, int level)
 {
 	vec3_t		local, transformed;
 	float		zi;

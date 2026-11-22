@@ -581,7 +581,7 @@ R_GenerateSpansBackward(void)
 	R_CleanupSpan ();
 }
 
-static void D_DrawSurfaces (entity_t *currententity, const surf_t *surface);
+static void D_DrawSurfaces(const entity_t *currententity, const surf_t *surface);
 
 /*
 ==============
@@ -597,7 +597,7 @@ Each surface has a linked list of its visible spans
 ==============
 */
 void
-R_ScanEdges (entity_t *currententity, const surf_t *surface)
+R_ScanEdges(const entity_t *currententity, const surf_t *surface)
 {
 	shift20_t	iv, bottom;
 	surf_t		*s;
@@ -778,7 +778,7 @@ D_CalcGradients
 ==============
 */
 static void
-D_CalcGradients (msurface_t *pface, float d_ziorigin, float d_zistepu, float d_zistepv)
+D_CalcGradients(msurface_t *face, float d_ziorigin, float d_zistepu, float d_zistepv)
 {
 	float		mipscale;
 	vec3_t		p_temp1;
@@ -787,8 +787,8 @@ D_CalcGradients (msurface_t *pface, float d_ziorigin, float d_zistepu, float d_z
 
 	mipscale = 1.0 / (float)(1 << miplevel);
 
-	TransformVector(pface->texinfo->vecs[0], p_saxis);
-	TransformVector(pface->texinfo->vecs[1], p_taxis);
+	TransformVector(face->texinfo->vecs[0], p_saxis);
+	TransformVector(face->texinfo->vecs[1], p_taxis);
 
 	t = xscaleinv * mipscale;
 	d_sdivzstepu = p_saxis[0] * t;
@@ -807,18 +807,16 @@ D_CalcGradients (msurface_t *pface, float d_ziorigin, float d_zistepu, float d_z
 
 	t = SHIFT16XYZ_MULT * mipscale;
 	sadjust = ((int)(DotProduct(p_temp1, p_saxis) * SHIFT16XYZ_MULT + 0.5)) -
-			((pface->texturemins[0] << SHIFT16XYZ) >> miplevel)
-			+ pface->texinfo->vecs[0][3]*t;
+			  ((face->texturemins[0] << SHIFT16XYZ) >> miplevel) + face->texinfo->vecs[0][3] * t;
 	tadjust = ((int)(DotProduct(p_temp1, p_taxis) * SHIFT16XYZ_MULT + 0.5)) -
-			((pface->texturemins[1] << SHIFT16XYZ) >> miplevel)
-			+ pface->texinfo->vecs[1][3]*t;
+			  ((face->texturemins[1] << SHIFT16XYZ) >> miplevel) + face->texinfo->vecs[1][3] * t;
 
 	// changing flow speed for non-warping textures.
-	if (pface->texinfo->flags & SURF_SCROLL)
+	if (face->texinfo->flags & SURF_SCROLL)
 	{
 		float sscroll, tscroll;
 
-		R_FlowingScroll(&r_newrefdef, pface->texinfo->flags, &sscroll, &tscroll);
+		R_FlowingScroll(&r_newrefdef, face->texinfo->flags, &sscroll, &tscroll);
 		sadjust += SHIFT16XYZ_MULT * 2 * sscroll;
 		tadjust += SHIFT16XYZ_MULT * 2 * tscroll;
 	}
@@ -826,8 +824,8 @@ D_CalcGradients (msurface_t *pface, float d_ziorigin, float d_zistepu, float d_z
 	//
 	// -1 (-epsilon) so we never wander off the edge of the texture
 	//
-	bbextents = ((pface->extents[0] << SHIFT16XYZ) >> miplevel) - 1;
-	bbextentt = ((pface->extents[1] << SHIFT16XYZ) >> miplevel) - 1;
+	bbextents = ((face->extents[0] << SHIFT16XYZ) >> miplevel) - 1;
+	bbextentt = ((face->extents[1] << SHIFT16XYZ) >> miplevel) - 1;
 }
 
 
@@ -862,7 +860,7 @@ D_TurbulentSurf(surf_t *s)
 
 	if (s->insubmodel)
 	{
-		entity_t *currententity;
+		const entity_t *currententity;
 		vec3_t local_modelorg;
 
 		// FIXME: we don't want to do all this for every polygon!
@@ -936,7 +934,7 @@ Normal surface cached, texture mapped surface
 ==============
 */
 static void
-D_SolidSurf (entity_t *currententity, surf_t *s)
+D_SolidSurf(const entity_t *currententity, surf_t *s)
 {
 	float len1, len2, mipadjust;
 
@@ -1029,7 +1027,7 @@ May be called more than once a frame if the surf list overflows (higher res)
 ==============
 */
 static void
-D_DrawSurfaces(entity_t *currententity, const surf_t *surface)
+D_DrawSurfaces(const entity_t *currententity, const surf_t *surface)
 {
 	VectorSubtract(r_origin, vec3_origin, modelorg);
 	TransformVector(modelorg, transformed_modelorg);

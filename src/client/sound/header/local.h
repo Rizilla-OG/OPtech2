@@ -251,7 +251,7 @@ void SDL_SoundInfo(void);
  * Alters start position of
  * sound playback
  */
-int  SDL_DriftBeginofs(float);
+int SDL_DriftBeginofs(float timeofs);
 
 /*
  * Clears all playback buffers
@@ -278,7 +278,7 @@ void SDL_Update(void);
  * playback
  */
 void SDL_RawSamples(int samples, int rate, int width,
-		int channels, const byte *data, float volume);
+	int num_channels, const byte *data, float volume);
 
 /*
  * Convert mp3 to raw samples

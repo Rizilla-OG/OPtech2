@@ -1449,13 +1449,13 @@ SCR_ExecuteLayoutString(char *s)
 		if (!strcmp(token, "story"))
 		{
 			char message[241]; /* utf string could by 4 bytes per char */
-			int l, x;
+			int l, line_x;
 
 			token = cl.configstrings[CS_STORY];
 			l = SCR_CopyUtf8(SV_LocalizationMessage(token, NULL), message, 60);
-			x = (viddef.width - (l * CHAR_SIZE * scale)) / 2;
+			line_x = (viddef.width - (l * CHAR_SIZE * scale)) / 2;
 
-			Draw_StringScaled(x, viddef.width / 2, scale, false, message);
+			Draw_StringScaled(line_x, viddef.width / 2, scale, false, message);
 			continue;
 		}
 

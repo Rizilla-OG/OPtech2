@@ -439,7 +439,7 @@ DrawInlineBModel(const entity_t *currententity, model_t *currentmodel, gl3drawCm
 	/* draw texture */
 	for (i = 0; i < currentmodel->nummodelsurfaces; i++, psurf++)
 	{
-		cplane_t *pplane;
+		const cplane_t *pplane;
 		float dot;
 
 		/* find which side of the node we are on */

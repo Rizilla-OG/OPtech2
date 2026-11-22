@@ -888,12 +888,12 @@ Mod_LoadModel_MD3(const char *mod_name, const void *buffer, int modfilelen)
 	{
 		const md3_mesh_t *md3_mesh;
 		md3_vertex_t *md3_vertex;
-		const float *fst;
+		const byte *fst; // optech2: read with Q_ReadFloat
 		const int *p;
 		int j;
 
 		md3_mesh = (md3_mesh_t*)((byte*)buffer + meshofs);
-		fst = (const float*)((byte*)buffer + meshofs + LittleLong(md3_mesh->ofs_st));
+		fst = (const byte *)buffer + meshofs + LittleLong(md3_mesh->ofs_st);
 
 		/* load shaders */
 		for (j = 0; j < LittleLong(md3_mesh->num_shaders); j++)
@@ -906,8 +906,8 @@ Mod_LoadModel_MD3(const char *mod_name, const void *buffer, int modfilelen)
 
 		for (j = 0; j < LittleLong(md3_mesh->num_xyz); j++)
 		{
-			st[j + num_xyz].s = LittleFloat(fst[j * 2 + 0]) * pheader->skinwidth;
-			st[j + num_xyz].t = LittleFloat(fst[j * 2 + 1]) * pheader->skinheight;
+			st[j + num_xyz].s = LittleFloat(Q_ReadFloat(fst + (j * 2 + 0) * sizeof(float))) * pheader->skinwidth;
+			st[j + num_xyz].t = LittleFloat(Q_ReadFloat(fst + (j * 2 + 1) * sizeof(float))) * pheader->skinheight;
 		}
 
 		/* load triangles */

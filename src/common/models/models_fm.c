@@ -177,7 +177,7 @@ Mod_FlexLoadSkeleton(const char *mod_name, const void *buffer, int modfilelen,
 	size_t size, count, pos, total = 0;
 	const char *src, *frames;
 	const int *data, *lists;
-	const float *poses;
+	const int *poses; // optech2: floats in the int list, read with Q_ReadFloat
 
 	src = Mod_LoadModel_FlexSection(buffer, modfilelen, "skeleton", &version, &size);
 	if (!src || !size)
@@ -261,7 +261,7 @@ Mod_FlexLoadSkeleton(const char *mod_name, const void *buffer, int modfilelen,
 			__func__);
 		return false;
 	}
-	poses = (const float *)(data + pos);
+	poses = data + pos;
 
 	frames = Mod_LoadModel_FlexSection(buffer, modfilelen, "frames", &version, &size);
 	if (!frames || version != 1 || size < (size_t)model->num_frames * inframesize)
@@ -315,7 +315,7 @@ Mod_FlexLoadSkeleton(const char *mod_name, const void *buffer, int modfilelen,
 			{
 				for (j = 0; j < 3; j++)
 				{
-					points[p][j] = LittleFloat(*poses) * scale[j] + translate[j];
+					points[p][j] = LittleFloat(Q_ReadFloat(poses)) * scale[j] + translate[j];
 					poses++;
 				}
 			}

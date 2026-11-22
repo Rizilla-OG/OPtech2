@@ -405,10 +405,10 @@ void R_DrawSolidClippedSubmodelPolygons(entity_t *currententity, const model_t *
 
 void R_DrawAliasModel(entity_t *currententity, const model_t *currentmodel);
 void R_BeginEdgeFrame(void);
-void R_ScanEdges(entity_t *currententity, const surf_t *surface);
+void R_ScanEdges(const entity_t *currententity, const surf_t *surface);
 void RI_PushDlights(const model_t *model);
 void R_RotateBmodel(const entity_t *currententity);
-void RI_BuildLightMap(drawsurf_t* drawsurf, const refdef_t *r_newrefdef, float modulate);
+void RI_BuildLightMap(const drawsurf_t *drawsurf, const refdef_t *newrefdef, float modulate);
 
 extern int	c_faceclip;
 extern int	r_polycount;
@@ -515,7 +515,7 @@ extern byte d_8to24table[256 * 4];
 extern byte *d_16to8table;
 void	R_InitImages(void);
 void	R_ShutdownImages(void);
-image_t	*R_FindImage(const char *name, imagetype_t type);
+image_t *R_FindImage(const char *originname, imagetype_t type);
 image_t	*R_LoadPic(const char *name, const byte *pic, int width, int realwidth, int height, int realheight,
 	size_t data_size, imagetype_t type, int bits);
 byte	*Get_BestImageSize(const image_t *image, int *req_width, int *req_height);
