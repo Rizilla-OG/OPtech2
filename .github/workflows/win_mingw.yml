@@ -50,10 +50,11 @@ jobs:
         shell: sh -l {0}
         run: |
           cd ${GITHUB_WORKSPACE}
-          export CPATH="${GITHUB_WORKSPACE}/buildenv/dep/curl/include;${GITHUB_WORKSPACE}/buildenv/dep/openal-soft/include;${GITHUB_WORKSPACE}/buildenv/dep/Vulkan-Headers/include"
+          export CPATH="${GITHUB_WORKSPACE}/buildenv/dep/curl/include;${GITHUB_WORKSPACE}/buildenv/dep/openal-soft/include;${GITHUB_WORKSPACE}/buildenv/dep/vulkan-sdk/include"  # optech2: makebuildenv.sh names it vulkan-sdk
           export PKG_CONFIG_PATH="${GITHUB_WORKSPACE}/buildenv/dep/SDL3/${{matrix.family}}-w64-mingw32/lib/pkgconfig"
           # Public runners come with 4 CPUs.
           sed -i 's|WITH_AVCODEC:=yes|WITH_AVCODEC:=no|g' Makefile
+          set -e  # optech2: a failed renderer used to skip the assets (fonts, yq2.cfg) silently
           make -j4
           make -j4 ref_gles1
       - name: Create testbuild package

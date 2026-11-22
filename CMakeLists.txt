@@ -1229,6 +1229,11 @@ add_custom_command(TARGET game POST_BUILD
 		${CMAKE_SOURCE_DIR}/stuff/fonts/Hack-Regular.ttf
 		${CMAKE_SOURCE_DIR}/stuff/fonts/Hack-LICENSE.txt
 		${OPTECH2_FONT_DIR})
+# optech2: the default key bindings (WASD, weapon and powerup wheels), run after default.cfg
+add_custom_command(TARGET game POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different
+		${CMAKE_SOURCE_DIR}/stuff/yq2.cfg
+		${OPTECH2_FONT_DIR}/..)
 
 if(${GL1_RENDERER})
 

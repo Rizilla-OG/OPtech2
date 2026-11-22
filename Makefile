@@ -1123,6 +1123,7 @@ assets:
 	${Q}mkdir -p $(BINDIR)/baseq2
 	$(MAKE) $(BINDIR)/baseq2/models/entity.dat
 	$(MAKE) $(BINDIR)/baseq2/fonts/Hack-Regular.ttf
+	$(MAKE) $(BINDIR)/baseq2/yq2.cfg
 
 $(BINDIR)/baseq2/models/entity.dat: stuff/models/entity.dat
 	${Q}mkdir -p $(BINDIR)/baseq2/models
@@ -1132,6 +1133,11 @@ $(BINDIR)/baseq2/models/entity.dat: stuff/models/entity.dat
 $(BINDIR)/baseq2/fonts/Hack-Regular.ttf: stuff/fonts/Hack-Regular.ttf
 	${Q}mkdir -p $(BINDIR)/baseq2/fonts
 	cp stuff/fonts/Hack-Regular.ttf stuff/fonts/Hack-LICENSE.txt $(BINDIR)/baseq2/fonts/
+
+# optech2: the default key bindings (WASD, weapon and powerup wheels), run after default.cfg
+$(BINDIR)/baseq2/yq2.cfg: stuff/yq2.cfg
+	${Q}mkdir -p $(BINDIR)/baseq2
+	cp stuff/yq2.cfg $(BINDIR)/baseq2/yq2.cfg
 
 # ----------
 
