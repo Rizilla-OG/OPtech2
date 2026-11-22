@@ -358,6 +358,13 @@ CL_AddPacketEntities(const frame_t *frame)
 			VectorCopy(cent->current.origin, ent.origin);
 			VectorCopy(cent->current.old_origin, ent.oldorigin);
 		}
+		else if (renderfx & RF_NO_ORIGIN_LERP)
+		{
+			/* optech2: the game moved it in one go (a re-release game's
+			   teleport or snap): no sliding there */
+			VectorCopy(cent->current.origin, ent.origin);
+			VectorCopy(cent->current.origin, ent.oldorigin);
+		}
 		else
 		{
 			int i;

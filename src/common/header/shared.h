@@ -845,6 +845,7 @@ void PmoveEx(pmove_t *pmove, int *origin);
 #define RF_CUSTOM_LIGHT 0x00100000
 #define RF_FLARE 0x00200000
 #define RF_CASTSHADOW 0x00400000 /* entity casts shadows */
+#define RF_NO_ORIGIN_LERP 0x00800000 /* optech2: draw at the new origin, not moving there (re-release) */
 #define RF_FLARE_LOCK_ANGLE RF_MINLIGHT
 
 /* player_state_t->refdef flags */

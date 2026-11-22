@@ -162,6 +162,12 @@ RR_ConvertRenderfx(uint32_t renderfx)
 		converted |= RF_SHELL_GREEN;
 	}
 
+	/* optech2: kept under our own bit */
+	if (renderfx & RR_RF_NO_ORIGIN_LERP)
+	{
+		converted |= RF_NO_ORIGIN_LERP;
+	}
+
 	return converted;
 }
 

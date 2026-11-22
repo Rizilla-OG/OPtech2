@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Re-release `RF_NO_ORIGIN_LERP` is kept (as `RF_NO_ORIGIN_LERP`, 0x00800000) instead of dropped: the client draws such an entity at its new origin without sliding there. id's game doesn't set it; for mods built on it.
 - Re-release games' looping sound volume and falloff (`loop_volume`, `loop_attenuation`: `target_speaker` volume and attenuation, -1 for no falloff) reach the client and set the loop's volume and distance falloff in both sound backends; they were dropped, so every loop played at full volume with the static falloff. New entity bit `U_LOOPSOUND` (two bytes): **protocol 2027**. Engine side only, id's game API is unchanged.
 - Re-release client games: the chat line being typed goes to the module (`CL_GetTextInput`, with a blinking cursor), which draws it under its notify lines; the engine's own `say:` line stays hidden then. The HUD's low-ammo warning uses the count the game gives each weapon (`CL_GetWarnAmmoCount`, from the weapon wheel's list; was always the default 5).
 - Re-release games pick the client slot a connecting player takes (`ClientChooseSlot`, never called before): in coop a player who comes back gets the slot that has their name, and with it their inventory and place; the host gets slot 1.
