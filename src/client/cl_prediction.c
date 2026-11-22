@@ -47,6 +47,27 @@ CL_CheckPredictionError(void)
 	frame = cls.netchan.incoming_acknowledged;
 	frame &= (CMD_BACKUP - 1);
 
+	/* optech2: paused (console or menu in single player): no prediction
+	   ran, so there is nothing to compare; keep the server's position for
+	   when it resumes instead of counting old predictions as misses */
+	if (cl_paused->value)
+	{
+		VectorCopy(cl.frame.origin, cl.predicted_origins[frame]);
+
+		if (cl.frame.playerstate.rr_pmove)
+		{
+			int i;
+
+			for (i = 0; i < 3; i++)
+			{
+				cl.predicted_origins[frame][i] =
+					(int)lroundf(cl.frame.playerstate.rr_origin[i] * 8);
+			}
+		}
+
+		return;
+	}
+
 	/* compare what the server returned with what we had predicted it to be */
 	VectorSubtract(cl.frame.origin,
 			cl.predicted_origins[frame], delta);
