@@ -78,6 +78,8 @@ typedef struct
 
 	float (*points)[3]; /* if set: the path's corners go here */
 	int64_t point_count; /* room in points */
+
+	float leap_distance; /* optech2: how far a long jump (a gap) may go; 0 = none */
 } optech2_path_request_t;
 
 typedef struct

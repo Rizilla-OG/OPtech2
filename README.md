@@ -114,7 +114,8 @@ a second, cached in `navigation/<map>.otnav` in the game folder). Walking monste
 straight at you follow it: around walls, off ledges up to 256 units high, and onto lifts
 (`func_plat`), which they call and ride. With the re-release's data, the barrier jumps in its bot
 navigation files (`bots/navigation/<map>.nav`) are added too: monsters that can jump (Berserker,
-Gunner, Infantry, Mutant, Parasite) jump up onto ledges and over barriers where those files mark it.
+Gunner, Infantry, Mutant, Parasite) jump up onto ledges, over barriers and across gaps where those
+files mark it.
 
 - `g_monster_nav 0` turns it off (the stock chase), `2` logs ledge drops, lift rides and jumps, `3` also
   draws each monster's path (single player)
@@ -154,6 +155,7 @@ clock. `run_all.py --headless` runs only the checks that need no window or sound
 - `python3 tests/maps/make_ledge_map.py`, then `tests/nav/ledge_check.py`: ledge drops, one way, not from too high; a Berserker walks off a ledge to the player
 - `python3 tests/maps/make_plat_map.py`, then `tests/nav/plat_check.py`: monsters (Berserker, Tank) ride a lift up and down to the player
 - `python3 tests/maps/make_jump_map.py`, then `tests/nav/jump_check.py`: a Berserker jumps up a ledge through a gap, using a re-release navigation file's barrier jump
+- `python3 tests/maps/make_leap_map.py`, then `tests/nav/leap_check.py`: a Berserker leaps a pit, using a re-release navigation file's long jump
 - `python3 tests/run_all.py`: all of the above
 
 ## Code scanning

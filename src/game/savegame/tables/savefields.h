@@ -218,6 +218,8 @@ static const savefield_t savefields_edict[] = {
 	{"monsterinfo.nav_link_type", offsetof(edict_t, monsterinfo.nav_link_type), sizeof(((edict_t *)0)->monsterinfo.nav_link_type), SF_RAW},
 	{"monsterinfo.nav_lift_wait_end", offsetof(edict_t, monsterinfo.nav_lift_wait_end), sizeof(((edict_t *)0)->monsterinfo.nav_lift_wait_end), SF_RAW},
 	{"monsterinfo.nav_jump_time", offsetof(edict_t, monsterinfo.nav_jump_time), sizeof(((edict_t *)0)->monsterinfo.nav_jump_time), SF_RAW},
+	{"monsterinfo.nav_leaping", offsetof(edict_t, monsterinfo.nav_leaping), sizeof(((edict_t *)0)->monsterinfo.nav_leaping), SF_RAW},
+	{"monsterinfo.nav_leap_target", offsetof(edict_t, monsterinfo.nav_leap_target), sizeof(((edict_t *)0)->monsterinfo.nav_leap_target), SF_RAW},
 	{"orders", offsetof(edict_t, orders), sizeof(((edict_t *)0)->orders), SF_RAW},
 	{"plat2flags", offsetof(edict_t, plat2flags), sizeof(((edict_t *)0)->plat2flags), SF_RAW},
 	{"offset", offsetof(edict_t, offset), sizeof(((edict_t *)0)->offset), SF_RAW},

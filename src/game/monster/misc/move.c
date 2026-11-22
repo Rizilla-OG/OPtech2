@@ -1180,38 +1180,40 @@ M_NavLift(edict_t *ent, float dist)
  * when its next corner is reached, or when a step fails. False when there's
  * no path to follow: the stock chase takes over.
  */
-/* optech2: how high a monster can jump onto a ledge or over a barrier on a
-   path: the ones with a jump of their own (they jump when blocked), as high
-   as that jump goes (the re-release's jump_height); 0: it doesn't jump */
-static float
-M_NavJumpHeight(const edict_t *ent)
+/* optech2: the monsters with a jump of their own (they jump when blocked):
+   how high they jump onto a ledge or over a barrier on a path (the
+   re-release's jump_height) and how far they leap across a gap (takeoff to
+   landing). Others don't jump on paths. */
+static const struct
 {
-	static const struct
-	{
-		const char *classname;
-		float height;
-	} jumpers[] = {
-		{"monster_berserk", 40},
-		{"monster_gunner", 40},
-		{"monster_infantry", 40},
-		{"monster_mutant", 68},
-		{"monster_parasite", 68},
-	};
+	const char *classname;
+	float height;
+	float leap;
+} nav_jumpers[] = {
+	{"monster_berserk", 40, 192},
+	{"monster_gunner", 40, 192},
+	{"monster_infantry", 40, 192},
+	{"monster_mutant", 68, 320},
+	{"monster_parasite", 68, 256},
+};
 
+static int
+M_NavJumper(const edict_t *ent)
+{
 	if (!ent->classname || !ent->monsterinfo.blocked)
 	{
-		return 0;
+		return -1;
 	}
 
-	for (size_t i = 0; i < sizeof(jumpers) / sizeof(jumpers[0]); i++)
+	for (int i = 0; i < (int)(sizeof(nav_jumpers) / sizeof(nav_jumpers[0])); i++)
 	{
-		if (!Q_stricmp(ent->classname, jumpers[i].classname))
+		if (!Q_stricmp(ent->classname, nav_jumpers[i].classname))
 		{
-			return jumpers[i].height;
+			return i;
 		}
 	}
 
-	return 0;
+	return -1;
 }
 
 static qboolean
@@ -1252,12 +1254,18 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 		request.goal[2] += goal->mins[2];
 		request.path_flags = OPTECH2_PATH_WALK | OPTECH2_PATH_WALK_OFF_LEDGE | OPTECH2_PATH_ELEVATOR;
 		request.drop_height = MONSTER_DROP_HEIGHT;
-		request.jump_height = M_NavJumpHeight(ent);
 
-		if (request.jump_height > 0)
 		{
-			request.path_flags |= OPTECH2_PATH_BARRIER_JUMP;
+			const int jumper = M_NavJumper(ent);
+
+			if (jumper >= 0)
+			{
+				request.path_flags |= OPTECH2_PATH_BARRIER_JUMP | OPTECH2_PATH_LONG_JUMP;
+				request.jump_height = nav_jumpers[jumper].height;
+				request.leap_distance = nav_jumpers[jumper].leap;
+			}
 		}
+
 		request.move_dist = dist;
 
 		/* g_monster_nav 3: draw the path until the next one (single player) */
@@ -1309,17 +1317,26 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 	ent->monsterinfo.nav_lift_wait_end = 0;
 	VectorSubtract(ent->monsterinfo.nav_move_point, ent->s.origin, to_point);
 
-	/* at a barrier the path jumps (its takeoff, back from the edge): face
-	   across it and jump right away (the monster's own jump, through its
-	   blocked callback); walking into the barrier first would stop the
-	   jump's forward speed against it */
-	if ((ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_BARRIER_JUMP) && ent->monsterinfo.blocked)
+	/* at a barrier the path jumps or a gap it leaps (its takeoff, back from
+	   the edge): face across it and jump right away (the monster's own
+	   jump, through its blocked callback; a leap gets the speed that lands
+	   it). Walking into a barrier first would stop the jump's forward speed
+	   against it. */
+	if (((ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_BARRIER_JUMP) ||
+			(ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_LONG_JUMP)) &&
+		ent->monsterinfo.blocked)
 	{
+		const qboolean leap = (ent->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_LONG_JUMP);
 		const float since_jump = level.time - ent->monsterinfo.nav_jump_time;
+		vec3_t to_landing;
 
-		/* landed up there (the old path still names the jump): it made it */
+		VectorSubtract(ent->monsterinfo.nav_move_point, ent->s.origin, to_landing);
+		to_landing[2] = 0;
+
+		/* landed there (the old path still names the jump): it made it */
 		if (ent->monsterinfo.nav_jump_time > 0 && since_jump >= 1.0f &&
-			ent->s.origin[2] + ent->mins[2] >= ent->monsterinfo.nav_move_point[2] - STEPSIZE)
+			ent->s.origin[2] + ent->mins[2] >= ent->monsterinfo.nav_move_point[2] - STEPSIZE &&
+			VectorLength(to_landing) < 96.0f)
 		{
 			ent->monsterinfo.nav_jump_time = 0;
 			ent->monsterinfo.nav_retry_time = 0;
@@ -1361,18 +1378,24 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 		/* (facing is within 45 degrees: square up, the jump goes where it faces) */
 		ent->s.angles[YAW] = ent->ideal_yaw;
 
+		/* (a leap: the jump's takeoff frame gets the speed to land there) */
+		ent->monsterinfo.nav_leaping = leap;
+		VectorCopy(ent->monsterinfo.nav_move_point, ent->monsterinfo.nav_leap_target);
+
 		if (ent->monsterinfo.blocked(ent, dist))
 		{
 			if (g_monster_nav->value >= 2)
 			{
-				gi.dprintf("%s jumps at %.0f %.0f %.0f\n", ent->classname, ent->s.origin[0],
-					ent->s.origin[1], ent->s.origin[2]);
+				gi.dprintf("%s %s at %.0f %.0f %.0f\n", ent->classname, leap ? "leaps" : "jumps",
+					ent->s.origin[0], ent->s.origin[1], ent->s.origin[2]);
 			}
 
 			ent->monsterinfo.nav_jump_time = level.time;
 			ent->monsterinfo.nav_retry_time = level.time + 1.5f; /* in the air: ask again once landed */
 			return true;
 		}
+
+		ent->monsterinfo.nav_leaping = false;
 	}
 
 	if (!SV_StepDirection(ent, vectoyaw(to_point), dist))

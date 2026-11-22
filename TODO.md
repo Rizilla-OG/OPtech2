@@ -26,8 +26,7 @@ something unfinished; remove an entry in the commit that fixes it.
 - **Scripting API is small**: three events and player functions. Grow it with
   the data-driven definitions (entities, damage, think, spawn).
 - **Monster navigation, phase 4**: lifts, ledge drops and the re-release
-  `.nav` files' barrier jumps are done. Left: their long jumps (gaps; the
-  re-release gives them to flyers only), ladders and teleporters (stock
+  `.nav` files' barrier and long jumps are done. Left: ladders and teleporters (stock
   monsters can't use either), trains and doors as lifts, a per-monster drop
   height (every walking monster may drop 256), and `.nav` jumps onto spots
   narrower than a monster's mesh (crates, ledges) that bots can use.

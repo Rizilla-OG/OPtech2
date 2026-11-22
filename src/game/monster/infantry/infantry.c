@@ -619,8 +619,12 @@ infantry_jump_now(edict_t *self)
 	monster_jump_start(self);
 
 	AngleVectors(self->s.angles, forward, NULL, up);
-	VectorMA(self->velocity, 100, forward, self->velocity);
-	VectorMA(self->velocity, 300, up, self->velocity);
+	/* optech2: a path's leap gets the speed that lands it; else the stock jump */
+	if (!monster_nav_leap_velocity(self))
+	{
+		VectorMA(self->velocity, 100, forward, self->velocity);
+		VectorMA(self->velocity, 300, up, self->velocity);
+	}
 }
 
 static void
@@ -636,8 +640,12 @@ infantry_jump2_now(edict_t *self)
 	monster_jump_start(self);
 
 	AngleVectors(self->s.angles, forward, NULL, up);
-	VectorMA(self->velocity, 150, forward, self->velocity);
-	VectorMA(self->velocity, 400, up, self->velocity);
+	/* optech2: a path's leap gets the speed that lands it; else the stock jump */
+	if (!monster_nav_leap_velocity(self))
+	{
+		VectorMA(self->velocity, 150, forward, self->velocity);
+		VectorMA(self->velocity, 400, up, self->velocity);
+	}
 }
 
 static void

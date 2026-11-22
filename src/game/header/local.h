@@ -677,7 +677,9 @@ typedef struct
 	qboolean nav_has_point; /* nav_move_point is valid */
 	int nav_link_type; /* optech2: how to get to nav_move_point (OPTECH2_PATH_LINK_) */
 	float nav_lift_wait_end; /* optech2: when to stop waiting for a lift (0: not waiting) */
-	float nav_jump_time; /* optech2: when it last jumped a path's barrier jump */
+	float nav_jump_time; /* optech2: when it last jumped a path's barrier jump or leap */
+	qboolean nav_leaping; /* optech2: its next jump is a path's leap, to nav_leap_target */
+	vec3_t nav_leap_target; /* optech2: where the leap lands (feet) */
 } monsterinfo_t;
 
 /* this determines how long to wait after a duck to duck again.
@@ -1401,6 +1403,7 @@ qboolean blocked_checkplat(edict_t *self, float dist);
 qboolean blocked_checkjump(edict_t *self, float dist, float maxDown, float maxUp);
 qboolean monster_on_nav_jump(const edict_t *self); /* optech2 */
 float monster_jump_target_z(const edict_t *self); /* optech2 */
+qboolean monster_nav_leap_velocity(edict_t *self); /* optech2 */
 qboolean monsterlost_checkhint(edict_t *self);
 qboolean inback(edict_t *self, edict_t *other);
 float realrange(edict_t *self, edict_t *other);

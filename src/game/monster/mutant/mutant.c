@@ -828,8 +828,12 @@ mutant_jump_down(edict_t *self)
 	}
 
 	AngleVectors(self->s.angles, forward, NULL, up);
-	VectorMA(self->velocity, 100, forward, self->velocity);
-	VectorMA(self->velocity, 300, up, self->velocity);
+	/* optech2: a path's leap gets the speed that lands it; else the stock jump */
+	if (!monster_nav_leap_velocity(self))
+	{
+		VectorMA(self->velocity, 100, forward, self->velocity);
+		VectorMA(self->velocity, 300, up, self->velocity);
+	}
 }
 
 static void
@@ -843,8 +847,12 @@ mutant_jump_up(edict_t *self)
 	}
 
 	AngleVectors(self->s.angles, forward, NULL, up);
-	VectorMA(self->velocity, 200, forward, self->velocity);
-	VectorMA(self->velocity, 450, up, self->velocity);
+	/* optech2: a path's leap gets the speed that lands it; else the stock jump */
+	if (!monster_nav_leap_velocity(self))
+	{
+		VectorMA(self->velocity, 200, forward, self->velocity);
+		VectorMA(self->velocity, 450, up, self->velocity);
+	}
 }
 
 static void

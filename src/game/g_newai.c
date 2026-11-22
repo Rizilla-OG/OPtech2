@@ -129,7 +129,49 @@ qboolean
 monster_on_nav_jump(const edict_t *self)
 {
 	return self && self->monsterinfo.nav_has_point &&
-		   (self->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_BARRIER_JUMP);
+		   ((self->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_BARRIER_JUMP) ||
+			   (self->monsterinfo.nav_link_type == OPTECH2_PATH_LINK_LONG_JUMP));
+}
+
+/* optech2: a path's leap across a gap: at the jump's takeoff frame, the
+   speed that lands it on nav_leap_target (high enough to clear the far
+   lip, a little long so it lands past the edge). False when it isn't
+   leaping: the monster's own jump speed then. */
+qboolean
+monster_nav_leap_velocity(edict_t *self)
+{
+	vec3_t target, across;
+	float gravity, rise, apex, up_speed, fall, flight, distance;
+
+	if (!self || !self->monsterinfo.nav_leaping)
+	{
+		return false;
+	}
+
+	self->monsterinfo.nav_leaping = false;
+	gravity = sv_gravity->value * (self->gravity > 0 ? self->gravity : 1.0f);
+
+	if (gravity <= 0)
+	{
+		return false;
+	}
+
+	/* where its origin ends up: the landing point is its feet */
+	VectorCopy(self->monsterinfo.nav_leap_target, target);
+	target[2] -= self->mins[2];
+	VectorSubtract(target, self->s.origin, across);
+	rise = across[2];
+	across[2] = 0;
+	distance = VectorNormalize(across);
+
+	apex = (rise > 0 ? rise : 0) + 32.0f;
+	up_speed = sqrtf(2.0f * gravity * apex);
+	fall = up_speed * up_speed - 2.0f * gravity * rise;
+	flight = (up_speed + sqrtf(fall > 0 ? fall : 0)) / gravity;
+
+	VectorScale(across, distance * 1.1f / flight, self->velocity);
+	self->velocity[2] = up_speed;
+	return true;
 }
 
 /* optech2: the height a jump aims for, to pick the jump up or down: the
