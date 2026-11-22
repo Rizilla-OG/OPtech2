@@ -255,7 +255,15 @@ SVC_DirectConnect(void)
 	/* find a client slot */
 	newcl = NULL;
 
-	for (i = 0, cl = svs.clients; i < maxclients->value; i++, cl++)
+	/* optech2: a re-release game picks it (coop players get their own back) */
+	i = SV_RR_ChooseSlot(userinfo);
+
+	if (i >= 0)
+	{
+		newcl = &svs.clients[i];
+	}
+
+	for (i = 0, cl = svs.clients; !newcl && i < maxclients->value; i++, cl++)
 	{
 		if (cl->state == cs_free)
 		{

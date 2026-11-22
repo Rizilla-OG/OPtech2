@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Re-release games pick the client slot a connecting player takes (`ClientChooseSlot`, never called before): in coop a player who comes back gets the slot that has their name, and with it their inventory and place; the host gets slot 1.
 - Re-release games' per-player entities (`SVF_INSTANCED`: in coop, an item one player took stays for the others): each client's frame leaves out the ones the game's `Entity_IsVisibleToPlayer` says it shouldn't see (they were sent to everyone, so a taken item still showed to the player who took it).
 - Re-release damage indicators (`svc_damage`, only logged before): an arc around the crosshair toward where each hit came from, red for health, white for armor only, green for the power shield, thicker for bigger hits, fading in a second.
 - Re-release markers: the compass's trail (`svc_help_path`) draws an arrow (the re-release's `models/objects/pointer`, 6 times its size) at each point the game sends on the way to the objective, pointing on, fading after 4 s; points of interest (`svc_poi`: the objective the compass shows, coop pings) draw their icon in their color where the point is on screen, held at the screen edge while out of view, hidden near the crosshair when the game asks (`src/client/cl_markers.c`). Both were only logged.

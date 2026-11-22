@@ -1874,6 +1874,42 @@ SV_RR_VisibleTo(const edict_t *shadow, const edict_t *client_shadow)
 	return rr_ge->Entity_IsVisibleToPlayer(ent, RR_GameEdictOf(client_shadow));
 }
 
+/* optech2: the client slot a connecting player should take, as the game
+   picks it (coop: the slot of the player with that name, so they get their
+   inventory back); -1 for the engine's own pick */
+int
+SV_RR_ChooseSlot(const char *userinfo)
+{
+	rr_edict_t *ignore[MAX_CLIENTS];
+	const rr_edict_t *chosen;
+	size_t ignore_count = 0;
+	int i, slot;
+
+	if (!rr_ge || !rr_ge->ClientChooseSlot)
+	{
+		return -1;
+	}
+
+	/* slots the engine already has a client in */
+	for (i = 0; i < maxclients->value && i < MAX_CLIENTS; i++)
+	{
+		if (svs.clients[i].state != cs_free)
+		{
+			ignore[ignore_count++] = RR_EdictNum(i + 1);
+		}
+	}
+
+	chosen = rr_ge->ClientChooseSlot(userinfo, "", false, ignore, ignore_count, sv.state == ss_cinematic);
+
+	if (!chosen)
+	{
+		return -1;
+	}
+
+	slot = RR_NumForEdict(chosen) - 1;
+	return (slot >= 0 && slot < maxclients->value && svs.clients[slot].state == cs_free) ? slot : -1;
+}
+
 /* the game may refuse a save (intermission, deathmatch, dead player...) */
 qboolean
 SV_RR_CanSave(void)
