@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Project page: a "New in M2 preview 3" section of its own, its screenshots retaken at 2560x1440 with OpenGL 3 (were 1280x720 software renderer), wheel, vendor and console shown full width.
 - Project page and README: M2 preview 3 (re-release game libraries and q2arpg, wheels, kill feed and chat, the modern console, Vulkan in the default build), new screenshots, download links to `m2-preview-3`.
 - The re-release bridge builds with MSVC: the caller of a message import is found with `_ReturnAddress()` there (`__builtin_return_address` is GCC/Clang only).
 - Beams get no color shell (q2arpg's elemental tracers come with one; drawn, it covered the view in the element's color), and a beam starting at our own eye (a re-release game's hitscan tracer starts where the shot does) comes out of the view weapon's muzzle (`hand` side).
