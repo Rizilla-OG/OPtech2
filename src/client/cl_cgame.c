@@ -1136,7 +1136,27 @@ CL_CGame_PlayerState(cg_player_state_t *out)
 	out->pmove.pm_flags = ps->pmove.pm_flags;
 	out->pmove.pm_time = ps->pmove.pm_time;
 	out->pmove.gravity = ps->pmove.gravity;
-	out->pmove.viewheight = (int8_t)ps->viewoffset[2];
+
+	/* optech2: our view offset has the view height in it, the re-release
+	   keeps them apart (eye = origin + viewoffset + viewheight); counting it
+	   twice put the eye 22 units high, so q2arpg's health bars sank into the
+	   monsters */
+	out->pmove.viewheight = ps->rr_pmove ? (int8_t)ps->rr_viewheight : (int8_t)ps->viewoffset[2];
+	out->viewoffset[2] -= out->pmove.viewheight;
+
+	/* the view as drawn this frame (predicted, smoothed, with kicks), so
+	   what the module projects onto the screen (health bars over monsters)
+	   stays on them while turning and moving */
+	if (cls.state == ca_active && cl.refresh_prepped)
+	{
+		for (i = 0; i < 3; i++)
+		{
+			out->pmove.origin[i] = cl.refdef.vieworg[i] - out->viewoffset[i];
+			out->viewangles[i] = cl.refdef.viewangles[i];
+		}
+
+		out->pmove.origin[2] -= out->pmove.viewheight;
+	}
 
 	out->gunindex = ps->gunindex;
 	out->gunframe = ps->gunframe;
