@@ -732,6 +732,14 @@ path_corner_touch(edict_t *self, edict_t *other, const cplane_t *plane /* unused
 
 	if (!other->movetarget)
 	{
+		/* optech2: a monster in Quake II 64's end scene (hackflags 4) is
+		   gone at its path's end */
+		if (other->hackflags & HACKFLAG_END_CUTSCENE)
+		{
+			G_FreeEdict(other);
+			return;
+		}
+
 		other->monsterinfo.pausetime = level.time + 100000000;
 		other->monsterinfo.stand(other);
 	}

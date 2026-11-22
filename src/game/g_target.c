@@ -1738,6 +1738,15 @@ update_target_camera_think(edict_t *self)
 
 		if (self->moveinfo.remaining_distance <= 0)
 		{
+			/* optech2: re-release hackflags 2 on a path stop: the stand-in
+			   player teleports out, fading over the stop's wait */
+			if ((self->movetarget->hackflags & HACKFLAG_TELEPORT_OUT) && self->enemy)
+			{
+				self->enemy->s.event = EV_PLAYER_TELEPORT;
+				self->enemy->hackflags = HACKFLAG_TELEPORT_OUT;
+				self->enemy->pain_debounce_time = self->enemy->timestamp = self->movetarget->wait;
+			}
+
 			VectorCopy(self->movetarget->s.origin, self->s.origin);
 			self->nextthink = level.time + self->movetarget->wait;
 			if (self->movetarget->target)
@@ -1838,6 +1847,18 @@ target_camera_dummy_think(edict_t *self)
 		self->velocity[0] * self->velocity[0] +
 		self->velocity[1] * self->velocity[1]));
 	self->client = NULL;
+
+	/* optech2: fading out after a teleport (re-release hackflags 2) */
+	if ((self->hackflags & HACKFLAG_TELEPORT_OUT) && (self->pain_debounce_time > 0))
+	{
+		self->timestamp = (self->timestamp > FRAMETIME) ? self->timestamp - FRAMETIME : 0;
+		self->rrs.alpha = self->timestamp / self->pain_debounce_time;
+
+		if (self->rrs.alpha < 1.0f / 255.0f)
+		{
+			self->rrs.alpha = 1.0f / 255.0f;
+		}
+	}
 
 	self->nextthink = level.time + FRAMETIME;
 }

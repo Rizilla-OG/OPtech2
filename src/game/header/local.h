@@ -101,6 +101,11 @@
 
 /* optech2: re-release target_changelevel spawnflags */
 #define SPAWNFLAG_CHANGELEVEL_NO_END_OF_UNIT 16 /* no end-of-unit screen */
+/* optech2: re-release "hackflags" (Quake II 64) */
+#define HACKFLAG_ATTACK_PLAYER 1 /* monster: always after the player, seen anywhere; not counted */
+#define HACKFLAG_TELEPORT_OUT 2 /* camera path stop: the camera's stand-in player fades out (teleports) */
+#define HACKFLAG_END_CUTSCENE 4 /* monster: walks in the end scene, ignores players, gone at its path's end */
+#define HACKFLAG_END_OF_UNIT 128 /* camera: show the end of unit message as it starts */
 #define HACKFLAG_SKIPPABLE 64 /* re-release target_camera: any button ends the scene after 2 s */
 #define SPAWNFLAG_CHANGELEVEL_FADE_OUT 32 /* fade to black before leaving (Quake II 64) */
 #define SPAWNFLAG_CHANGELEVEL_IMMEDIATE_LEAVE 64 /* with 16: leave at once */

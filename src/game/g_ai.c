@@ -497,6 +497,12 @@ visible(const edict_t *self, const edict_t *other)
 	 */
 	if (other->client)
 	{
+		/* optech2: re-release hackflags 1 (Quake II 64): always sees players */
+		if (self->hackflags & HACKFLAG_ATTACK_PLAYER)
+		{
+			return self->inuse;
+		}
+
 		if (other->client->invisible_framenum > level.framenum)
 		{
 			return false;
@@ -706,6 +712,13 @@ FindTarget(edict_t *self)
 	}
 
 	if (self->monsterinfo.aiflags & AI_GOOD_GUY)
+	{
+		return false;
+	}
+
+	/* optech2: re-release hackflags 4: a monster in Quake II 64's end
+	   scene looks for nobody */
+	if (self->hackflags & HACKFLAG_END_CUTSCENE)
 	{
 		return false;
 	}
@@ -1006,8 +1019,8 @@ M_CheckAttack(edict_t *self)
 				CONTENTS_SOLID | CONTENTS_MONSTER | CONTENTS_SLIME |
 				CONTENTS_LAVA | CONTENTS_WINDOW);
 
-		/* do we have a clear shot? */
-		if (tr.ent != self->enemy)
+		/* do we have a clear shot? optech2: hackflags 1 always shoots */
+		if (!(self->hackflags & HACKFLAG_ATTACK_PLAYER) && (tr.ent != self->enemy))
 		{
 			/* we want them to go ahead and shoot at info_notnulls if they can. */
 			if ((self->enemy->solid != SOLID_NOT) || (tr.fraction < 1.0))
@@ -1406,8 +1419,8 @@ ai_checkattack(edict_t *self)
 
 	enemy_vis = false;
 
-	/* see if the enemy is dead */
-	if (hesDeadJim(self))
+	/* see if the enemy is dead (optech2: hackflags 1 keeps at it) */
+	if (hesDeadJim(self) && !(self->hackflags & HACKFLAG_ATTACK_PLAYER))
 	{
 		self->enemy = NULL;
 		self->monsterinfo.aiflags &= ~AI_MEDIC;

@@ -658,6 +658,14 @@ CL_AddPacketEntities(const frame_t *frame)
 			ent.alpha = 0.30f;
 		}
 
+		/* optech2: an entity's own alpha (re-release s.alpha: fades,
+		   teleports out); 0 means not set */
+		if ((s1->rr_alpha > 0) && (s1->rr_alpha < 1))
+		{
+			ent.flags |= RF_TRANSLUCENT;
+			ent.alpha = s1->rr_alpha;
+		}
+
 		if (rr_effects & EF_HOLOGRAM)
 		{
 			ent.flags |= RF_TRANSLUCENT;

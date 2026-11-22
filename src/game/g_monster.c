@@ -1781,6 +1781,14 @@ monster_think(edict_t *self)
 
 	M_MoveFrame(self);
 
+	/* optech2: re-release hackflags 1: always after the (first) player */
+	if (self->inuse && (self->hackflags & HACKFLAG_ATTACK_PLAYER) && !self->enemy &&
+		g_edicts[1].inuse && (self->think == monster_think))
+	{
+		self->enemy = &g_edicts[1];
+		FoundTarget(self);
+	}
+
 	if (self->linkcount != self->monsterinfo.linkcount)
 	{
 		self->monsterinfo.linkcount = self->linkcount;
@@ -1894,7 +1902,8 @@ monster_triggered_spawn_use(edict_t *self, edict_t *other /* unused */, edict_t 
 	self->think = monster_triggered_spawn;
 	self->nextthink = level.time + FRAMETIME;
 
-	if (activator->client)
+	/* optech2: not a monster in Quake II 64's end scene (hackflags 4) */
+	if (activator->client && !(self->hackflags & HACKFLAG_END_CUTSCENE))
 	{
 		self->enemy = activator;
 	}
@@ -2027,6 +2036,13 @@ monster_start(edict_t *self)
 		}
 
 		gi.dprintf ("triggered %s at %s has no targetname\n", self->classname, vtos (self->s.origin));
+	}
+
+	/* optech2: re-release hackflags 1 and 4 (Quake II 64's scripted
+	   monsters) don't count toward the kills */
+	if (self->hackflags & (HACKFLAG_END_CUTSCENE | HACKFLAG_ATTACK_PLAYER))
+	{
+		self->monsterinfo.aiflags |= AI_DO_NOT_COUNT;
 	}
 
 	if ((!(self->monsterinfo.aiflags & AI_GOOD_GUY)) &&

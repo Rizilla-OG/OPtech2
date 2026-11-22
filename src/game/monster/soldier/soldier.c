@@ -388,7 +388,9 @@ soldier_walk(edict_t *self)
 		return;
 	}
 
-	if (random() < 0.5)
+	/* optech2: in Quake II 64's end scene (hackflags 4) always the fast
+	   walk, or the line bogs down */
+	if (!(self->hackflags & HACKFLAG_END_CUTSCENE) && (random() < 0.5))
 	{
 		self->monsterinfo.currentmove = &soldier_move_walk1;
 	}
