@@ -344,32 +344,29 @@ SV_LocalizationReload(void)
 				/* start real value */
 				if (sign && *sign == '"')
 				{
-					char *currend;
+					char *currend, *out;
 
 					sign ++;
 
-					currend = sign;
+					/* optech2: unescape in place (\n new line, \" and \\ the
+					   character itself); the backslash used to become a space,
+					   so every line break left one behind */
+					currend = out = sign;
 					while (*currend && *currend != '"')
 					{
-						if (*currend == '\\')
+						if (*currend == '\\' && currend[1])
 						{
-							/* escaped */
-							*currend = ' ';
 							currend++;
-							if (*currend == 'n')
-							{
-								/* new line */
-								*currend = '\n';
-							}
+							*out++ = (*currend == 'n') ? '\n' : *currend;
+							currend++;
+							continue;
 						}
-						currend++;
+
+						*out++ = *currend++;
 					}
 
-					if (*currend == '"')
-					{
-						/* mark as end of string */
-						*currend = 0;
-					}
+					/* mark as end of string */
+					*out = 0;
 
 					localmessages[curr_pos].key = malloc(strlen(curr) + 2);
 					if (!localmessages[curr_pos].key)

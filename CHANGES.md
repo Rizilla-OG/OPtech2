@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Localized texts: escapes in the re-release's localization file are taken out properly (`\n` a line break, `\"` and `\\` the character); the backslash used to turn into a space, so multi-line texts had a stray space at each line break.
 - The weapon and powerup wheels take a gamepad: while one is open the right stick points at its items (the cursor goes where the stick leans and stays on the last item when it comes back to the middle) instead of turning. Bind a button to open them, e.g. `bind SHOULDR_RIGHT +wheel` and `bind SHOULDR_LEFT +wheel2`.
 - Slow motion while a weapon or powerup wheel is open, as in the re-release: in single player, game time (server and client) runs at `cl_wheel_slowtime` (default 0.25; the re-release's own speed isn't known) while drawing and input keep their pace. Also while a re-release game asks for slow time (`SERVER_FLAG_SLOW_TIME`, its help computer).
 - Re-release `RF_NO_ORIGIN_LERP` is kept (as `RF_NO_ORIGIN_LERP`, 0x00800000) instead of dropped: the client draws such an entity at its new origin without sliding there. id's game doesn't set it; for mods built on it.
