@@ -268,7 +268,10 @@ CG_ServerFrame(void)
 static int32_t
 CG_ServerProtocol(void)
 {
-	return cls.serverProtocol;
+	/* optech2: 0 while reconnecting (a level change); the client game takes
+	   anything up to 34 for an old server and remaps the HUD's configstring
+	   numbers, out of range for ours ("Bad stat_string index") */
+	return cls.serverProtocol ? cls.serverProtocol : PROTOCOL_VERSION;
 }
 
 static const char *
