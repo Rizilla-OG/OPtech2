@@ -42,6 +42,30 @@ typedef struct
 } wheel_slot_t;
 
 static int wheel_open = -1; /* WHEEL_WEAPONS, WHEEL_POWERUPS, -1 closed */
+static cvar_t *cl_wheel_slowtime; /* game speed while a wheel is open (single player) */
+
+/* optech2: how fast time runs this frame: slowed in single player while a
+   wheel is open or the re-release game asks (its help computer), as the
+   re-release does; 1 otherwise */
+float
+CL_Wheel_TimeScale(void)
+{
+	float scale;
+
+	if (!cl_wheel_slowtime || !Com_ServerState() || (Cvar_VariableValue("maxclients") > 1) ||
+		(cls.state != ca_active))
+	{
+		return 1;
+	}
+
+	if ((wheel_open < 0) && !SV_RR_SlowTime())
+	{
+		return 1;
+	}
+
+	scale = cl_wheel_slowtime->value;
+	return (scale > 0 && scale < 1) ? scale : 1;
+}
 static float wheel_cursor[2]; /* mouse offset from the center, pixels */
 static wheel_slot_t wheel_slots[MAX_WHEEL_ITEMS];
 static int wheel_slot_count;
@@ -431,6 +455,7 @@ CL_Wheel_Draw(void)
 void
 CL_Wheel_Init(void)
 {
+	cl_wheel_slowtime = Cvar_Get("cl_wheel_slowtime", "0.25", CVAR_ARCHIVE);
 	cl_wheel_deadzone = Cvar_Get("cl_wheel_deadzone", "0.25", CVAR_ARCHIVE);
 
 	Cmd_AddCommand("+wheel", Wheel_Down_f);

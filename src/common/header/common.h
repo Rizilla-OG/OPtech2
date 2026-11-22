@@ -933,6 +933,8 @@ YQ2_ATTR_NORETURN void Com_Quit(void);
 #endif
 
 int Com_ServerState(void);              /* this should have just been a cvar... */
+float CL_Wheel_TimeScale(void); /* optech2: slow motion while a wheel is open */
+qboolean SV_RR_SlowTime(void); /* optech2: a re-release game asks for slow time */
 extern qboolean sv_paused_at_load; /* optech2: the server paused itself for a single-player load */
 void Com_SetServerState(int state);
 

@@ -542,6 +542,7 @@ int CL_CGame_WheelPowerup(int powerup_index);
 void CL_Wheel_Init(void);
 void CL_Wheel_Draw(void);
 int CL_Wheel_WarnAmmo(int weapon_slot); /* optech2 */
+float CL_Wheel_TimeScale(void); /* optech2 */
 qboolean CL_Wheel_Mouse(float dx, float dy);
 qboolean CL_Wheel_IsOpen(void);
 void CL_CGame_ConfigString(int index, const char *text);

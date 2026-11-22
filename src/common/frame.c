@@ -670,8 +670,14 @@ Qcommon_Frame(int usec)
 	// Calculate timings.
 	packetdelta += usec;
 	renderdelta += usec;
-	clienttimedelta += usec;
-	servertimedelta += usec;
+	/* optech2: game time slows while a weapon or powerup wheel is open
+	   (single player); drawing and input keep their pace */
+	{
+		const float slow = CL_Wheel_TimeScale();
+
+		clienttimedelta += (slow < 1) ? (int)(usec * slow) : usec;
+		servertimedelta += (slow < 1) ? (int)(usec * slow) : usec;
+	}
 
 	if (!cl_timedemo->value)
 	{

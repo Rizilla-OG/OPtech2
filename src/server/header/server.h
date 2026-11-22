@@ -351,6 +351,7 @@ qboolean SV_RR_CanSave(void);
 qboolean SV_RR_VisibleTo(const edict_t *shadow, const edict_t *client_shadow); /* optech2 */
 int SV_RR_ChooseSlot(const char *userinfo); /* optech2 */
 void SV_RR_LoopSound(const edict_t *shadow, float *volume, float *attenuation); /* optech2 */
+qboolean SV_RR_SlowTime(void); /* optech2 */
 void SV_RR_FillPlayerState(int edict_number, player_xstate_t *ps);
 
 /* optech2: true while the level being left is saved (gamemap) */

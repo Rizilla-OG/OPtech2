@@ -1880,6 +1880,13 @@ SV_RR_VisibleTo(const edict_t *shadow, const edict_t *client_shadow)
 	return rr_ge->Entity_IsVisibleToPlayer(ent, RR_GameEdictOf(client_shadow));
 }
 
+/* optech2: the game asks for slow time (its help computer is open) */
+qboolean
+SV_RR_SlowTime(void)
+{
+	return rr_ge && (rr_ge->server_flags & RR_SERVER_FLAG_SLOW_TIME);
+}
+
 /* optech2: a shadow's looping sound volume and attenuation, from the
    game's entity; left alone for other entities */
 void
