@@ -79,9 +79,5 @@ something unfinished; remove an entry in the commit that fixes it.
 
 ## Builds and releases
 
-- **Vulkan renderer isn't tested or shipped** (needed for M3 renderer work): CI
-  compiles `ref_vk`, but the default preset has `VK_RENDERER OFF`, no check
-  renders with it, and m2-preview-2 shipped without it. Turn it on in the
-  preset, add a Vulkan pass to the screenshot check, ship `ref_vk` in releases.
 - Website (`docs/`): no screenshots yet of the barrier jumps, leaps, ladders,
   teleporters or the new console.

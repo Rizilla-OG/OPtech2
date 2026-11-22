@@ -1693,9 +1693,15 @@ RE_IsVsyncActive(void)
 
 static int RE_PrepareForWindow(void)
 {
+#ifdef USE_SDL3
+	/* optech2: SDL3 returns true on success (SDL2 returned 0), so this
+	   printed "failed" on every start */
+	if (!SDL_Vulkan_LoadLibrary(NULL))
+#else
 	if (SDL_Vulkan_LoadLibrary(NULL))
+#endif
 	{
-		Com_Printf("%s() Loader import failed: %s", __func__, SDL_GetError());
+		Com_Printf("%s() Loader import failed: %s\n", __func__, SDL_GetError());
 	}
 
 #ifdef USE_SDL3
