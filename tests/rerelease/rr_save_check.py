@@ -6,6 +6,8 @@ library (built as in rr_game_check.py) on the re-release data:
   - a save written in one run loads in a fresh run: the player is back at
     the saved spot with the saved health, and the tank is there
     (WriteGameJson / ReadGameJson and the level files),
+  - a save loads while the player is dead (the game's CanSave refuses
+    saving then, not loading),
   - no errors, every game message readable.
 
 Usage:
@@ -49,6 +51,18 @@ delay 4100 "viewpos"
 delay 4200 "rr_edicts monster_tank"
 delay 4300 "rr_edicts player"
 delay 4400 "quit"
+"""
+
+DEAD_SCRIPT = """set cheats 1
+map base1
+delay 3000 "teleport 200 -300 46 0 90 0"
+delay 3300 "save rrdead"
+delay 6500 "kill"
+delay 7500 "echo STEP dead"
+delay 7600 "load rrdead"
+delay 11000 "echo STEP loaded"
+delay 11100 "viewpos"
+delay 11300 "quit"
 """
 
 
@@ -98,6 +112,7 @@ def main():
         shutil.copy(game_library, mod_dir / "game_x64.so")
         first = run(mod_dir, home, TRANSITION_SCRIPT, OUTPUT_DIR / "transition.log")
         second = run(mod_dir, home, LOAD_SCRIPT, OUTPUT_DIR / "load.log")
+        dead = run(mod_dir, home, DEAD_SCRIPT, OUTPUT_DIR / "dead.log")
         saved = sorted(p.name for p in (mod_dir / "save" / "rrcheck").glob("*")) \
             if (mod_dir / "save" / "rrcheck").exists() else []
 
@@ -117,7 +132,12 @@ def main():
     report(len(tank) == 1, "tank there after loading")
     report(bool(player) and "health 100" in player[0], f"player health kept ({player[0] if player else None})")
 
-    for name, log in (("first run", first), ("second run", second)):
+    after_death = dead.split("STEP dead")[-1] if "STEP dead" in dead else ""
+    loaded_dead = re.search(r"position: (-?\d+) (-?\d+) (-?\d+)", after_death.split("STEP loaded")[-1])
+    report("Can't save" not in after_death and bool(loaded_dead) and abs(int(loaded_dead.group(1)) - 200) <= 2,
+           f"a save loads while dead ({loaded_dead.groups() if loaded_dead else None})")
+
+    for name, log in (("first run", first), ("second run", second), ("dead run", dead)):
         bad = [line for line in log.splitlines() if "(BAD" in line or "ERROR" in line or "Game Error" in line]
         report(not bad, f"{name}: no errors" + (f" ({bad[0].strip()[:90]})" if bad else ""))
 

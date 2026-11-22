@@ -127,6 +127,7 @@ R_VertBufferFree(void)
 typedef struct
 {
 	qboolean powerUpEffect;
+	float shell_push; /* optech2: how far a color shell stands off the model */
 	const dxtrivertx_t *v;
 	const dxtrivertx_t *ov;
 	float *lerp;
@@ -158,7 +159,7 @@ R_StaticVerts_Worker(size_t start, size_t end, void *user)
 				normal = r_byteNormalScale[(unsigned char)v->normal[n]];
 
 				lerp[n] = job->scale[n] * (job->move[n] + ov->v[n] * job->backv[n] + v->v[n] * job->frontv[n]) +
-						  normal * POWERSUIT_SCALE;
+						  normal * job->shell_push;
 			}
 		}
 	}
@@ -190,6 +191,7 @@ R_StaticVerts(qboolean powerUpEffect, int nverts,
 	}
 
 	job.powerUpEffect = powerUpEffect;
+	job.shell_push = POWERSUIT_SCALE;
 	job.v = v;
 	job.ov = ov;
 	job.lerp = lerp;
@@ -197,6 +199,38 @@ R_StaticVerts(qboolean powerUpEffect, int nverts,
 	job.frontv = frontv;
 	job.backv = backv;
 	job.scale = scale;
+
+	/* optech2: a shell stands 4 units off the model, the size of a
+	   player; small items (the re-release's gold cash on armor shards) get a
+	   tighter one, or two plates float off a flat card with nothing between */
+	if (powerUpEffect)
+	{
+		unsigned short low[3] = {65535, 65535, 65535}, high[3] = {0, 0, 0};
+		float extent = 0;
+		int i, n;
+
+		for (i = 0; i < nverts; i++)
+		{
+			for (n = 0; n < 3; n++)
+			{
+				low[n] = v[i].v[n] < low[n] ? v[i].v[n] : low[n];
+				high[n] = v[i].v[n] > high[n] ? v[i].v[n] : high[n];
+			}
+		}
+
+		for (n = 0; n < 3; n++)
+		{
+			float size = (high[n] - low[n]) * (frontv[n] + backv[n]) * (scale ? scale[n] : 1.0f);
+
+			extent = size > extent ? size : extent;
+		}
+
+		/* full push from 48 units up (players, monsters) */
+		if (extent < 48.0f)
+		{
+			job.shell_push = POWERSUIT_SCALE * (extent > 6.0f ? extent : 6.0f) / 48.0f;
+		}
+	}
 
 	R_ParallelTasks(nverts, 2048, R_StaticVerts_Worker, &job, __func__);
 }

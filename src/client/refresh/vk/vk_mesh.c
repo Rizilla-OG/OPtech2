@@ -385,11 +385,6 @@ Vk_DrawAliasFrameLerp(entity_t *currententity, dmdx_t *paliashdr, float backlerp
 	R_LerpVerts(paliashdr, currententity->frame, currententity->oldframe,
 			frontlerp, backlerp, (float*)s_lerped, move, currententity->scale, colorOnly);
 
-	VkDescriptorSet descriptorSets[] = {
-		skin->vk_texture.descriptorSet,
-		uboDescriptorSet
-	};
-
 	// player configuration screen model is using the UI renderpass
 	int pidx = (r_newrefdef.rdflags & RDF_NOWORLDMODEL) ? RP_UI : RP_WORLD;
 	// non-depth write alias models don't occur with RF_WEAPONMODEL set, so no need for additional left-handed pipelines
@@ -425,10 +420,17 @@ Vk_DrawAliasFrameLerp(entity_t *currententity, dmdx_t *paliashdr, float backlerp
 	uint8_t *vertData = QVk_GetVertexBuffer(vaoSize, &vbo, &vboOffset);
 	memcpy(vertData, vertList, vaoSize);
 
-	QVk_BindPipeline(&pipelines[translucentIdx][leftHandOffset]);
-	vkCmdBindDescriptorSets(vk_activeCmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-		pipelines[translucentIdx][leftHandOffset].layout, 0, 2,
-		descriptorSets, 1, &uboOffset);
+	{
+		/* optech2: color shells two-sided (vk_drawShellModelPipelineFan) */
+		VkDescriptorSet descriptorSets[] = {
+			skin->vk_texture.descriptorSet,
+			uboDescriptorSet};
+		qvkpipeline_t *pipeline = (colorOnly && translucentIdx && !leftHandOffset && pidx == RP_WORLD) ? &vk_drawShellModelPipelineFan : &pipelines[translucentIdx][leftHandOffset];
+
+		QVk_BindPipeline(pipeline);
+		vkCmdBindDescriptorSets(vk_activeCmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			pipeline->layout, 0, 2, descriptorSets, 1, &uboOffset);
+	}
 	vkCmdBindVertexBuffers(vk_activeCmdbuffer, 0, 1, &vbo, &vboOffset);
 
 	*buffer = UpdateIndexBuffer(vertIdxData, *index_pos * sizeof(uint16_t), dstOffset);

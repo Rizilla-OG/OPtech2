@@ -476,13 +476,6 @@ SV_Loadgame_f(void)
 
 	Com_Printf("Loading game...\n");
 
-	/* optech2: a re-release game says when saving is allowed */
-	if (sv_rerelease_game && !SV_RR_CanSave())
-	{
-		Com_Printf("Can't save right now.\n");
-		return;
-	}
-
 	dir = Cmd_Argv(1);
 
 	if (strstr(dir, "..") || strstr(dir, "/") || strstr(dir, "\\"))

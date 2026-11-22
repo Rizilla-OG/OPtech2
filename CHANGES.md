@@ -4,6 +4,8 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Color shells (quad damage, the re-release's gold cash glow) stand off small models in proportion: 4 units from 48 units up, less below, so a flat armor shard isn't two plates floating off its sides. Vulkan draws shells two-sided.
+- Re-release games: a save loads while the player is dead (the "can the game save" check had gone into loadgame too: "can't save while dead"). `rr-saves` checks it.
 - Text in a color: renderer API 11 adds `DrawStringScaledCol` (all five renderers; GL3/GL4 through the tinting shader, Vulkan tinted quads, GL1 modulated, software by brightness). Re-release client games' colored font strings use it: q2arpg's better / worse stats show green / red.
 - Re-release games' center prints show at once, as there; only typewriter prints (mission objectives) type out. They go to the client as localized prints of level 4 (typed) or 5 (at once). q2arpg's sell confirmations no longer come up seconds late.
 - Re-release client games get the eye where it is: the view height was counted twice (our view offset has it in, the re-release keeps it apart), 22 units high, so q2arpg's health bars sank into monsters. The HUD player state now also carries the view as drawn (predicted origin, angles with kicks), so things projected onto the screen stay put while turning.

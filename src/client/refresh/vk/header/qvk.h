@@ -254,6 +254,7 @@ extern qvkpipeline_t vk_drawColorQuadPipeline[RP_COUNT];
 extern qvkpipeline_t vk_drawModelPipelineFan[RP_COUNT];
 extern qvkpipeline_t vk_drawTexQuadTintedPipeline[RP_COUNT];
 extern qvkpipeline_t vk_drawNoDepthModelPipelineFan;
+extern qvkpipeline_t vk_drawShellModelPipelineFan; /* optech2 */
 extern qvkpipeline_t vk_drawLefthandModelPipelineFan;
 extern qvkpipeline_t vk_drawNullModelPipeline;
 extern qvkpipeline_t vk_drawParticlesPipeline;
