@@ -635,8 +635,9 @@ CL_RefreshCmd(void)
 	cmd->angles[1] = ANGLE2SHORT(cl.viewangles[1]);
 	cmd->angles[2] = ANGLE2SHORT(cl.viewangles[2]);
 
-	// Update time for prediction
-	ms = (int)(cls.nframetime * 1000.0f);
+	// Update time for prediction; optech2: slowed with the game while a
+	// wheel is open, so the player slows down too, not just the world
+	ms = (int)(cls.nframetime * 1000.0f * CL_Wheel_TimeScale() + 0.5f);
 
 	if (ms > 250)
 	{

@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Wheel slow motion slows the player too: movement commands use the slowed time (the world slowed but the player moved at full speed, so it hardly showed). Camera scenes: the help computer doesn't open during an intermission or camera scene, and the player's buttons still reach the game there, so the skippable Quake II 64 intro camera sees a key press.
 - Quake II 64's camera scenes: a skippable camera (re-release `hackflags` 64, the intro) ends when a player presses any button after 2 s; our game reads the `hackflags` key now. No crosshair and no weapon or powerup wheel while the player is frozen (intermission, camera scenes), as in the re-release.
 - Default keys as in the re-release's own `default.cfg`: E opens the weapon wheel and Q the powerup wheel (were the other way round), and the gamepad gets its layout: right trigger fire, left trigger or A jump, B or left stick crouch, X help, right stick center view, RB / LB the weapon / powerup wheel, D-pad left / right previous / next weapon, D-pad up wave. Wheel slow motion goes to 0.1 (`cl_wheel_slowtime`; 0.25 wasn't slow enough).
 - Fixed: the re-release's own demos (played behind the menu at startup) broke with "Illegible server message" since protocol 2027: the client read the loop sound bit in every protocol, and those demos use bit 36 for their own field. It is read only with our protocol now. New check `rr-demos` (demo1 and demo2 play 15 s each without errors).

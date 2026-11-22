@@ -3151,6 +3151,11 @@ ClientThink(edict_t *ent, usercmd_t *ucmd)
 
 		client->ps.pmove.pm_type = PM_FREEZE;
 
+		/* optech2: keep the buttons, so a skippable camera scene (Quake II
+		   64's intro) sees a key press */
+		client->oldbuttons = client->buttons;
+		client->buttons = ucmd->buttons;
+
 		/* can exit intermission after five seconds; optech2: only once a
 		   next map is set, as in the re-release (a target_camera cut scene
 		   is an intermission without one until it ends, e.g. Quake II 64's

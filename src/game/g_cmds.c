@@ -871,6 +871,13 @@ Cmd_Help_f(edict_t *ent)
 		return;
 	}
 
+	/* optech2: not during an intermission or a camera scene, as the
+	   re-release */
+	if (level.intermissiontime)
+	{
+		return;
+	}
+
 	ent->client->showinventory = false;
 	ent->client->showscores = false;
 	ent->client->showradar = false;
