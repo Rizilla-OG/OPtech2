@@ -230,7 +230,9 @@ SV_GameMap_f(void)
 				clent->inuse = false;
 			}
 
+			sv_level_transition = true; /* optech2 */
 			SV_WriteLevelFile();
+			sv_level_transition = false;
 
 			/* we must restore these for clients to transfer over correctly */
 			for (i = 0; i < maxclients->value; i++)

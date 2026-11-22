@@ -52,6 +52,7 @@ cvar_t *sv_noreload; /* don't reload level state when reentering */
 cvar_t *maxclients; /* rename sv_maxclients */
 cvar_t *sv_showclamp;
 cvar_t *sv_tickrate; /* optech2 */
+qboolean sv_level_transition; /* optech2: the level being left is being saved */
 cvar_t *sv_netstats; /* optech2 */
 cvar_t *hostname;
 cvar_t *public_server; /* should heartbeats be sent */

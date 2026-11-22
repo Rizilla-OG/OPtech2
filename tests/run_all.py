@@ -83,6 +83,7 @@ CHECKS = [
     Check("lifts", "nav/plat_check.py", needs_map=("optech2_plat.bsp", "maps/make_plat_map.py")),
     # re-release game library (API 2023) on base1; builds id's stock game first
     Check("rr-game", "rerelease/rr_game_check.py"),
+    Check("rr-saves", "rerelease/rr_save_check.py"),
     Check("rr-layout", "rerelease/layout_check.py",
           arguments=(str(REPO_DIR.parent / "research" / "rerelease-stock" / "rerelease"),
                      str(REPO_DIR / "build" / "rerelease-stock-game" / "_deps" / "fmt-src" / "include"))),

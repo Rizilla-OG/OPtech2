@@ -1603,32 +1603,146 @@ Classic_SpawnEntities(const char *mapname, char *entstring, const char *spawnpoi
 	RR_PullAll();
 }
 
+/* saves: the game writes and reads JSON; the server hands us file names
+   relative to the save folder it made the work directory */
+
+static void
+RR_WriteJsonFile(const char *filename, char *json, size_t size)
+{
+	FILE *f;
+
+	if (!json)
+	{
+		Com_Printf("%s: the game wrote nothing\n", filename);
+		return;
+	}
+
+	f = Q_fopen(filename, "wb");
+
+	if (!f)
+	{
+		Com_Printf("Couldn't write %s\n", filename);
+	}
+	else
+	{
+		fwrite(json, 1, size, f);
+		fclose(f);
+	}
+
+	Z_Free(json); /* TagMalloc'd by the game */
+}
+
+/* the whole file, zero terminated (free it), or NULL */
+static char *
+RR_ReadJsonFile(const char *filename)
+{
+	FILE *f;
+	long size;
+	char *text;
+
+	f = Q_fopen(filename, "rb");
+
+	if (!f)
+	{
+		return NULL;
+	}
+
+	fseek(f, 0, SEEK_END);
+	size = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	if (size < 0)
+	{
+		fclose(f);
+		return NULL;
+	}
+
+	text = malloc(size + 1);
+
+	if (!text)
+	{
+		fclose(f);
+		return NULL;
+	}
+
+	if (fread(text, 1, size, f) != (size_t)size)
+	{
+		free(text);
+		fclose(f);
+		return NULL;
+	}
+
+	text[size] = '\0';
+	fclose(f);
+	return text;
+}
+
+/* the game is about to replace all its edicts: forget the shadows' world
+   links (the server cleared the world, or is about to) */
+static void
+RR_ForgetShadows(void)
+{
+	memset(rr_shadows, 0, rr_shadow_count * sizeof(*rr_shadows));
+}
+
 static void
 Classic_WriteGame(const char *filename, qboolean autosave)
 {
-	(void)filename;
-	(void)autosave;
-	Com_Printf("Saving is not supported with re-release game libraries yet.\n");
+	size_t size = 0;
+	char *json = rr_ge->WriteGameJson(autosave, &size);
+
+	RR_WriteJsonFile(filename, json, size);
 }
 
 static void
 Classic_ReadGame(const char *filename)
 {
-	(void)filename;
-	Com_Error(ERR_DROP, "Loading is not supported with re-release game libraries yet.");
+	char *json = RR_ReadJsonFile(filename);
+
+	if (!json)
+	{
+		Com_Error(ERR_DROP, "Couldn't read %s", filename);
+		return;
+	}
+
+	RR_ForgetShadows();
+	rr_ge->ReadGameJson(json);
+	free(json);
+	RR_PullAll();
 }
 
 static void
 Classic_WriteLevel(const char *filename)
 {
-	(void)filename;
+	size_t size = 0;
+	/* leaving the level: the players go on with the player, not with it */
+	char *json = rr_ge->WriteLevelJson(sv_level_transition, &size);
+
+	RR_WriteJsonFile(filename, json, size);
 }
 
 static void
 Classic_ReadLevel(const char *filename)
 {
-	(void)filename;
-	Com_Error(ERR_DROP, "Loading is not supported with re-release game libraries yet.");
+	char *json = RR_ReadJsonFile(filename);
+
+	if (!json)
+	{
+		Com_Error(ERR_DROP, "Couldn't read %s", filename);
+		return;
+	}
+
+	RR_ForgetShadows();
+	rr_ge->ReadLevelJson(json);
+	free(json);
+	RR_PullAll();
+}
+
+/* the game may refuse a save (intermission, deathmatch, dead player...) */
+qboolean
+SV_RR_CanSave(void)
+{
+	return !rr_ge || !rr_ge->CanSave || rr_ge->CanSave();
 }
 
 static qboolean
