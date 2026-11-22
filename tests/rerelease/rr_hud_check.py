@@ -10,6 +10,9 @@ library (built as in rr_game_check.py):
   - a deathmatch obituary shows in the feed, and the library's "##P0"
     player names read as the player's name (the game refuses kill for 5 s
     after spawning),
+  - the weapon wheel (+wheel) holds the weapons the player has, 20 after
+    give all, and pointing right then letting go switches to the one there
+    (the ETF Rifle, 5 of 20 clockwise from the top),
   - no errors.
 Screenshots land in build/rr-hud-check/ and docs/screenshots/.
 
@@ -51,6 +54,21 @@ map q2dm1
 delay 6500 "kill"
 delay 7000 "screenshot png"
 delay 7300 "quit"
+"""
+
+WHEEL = """set cheats 1
+set cl_notifytime 5
+map base1
+delay 2500 "notarget"
+delay 2600 "give all"
+delay 3000 "wheel_list"
+delay 3200 "+wheel"
+delay 3300 "wheel_aim 300 0"
+delay 3500 "screenshot png"
+delay 3600 "-wheel"
+delay 4600 "echo AFTER"
+delay 4700 "wheel_list"
+delay 4800 "quit"
 """
 
 
@@ -102,7 +120,8 @@ def main():
         logs, shots = {}, {}
         for name, script in (("feed", SINGLE.format(notifytime=5)),
                              ("hidden", SINGLE.format(notifytime=0)),
-                             ("deathmatch", DEATHMATCH)):
+                             ("deathmatch", DEATHMATCH),
+                             ("wheel", WHEEL)):
             logs[name], shot = run(mod_dir, home, script, OUTPUT_DIR / f"{name}.log")
             if shot:
                 shots[name] = OUTPUT_DIR / f"{name}.png"
@@ -129,6 +148,16 @@ def main():
         report(bright_pixels(shots["deathmatch"]) > 100, "obituary drawn in the feed")
     else:
         report(False, "deathmatch screenshot taken")
+
+    wheel = logs["wheel"]
+    before = wheel.split("AFTER")[0]
+    after = wheel.split("AFTER")[-1] if "AFTER" in wheel else ""
+    report("wheel weapons: 20" in before, "weapon wheel holds 20 weapons after give all")
+    report("Blaster (item 8, w_blaster) count -1 in hand" in before, "the blaster in hand before")
+    in_hand = [line.strip() for line in after.splitlines() if line.endswith(" in hand")]
+    report(bool(in_hand) and in_hand[0].startswith("ETF Rifle"),
+           f"pointing right and letting go switched weapons ({in_hand[0] if in_hand else None})")
+    report("wheel" in shots, "wheel screenshot taken")
 
     bad = [line for log in logs.values() for line in log.splitlines()
            if "(BAD" in line or "ERROR" in line or "Game Error" in line]

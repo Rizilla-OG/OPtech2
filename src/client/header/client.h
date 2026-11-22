@@ -534,6 +534,15 @@ void CL_CGame_CenterPrint(const char *text);
 qboolean CL_CGame_HasNotify(void);
 void CL_CGame_NotifyMessage(const char *text, qboolean is_chat);
 void CL_CGame_ClearNotify(void);
+qboolean CL_CGame_WheelWeapons(uint32_t *owned, int *active);
+int CL_CGame_WheelAmmo(int ammo_index);
+int CL_CGame_WheelPowerup(int powerup_index);
+
+/* optech2: cl_wheel.c, the re-release's weapon and powerup wheels */
+void CL_Wheel_Init(void);
+void CL_Wheel_Draw(void);
+qboolean CL_Wheel_Mouse(float dx, float dy);
+qboolean CL_Wheel_IsOpen(void);
 void CL_CGame_ConfigString(int index, const char *text);
 void CL_LoadShadowLight(int idx, const char *s);
 void CL_RegisterSounds(void);

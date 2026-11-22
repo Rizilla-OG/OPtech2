@@ -671,6 +671,8 @@ CL_InitLocal(void)
 	cls.serverProtocol = 0;
 	cls.realtime = Sys_Milliseconds();
 
+	CL_Wheel_Init(); /* optech2 */
+
 	CL_InitInput();
 
 	/* register our variables */

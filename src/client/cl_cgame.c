@@ -1263,12 +1263,62 @@ CL_CGame_ClearNotify(void)
 	}
 }
 
+/* optech2: the weapon and powerup wheels (cl_wheel.c) ask the module what
+   the player has; false without a re-release client game */
+qboolean
+CL_CGame_WheelWeapons(uint32_t *owned, int *active)
+{
+	cg_player_state_t ps;
+
+	if (!cgame || !cl.frame.valid || !cgame->GetOwnedWeaponWheelWeapons ||
+		!cgame->GetActiveWeaponWheelWeapon)
+	{
+		return false;
+	}
+
+	CL_CGame_PlayerState(&ps);
+	*owned = cgame->GetOwnedWeaponWheelWeapons(&ps);
+	*active = cgame->GetActiveWeaponWheelWeapon(&ps);
+	return true;
+}
+
+int
+CL_CGame_WheelAmmo(int ammo_index)
+{
+	cg_player_state_t ps;
+
+	if (!cgame || !cl.frame.valid || !cgame->GetWeaponWheelAmmoCount || (ammo_index < 0))
+	{
+		return 0;
+	}
+
+	CL_CGame_PlayerState(&ps);
+	return cgame->GetWeaponWheelAmmoCount(&ps, ammo_index);
+}
+
+int
+CL_CGame_WheelPowerup(int powerup_index)
+{
+	cg_player_state_t ps;
+
+	if (!cgame || !cl.frame.valid || !cgame->GetPowerupWheelCount)
+	{
+		return 0;
+	}
+
+	CL_CGame_PlayerState(&ps);
+	return cgame->GetPowerupWheelCount(&ps, powerup_index);
+}
+
 /* a configstring changed (our numbering); the module gets its own */
 void
 CL_CGame_ConfigString(int index, const char *text)
 {
-	if (cgame && cgame->ParseConfigString)
+	int rr = P_ConvertConfigStringTo(index, PROTOCOL_RR22_VERSION);
+
+	/* optech2: only the ones the re-release has (CS_AIRACCEL, the wheels) */
+	if (cgame && cgame->ParseConfigString && (rr >= 0))
 	{
-		cgame->ParseConfigString(P_ConvertConfigStringTo(index, PROTOCOL_RR22_VERSION), text);
+		cgame->ParseConfigString(rr, text);
 	}
 }

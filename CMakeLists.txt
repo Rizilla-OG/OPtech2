@@ -554,6 +554,7 @@ set(Client-Source
 	${CLIENT_SRC_DIR}/cl_prediction.c
 	${CLIENT_SRC_DIR}/cl_screen.c
 	${CLIENT_SRC_DIR}/cl_cgame.c
+	${CLIENT_SRC_DIR}/cl_wheel.c
 	${CLIENT_SRC_DIR}/cl_stats.c
 	${CLIENT_SRC_DIR}/cl_tempentities.c
 	${CLIENT_SRC_DIR}/cl_view.c

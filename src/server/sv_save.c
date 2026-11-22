@@ -220,11 +220,23 @@ SV_WriteLevelFile(void)
 }
 
 static void
-SV_ReadConfigStrings(fileHandle_t f)
+SV_ReadConfigStrings(fileHandle_t f, int file_length)
 {
 	int i;
+	int portal_bytes = (int)(sizeof(qboolean) * CM_NumAreaPortals());
+	int old_bytes = CS_WHEEL_WEAPONS * MAX_CONFIGSTRING;
 
-	FS_Read(sv.configstrings, sizeof(sv.configstrings), f);
+	/* optech2: level files from before the wheel configstrings (protocol
+	   2025) hold fewer; their length tells */
+	if (file_length == old_bytes + portal_bytes)
+	{
+		memset(sv.configstrings, 0, sizeof(sv.configstrings));
+		FS_Read(sv.configstrings, old_bytes, f);
+	}
+	else
+	{
+		FS_Read(sv.configstrings, sizeof(sv.configstrings), f);
+	}
 
 	/* ensure the configstrings are null terminated */
 	for (i = 0; i < MAX_CONFIGSTRINGS; i++)
@@ -251,15 +263,17 @@ SV_ReadLevelFile(void)
 	SV_CleanLevelFileName(savename);
 
 	Com_sprintf(name, sizeof(name), "save/current/%s.sv2", savename);
-	FS_FOpenFile(name, &f, true);
-
-	if (!f)
 	{
-		Com_Printf("Failed to open %s\n", name);
-		return;
-	}
+		int file_length = FS_FOpenFile(name, &f, true);
 
-	SV_ReadConfigStrings(f);
+		if (!f)
+		{
+			Com_Printf("Failed to open %s\n", name);
+			return;
+		}
+
+		SV_ReadConfigStrings(f, file_length);
+	}
 	CM_ReadPortalState(f);
 	FS_FCloseFile(f);
 
