@@ -1464,6 +1464,9 @@ CreatePipelines(void)
 	for (int i = 0; i < RP_COUNT; ++i)
 	{
 		vk_drawTexQuadPipeline[i].depthTestEnable = VK_FALSE;
+		/* optech2: alpha blended, as the GL renderers draw 2D pictures; the
+		   0.666 alpha test alone cut TrueType glyphs to fragments */
+		vk_drawTexQuadPipeline[i].blendOpts.blendEnable = VK_TRUE;
 		QVk_CreatePipeline(samplerUboDsLayouts, 2, &vertInfoRG_RG,
 			&vk_drawTexQuadPipeline[i], &vk_renderpasses[i], shaders, 2);
 		QVk_DebugSetObjectName((uint64_t)vk_drawTexQuadPipeline[i].layout, VK_OBJECT_TYPE_PIPELINE_LAYOUT,

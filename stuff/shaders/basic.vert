@@ -26,5 +26,5 @@ void main() {
     gl_Position = vec4(vPos + it.offset * 2.0, 0.0, 1.0);
     texCoord = inTexCoord.xy * it.uvScale + it.uvOffset;
     color = vec4(1.0, 1.0, 1.0, 1.0);
-    aTreshold = 0.666;
+    aTreshold = 0.004; // optech2: was 0.666 (alpha test only); blended now, so TrueType glyph edges stay
 }

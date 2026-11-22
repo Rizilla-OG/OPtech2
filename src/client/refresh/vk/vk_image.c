@@ -1144,8 +1144,10 @@ Vk_LoadPic(const char *name, byte *pic, int width, int realwidth,
 	upload_width = realwidth;
 	upload_height = realheight;
 
-	/* load little pics into the scrap */
-	if ((image->type == it_pic) && (width <= BLOCK_WIDTH) && (height <= BLOCK_HEIGHT))
+	/* load little pics into the scrap; optech2: not the TrueType font,
+	   whose thin strokes need its own smoothed (mipmapped) texture */
+	if ((image->type == it_pic) && (width <= BLOCK_WIDTH) && (height <= BLOCK_HEIGHT) &&
+		strcmp(name, "pics/ttf_font"))
 	{
 		int texnum = -1;
 		int x, y;

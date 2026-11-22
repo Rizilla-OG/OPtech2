@@ -7,6 +7,8 @@ and compares them with the saved references in reference/.
 Usage:
   screenshot_check.py            compare against references (exit 1 on mismatch)
   screenshot_check.py --update   replace references with fresh screenshots
+  screenshot_check.py --renderer vk   the Vulkan renderer (own references,
+                                 reference/vk/; gl3 uses reference/)
 
 The game runs with HOME pointed at a temporary folder, so the user's own
 config and savegames are never touched. A game window opens while it runs.
@@ -39,7 +41,8 @@ GAME_TIMEOUT_SECONDS = 180
 VIDEO_SETTINGS = [
     "+set", "vid_fullscreen", "0", "+set", "r_mode", "-1",
     "+set", "r_customwidth", str(SCREEN_WIDTH), "+set", "r_customheight", str(SCREEN_HEIGHT),
-    "+set", "fixedtime", "16667", "+set", "vid_renderer", "gl3", "+set", "r_vsync", "0", "+set", "cl_maxfps", "60",
+    "+set", "fixedtime", "16667", "+set", "r_vsync", "0", "+set", "cl_maxfps", "60",
+    "+set", "s_initsound", "0",  # no sound: the fixed clock garbles it, and it's not checked here
 ]
 
 
@@ -72,7 +75,7 @@ def build_script(map_name, spots):
     return "\n".join(lines) + "\n"
 
 
-def capture_map(map_name, spots, data_dir, temp_home):
+def capture_map(map_name, spots, data_dir, temp_home, renderer):
     """Run the game for one map; return the screenshots it wrote, in order."""
     game_dir = temp_home / ".opentech2" / "baseq2"
     game_dir.mkdir(parents=True, exist_ok=True)
@@ -82,10 +85,11 @@ def capture_map(map_name, spots, data_dir, temp_home):
         shutil.rmtree(shot_dir)
 
     environment = dict(os.environ, HOME=str(temp_home))
-    log_path = OUTPUT_DIR / f"{map_name}.log"
+    log_path = OUTPUT_DIR / f"{map_name}_{renderer}.log"
     with open(log_path, "w") as log_file:
         subprocess.run(
-            [str(GAME_BINARY), "-datadir", str(data_dir), *VIDEO_SETTINGS, "+exec", "screenshot_check.cfg"],
+            [str(GAME_BINARY), "-datadir", str(data_dir), *VIDEO_SETTINGS, "+set", "vid_renderer", renderer,
+             "+exec", "screenshot_check.cfg"],
             env=environment, stdout=log_file, stderr=subprocess.STDOUT,
             timeout=GAME_TIMEOUT_SECONDS, check=False)
 
@@ -115,22 +119,25 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--update", action="store_true", help="save fresh screenshots as the new references")
     parser.add_argument("--datadir", type=Path, default=DEFAULT_DATA_DIR, help="folder holding the stock baseq2/")
+    parser.add_argument("--renderer", default="gl3", help="vid_renderer to check (gl3, vk, gl1, soft...)")
     arguments = parser.parse_args()
+    reference_dir = REFERENCE_DIR if arguments.renderer == "gl3" else REFERENCE_DIR / arguments.renderer
+    suffix = "" if arguments.renderer == "gl3" else f"_{arguments.renderer}"
 
     if not GAME_BINARY.exists():
         sys.exit(f"Missing {GAME_BINARY}. Build first: cmake --workflow --preset default")
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    REFERENCE_DIR.mkdir(exist_ok=True)
+    reference_dir.mkdir(parents=True, exist_ok=True)
 
     failures = []
     with tempfile.TemporaryDirectory(prefix="optech2-shots-") as temp_folder:
         temp_home = Path(temp_folder)
         for map_name, spots in read_viewpoints().items():
-            shots = capture_map(map_name, spots, arguments.datadir, temp_home)
+            shots = capture_map(map_name, spots, arguments.datadir, temp_home, arguments.renderer)
             for (shot_name, _coordinates), shot_path in zip(spots, shots):
-                fresh_path = OUTPUT_DIR / f"{shot_name}.png"
+                fresh_path = OUTPUT_DIR / f"{shot_name}{suffix}.png"
                 shutil.copy(shot_path, fresh_path)
-                reference_path = REFERENCE_DIR / f"{shot_name}.png"
+                reference_path = reference_dir / f"{shot_name}.png"
                 if arguments.update:
                     shutil.copy(shot_path, reference_path)
                     print(f"saved   {shot_name}")
@@ -139,7 +146,7 @@ def main():
                     failures.append(shot_name)
                     print(f"MISSING {shot_name}: no reference (run with --update)")
                     continue
-                changed_fraction = compare(fresh_path, reference_path, OUTPUT_DIR / f"{shot_name}_diff.png")
+                changed_fraction = compare(fresh_path, reference_path, OUTPUT_DIR / f"{shot_name}{suffix}_diff.png")
                 passed = changed_fraction <= MAX_CHANGED_FRACTION
                 print(f"{'ok     ' if passed else 'FAIL   '} {shot_name}: {changed_fraction:.3%} pixels changed")
                 if not passed:
