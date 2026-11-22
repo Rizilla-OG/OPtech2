@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Project page: the wheels work in every game now.
 - The weapon and powerup wheels work with our own game library too (they needed a re-release game): it sends what each wheel holds (`CS_WHEEL_WEAPONS` / `_AMMO` / `_POWERUPS`, set at map start; slots also assigned at load so saves loaded from the menu work), the player's weapons, ammo and powerups in the re-release stat layout (stats 32-47, ammo counts 9 bits and powerups 2 bits each; the re-release's 12 ammo types keep their counts first, extra ones from mods show none), the weapon in hand, and takes `use_index` / `use_index_only`. Power Screen and Power Shield sit on the powerup wheel as on/off items. `rr-game` check pins `cl_run 0` (the shipped `yq2.cfg` turns running on, so the walk went off a ledge before the jump).
 - Project page: Vulkan ships in every download now, Windows too.
 - Builds ship `yq2.cfg` (the default keys: WASD, Q weapon wheel, E powerup wheel) in `baseq2/`, where the engine runs it after `default.cfg`; before, it stayed in `stuff/` (CMake) or `misc/` (Windows packages), so fresh installs got the old keys. Windows CI: the Vulkan renderer builds (the header path named the wrong folder), it builds only what the package ships (pakextract needs zlib, missing there), and a failed build stops the job instead of silently skipping the assets (font, key file).
