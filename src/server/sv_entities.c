@@ -29,6 +29,7 @@
 #include <stdint.h>
 
 #include "header/server.h"
+#include "header/game_rerelease.h" /* optech2: RR_ svflags */
 
 /*
  * Writes a delta update of an entity_state_t list to the message.
@@ -865,6 +866,14 @@ SV_BuildClientFrame(client_t *client)
 
 		/* don't mark players missiles as solid */
 		if (ent->owner == clent)
+		{
+			state->solid = 0;
+		}
+
+		/* optech2: re-release games: the player's movement passes through
+		   projectiles and dead monsters (they only block traces that ask for
+		   them), so the client's prediction must not bump into them either */
+		if (sv_rerelease_game && (ent->svflags & (RR_SVF_PROJECTILE | RR_SVF_DEADMONSTER)))
 		{
 			state->solid = 0;
 		}

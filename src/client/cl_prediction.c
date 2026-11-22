@@ -101,6 +101,18 @@ CL_CheckPredictionError(void)
 		VectorCopy(cl.frame.origin,
 				cl.predicted_origins[frame]);
 
+		/* optech2: a re-release game: store its exact position, rounded as
+		   above, or a second frame acking the same command (no new command
+		   sent in between) compares the exact one to the truncated one */
+		if (cl.frame.playerstate.rr_pmove)
+		{
+			for (i = 0; i < 3; i++)
+			{
+				cl.predicted_origins[frame][i] =
+					(int)lroundf(cl.frame.playerstate.rr_origin[i] * 8);
+			}
+		}
+
 		/* save for error itnerpolation */
 		for (i = 0; i < 3; i++)
 		{

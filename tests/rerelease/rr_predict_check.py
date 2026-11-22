@@ -9,6 +9,11 @@ state (PS_RR_PMOVE), so it should almost never miss:
   - the server sends the re-release movement state,
   - at most a few misses over the route, none bigger than 1 unit,
   - the player really moved (the route ran),
+  - standing still under the base1 soldiers' blaster fire with the
+    client running ahead of the packets (cl_async 1, uncapped frames):
+    no misses (bolts flying through the player must not push the
+    prediction, and a server frame acking the same command twice must not
+    count as one),
   - no errors.
 
 Usage:
@@ -61,6 +66,31 @@ delay 9700 "viewpos"
 delay 9800 "quit"
 """
 
+# soldiers on base1 see this spot and shoot; the player steps once (a
+# position off the 1/8 grid) then stands still
+STAND = """set cheats 1
+set cl_showmiss 1
+map base1
+delay 2500 "teleport -862 1468 -24 0 130 0"
+delay 3500 "+forward"
+delay 3800 "-forward"
+delay 4500 "echo STAND start"
+delay 9000 "echo STAND end"
+delay 9100 "quit"
+"""
+
+
+def run(mod_dir, home, script, log_path, settings):
+    (mod_dir / "c.cfg").write_text(script)
+    environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
+    with open(log_path, "w") as log_file:
+        subprocess.run(["stdbuf", "-oL", str(rr_game_check.CLIENT_BINARY),
+                        "-datadir", str(rr_game_check.RERELEASE_DATA_DIR),
+                        "+set", "game", rr_game_check.MOD_NAME, "+set", "vid_renderer", "soft",
+                        "+set", "s_initsound", "0", *settings, "+exec", "c.cfg"],
+                       env=environment, stdout=log_file, stderr=subprocess.STDOUT, timeout=90, check=False)
+    return log_path.read_text(errors="replace")
+
 
 def main():
     source_dir = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else rr_game_check.DEFAULT_SOURCE
@@ -77,22 +107,13 @@ def main():
         results.append(passed)
         print(f"{'ok' if passed else 'FAIL':<6}{text}")
 
-    log_path = OUTPUT_DIR / "client.log"
     with tempfile.TemporaryDirectory(prefix="optech2-rr-predict-") as home:
         mod_dir = Path(home) / ".opentech2" / rr_game_check.MOD_NAME
         mod_dir.mkdir(parents=True)
         shutil.copy(game_library, mod_dir / "game_x64.so")
-        (mod_dir / "c.cfg").write_text(ROUTE)
-        environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
-        with open(log_path, "w") as log_file:
-            subprocess.run(["stdbuf", "-oL", str(rr_game_check.CLIENT_BINARY),
-                            "-datadir", str(rr_game_check.RERELEASE_DATA_DIR),
-                            "+set", "game", rr_game_check.MOD_NAME, "+set", "vid_renderer", "soft",
-                            "+set", "s_initsound", "0", "+set", "cl_maxfps", "125",
-                            "+exec", "c.cfg"],
-                           env=environment, stdout=log_file, stderr=subprocess.STDOUT, timeout=90, check=False)
-
-    log = log_path.read_text(errors="replace")
+        log = run(mod_dir, home, ROUTE, OUTPUT_DIR / "client.log", ["+set", "cl_maxfps", "125"])
+        stand_log = run(mod_dir, home, STAND, OUTPUT_DIR / "stand.log",
+                        ["+set", "cl_maxfps", "-1", "+set", "vid_maxfps", "999", "+set", "cl_async", "1"])
     report("client game: library game_x64" in log, "client loaded the re-release library")
     report("client game: re-release movement for prediction" in log,
            "client predicts with the library's movement (server sent the re-release state)")
@@ -111,7 +132,11 @@ def main():
     else:
         report(False, "positions printed")
 
-    bad = [line for line in log.splitlines() if "(BAD" in line or "ERROR" in line or "Game Error" in line]
+    stand = stand_log.split("STAND start")[-1].split("STAND end")[0] if "STAND start" in stand_log else None
+    stand_misses = len(re.findall(r"prediction miss on", stand)) if stand is not None else -1
+    report(stand_misses == 0, f"{stand_misses} prediction misses standing in blaster fire, uncapped frames (0)")
+
+    bad = [line for line in (log + stand_log).splitlines() if "(BAD" in line or "ERROR" in line or "Game Error" in line]
     report(not bad, "no errors" + (f" ({bad[0].strip()[:90]})" if bad else ""))
 
     passed = all(results)
