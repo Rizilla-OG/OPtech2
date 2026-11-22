@@ -1958,6 +1958,14 @@ use_target_camera(edict_t *self, edict_t *other, edict_t *activator)
 
 	self->moveinfo.remaining_distance = VectorNormalize(diff);
 	self->moveinfo.distance = self->moveinfo.remaining_distance;
+
+	/* optech2: re-release hackflags 128: the scene ends the unit (Quake II
+	   64's ending flybys), so its screen shows over it */
+	if ((self->hackflags & HACKFLAG_END_OF_UNIT) && !deathmatch->value)
+	{
+		level.intermission_eou = true;
+		G_EndOfUnitMessage();
+	}
 }
 
 void

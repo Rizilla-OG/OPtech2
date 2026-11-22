@@ -86,8 +86,8 @@ MoveClientToIntermission(edict_t *ent)
 
 	gi.linkentity(ent);
 
-	/* add the layout */
-	if (deathmatch->value || coop->value)
+	/* add the layout; optech2: not over the end of unit screen */
+	if (deathmatch->value || (coop->value && !level.intermission_eou))
 	{
 		DeathmatchScoreboardMessage(ent, NULL);
 		gi.unicast(ent, true);
@@ -144,9 +144,13 @@ BeginIntermission(const edict_t *targ)
 
 	level.intermissiontime = level.time;
 	level.changemap = targ->map;
+	level.intermission_eou = false; /* optech2 */
+	G_UpdateLevelEntry(); /* optech2: the stats this level leaves with */
 
 	if (level.changemap && strstr(level.changemap, "*")) /* optech2: a map can leave it out */
 	{
+		level.intermission_eou = true; /* optech2: leaving the unit */
+
 		if (coop->value)
 		{
 			for (i = 0; i < maxclients->value; i++)
@@ -252,6 +256,221 @@ BeginIntermission(const edict_t *targ)
 
 		MoveClientToIntermission(client);
 	}
+
+	/* optech2: the end of unit screen, as the re-release (not for "no end
+	   of unit" changes, Quake II 64's camera endings) */
+	if (level.intermission_eou && !deathmatch->value &&
+		!(targ->spawnflags & SPAWNFLAG_CHANGELEVEL_NO_END_OF_UNIT))
+	{
+		G_EndOfUnitMessage();
+	}
+}
+
+/*
+ * optech2: the re-release's end of unit screen (ported from its p_hud.cpp
+ * and p_client.cpp): each level of the unit with its kills, secrets and
+ * time, in the order visited, and the totals.
+ */
+void
+G_SetLevelEntry(void)
+{
+	level_entry_t *found = NULL;
+	edict_t *changelevel = NULL;
+	int highest_order = 0, i;
+
+	level.level_entry = 0;
+
+	if (deathmatch->value)
+	{
+		return;
+	}
+
+	for (i = 0; i < MAX_LEVELS_PER_UNIT; i++)
+	{
+		level_entry_t *entry = &game.level_entries[i];
+
+		if (entry->visit_order > highest_order)
+		{
+			highest_order = entry->visit_order;
+		}
+
+		if (!strcmp(entry->map_name, level.mapname) || !entry->map_name[0])
+		{
+			found = entry;
+			break;
+		}
+	}
+
+	if (!found)
+	{
+		gi.dprintf("WARNING: more than %d maps in unit, can't track the rest\n", MAX_LEVELS_PER_UNIT);
+		return;
+	}
+
+	level.level_entry = (int)(found - game.level_entries) + 1;
+	Q_strlcpy(found->map_name, level.mapname, sizeof(found->map_name));
+
+	/* the first visit: the next in the order */
+	if (!found->pretty_name[0])
+	{
+		Q_strlcpy(found->pretty_name, level.level_name[0] ? level.level_name : level.mapname,
+			sizeof(found->pretty_name));
+		found->visit_order = highest_order + 1;
+	}
+
+	/* every map this one leads to gets an entry, so ones not visited
+	   (secret levels) show as ??? */
+	while ((changelevel = G_Find(changelevel, FOFS(classname), "target_changelevel")) != NULL)
+	{
+		const char *name, *plus;
+		size_t length;
+
+		if (!changelevel->map || !changelevel->map[0] || strchr(changelevel->map, '*'))
+		{
+			continue;
+		}
+
+		plus = strchr(changelevel->map, '+');
+		name = plus ? plus + 1 : changelevel->map;
+
+		if (strstr(name, ".cin") || strstr(name, ".pcx"))
+		{
+			continue;
+		}
+
+		length = strchr(name, '$') ? (size_t)(strchr(name, '$') - name) : strlen(name);
+		found = NULL;
+
+		for (i = 0; i < MAX_LEVELS_PER_UNIT; i++)
+		{
+			level_entry_t *entry = &game.level_entries[i];
+
+			if (!entry->map_name[0] || !strncmp(entry->map_name, name, length))
+			{
+				found = entry;
+				break;
+			}
+		}
+
+		if (!found)
+		{
+			return;
+		}
+
+		Q_strlcpy(found->map_name, name, (length + 1 < sizeof(found->map_name)) ? length + 1 : sizeof(found->map_name));
+	}
+}
+
+void
+G_UpdateLevelEntry(void)
+{
+	level_entry_t *entry;
+
+	if (!level.level_entry)
+	{
+		return;
+	}
+
+	entry = &game.level_entries[level.level_entry - 1];
+	entry->found_secrets = level.found_secrets;
+	entry->total_secrets = level.total_secrets;
+	entry->killed_monsters = level.killed_monsters;
+	entry->total_monsters = level.total_monsters;
+}
+
+static int
+G_LevelEntryOrder(const void *a, const void *b)
+{
+	const level_entry_t *first = a, *second = b;
+	int first_order = first->visit_order ? first->visit_order : (first->pretty_name[0] ? MAX_LEVELS_PER_UNIT + 1 : MAX_LEVELS_PER_UNIT + 2);
+	int second_order = second->visit_order ? second->visit_order : (second->pretty_name[0] ? MAX_LEVELS_PER_UNIT + 1 : MAX_LEVELS_PER_UNIT + 2);
+
+	return first_order - second_order;
+}
+
+static size_t
+G_EndOfUnitEntry(char *layout, size_t size, int y, const level_entry_t *entry)
+{
+	size_t used = strlen(layout);
+	int milliseconds = (int)(entry->time * 1000);
+
+	if (!entry->pretty_name[0])
+	{
+		Com_sprintf(layout + used, size - used, "yv %d table_row 1 ??? ", y);
+	}
+	else
+	{
+		Com_sprintf(layout + used, size - used, "yv %d table_row 4 \"%s\" %d/%d %d/%d %02d:%02d:%03d ", y,
+			entry->pretty_name, entry->killed_monsters, entry->total_monsters, entry->found_secrets,
+			entry->total_secrets, milliseconds / 60000, (milliseconds / 1000) % 60, milliseconds % 1000);
+	}
+
+	return strlen(layout);
+}
+
+void
+G_EndOfUnitMessage(void)
+{
+	char layout[1400];
+	level_entry_t totals;
+	int y = 16, rows = 0, i;
+
+	G_UpdateLevelEntry();
+	qsort(game.level_entries, MAX_LEVELS_PER_UNIT, sizeof(game.level_entries[0]), G_LevelEntryOrder);
+
+	/* the sort moved this level's entry */
+	level.level_entry = 0;
+
+	for (i = 0; i < MAX_LEVELS_PER_UNIT; i++)
+	{
+		if (!strcmp(game.level_entries[i].map_name, level.mapname))
+		{
+			level.level_entry = i + 1;
+		}
+	}
+
+	memset(&totals, 0, sizeof(totals));
+	Q_strlcpy(layout, "start_table 4 $m_eou_level $m_eou_kills $m_eou_secrets $m_eou_time ", sizeof(layout));
+
+	for (i = 0; i < MAX_LEVELS_PER_UNIT; i++)
+	{
+		const level_entry_t *entry = &game.level_entries[i];
+
+		if (!entry->map_name[0])
+		{
+			break;
+		}
+
+		G_EndOfUnitEntry(layout, sizeof(layout), y, entry);
+		y += 8;
+
+		totals.found_secrets += entry->found_secrets;
+		totals.killed_monsters += entry->killed_monsters;
+		totals.time += entry->time;
+		totals.total_monsters += entry->total_monsters;
+		totals.total_secrets += entry->total_secrets;
+
+		if (entry->visit_order)
+		{
+			rows++;
+		}
+	}
+
+	y += 8;
+
+	/* totals, under an empty row */
+	if (rows > 1)
+	{
+		Q_strlcat(layout, "table_row 0 ", sizeof(layout));
+		totals.pretty_name[0] = ' ';
+		G_EndOfUnitEntry(layout, sizeof(layout), y, &totals);
+	}
+
+	Q_strlcat(layout, "xv 160 yt 0 draw_table yb -48 xv 0 loc_cstring2 0 \"$m_eou_press_button\" ", sizeof(layout));
+
+	gi.WriteByte(svc_layout);
+	gi.WriteString(layout);
+	gi.multicast(vec3_origin, MULTICAST_ALL);
 }
 
 void
@@ -868,7 +1087,9 @@ G_SetStats(edict_t *ent)
 	}
 	else
 	{
-		if (ent->client->showscores || ent->client->showhelp)
+		/* optech2: the end of unit screen stays up */
+		if (ent->client->showscores || ent->client->showhelp ||
+			(level.intermissiontime && level.intermission_eou))
 		{
 			ent->client->ps_rrstats[STAT_LAYOUTS] |= LAYOUTS_LAYOUT;
 		}

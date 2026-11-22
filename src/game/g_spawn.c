@@ -1366,6 +1366,9 @@ SpawnEntities(const char *mapname, char *entities, const char *spawnpoint)
 
 	PlayerTrail_Init();
 
+	/* optech2: this level's line on the end of unit screen */
+	G_SetLevelEntry();
+
 	if (deathmatch->value)
 	{
 		if (randomrespawn && randomrespawn->value)

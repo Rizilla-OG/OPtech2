@@ -455,6 +455,12 @@ ExitLevel(void)
 		return;
 	}
 
+	/* optech2: a new unit starts its end of unit screen afresh */
+	if (level.intermission_eou)
+	{
+		memset(game.level_entries, 0, sizeof(game.level_entries));
+	}
+
 	Com_sprintf(command, sizeof(command), "gamemap \"%s\"\n", level.changemap);
 	gi.AddCommandString(command);
 	level.changemap = NULL;
@@ -513,6 +519,13 @@ G_RunFrame(void)
 
 	/* choose a client for monsters to target this frame */
 	AI_SetSightClient();
+
+	/* optech2: time spent in this level, for the end of unit screen */
+	if (level.level_entry && !level.intermissiontime && g_edicts[1].inuse && g_edicts[1].client &&
+		g_edicts[1].client->pers.connected)
+	{
+		game.level_entries[level.level_entry - 1].time += 1.0f / level.tickrate;
+	}
 
 	/* exit intermissions */
 	if (level.exitintermission)

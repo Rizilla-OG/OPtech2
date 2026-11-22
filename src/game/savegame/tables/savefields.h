@@ -511,6 +511,8 @@ static const savefield_t savefields_level[] = {
 	{"intermission_fade_time", offsetof(level_locals_t, intermission_fade_time), sizeof(((level_locals_t *)0)->intermission_fade_time), SF_RAW},
 	{"intermission_origin", offsetof(level_locals_t, intermission_origin), sizeof(((level_locals_t *)0)->intermission_origin), SF_RAW},
 	{"intermission_angle", offsetof(level_locals_t, intermission_angle), sizeof(((level_locals_t *)0)->intermission_angle), SF_RAW},
+	{"level_entry", offsetof(level_locals_t, level_entry), sizeof(((level_locals_t *)0)->level_entry), SF_RAW},
+	{"intermission_eou", offsetof(level_locals_t, intermission_eou), sizeof(((level_locals_t *)0)->intermission_eou), SF_RAW},
 	{"valid_poi", offsetof(level_locals_t, valid_poi), sizeof(((level_locals_t *)0)->valid_poi), SF_RAW},
 	{"current_poi", offsetof(level_locals_t, current_poi), sizeof(((level_locals_t *)0)->current_poi), SF_RAW},
 	{"current_poi_image", offsetof(level_locals_t, current_poi_image), sizeof(((level_locals_t *)0)->current_poi_image), SF_RAW},
@@ -551,4 +553,5 @@ static const savefield_t savefields_game[] = {
 	{"cross_unit_flags", offsetof(game_locals_t, cross_unit_flags), sizeof(((game_locals_t *)0)->cross_unit_flags), SF_RAW},
 	{"autosaved", offsetof(game_locals_t, autosaved), sizeof(((game_locals_t *)0)->autosaved), SF_RAW},
 	{"script_state", offsetof(game_locals_t, script_state), sizeof(((game_locals_t *)0)->script_state), SF_STRING},
+	{"level_entries", offsetof(game_locals_t, level_entries), sizeof(((game_locals_t *)0)->level_entries), SF_RAW},
 };

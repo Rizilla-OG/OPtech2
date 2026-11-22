@@ -391,6 +391,21 @@ typedef struct gitem_s
 /* this structure is left intact through an entire game
    it should be initialized at dll load time, and read/written to
    the server.ssv file for savegames */
+/* optech2: one level of the unit, for the re-release's end of unit screen */
+#define MAX_LEVELS_PER_UNIT 8
+
+typedef struct
+{
+	char map_name[MAX_QPATH]; /* bsp name */
+	char pretty_name[MAX_QPATH]; /* "" until visited */
+	int total_secrets;
+	int found_secrets;
+	int total_monsters;
+	int killed_monsters;
+	float time; /* seconds spent there */
+	int visit_order;
+} level_entry_t;
+
 typedef struct
 {
 	char helpmessage1[512];
@@ -416,6 +431,8 @@ typedef struct
 	qboolean autosaved;
 
 	char *script_state; /* optech2: Lua scripts' game.state tables, as text (script/g_script.c) */
+
+	level_entry_t level_entries[MAX_LEVELS_PER_UNIT]; /* optech2: this unit's levels */
 } game_locals_t;
 
 /* this structure is cleared as each map is entered
@@ -443,6 +460,9 @@ typedef struct
 	vec3_t intermission_angle;
 
 	/* optech2: re-release points of interest (target_poi, the compass) */
+	int level_entry; /* optech2: this level's game.level_entries index + 1; 0 none */
+	qboolean intermission_eou; /* optech2: leaving the unit */
+
 	qboolean valid_poi;
 	vec3_t current_poi;
 	int current_poi_image;
@@ -952,6 +972,9 @@ void InitItems(void);
 qboolean ItemHasValidModel(const gitem_t *item);
 void SetItemNames(void);
 void Compass_Update(edict_t *ent, qboolean first); /* optech2 */
+void G_SetLevelEntry(void); /* optech2 */
+void G_UpdateLevelEntry(void); /* optech2 */
+void G_EndOfUnitMessage(void); /* optech2 */
 void P_SendLevelPOI(edict_t *ent); /* optech2 */
 void target_poi_use(edict_t *ent, edict_t *other, edict_t *activator); /* optech2 */
 gitem_t *FindItem(const char *pickup_name);
