@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- FFmpeg videos play to the end: at the end of the file each decoder is drained of the frames it still holds (the last ~0.25 s were lost; Quake II 64's intro video `n64l0t.ogv` now shows 396 of its 397 frames, 6.60 s, was 6.35 s).
 - Our game: re-release `target_changelevel` flag 32 (fade out, Quake II 64's intro and level ends): the screen fades to black over 1.3 s before the level changes, as the re-release does. Re-release game libraries already did it themselves (their screen tint reaches the client).
 - Localized texts: escapes in the re-release's localization file are taken out properly (`\n` a line break, `\"` and `\\` the character); the backslash used to turn into a space, so multi-line texts had a stray space at each line break.
 - The weapon and powerup wheels take a gamepad: while one is open the right stick points at its items (the cursor goes where the stick leans and stays on the last item when it comes back to the middle) instead of turning. Bind a button to open them, e.g. `bind SHOULDR_RIGHT +wheel` and `bind SHOULDR_LEFT +wheel2`.

@@ -513,6 +513,127 @@ cinavdecode_reserve_video(cinavdecode_t *state)
 	return state->video_res + state->video_pos;
 }
 
+/*
+ * optech2: takes every frame the decoder of a stream has ready (audio into
+ * audio_res, video into video_res); ret is what sending its packet gave.
+ * Also used at the end of the file to drain the decoders, whose last
+ * frames (about a quarter second of video) were lost.
+ */
+static void
+cinavdecode_receive_frames(cinavdecode_t *state, int stream_index, int ret)
+{
+	while (ret >= 0)
+	{
+		/* unroll of loop doesn't help with speed as internally
+		 * decoded several frames */
+		ret = avcodec_receive_frame(state->dec_ctx[stream_index], state->dec_frame);
+		if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+		{
+			/* End of package */
+			break;
+		}
+		else if (ret < 0)
+		{
+			state->eof = 1;
+			/* Decode error */
+			break;
+		}
+
+		if (state->dec_ctx[stream_index]->codec_type == AVMEDIA_TYPE_AUDIO)
+		{
+			uint8_t *out[1];
+			int ret, required_space;
+
+			state->audio_timestamp = ((double)state->dec_frame->pts *
+									  state->dec_ctx[stream_index]->pkt_timebase.num /
+									  state->dec_ctx[stream_index]->pkt_timebase.den);
+
+			required_space = state->dec_frame->nb_samples * 2 * state->channels;
+
+			/* compact frame */
+			if ((state->audio_pos + required_space) > state->audio_buffsize &&
+				(state->audio_curr > 0))
+			{
+				memmove(state->audio_res,
+					state->audio_res + state->audio_curr,
+					state->audio_pos - state->audio_curr);
+				state->audio_pos -= state->audio_curr;
+				state->audio_curr = 0;
+			}
+
+			if ((state->audio_pos + required_space) > state->audio_buffsize)
+			{
+				uint8_t *new_buffer;
+
+				/* add current frame size */
+				state->audio_buffsize += required_space;
+				/* double buffer */
+				state->audio_buffsize *= 2;
+				/* realloacate buffer */
+				new_buffer = realloc(state->audio_res, state->audio_buffsize);
+				if (!new_buffer)
+				{
+					/* Memalloc error */
+					state->eof = 1;
+					break;
+				}
+				state->audio_res = new_buffer;
+			}
+
+			out[0] = state->audio_res + state->audio_pos;
+			ret = swr_convert(state->swr_audio, out, state->dec_frame->nb_samples,
+				(const uint8_t **)state->dec_frame->data, state->dec_frame->nb_samples);
+			if (ret < 0)
+			{
+				/* Decode error */
+				state->eof = 1;
+				break;
+			}
+
+			/* move current pos */
+			state->audio_pos += required_space;
+		}
+		else if (state->dec_ctx[stream_index]->codec_type == AVMEDIA_TYPE_VIDEO)
+		{
+			uint8_t *out[1];
+			int linesize[1], ret, required_space;
+
+			state->video_timestamp = ((double)state->dec_frame->pts *
+									  state->dec_ctx[stream_index]->pkt_timebase.num /
+									  state->dec_ctx[stream_index]->pkt_timebase.den);
+
+			required_space = state->video_frame_size;
+
+			if (!cinavdecode_reserve_video(state))
+			{
+				/* Memalloc error */
+				state->eof = 1;
+				break;
+			}
+
+			/* RGB stride with single plane */
+			linesize[0] = 4 * state->width;
+			out[0] = state->video_res + state->video_pos;
+
+			ret = sws_scale(state->swsctx_image,
+				(const uint8_t *const *)state->dec_frame->data,
+				state->dec_frame->linesize, 0,
+				state->dec_frame->height, out, linesize);
+
+			if (ret < 0)
+			{
+				/* Decode error */
+				state->eof = 1;
+				break;
+			}
+
+			memcpy(state->video_last, out[0], state->video_frame_size); /* optech2 */
+			state->video_last_valid = 1;
+			state->video_pos += required_space;
+		}
+	}
+}
+
 static void
 cinavdecode_parse_next(cinavdecode_t *state)
 {
@@ -522,6 +643,17 @@ cinavdecode_parse_next(cinavdecode_t *state)
 
 		if ((ret = av_read_frame(state->demuxer, state->packet)) < 0)
 		{
+			unsigned int i;
+
+			/* optech2: end of file: drain each decoder's last frames */
+			for (i = 0; i < state->demuxer->nb_streams; i++)
+			{
+				if (state->dec_ctx[i] && (avcodec_send_packet(state->dec_ctx[i], NULL) >= 0))
+				{
+					cinavdecode_receive_frames(state, (int)i, 0);
+				}
+			}
+
 			state->eof = 1;
 			break;
 		}
@@ -564,120 +696,7 @@ cinavdecode_parse_next(cinavdecode_t *state)
 		}
 
 		/* read all the output frames (in general there may be any number of them) */
-		while (ret >= 0)
-		{
-			/* unroll of loop doesn't help with speed as internally
-			 * decoded several frames */
-			ret = avcodec_receive_frame(state->dec_ctx[stream_index], state->dec_frame);
-			if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
-			{
-				/* End of package */
-				break;
-			}
-			else if (ret < 0)
-			{
-				state->eof = 1;
-				/* Decode error */
-				break;
-			}
-
-			if (state->dec_ctx[stream_index]->codec_type == AVMEDIA_TYPE_AUDIO)
-			{
-				uint8_t *out[1];
-				int ret, required_space;
-
-				state->audio_timestamp = (
-					(double)state->dec_frame->pts *
-					state->dec_ctx[stream_index]->pkt_timebase.num /
-					state->dec_ctx[stream_index]->pkt_timebase.den
-				);
-
-				required_space = state->dec_frame->nb_samples * 2 * state->channels;
-
-				/* compact frame */
-				if ((state->audio_pos + required_space) > state->audio_buffsize &&
-					(state->audio_curr > 0))
-				{
-					memmove(state->audio_res,
-						state->audio_res + state->audio_curr,
-						state->audio_pos - state->audio_curr);
-					state->audio_pos -= state->audio_curr;
-					state->audio_curr = 0;
-				}
-
-				if ((state->audio_pos + required_space) > state->audio_buffsize)
-				{
-					uint8_t *new_buffer;
-
-					/* add current frame size */
-					state->audio_buffsize += required_space;
-					/* double buffer */
-					state->audio_buffsize *= 2;
-					/* realloacate buffer */
-					new_buffer = realloc(state->audio_res, state->audio_buffsize);
-					if (!new_buffer)
-					{
-						/* Memalloc error */
-						state->eof = 1;
-						break;
-					}
-					state->audio_res = new_buffer;
-				}
-
-				out[0] = state->audio_res + state->audio_pos;
-				ret = swr_convert(state->swr_audio, out, state->dec_frame->nb_samples,
-					(const uint8_t **)state->dec_frame->data, state->dec_frame->nb_samples);
-				if (ret < 0)
-				{
-					/* Decode error */
-					state->eof = 1;
-					break;
-				}
-
-				/* move current pos */
-				state->audio_pos += required_space;
-			}
-			else if (state->dec_ctx[stream_index]->codec_type == AVMEDIA_TYPE_VIDEO)
-			{
-				uint8_t *out[1];
-				int linesize[1], ret, required_space;
-
-				state->video_timestamp = (
-					(double)state->dec_frame->pts *
-					state->dec_ctx[stream_index]->pkt_timebase.num /
-					state->dec_ctx[stream_index]->pkt_timebase.den
-				);
-
-				required_space = state->video_frame_size;
-
-				if (!cinavdecode_reserve_video(state))
-				{
-					/* Memalloc error */
-					state->eof = 1;
-					break;
-				}
-
-				/* RGB stride with single plane */
-				linesize[0] = 4 * state->width;
-				out[0] = state->video_res + state->video_pos;
-
-				ret = sws_scale(state->swsctx_image,
-					(const uint8_t * const*)state->dec_frame->data,
-					state->dec_frame->linesize, 0,
-					state->dec_frame->height, out, linesize);
-
-				if (ret < 0)
-				{
-					/* Decode error */
-					state->eof = 1;
-					break;
-				}
-
-				memcpy(state->video_last, out[0], state->video_frame_size); /* optech2 */
-				state->video_last_valid = 1;
-				state->video_pos += required_space;
-			}
-		}
+		cinavdecode_receive_frames(state, stream_index, ret);
 		av_packet_unref(state->packet);
 
 		/* use 2.5 second of audio buffering and 1.5 video buffer for async in
