@@ -4,6 +4,9 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Beams get no color shell (q2arpg's elemental tracers come with one; drawn, it covered the view in the element's color), and a beam starting at our own eye (a re-release game's hitscan tracer starts where the shot does) comes out of the view weapon's muzzle (`hand` side).
+- A shell on the view weapon keeps the classic size (growing it from its center pushed it through the camera); Vulkan shells are one-sided again (two-sided showed the inside of the player's own).
+- RF_CUSTOM_LIGHT colors read as unsigned bytes (bright channels came out negative: a dark light).
 - Re-release games: the engine commands their libraries use for saves. `autosave` (maps' target_autosave) saves to the autosave slot (save0) in single player when the game allows; `restart_level` loads it. The load menu puts "Restart level" first while a single player game runs (it opens on death), loading the level's autosave as the re-release's death menu does. `rr-saves` checks both (screenshot `m2_rr_restart_level_menu.png`).
 - Shells on small models also grow from the model's center by about their push, so a flat shard's edges are covered too.
 - Color shells (quad damage, the re-release's gold cash glow) stand off small models in proportion: 4 units from 48 units up, less below, so a flat armor shard isn't two plates floating off its sides. Vulkan draws shells two-sided.

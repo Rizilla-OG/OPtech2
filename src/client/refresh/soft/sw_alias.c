@@ -283,7 +283,9 @@ R_AliasPreparePoints(const entity_t *currententity, finalvert_t *verts, const fi
 		 RF_SHELL_HALF_DAM));
 
 	R_LerpVerts(s_pmdl, currententity->frame, currententity->oldframe,
-			frontlerp, backlerp, (float*)s_lerped, r_lerp_move, currententity->scale, colorOnly);
+		frontlerp, backlerp, (float *)s_lerped, r_lerp_move, currententity->scale,
+		/* optech2: 2 = a shell on the view weapon, kept from growing */
+		colorOnly ? ((currententity->flags & RF_WEAPONMODEL) ? 2 : 1) : 0);
 
 	R_AliasTransformFinalVerts(s_pmdl->num_xyz,
 		verts,	/* destination for transformed verts */

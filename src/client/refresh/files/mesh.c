@@ -210,7 +210,9 @@ R_StaticVerts(qboolean powerUpEffect, int nverts,
 	/* optech2: a shell stands 4 units off the model, the size of a
 	   player; small items (the re-release's gold cash on armor shards) get a
 	   tighter one, or two plates float off a flat card with nothing between */
-	if (powerUpEffect)
+	/* powerUpEffect 2: the view weapon's shell; it is close to the camera,
+	   growing it pushed it through the view */
+	if (powerUpEffect == 1)
 	{
 		unsigned short low[3] = {65535, 65535, 65535}, high[3] = {0, 0, 0};
 		float extent = 0;

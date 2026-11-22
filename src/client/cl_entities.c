@@ -26,6 +26,8 @@
 
 #include <math.h>
 #include "header/client.h"
+
+extern cvar_t *hand; /* optech2: which side the view weapon is on */
 #include "../common/header/cmodel.h"
 
 /* skip lerping the first server frames after client receives it
@@ -320,6 +322,15 @@ CL_AddPacketEntities(const frame_t *frame)
 			renderfx |= RF_SHELL_HALF_DAM;
 		}
 
+		/* optech2: a beam has no model to put a shell around (q2arpg's
+		   elemental tracers come with one; drawn, it filled the view) */
+		if (renderfx & RF_BEAM)
+		{
+			effects &= ~EF_COLOR_SHELL;
+			renderfx &= ~(RF_SHELL_RED | RF_SHELL_GREEN | RF_SHELL_BLUE |
+						  RF_SHELL_DOUBLE | RF_SHELL_HALF_DAM);
+		}
+
 		/* optech2: each entity has its own lerp fractions, see CL_EntityLerpFraction */
 		moveLerp = CL_EntityLerpFraction(cent->move_change_time, cent->move_lerp_msec);
 		animLerp = CL_EntityLerpFraction(cent->anim_change_time, cent->anim_lerp_msec);
@@ -423,10 +434,11 @@ CL_AddPacketEntities(const frame_t *frame)
 				color = BigLong(s1->skinnum);
 			}
 
+			/* optech2: unsigned bytes, or channels over 127 went negative */
 			V_AddLight(ent.origin, DLIGHT_CUTOFF + s1->frame,
-						((char *)&color)[0] / 255.0f,
-						((char *)&color)[1] / 255.0f,
-						((char *)&color)[2] / 255.0f);
+				((unsigned char *)&color)[0] / 255.0f,
+				((unsigned char *)&color)[1] / 255.0f,
+				((unsigned char *)&color)[2] / 255.0f);
 
 			continue;
 		}
@@ -434,6 +446,25 @@ CL_AddPacketEntities(const frame_t *frame)
 		/* tweak the color of beams */
 		if (renderfx & RF_BEAM)
 		{
+			/* optech2: a beam starting at our own eye (a re-release game's
+			   hitscan tracer starts where the shot does, just under the
+			   view) comes out of the view weapon's muzzle instead */
+			{
+				vec3_t from_eye;
+
+				VectorSubtract(ent.origin, cl.refdef.vieworg, from_eye);
+
+				if (VectorLength(from_eye) < 16.0f)
+				{
+					float side = (hand->value == 1) ? -7.0f : (hand->value == 2) ? 0.0f
+																				 : 7.0f;
+
+					VectorMA(cl.refdef.vieworg, 16.0f, cl.v_forward, ent.origin);
+					VectorMA(ent.origin, side, cl.v_right, ent.origin);
+					VectorMA(ent.origin, -8.0f, cl.v_up, ent.origin);
+				}
+			}
+
 			ent.alpha = Q_clamp(cl_laseralpha->value, 0.0f, 1.0f);
 
 			/* the four beam colors are encoded in 32 bits of skinnum (hack) */

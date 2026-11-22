@@ -168,7 +168,6 @@ qvkpipeline_t vk_drawColorQuadPipeline[RP_COUNT]  = {
 qvkpipeline_t vk_drawModelPipelineFan[RP_COUNT]   = {
 	QVKPIPELINE_INIT, QVKPIPELINE_INIT, QVKPIPELINE_INIT };
 qvkpipeline_t vk_drawNoDepthModelPipelineFan = QVKPIPELINE_INIT;
-qvkpipeline_t vk_drawShellModelPipelineFan = QVKPIPELINE_INIT; /* optech2 */
 qvkpipeline_t vk_drawLefthandModelPipelineFan = QVKPIPELINE_INIT;
 qvkpipeline_t vk_drawNullModelPipeline = QVKPIPELINE_INIT;
 qvkpipeline_t vk_drawParticlesPipeline = QVKPIPELINE_INIT;
@@ -1548,16 +1547,6 @@ CreatePipelines(void)
 	QVk_DebugSetObjectName((uint64_t)vk_drawNoDepthModelPipelineFan.layout, VK_OBJECT_TYPE_PIPELINE_LAYOUT, "Pipeline Layout: translucent model: fan");
 	QVk_DebugSetObjectName((uint64_t)vk_drawNoDepthModelPipelineFan.pl, VK_OBJECT_TYPE_PIPELINE, "Pipeline: translucent model: fan");
 
-	// optech2: color shells (quad damage, the re-release's gold cash glow): as
-	// translucent models but two-sided, or thin models (armor shards) show
-	// holes edge-on where the back faces were culled
-	vk_drawShellModelPipelineFan.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-	vk_drawShellModelPipelineFan.depthWriteEnable = VK_FALSE;
-	vk_drawShellModelPipelineFan.blendOpts.blendEnable = VK_TRUE;
-	vk_drawShellModelPipelineFan.cullMode = VK_CULL_MODE_NONE;
-	QVk_CreatePipeline(samplerUboDsLayouts, 2, &vertInfoRGB_RGBA_RG, &vk_drawShellModelPipelineFan, &vk_renderpasses[RP_WORLD], shaders, 2);
-	QVk_DebugSetObjectName((uint64_t)vk_drawShellModelPipelineFan.pl, VK_OBJECT_TYPE_PIPELINE, "Pipeline: color shell model: fan");
-
 	// dedicated model pipelines for when left-handed weapon model is drawn
 	vk_drawLefthandModelPipelineFan.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	vk_drawLefthandModelPipelineFan.cullMode = VK_CULL_MODE_FRONT_BIT;
@@ -1736,7 +1725,6 @@ QVk_Shutdown(void)
 
 		QVk_DestroyPipeline(&vk_drawNullModelPipeline);
 		QVk_DestroyPipeline(&vk_drawNoDepthModelPipelineFan);
-		QVk_DestroyPipeline(&vk_drawShellModelPipelineFan);
 		QVk_DestroyPipeline(&vk_drawLefthandModelPipelineFan);
 		QVk_DestroyPipeline(&vk_drawParticlesPipeline);
 		QVk_DestroyPipeline(&vk_drawPointParticlesPipeline);
