@@ -1896,7 +1896,9 @@ SCR_DrawCrosshair(void)
 	vec3_t color;
 	float scale;
 
-	if (!crosshair->value)
+	/* optech2: none while the player is frozen (intermission, a camera
+	   scene such as Quake II 64's intro), as the re-release */
+	if (!crosshair->value || (cl.frame.playerstate.pmove.pm_type == PM_FREEZE))
 	{
 		return;
 	}

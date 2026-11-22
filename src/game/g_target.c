@@ -1709,7 +1709,28 @@ camera_lookat_pathtarget(const edict_t* self, vec3_t origin, vec3_t* dest)
 void
 update_target_camera_think(edict_t *self)
 {
-	if (self->movetarget)
+	qboolean skip = false;
+
+	/* optech2: a skippable camera (re-release hackflags 64, Quake II 64's
+	   intro) ends when a player presses any button, after 2 seconds */
+	if ((self->hackflags & HACKFLAG_SKIPPABLE) && (level.time > 2.0f))
+	{
+		int i;
+
+		for (i = 0; i < game.maxclients; i++)
+		{
+			const edict_t *client = g_edicts + 1 + i;
+
+			if (client->inuse && client->client && client->client->pers.connected &&
+				(client->client->buttons & BUTTON_ANY))
+			{
+				skip = true;
+				break;
+			}
+		}
+	}
+
+	if (!skip && self->movetarget)
 	{
 		self->moveinfo.remaining_distance -= (self->moveinfo.move_speed * FRAMETIME) * 0.8f;
 

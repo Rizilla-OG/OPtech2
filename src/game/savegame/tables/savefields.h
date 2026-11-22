@@ -278,6 +278,7 @@ static const savefield_t savefields_edict[] = {
 	{"was_falling", offsetof(edict_t, was_falling), sizeof(((edict_t *)0)->was_falling), SF_RAW},
 	{"last_node", offsetof(edict_t, last_node), sizeof(((edict_t *)0)->last_node), SF_RAW},
 	{"last_update", offsetof(edict_t, last_update), sizeof(((edict_t *)0)->last_update), SF_RAW},
+	{"hackflags", offsetof(edict_t, hackflags), sizeof(((edict_t *)0)->hackflags), SF_RAW},
 };
 
 static const savefield_t savefields_client[] = {

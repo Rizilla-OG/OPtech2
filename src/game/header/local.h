@@ -101,6 +101,7 @@
 
 /* optech2: re-release target_changelevel spawnflags */
 #define SPAWNFLAG_CHANGELEVEL_NO_END_OF_UNIT 16 /* no end-of-unit screen */
+#define HACKFLAG_SKIPPABLE 64 /* re-release target_camera: any button ends the scene after 2 s */
 #define SPAWNFLAG_CHANGELEVEL_FADE_OUT 32 /* fade to black before leaving (Quake II 64) */
 #define SPAWNFLAG_CHANGELEVEL_IMMEDIATE_LEAVE 64 /* with 16: leave at once */
 
@@ -2001,6 +2002,8 @@ struct edict_s
 	qboolean was_falling;
 	int last_node;
 	float last_update;
+
+	int hackflags; /* optech2: re-release "hackflags" key (Quake II 64 cameras, monsters) */
 };
 
 #define SPHERE_DEFENDER 0x0001
