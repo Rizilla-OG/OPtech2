@@ -768,7 +768,7 @@ static void CG_DrawTable(int x, int y, uint32_t width, uint32_t height, int32_t 
             cgi.SCR_DrawFontString(hud_temp.table_rows[r].table_cells[i].text, x + x_offset, ry - (font_y_offset * scale), scale, r == 0 ? alt_color : rgba_white, true, text_align_t::LEFT);
         }
 
-        x += (hud_temp.column_widths[i] + cgi.SCR_MeasureFontString(" ", 1).x);
+        x += (hud_temp.column_widths[i] + cgi.SCR_MeasureFontString(" ", scale).x); // optech2: the gap at the HUD scale, as the width above
     }
 }
 
