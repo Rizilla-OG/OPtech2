@@ -25,7 +25,7 @@
     limits for mappers and modders, a multi-threaded renderer and per-pixel lighting with real-time shadows,
     while staying playable on modest hardware. Stock Quake II maps and assets keep working as test content.</p>
   <div class="buttons">
-    <a class="btn primary" href="https://github.com/Rizilla-OG/OPtech2/releases/tag/m2-preview-3">Download M2 preview</a>
+    <a class="btn primary" href="https://github.com/Rizilla-OG/OPtech2/releases/tag/m2-preview-4">Download M2 preview</a>
     <a class="btn ghost" href="roadmap.html">Roadmap</a>
     <a class="btn ghost" href="https://github.com/Rizilla-OG/OPtech2">View on GitHub</a>
   </div>
@@ -80,7 +80,8 @@
           animation system and an in-game editor for entities and lights. Done so far: the client game module
           with its HUD and effects, player movement as game code, stacked mod folders, Lua scripts, item, weapon and
           monster definitions, monster navigation, re-release game libraries (id's own and mods built on it) with
-          their movement, HUD, kill feed and weapon wheels, and a modern console.</p>
+          their movement, HUD, kill feed and weapon wheels, a modern console, and the re-release's game features
+          (compass, co-op lives, end-of-unit screen) in the stock game.</p>
       </li>
       <li class="milestone later">
         <span class="id">M3</span><h3>Multi-threaded renderer</h3><span class="status">PLANNED</span>
@@ -102,9 +103,52 @@
 
 <section id="new">
   <div class="wrap">
-    <h2>New in M2 preview 3</h2>
-    <p class="lead">Game code written for the 2023 re-release now runs on OpenTech2 unchanged, with its HUD,
-      wheels and kill feed, and the console got a modern look. Screenshots at 2560&times;1440, OpenGL 3.</p>
+    <h2>New in M2 preview 4</h2>
+    <p class="lead">The rest of the re-release's game features, a full code review with its fixes, and monsters
+      that behave. Screenshot at 2560&times;1440, OpenGL 3.</p>
+    <div class="features">
+      <div class="feature">
+        <h3>Re-release features in the stock game</h3>
+        <p>The compass draws a trail of arrows along the walking path to your objective. Co-op gets squad respawn
+          and limited lives, the end-of-unit screen lists each level's kills, secrets and time, and the weapon
+          wheel slows time while it is open. <code>g_skip_cameras</code> lets you skip any camera scene.</p>
+      </div>
+      <div class="feature">
+        <h3>Monsters that behave</h3>
+        <p>Monsters look for a player in plain sight before chasing noises, so firing every frame no longer makes
+          them twitch in place, and they turn instead of snapping round. Weapons and monsters use the re-release's
+          balance; <code>g_classic_balance 1</code> brings back the original numbers.</p>
+      </div>
+      <div class="feature">
+        <h3>Footsteps on every floor</h3>
+        <p>Step sounds follow the floor's material (metal, grates, glass, carpet, ladders and more) from the
+          re-release's sound set, where most floors used to be silent.</p>
+      </div>
+      <div class="feature">
+        <h3>Two code reviews</h3>
+        <p>Everything written since the fork was reviewed area by area (server, client, game, common code,
+          effects) and every finding fixed: memory errors, save and load gaps, network numbering, timing at
+          60&nbsp;Hz. A second review checked the fixes themselves.</p>
+      </div>
+    </div>
+    <div class="gallery" style="margin-top:16px">
+      <figure class="wide">
+        <a href="assets/img/compass.jpg"><img src="assets/img/compass.jpg" width="2560" height="1440" loading="lazy"
+          alt="Green arrows on the floor of a Quake II base room lead toward a green objective marker"></a>
+        <figcaption>The compass in the stock game: arrows every few steps along the walking path, fading after
+          10 seconds, lead to the objective marker.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="m2">
+  <div class="wrap">
+    <h2>M2 so far</h2>
+    <p class="lead">M2 moves what a mod might change out of the engine and into game code or data files. In the
+      M2 preview: the HUD, player movement and every effect the server triggers come from the game library, mods
+      stack and bring their own scripts and definitions, monsters find their way to you, the re-release's
+      episodes are playable from the menu, and game libraries built for the re-release run unchanged.</p>
     <div class="features">
       <div class="feature">
         <h3>Re-release game libraries</h3>
@@ -129,47 +173,7 @@
         <p>The Vulkan renderer is now part of the default build and every download (<code>vid_renderer vk</code>),
           with its own screenshot check and see-through 2D drawing like the OpenGL renderers.</p>
       </div>
-    </div>
-    <div class="gallery" style="margin-top:16px">
-      <figure class="wide">
-        <a href="assets/img/q2arpg-vendor.jpg"><img src="assets/img/q2arpg-vendor.jpg" width="2560" height="1440" loading="lazy"
-          alt="A vendor menu listing guns with rarity, damage and price, over a Quake II base room"></a>
-        <figcaption>q2arpg, a re-release game mod, running unchanged: its vendor, minimap and stat colors are
-          drawn by the mod's own client game.</figcaption>
-      </figure>
-      <figure class="wide">
-        <a href="assets/img/weapon-wheel.jpg"><img src="assets/img/weapon-wheel.jpg" width="2560" height="1440" loading="lazy"
-          alt="A ring of weapon icons around the screen center, the pointed one named in the middle"></a>
-        <figcaption>The weapon wheel (hold Q): weapons in a ring, the pointed one's name and ammo in the
-          middle.</figcaption>
-      </figure>
-      <figure class="wide">
-        <a href="assets/img/console.jpg"><img src="assets/img/console.jpg" width="2560" height="1440" loading="lazy"
-          alt="A dark see-through console over the game, text in a clean monospaced font"></a>
-        <figcaption>The new console: see-through panel, Hack font, terminal layout.</figcaption>
-      </figure>
-      <figure>
-        <a href="assets/img/kill-feed.jpg"><img src="assets/img/kill-feed.jpg" width="2560" height="1440" loading="lazy"
-          alt="Two chat lines in the top-left corner over a Quake II base room"></a>
-        <figcaption>Chat and the kill feed in the top-left corner, drawn by the re-release client game.</figcaption>
-      </figure>
-      <figure>
-        <a href="assets/img/q2arpg-minimap.jpg"><img src="assets/img/q2arpg-minimap.jpg" width="2560" height="1440" loading="lazy"
-          alt="A large see-through green map overlay showing the explored rooms"></a>
-        <figcaption>q2arpg's minimap: see-through boxes from the client game, which used to go missing.</figcaption>
-      </figure>
-    </div>
-  </div>
-</section>
 
-<section id="m2">
-  <div class="wrap">
-    <h2>M2 so far</h2>
-    <p class="lead">M2 moves what a mod might change out of the engine and into game code or data files. In the
-      M2 preview: the HUD, player movement and every effect the server triggers come from the game library, mods
-      stack and bring their own scripts and definitions, monsters find their way to you, the re-release's
-      episodes are playable from the menu, and game libraries built for the re-release run unchanged.</p>
-    <div class="features">
       <div class="feature">
         <h3>Re-release episodes</h3>
         <p>With the 2023 re-release data, the Game menu lists Quake II, The Reckoning, Ground Zero, Call of the
@@ -209,6 +213,34 @@
       </div>
     </div>
     <div class="gallery" style="margin-top:16px">
+      <figure class="wide">
+        <a href="assets/img/q2arpg-vendor.jpg"><img src="assets/img/q2arpg-vendor.jpg" width="2560" height="1440" loading="lazy"
+          alt="A vendor menu listing guns with rarity, damage and price, over a Quake II base room"></a>
+        <figcaption>q2arpg, a re-release game mod, running unchanged: its vendor, minimap and stat colors are
+          drawn by the mod's own client game.</figcaption>
+      </figure>
+      <figure class="wide">
+        <a href="assets/img/weapon-wheel.jpg"><img src="assets/img/weapon-wheel.jpg" width="2560" height="1440" loading="lazy"
+          alt="A ring of weapon icons around the screen center, the pointed one named in the middle"></a>
+        <figcaption>The weapon wheel (hold Q): weapons in a ring, the pointed one's name and ammo in the
+          middle.</figcaption>
+      </figure>
+      <figure class="wide">
+        <a href="assets/img/console.jpg"><img src="assets/img/console.jpg" width="2560" height="1440" loading="lazy"
+          alt="A dark see-through console over the game, text in a clean monospaced font"></a>
+        <figcaption>The new console: see-through panel, Hack font, terminal layout.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/kill-feed.jpg"><img src="assets/img/kill-feed.jpg" width="2560" height="1440" loading="lazy"
+          alt="Two chat lines in the top-left corner over a Quake II base room"></a>
+        <figcaption>Chat and the kill feed in the top-left corner, drawn by the re-release client game.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/q2arpg-minimap.jpg"><img src="assets/img/q2arpg-minimap.jpg" width="2560" height="1440" loading="lazy"
+          alt="A large see-through green map overlay showing the explored rooms"></a>
+        <figcaption>q2arpg's minimap: see-through boxes from the client game, which used to go missing.</figcaption>
+      </figure>
+
       <figure class="wide">
         <a href="assets/img/q64-complex.jpg"><img src="assets/img/q64-complex.jpg" width="1600" height="900" loading="lazy"
           alt="A Quake II 64 level: a riveted metal room with a blue lit window ahead"></a>
@@ -471,7 +503,7 @@
     <div class="two-col">
       <div>
         <h3>Play</h3>
-        <p>Download the <a href="https://github.com/Rizilla-OG/OPtech2/releases/tag/m2-preview-3">M2 preview</a> for
+        <p>Download the <a href="https://github.com/Rizilla-OG/OPtech2/releases/tag/m2-preview-4">M2 preview</a> for
           Windows (64 or 32 bit) or Linux x86_64, an interim build of the modding work so far. You need the Quake II
           game data (Steam or GOG, the folder holding <code>baseq2</code>).</p>
         <pre><code>Windows:  OpenTech2.exe -datadir "C:\Path\To\Quake 2"

@@ -29,7 +29,10 @@ and assets keep loading and serve as test content.
   game libraries (game API 2023: id's game and mods built on it, such as q2arpg) with their saves,
   level changes and movement prediction, weapon and powerup wheels (hold Q / E), kill feed and chat,
   colored text, autosave and Restart level, WASD default keys, a modern console (see-through panel,
-  Hack TrueType font), and the Vulkan renderer in the default build. Network protocol 2026.
+  Hack TrueType font), the Vulkan renderer in the default build, and the re-release's game features in
+  the stock game: compass trail, co-op squad respawn and lives, end-of-unit screen, re-release weapon and
+  monster balance (`g_classic_balance 1` for the original), monsters that see before they listen, and
+  footsteps by floor material. Two full code reviews with every finding fixed. Network protocol 2027.
 
 Downloads (pre-releases, Windows and Linux): https://github.com/Rizilla-OG/OPtech2/releases
 

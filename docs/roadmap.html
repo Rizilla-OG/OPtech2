@@ -27,7 +27,7 @@
     <a class="back" href="./">&larr; OpenTech2</a>
     <h1>Roadmap</h1>
     <p class="lead">Six milestones, in order. Each builds on the data formats the one before it settles.
-      M0 and M1 are done; M2, the modding milestone, is over a third of the way through.</p>
+      M0 and M1 are done; M2, the modding milestone, is close to half way through.</p>
     <p class="updated">Updated 2026-11-21</p>
     <div class="legend">
       <span><i class="mark done"></i>Done</span>
@@ -52,21 +52,21 @@
           modern sound formats, savegames that survive code changes, 60 Hz simulation.</p>
       </li>
       <li class="milestone next">
-        <span class="id">M2</span><h3>Modding and gameplay systems</h3><span class="status">IN PROGRESS · 8 / 21</span>
+        <span class="id">M2</span><h3>Modding and gameplay systems</h3><span class="status">IN PROGRESS · 9 / 21</span>
         <p>Move everything a mod might change out of the engine and into game code or data files.</p>
-        <div class="bar" aria-label="8 of 21 tasks done, 1 partly"><i style="width:38%"></i></div>
+        <div class="bar" aria-label="9 of 21 tasks done"><i style="width:43%"></i></div>
       </li>
     </ol>
 
     <div class="task-groups">
       <div class="task-group">
-        <h3>Client game module <span>3 / 5</span></h3>
+        <h3>Client game module <span>4 / 5</span></h3>
         <ul class="tasks">
           <li class="done">Client game API (the 2022 re-release cgame API)</li>
           <li class="done">HUD in the module (id's re-release HUD code)</li>
           <li class="done">Effects in the module: explosions, beams, muzzle flashes, trails, footsteps</li>
           <li>Menus in the module or a data-driven UI</li>
-          <li class="part">Match the re-release APIs so re-release mods load unchanged: client side done, server side next</li>
+          <li class="done">Match the re-release APIs so re-release mods load unchanged: client and server game APIs, with the re-release's features (compass, wheels, co-op lives, end-of-unit screen, debug drawing, monster paths); bots come later</li>
         </ul>
         <p class="note">Still drawn by the engine: an entity's own model (powerup shells, translucency, linked weapons).</p>
       </div>
@@ -98,7 +98,7 @@
       <div class="task-group">
         <h3>Gameplay systems <span>1 / 5</span></h3>
         <ul class="tasks">
-          <li class="done">Monster navigation (Recast / Detour): a navigation mesh built for every map in three monster sizes, with ledge drops; walking monsters follow it. Lifts and the re-release's jump and ladder links next</li>
+          <li class="done">Monster navigation (Recast / Detour): a navigation mesh built for every map in three monster sizes, with ledge drops; walking monsters follow it, ride lifts, and use the re-release's jump, leap, ladder and teleporter links</li>
           <li>Animation system on IQM: blending, layers, events</li>
           <li>Physics: Jolt for rigid bodies, ragdolls and debris</li>
           <li>Scalable Unicode text; HUD and menus that scale</li>
@@ -156,7 +156,7 @@
     <nav>
       <a href="./">Home</a>
       <a href="https://github.com/Rizilla-OG/OPtech2">GitHub</a>
-      <a href="https://github.com/Rizilla-OG/OPtech2/releases/tag/m2-preview-2">M2 preview</a>
+      <a href="https://github.com/Rizilla-OG/OPtech2/releases/tag/m2-preview-4">M2 preview</a>
       <a href="https://github.com/Rizilla-OG/OPtech2/blob/main/CHANGES.md">Changes</a>
     </nav>
     <p>OpenTech2 is based on <a href="https://github.com/yquake2/yquake2remaster">Yamagi Quake II Remaster</a> and
