@@ -7,6 +7,8 @@ Thanks for helping. OpenTech2 is a hobby project, so small, focused changes are 
 - For anything bigger than a small fix, open an issue first so we can agree on the approach.
   The [roadmap](https://rizilla-og.github.io/OPtech2/roadmap.html) shows what is planned and in which order.
 - Security problems: don't open a public issue, see [SECURITY.md](SECURITY.md).
+- Everyone taking part in issues, pull requests and discussions follows the
+  [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Build and test
 
