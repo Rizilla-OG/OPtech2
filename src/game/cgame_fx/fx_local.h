@@ -98,6 +98,7 @@ extern fx_client_state_t fx_cl;
 #define cl fx_cl
 
 void FX_RefreshState(void);
+void CL_NewFrameTEntSounds(void); /* optech2 */
 
 /* messages: the engine's current temp entity message */
 #define MSG_ReadByte(msg) fxi->ReadByte()

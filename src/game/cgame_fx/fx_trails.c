@@ -1004,6 +1004,10 @@ FX_EntityTrails(optech2_fx_entity_t *info)
 	centity_t entity_state;
 	centity_t *cent = &entity_state;
 	entity_t entity;
+
+	/* optech2: this frame's client state (trails run before the frame's
+	   effects, which refreshed it until now) */
+	FX_RefreshState();
 	entity_t ent;
 	unsigned int effects = info->effects;
 

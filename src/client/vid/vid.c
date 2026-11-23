@@ -370,6 +370,7 @@ VID_ShutdownRenderer(void)
 		memset(&re, 0, sizeof(re));
 
 		CL_ClearTEntModels();
+		CL_CGame_ClearModels(); /* optech2: the game library's effects too */
 	}
 
 	/* Declare the refresher as inactive */

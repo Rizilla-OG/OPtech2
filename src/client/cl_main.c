@@ -614,6 +614,7 @@ CL_Snd_Restart_f(void)
 	S_Init();
 
 	CL_RegisterSounds();
+	CL_CGame_RegisterEffects(); /* optech2: the game library's effect sounds */
 
 	OGG_InitTrackList();
 	OGG_RecoverState();

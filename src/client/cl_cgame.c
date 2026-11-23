@@ -891,6 +891,16 @@ CL_CGame_AddEffects(void)
 	}
 }
 
+/* the renderer is going away: the game library's effects drop their models */
+void
+CL_CGame_ClearModels(void)
+{
+	if (cgame_fx && cgame_fx->ClearModels)
+	{
+		cgame_fx->ClearModels();
+	}
+}
+
 /* forget the game library's effects (level change, disconnect) */
 void
 CL_CGame_ClearEffects(void)

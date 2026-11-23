@@ -51,7 +51,7 @@ typedef struct
  * ones; types it doesn't handle get the engine's built-in effects.
  */
 #define OPTECH2_EXT_FX "optech2_fx"
-#define OPTECH2_FX_EXT_VERSION 5
+#define OPTECH2_FX_EXT_VERSION 6 /* optech2: 6 adds ClearModels */
 
 struct sfx_s;
 struct model_s;
@@ -147,7 +147,8 @@ typedef struct
 	int (*Time)(void);
 	int (*Rand)(void);
 
-	/* effects; NULL when the particle list is full */
+	/* effects. AllocParticle is NULL when the particle list is full;
+	   AllocDlight never is (it reuses the oldest light) */
 	optech2_particle_t *(*AllocParticle)(void);
 	optech2_dlight_t *(*AllocDlight)(int key);
 
@@ -197,7 +198,8 @@ typedef struct
 	   and return true, or return false to leave it to the engine */
 	qboolean (*EntityEvent)(int number, int event, const vec3_t origin);
 
-	/* register models and sounds; at each level load */
+	/* register models and sounds; at each level load, and again after
+	   snd_restart (sounds registered before are gone then) */
 	void (*RegisterMedia)(void);
 
 	/* add this frame's effects (explosions, beams, lasers...) */
@@ -205,6 +207,10 @@ typedef struct
 
 	/* forget all effects (level change, disconnect) */
 	void (*ClearEffects)(void);
+
+	/* the renderer is going away (vid_restart): drop every model pointer
+	   effects hold; they are registered again with RegisterMedia */
+	void (*ClearModels)(void);
 } optech2_fx_ext_t;
 
 /*

@@ -528,7 +528,8 @@ qboolean CL_CGame_EntityTrails(centity_t *cent, const entity_xstate_t *s1, unsig
 void CL_CGame_RegisterEffects(void); /* optech2 */
 void CL_CGame_NewLevel(void); /* optech2 */
 void CL_CGame_AddEffects(void); /* optech2 */
-void CL_CGame_ClearEffects(void); /* optech2 */
+void CL_CGame_ClearEffects(void);
+void CL_CGame_ClearModels(void); /* optech2 */
 void CL_CGame_DrawHUD(void);
 void CL_CGame_CenterPrint(const char *text, qboolean typewriter);
 qboolean CL_CGame_HasNotify(void);

@@ -29,6 +29,7 @@ void CL_RegisterTEntModels(void);
 void CL_RegisterTEntSounds(void);
 void CL_AddTEnts(void);
 void CL_ClearTEnts(void);
+void CL_ClearTEntModels(void);
 
 void
 FX_RefreshState(void)
@@ -71,6 +72,7 @@ static qboolean
 FX_ParseTempEntity(int type)
 {
 	FX_RefreshState();
+	CL_NewFrameTEntSounds();
 	return CL_ParseTEnt(type);
 }
 
@@ -120,6 +122,13 @@ static void
 FX_ClearEffects(void)
 {
 	CL_ClearTEnts();
+	memset(&fx_cl, 0, sizeof(fx_cl)); /* optech2: no client state from the last level */
+}
+
+static void
+FX_ClearModels(void)
+{
+	CL_ClearTEntModels();
 }
 
 const optech2_fx_ext_t fx_extension = {
@@ -131,4 +140,5 @@ const optech2_fx_ext_t fx_extension = {
 	FX_EntityEvent,
 	FX_RegisterMedia,
 	FX_AddFrameEffects,
-	FX_ClearEffects};
+	FX_ClearEffects,
+	FX_ClearModels};

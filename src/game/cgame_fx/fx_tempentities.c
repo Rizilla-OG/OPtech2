@@ -1772,6 +1772,21 @@ CL_ProcessSustain()
 	}
 }
 
+/* optech2: a new client frame: power screen hit sounds count from 0 again
+   (the engine reset its counter each frame; drawing frames alone missed
+   frames without one) */
+void
+CL_NewFrameTEntSounds(void)
+{
+	static int last_time = -1;
+
+	if (fx_cl.time != last_time)
+	{
+		last_time = fx_cl.time;
+		num_power_sounds = 0;
+	}
+}
+
 void
 CL_AddTEnts(void)
 {
