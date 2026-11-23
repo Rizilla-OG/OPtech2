@@ -109,11 +109,8 @@ something unfinished; remove an entry in the commit that fixes it.
   gekk and stalker keep theirs; berserker had the shared one already.
 - Per-monster re-release tweaks done: soldier, tank, mutant, medic, iron
   maiden, hornet (incl. Quake II 64's), supertank grenades, stalker, carrier,
-  gekk. Not ported: infantry run-and-shoot and gun cocking (needs the
-  re-release infantry model's 47 extra frames: run201-208, attak301-315,
-  attak401-424; would need a frame-count check to keep the classic model
-  working), tank dropped arm on death (re-release gib model barm.md2),
-  flyer pinning (part of the re-release's alternate flying), boss attack
+  gekk; infantry cocking and run-and-shoot, tank dropped arm (both only
+  with the re-release data, detected at run time). Not ported: flyer pinning (part of the re-release's alternate flying), boss attack
   checks via M_CheckAttack_Base (same numbers as ours), Makron health bar
   handover (we have no boss health bars).
 

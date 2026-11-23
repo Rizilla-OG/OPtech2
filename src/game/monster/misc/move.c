@@ -1594,6 +1594,31 @@ M_MoveToGoal(edict_t *ent, float dist)
 	}
 }
 
+/* optech2: re-release ai_check_move: could the monster step dist units
+   straight ahead (no wall, no ledge)? Doesn't move it */
+qboolean
+ai_check_move(edict_t *self, float dist)
+{
+	vec3_t move, old_origin;
+	float yaw;
+	qboolean possible;
+
+	if (!self)
+	{
+		return false;
+	}
+
+	yaw = self->s.angles[YAW] * M_PI * 2 / 360;
+	VectorSet(move, cos(yaw) * dist, sin(yaw) * dist, 0);
+	VectorCopy(self->s.origin, old_origin);
+
+	possible = SV_movestep(self, move, false);
+
+	VectorCopy(old_origin, self->s.origin);
+	gi.linkentity(self);
+	return possible;
+}
+
 qboolean
 M_walkmove(edict_t *ent, float yaw, float dist)
 {

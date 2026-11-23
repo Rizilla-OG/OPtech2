@@ -1190,6 +1190,58 @@ static const mmove_t tank_move_death_static = {
 	tank_dead
 };
 
+/* optech2: the re-release's tank drops its left arm when it dies (its
+   death animation lacks the arm), a gib only the re-release data has;
+   the classic model keeps its arm */
+#define TANK_ARM_GIB "models/monsters/tank/gibs/barm.md2"
+
+static qboolean
+tank_has_arm_gib(void)
+{
+	static int has_arm_gib = -1; /* checked once */
+
+	if (has_arm_gib < 0)
+	{
+		has_arm_gib = (gi.LoadFile(TANK_ARM_GIB, NULL) > 0) ? 1 : 0;
+	}
+
+	return has_arm_gib;
+}
+
+static void
+tank_drop_arm(edict_t *self, int damage)
+{
+	vec3_t forward, right, up;
+	edict_t *arm;
+
+	/* not the vault tank: a model of its own */
+	if (self->style || !tank_has_arm_gib() || !strcmp(self->classname, "monster_tankv"))
+	{
+		return;
+	}
+
+	self->style = 1; /* dropped */
+
+	arm = ThrowGib(self, TANK_ARM_GIB, damage, GIB_METALLIC);
+
+	if (!arm)
+	{
+		return;
+	}
+
+	AngleVectors(self->s.angles, forward, right, up);
+	VectorMA(self->s.origin, -16, right, arm->s.origin);
+	VectorMA(arm->s.origin, 23, up, arm->s.origin);
+	VectorCopy(arm->s.origin, arm->s.old_origin);
+	VectorSet(arm->avelocity, crandom() * 15, crandom() * 15, 180);
+	VectorScale(up, 100, arm->velocity);
+	VectorMA(arm->velocity, -120, right, arm->velocity);
+	VectorCopy(self->s.angles, arm->s.angles);
+	arm->s.angles[ROLL] = -90;
+	arm->s.skinnum = self->s.skinnum / 2;
+	gi.linkentity(arm);
+}
+
 void
 tank_die(edict_t *self, edict_t *inflictor /* unused */,
 		edict_t *attacker /* unused */, int damage,
@@ -1220,6 +1272,7 @@ tank_die(edict_t *self, edict_t *inflictor /* unused */,
 		ThrowGib(self, "models/objects/gibs/chest/tris.md2",
 				damage, GIB_ORGANIC);
 		ThrowHead(self, NULL, damage, GIB_METALLIC);
+		tank_drop_arm(self, damage); /* optech2 */
 		self->deadflag = DEAD_DEAD;
 		return;
 	}
@@ -1228,6 +1281,8 @@ tank_die(edict_t *self, edict_t *inflictor /* unused */,
 	{
 		return;
 	}
+
+	tank_drop_arm(self, damage); /* optech2 */
 
 	/* regular death */
 	gi.sound(self, CHAN_VOICE, sound_die, 1, ATTN_NORM, 0);
@@ -1338,6 +1393,11 @@ SP_monster_tank(edict_t *self)
 	else
 	{
 		self->s.modelindex = gi.modelindex("models/monsters/tank/tris.md2");
+
+		if (tank_has_arm_gib()) /* optech2: precache the dropped arm */
+		{
+			gi.modelindex(TANK_ARM_GIB);
+		}
 	}
 
 	monster_tank_fix(self);

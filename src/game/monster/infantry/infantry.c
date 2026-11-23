@@ -51,6 +51,10 @@ mmove_t infantry_move_jump = {0};
 mmove_t infantry_move_jump2 = {0};
 mmove_t infantry_move_attack1 = {0};
 mmove_t infantry_move_attack2 = {0};
+mmove_t infantry_move_attack1_rr; /* optech2: re-release model only, below */
+mmove_t infantry_move_attack3;
+mmove_t infantry_move_attack4;
+mmove_t infantry_move_attack5;
 mmove_t infantry_move_duck = {0};
 mmove_t infantry_move_pain1 = {0};
 mmove_t infantry_move_pain2 = {0};
@@ -377,10 +381,26 @@ InfantryMachineGun(edict_t *self)
 		return;
 	}
 
-	/* new attack start frame */
-	if (self->s.frame == (infantry_move_attack1.firstframe + 3))
+	/* new attack start frame; optech2: and the re-release model's aimed
+	   shots: attack1's earlier shot (103), the cock-and-shoot attacks
+	   (311, 416) and run-and-shoot (run201-208) */
+	if ((self->s.frame == (infantry_move_attack1.firstframe + 3)) ||
+		(self->s.frame == FRAME_attak103) || (self->s.frame == FRAME_attak311) ||
+		(self->s.frame == FRAME_attak416) ||
+		((self->s.frame >= FRAME_run201) && (self->s.frame <= FRAME_run208)))
 	{
-		flash_number = MZ2_INFANTRY_MACHINEGUN_1;
+		if ((self->s.frame >= FRAME_run201) && (self->s.frame <= FRAME_run208))
+		{
+			flash_number = MZ2_INFANTRY_MACHINEGUN_14 + (self->s.frame - FRAME_run201);
+		}
+		else if (self->s.frame == FRAME_attak416)
+		{
+			flash_number = MZ2_INFANTRY_MACHINEGUN_22;
+		}
+		else
+		{
+			flash_number = MZ2_INFANTRY_MACHINEGUN_1;
+		}
 		AngleVectors(self->s.angles, forward, right, NULL);
 		M_ProjectFlashSource(self, monster_flash_offset[flash_number],
 				forward, right, start);
@@ -985,7 +1005,10 @@ infantry_duck(edict_t *self, float eta)
 	}
 
 	if ((self->monsterinfo.currentmove == &infantry_move_attack1) ||
-		(self->monsterinfo.currentmove == &infantry_move_attack2))
+		(self->monsterinfo.currentmove == &infantry_move_attack2) ||
+		(self->monsterinfo.currentmove == &infantry_move_attack1_rr) || /* optech2 */
+		(self->monsterinfo.currentmove == &infantry_move_attack3) ||
+		(self->monsterinfo.currentmove == &infantry_move_attack5))
 	{
 		/* if we're shooting, and not on easy, don't dodge */
 		if (skill->value > SKILL_EASY)
@@ -1013,6 +1036,255 @@ infantry_duck(edict_t *self, float eta)
 	return;
 }
 
+/*
+ * optech2: the re-release's infantry attacks, used when the model has its
+ * extra frames (the re-release data; the classic model keeps the stock
+ * attack). The gun has to be cocked before each burst (count): a cocked
+ * infantry fires straight away (attack1_rr), else it cocks and fires
+ * (attack3, now and then the older attack5). Bursts last 0.7-2 s; from
+ * 375 units out, with room ahead, it runs and shoots instead (attack4,
+ * inspired by q2test) until the burst ends or it gets close.
+ */
+#define INFANTRY_RUN_ATTACK_RANGE 375 /* the re-release's RANGE_NEAR * 0.75 */
+
+static qboolean
+infantry_has_rr_frames(edict_t *self)
+{
+	return M_ModelNumFrames(self) > FRAME_run208;
+}
+
+static void
+infantry_set_firetime_rr(edict_t *self)
+{
+	if (!self)
+	{
+		return;
+	}
+
+	self->monsterinfo.pausetime = level.time + 0.7f + random() * 1.3f;
+
+	if (!(self->monsterinfo.aiflags & AI_STAND_GROUND) && self->enemy &&
+		(realrange(self, self->enemy) >= INFANTRY_RUN_ATTACK_RANGE) && ai_check_move(self, 8.0f))
+	{
+		self->monsterinfo.currentmove = &infantry_move_attack4;
+	}
+}
+
+static void
+infantry_set_firetime_footstep(edict_t *self)
+{
+	infantry_set_firetime_rr(self);
+	infantry_footstep(self);
+}
+
+static void
+infantry_cock_gun_rr(edict_t *self)
+{
+	if (!self)
+	{
+		return;
+	}
+
+	gi.sound(self, CHAN_WEAPON, sound_weapon_cock, 1, ATTN_NORM, 0);
+	self->count = 1; /* gun cocked */
+}
+
+static void
+infantry_fire_rr(edict_t *self)
+{
+	if (!self)
+	{
+		return;
+	}
+
+	InfantryMachineGun(self);
+
+	/* fired: it has to cock again before the next burst */
+	self->count = 0;
+
+	if (self->monsterinfo.currentmove == &infantry_move_attack4)
+	{
+		if (level.time >= self->monsterinfo.pausetime)
+		{
+			/* out of firing time */
+			monster_done_dodge(self);
+			self->monsterinfo.currentmove = &infantry_move_attack1_rr;
+			self->monsterinfo.nextframe = FRAME_attak114;
+		}
+		else if (!ai_check_move(self, 8.0f))
+		{
+			/* near an edge or a wall */
+			self->monsterinfo.currentmove = &infantry_move_attack1_rr;
+			self->monsterinfo.nextframe = FRAME_attak103;
+			monster_done_dodge(self);
+			self->monsterinfo.attack_state = AS_STRAIGHT;
+		}
+	}
+	else if (level.time >= self->monsterinfo.pausetime)
+	{
+		self->monsterinfo.aiflags &= ~AI_HOLD_FRAME;
+
+		if (self->s.frame == FRAME_attak416)
+		{
+			self->monsterinfo.nextframe = FRAME_attak420;
+		}
+	}
+	else
+	{
+		self->monsterinfo.aiflags |= AI_HOLD_FRAME;
+	}
+}
+
+static void
+infantry_fire_footstep(edict_t *self)
+{
+	infantry_footstep(self);
+	infantry_fire_rr(self);
+}
+
+static void
+infantry_skip_cock(edict_t *self)
+{
+	self->monsterinfo.nextframe = FRAME_attak114;
+	infantry_footstep(self);
+}
+
+static void
+infantry_next_frame(edict_t *self)
+{
+	self->monsterinfo.nextframe = self->s.frame + 1;
+}
+
+static void
+infantry_attack4_refire(edict_t *self)
+{
+	if (!self)
+	{
+		return;
+	}
+
+	if (level.time >= self->monsterinfo.pausetime)
+	{
+		/* out of firing time */
+		monster_done_dodge(self);
+		self->monsterinfo.currentmove = &infantry_move_attack1_rr;
+		self->monsterinfo.nextframe = FRAME_attak114;
+	}
+	else if ((self->monsterinfo.aiflags & AI_STAND_GROUND) || (self->enemy &&
+																  ((realrange(self, self->enemy) < INFANTRY_RUN_ATTACK_RANGE) || !ai_check_move(self, 8.0f))))
+	{
+		/* too close, or no room ahead: back to standing and shooting */
+		self->monsterinfo.currentmove = &infantry_move_attack1_rr;
+		self->monsterinfo.nextframe = FRAME_attak103;
+		monster_done_dodge(self);
+		self->monsterinfo.attack_state = AS_STRAIGHT;
+	}
+	else
+	{
+		self->monsterinfo.nextframe = FRAME_run201;
+	}
+
+	infantry_fire_rr(self);
+}
+
+/* cock-less attack, when the gun is already cocked */
+static mframe_t infantry_frames_attack1_rr[] = {
+	{ai_charge, 0, NULL},
+	{ai_charge, 6, infantry_set_firetime_footstep},
+	{ai_charge, 0, infantry_fire_rr},
+	{ai_charge, 0, NULL},
+	{ai_charge, 1, NULL},
+	{ai_charge, -7, NULL},
+	{ai_charge, -6, infantry_skip_cock},
+	/* the stock cock frames, skipped */
+	{ai_charge, -1, NULL},
+	{ai_charge, 0, infantry_cock_gun_rr},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, -1, NULL},
+	{ai_charge, -1, NULL}};
+
+mmove_t infantry_move_attack1_rr = {
+	FRAME_attak101,
+	FRAME_attak115,
+	infantry_frames_attack1_rr,
+	infantry_run};
+
+/* the newer full cock and shoot */
+static mframe_t infantry_frames_attack3[] = {
+	{ai_charge, 4, NULL},
+	{ai_charge, -1, NULL},
+	{ai_charge, -1, NULL},
+	{ai_charge, 0, infantry_cock_gun_rr},
+	{ai_charge, -1, NULL},
+	{ai_charge, 1, NULL},
+	{ai_charge, 1, NULL},
+	{ai_charge, 2, NULL},
+	{ai_charge, -2, NULL},
+	{ai_charge, -3, infantry_set_firetime_footstep},
+	{ai_charge, 1, infantry_fire_rr},
+	{ai_charge, 5, NULL},
+	{ai_charge, -1, NULL},
+	{ai_charge, -2, NULL},
+	{ai_charge, -3, NULL}};
+
+mmove_t infantry_move_attack3 = {
+	FRAME_attak301,
+	FRAME_attak315,
+	infantry_frames_attack3,
+	infantry_run};
+
+/* the older full cock and shoot */
+static mframe_t infantry_frames_attack5[] = {
+	{ai_charge, 0, NULL}, /* skipped */
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, infantry_footstep},
+	{ai_charge, 0, infantry_cock_gun_rr},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, infantry_next_frame},
+	{ai_charge, 0, NULL}, /* skipped */
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, infantry_set_firetime_rr},
+	{ai_charge, 0, infantry_fire_rr},
+	{ai_charge, 0, NULL}, /* skipped */
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, infantry_footstep}};
+
+mmove_t infantry_move_attack5 = {
+	FRAME_attak401,
+	FRAME_attak423,
+	infantry_frames_attack5,
+	infantry_run};
+
+/* run and shoot */
+static mframe_t infantry_frames_attack4[] = {
+	{ai_charge, 16, infantry_fire_rr},
+	{ai_charge, 16, infantry_fire_footstep},
+	{ai_charge, 13, infantry_fire_rr},
+	{ai_charge, 10, infantry_fire_rr},
+	{ai_charge, 16, infantry_fire_rr},
+	{ai_charge, 16, infantry_fire_footstep},
+	{ai_charge, 16, infantry_fire_rr},
+	{ai_charge, 16, infantry_attack4_refire}};
+
+mmove_t infantry_move_attack4 = {
+	FRAME_run201,
+	FRAME_run208,
+	infantry_frames_attack4,
+	infantry_run};
+
 void
 infantry_attack(edict_t *self)
 {
@@ -1030,7 +1302,23 @@ infantry_attack(edict_t *self)
 	/* optech2: shoot only with a clear shot (re-release); else keep running */
 	else if (M_CheckClearShot(self, monster_flash_offset[MZ2_INFANTRY_MACHINEGUN_1], NULL))
 	{
-		self->monsterinfo.currentmove = &infantry_move_attack1;
+		if (!infantry_has_rr_frames(self))
+		{
+			self->monsterinfo.currentmove = &infantry_move_attack1;
+		}
+		else if (self->count)
+		{
+			self->monsterinfo.currentmove = &infantry_move_attack1_rr;
+		}
+		else if (random() <= 0.1f)
+		{
+			self->monsterinfo.currentmove = &infantry_move_attack5;
+			self->monsterinfo.nextframe = FRAME_attak405;
+		}
+		else
+		{
+			self->monsterinfo.currentmove = &infantry_move_attack3;
+		}
 	}
 }
 
@@ -1049,8 +1337,28 @@ infantry_sidestep(edict_t *self)
 		return;
 	}
 
+	/* optech2: with the re-release frames, a sidestep at the moment of
+	   firing turns into running and shooting (re-release) */
+	if (infantry_has_rr_frames(self) && (self->monsterinfo.currentmove != &infantry_move_attack4) &&
+		((self->s.frame == FRAME_attak103) || (self->s.frame == FRAME_attak311) ||
+			(self->s.frame == FRAME_attak416)) &&
+		!self->count)
+	{
+		self->monsterinfo.pausetime += 0.3f + random() * 0.3f;
+		self->monsterinfo.currentmove = &infantry_move_attack4;
+		return;
+	}
+
+	if (self->monsterinfo.currentmove == &infantry_move_attack4)
+	{
+		return;
+	}
+
 	if ((self->monsterinfo.currentmove == &infantry_move_attack1) ||
-		(self->monsterinfo.currentmove == &infantry_move_attack2))
+		(self->monsterinfo.currentmove == &infantry_move_attack2) ||
+		(self->monsterinfo.currentmove == &infantry_move_attack1_rr) || /* optech2 */
+		(self->monsterinfo.currentmove == &infantry_move_attack3) ||
+		(self->monsterinfo.currentmove == &infantry_move_attack5))
 	{
 		/* if we're shooting, and not on easy, don't dodge */
 		if (skill->value > SKILL_EASY)

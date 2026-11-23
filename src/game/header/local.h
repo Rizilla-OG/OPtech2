@@ -1219,7 +1219,7 @@ void monster_done_dodge(edict_t *self);
 /* g_misc.c */
 void ThrowHead(edict_t *self, const char *gibname, int damage, gibtype_t type);
 void ThrowClientHead(edict_t *self, int damage);
-void ThrowGib(edict_t *self, const char *gibname, int damage, gibtype_t type);
+edict_t *ThrowGib(edict_t *self, const char *gibname, int damage, gibtype_t type);
 void BecomeExplosion1(edict_t *self);
 void ThrowHeadACID(edict_t *self, const char *gibname, int damage, gibtype_t type);
 void ThrowGibACID(edict_t *self, const char *gibname, int damage, gibtype_t type);
@@ -1399,6 +1399,8 @@ byte P_DamageModifier(const edict_t *ent);
 /* m_move.c */
 qboolean M_CheckBottom(edict_t *ent);
 qboolean M_walkmove(edict_t *ent, float yaw, float dist);
+qboolean ai_check_move(edict_t *self, float dist); /* optech2 */
+int M_ModelNumFrames(edict_t *self); /* optech2 */
 void M_MoveToGoal(edict_t *ent, float dist);
 void M_ChangeYaw(edict_t *ent);
 void M_SetAnimGroupFrame(edict_t *self, const char *name, qboolean fixpos);

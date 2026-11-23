@@ -943,6 +943,30 @@ M_GetModelIndex(edict_t *self)
 	return modelindex;
 }
 
+/* optech2: how many animation frames the monster's model has. Some
+   re-release models add frames at the end (the infantry's run-and-shoot):
+   the classic data's don't, so monsters check before using them */
+int
+M_ModelNumFrames(edict_t *self)
+{
+	const dmdxframegroup_t *groups;
+	int num_groups, i, num_frames = 0;
+
+	if (!self)
+	{
+		return 0;
+	}
+
+	groups = gi.GetModelInfo(M_GetModelIndex(self), &num_groups, NULL, NULL);
+
+	for (i = 0; groups && (i < num_groups); i++)
+	{
+		num_frames = Q_max(num_frames, groups[i].ofs + groups[i].num);
+	}
+
+	return num_frames;
+}
+
 static qboolean
 M_SetAnimGroupFrameValuesInt(edict_t *self, const char *name,
 	int *ofs_frames, int *num_frames, int select)

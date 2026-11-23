@@ -199,7 +199,7 @@ gib_die(edict_t *self, edict_t *inflictor /* unused */, edict_t *attacker /* unu
 	G_FreeEdict(self);
 }
 
-void
+edict_t * /* optech2: the gib, or NULL, so callers can place it */
 ThrowGib(edict_t *self, const char *gibname, int damage, gibtype_t type)
 {
 	edict_t *gib;
@@ -210,7 +210,7 @@ ThrowGib(edict_t *self, const char *gibname, int damage, gibtype_t type)
 
 	if (!self)
 	{
-		return;
+		return NULL;
 	}
 
 	if (!gibname)
@@ -219,7 +219,7 @@ ThrowGib(edict_t *self, const char *gibname, int damage, gibtype_t type)
 		{
 			case GIB_NONE:
 				/* no gib expected */
-				return;
+				return NULL;
 			case GIB_ORGANIC:
 				gibname = "models/objects/gibs/sm_meat/tris.md2";
 				break;
@@ -228,20 +228,20 @@ ThrowGib(edict_t *self, const char *gibname, int damage, gibtype_t type)
 				break;
 			default:
 				/* unknow gib */
-				return;
+				return NULL;
 		}
 	}
 
 	if (gibsthisframe >= MAX_GIBS)
 	{
-		return;
+		return NULL;
 	}
 
 	gib = G_SpawnOptional();
 
 	if (!gib)
 	{
-		return;
+		return NULL;
 	}
 
 	gibsthisframe++;
@@ -286,6 +286,8 @@ ThrowGib(edict_t *self, const char *gibname, int damage, gibtype_t type)
 	gib->s.renderfx |= RF_IR_VISIBLE;
 
 	gi.linkentity(gib);
+
+	return gib;
 }
 
 void
