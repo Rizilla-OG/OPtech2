@@ -51,6 +51,11 @@ something unfinished; remove an entry in the commit that fixes it.
 
 ## Re-release support
 
+- Ghosting seen once (user, 2026-11-22, Vulkan, our game on re-release
+  data): a pistol soldier turning to face the player looked like several
+  copies of itself. Not reproduced since; no capture. If it comes back:
+  compare `vid_renderer gl3`, check angle lerp and the Vulkan alias model
+  path.
 - Re-release bots (deferred, the last open item of the re-release parity
   list): the re-release keeps its bot brain in the engine (`Bot_RegisterEdict`,
   `Bot_MoveToPoint`, `Bot_FollowActor` and the game's `Bot_*` exports), so its

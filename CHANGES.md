@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Fixed: the Plasma Beam vanished while firing on the re-release data: our game switches to the firing view model `v_beamer2`, which the re-release doesn't have (it changes the skin instead). It keeps the normal model when `v_beamer2` isn't in the data.
 - Fixed: hints with a key in them ("%bind:+wheel2:$map_item_wheel%...") showed the label as its localization key ("[q] $map_item_wheel"); the client game's bind drawing now localizes it ("[q] Open Equipment Wheel"). The end of unit screen no longer lists the intro cinematic ("ntro.cin") as a level: cinematics and pictures get no entry.
 - Our game uses the re-release's balance numbers where they differ from the 1997 ones: railgun 125 damage / 225 kick in single player (was 150 / 250), Disruptor 135 in single player and 45 in deathmatch (was 45 / 30), Jorg 8000 health (was 3000), Ground Zero turret 50 health (was 240), Infantry gib health -65 (was -40). `g_classic_balance 1` brings back the 1997 numbers (health on the next map). The chainfist keeps its numbers: the re-release halved them because it fires it faster. weapon-defs and monster-defs checks pin the classic numbers (they test definitions against the 150 railgun).
 - Fixed: the Widow's health multiplier (`health_multiplier` key, item/monster definitions) only scaled the skill part of her health; it scales all of it now, as in the re-release.

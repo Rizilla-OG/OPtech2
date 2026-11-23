@@ -3362,6 +3362,25 @@ Weapon_ETF_Rifle(edict_t *ent)
 	}
 }
 
+/*
+ * optech2: the Plasma Beam's firing view model. The original data has
+ * v_beamer2 (the spinning barrel); the re-release's has no such model (it
+ * changes the skin instead), so the gun vanished while firing there. Fall
+ * back to the normal model when v_beamer2 isn't in the data.
+ */
+static int
+Heatbeam_FiringModel(void)
+{
+	static int has_firing_model = -1; /* not looked yet */
+
+	if (has_firing_model < 0)
+	{
+		has_firing_model = (gi.LoadFile("models/weapons/v_beamer2/tris.md2", NULL) >= 0) ? 1 : 0;
+	}
+
+	return gi.modelindex(has_firing_model ? "models/weapons/v_beamer2/tris.md2" : "models/weapons/v_beamer/tris.md2");
+}
+
 static void
 Heatbeam_Fire(edict_t *ent)
 {
@@ -3388,7 +3407,7 @@ Heatbeam_Fire(edict_t *ent)
 	}
 
 	ent->client->ps.gunframe++;
-	ent->client->ps.gunindex = gi.modelindex("models/weapons/v_beamer2/tris.md2");
+	ent->client->ps.gunindex = Heatbeam_FiringModel();
 
 	if (is_quad)
 	{
@@ -3445,11 +3464,11 @@ Weapon_Heatbeam(edict_t *ent)
 			if (ent->client->ps.gunframe >= 13)
 			{
 				ent->client->ps.gunframe = 9;
-				ent->client->ps.gunindex = gi.modelindex("models/weapons/v_beamer2/tris.md2");
+				ent->client->ps.gunindex = Heatbeam_FiringModel();
 			}
 			else
 			{
-				ent->client->ps.gunindex = gi.modelindex("models/weapons/v_beamer2/tris.md2");
+				ent->client->ps.gunindex = Heatbeam_FiringModel();
 			}
 		}
 		else
