@@ -699,10 +699,62 @@ FoundTarget(edict_t *self)
  * player games will have slightly
  * slower noticing monsters.
  */
+/*
+ * optech2 (from the re-release): a player this monster can see right now
+ * (in front of it and in sight, or touching it), picked at random among
+ * them; NULL when none.
+ */
+static edict_t *
+AI_GetSightClient(edict_t *self)
+{
+	edict_t *visible_players[MAX_CLIENTS];
+	int visible_count = 0;
+	int i;
+
+	if (level.intermissiontime)
+	{
+		return NULL;
+	}
+
+	for (i = 1; i <= game.maxclients && visible_count < MAX_CLIENTS; i++)
+	{
+		edict_t *player = &g_edicts[i];
+		qboolean touching;
+
+		if (!player->inuse || !player->client || (player->health <= 0) || player->deadflag || !player->solid)
+		{
+			continue;
+		}
+
+		if (player->flags & (FL_NOTARGET | FL_DISGUISED))
+		{
+			continue;
+		}
+
+		touching = (self->absmin[0] <= player->absmax[0]) && (self->absmax[0] >= player->absmin[0]) &&
+				   (self->absmin[1] <= player->absmax[1]) && (self->absmax[1] >= player->absmin[1]) &&
+				   (self->absmin[2] <= player->absmax[2]) && (self->absmax[2] >= player->absmin[2]);
+
+		if (!touching && (!infront(self, player) || !visible(self, player)))
+		{
+			continue;
+		}
+
+		visible_players[visible_count++] = player;
+	}
+
+	if (!visible_count)
+	{
+		return NULL;
+	}
+
+	return visible_players[randk() % visible_count];
+}
+
 qboolean
 FindTarget(edict_t *self)
 {
-	edict_t *client;
+	edict_t *client = NULL;
 	qboolean heardit;
 	int think_frames; /* optech2 */
 
@@ -750,8 +802,19 @@ FindTarget(edict_t *self)
 		think_frames = 1;
 	}
 
-	if (level.sight_entity && (level.sight_entity_framenum >= (level.framenum - think_frames)) &&
-		!(self->spawnflags & SPAWNFLAG_MONSTER_AMBUSH))
+	/* optech2 (from the re-release): a player in plain sight comes first;
+	   checking noises first kept a monster turning to the noise of a gun
+	   fired every frame (standing and running in place) instead of seeing
+	   the player who fired it */
+	if ((client = AI_GetSightClient(self)))
+	{
+		if (client == self->enemy)
+		{
+			return false;
+		}
+	}
+	else if (level.sight_entity && (level.sight_entity_framenum >= (level.framenum - think_frames)) &&
+			 !(self->spawnflags & SPAWNFLAG_MONSTER_AMBUSH))
 	{
 		client = level.sight_entity;
 
@@ -1388,7 +1451,11 @@ ai_checkattack(edict_t *self)
 			return false;
 		}
 
-		if ((self->monsterinfo.aiflags & AI_SOUND_TARGET) && !visible(self, self->goalentity))
+		/* optech2 (from the re-release): a recent noise is chased even in
+		   sight; a visible one fell through to "is the enemy dead?", the
+		   noise has no health, so the monster dropped it and stood, heard
+		   the next shot and ran, every other frame */
+		if ((self->monsterinfo.aiflags & AI_SOUND_TARGET) && self->enemy)
 		{
 			if ((level.time - self->enemy->last_sound_time) > 5.0)
 			{
@@ -1875,12 +1942,17 @@ ai_run(edict_t *self, float dist)
 		if (tr.fraction < 1)
 		{
 			float left, center, right, d2;
+			float backup_yaw;
 			vec3_t v_forward, v_right;
 
 			VectorSubtract(self->goalentity->s.origin, self->s.origin, v);
 			d1 = VectorLength(v);
 			center = tr.fraction;
 			d2 = d1 * ((center + 1) / 2);
+			/* optech2 (from the re-release): face the goal only for the
+			   side traces below, then turn there as usual (setting the
+			   facing snapped the monster round in one frame) */
+			backup_yaw = self->s.angles[YAW];
 			self->s.angles[YAW] = self->ideal_yaw = vectoyaw(v);
 			AngleVectors(self->s.angles, v_forward, v_right, NULL);
 
@@ -1913,7 +1985,7 @@ ai_run(edict_t *self, float dist)
 				VectorCopy(left_target, self->goalentity->s.origin);
 				VectorCopy(left_target, self->monsterinfo.last_sighting);
 				VectorSubtract(self->goalentity->s.origin, self->s.origin, v);
-				self->s.angles[YAW] = self->ideal_yaw = vectoyaw(v);
+				self->ideal_yaw = vectoyaw(v);
 			}
 			else if ((right >= center) && (right > left))
 			{
@@ -1930,8 +2002,10 @@ ai_run(edict_t *self, float dist)
 				VectorCopy(right_target, self->goalentity->s.origin);
 				VectorCopy(right_target, self->monsterinfo.last_sighting);
 				VectorSubtract(self->goalentity->s.origin, self->s.origin, v);
-				self->s.angles[YAW] = self->ideal_yaw = vectoyaw(v);
+				self->ideal_yaw = vectoyaw(v);
 			}
+
+			self->s.angles[YAW] = backup_yaw;
 		}
 	}
 

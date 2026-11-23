@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Monsters no longer dance in place when the player fires every frame (from the re-release): a monster checks for a player in plain sight before noises, and keeps chasing a recent noise it can see (a visible noise counted as a dead enemy, so it stood, heard the next shot and ran, every other frame); when it loses sight it turns toward where it goes instead of snapping round in one frame.
 - Footsteps on every material: step sounds come from the re-release's `player/steps/<material>N.wav`, picking only versions that exist (most materials have 4, some 5); they were looked for in `player/` with 1-5, a missing file, so most floors (and ladders) were silent. One engine lookup (`FootstepSfx` in the effects import) serves the engine and the game library.
 - Compass trail like the re-release's: path points come back every `move_dist` units along the path, not only at its corners (a straight hall drew 2 arrows), so arrows run evenly the whole way; arrows are half the size and last 10 s, fading over the last 5.
 - Compass trail: the extra arrow in front of the player sits on the floor like the others (it floated at body height, big and tilted, right in the view), and arrows closer than 64 units to the previous one are left out (corners close together piled them up).
