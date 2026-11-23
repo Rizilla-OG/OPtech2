@@ -15,6 +15,8 @@ monster shot with its muzzle flash, which tells the attacks apart:
     with the re-release data,
   - gunner: second-animation grenade flashes (MZ2_GUNNER_GRENADE2_1-4) only
     with the re-release data, the stock grenade flashes on the classic data,
+  - Gunner Commander: its own flechette chaingun, mortar and grenades
+    (MZ2_GUNCMDR_*) with the re-release data, the gunner's on the classic,
   - shotgun soldier: fires on both (it cocks after every shot).
 
 Usage:
@@ -44,7 +46,9 @@ MONSTER_SPOT = "-300 -10 40 0 60 0"     # north half, near the wall, facing the 
 
 INFANTRY_RUN_FLASHES = set(range(232, 240))   # MZ2_INFANTRY_MACHINEGUN_14-21
 GUNNER_GRENADE_FLASHES = set(range(53, 57))   # MZ2_GUNNER_GRENADE_1-4
-GUNNER_GRENADE2_FLASHES = set(range(257, 261))  # MZ2_GUNNER_GRENADE2_1-4
+GUNNER_GRENADE2_FLASHES = set(range(256, 260))  # MZ2_GUNNER_GRENADE2_1-4
+GUNNER_FLASHES = set(range(45, 57))            # MZ2_GUNNER_MACHINEGUN_1-8, GRENADE_1-4
+GUNCMDR_FLASHES = set(range(240, 251))         # MZ2_GUNCMDR_CHAINGUN_1 - GRENADE_CROUCH_3
 
 
 def run_monster(data_name, monster):
@@ -105,6 +109,18 @@ def main():
         report((stock + second) > 0 and (second > 0) == rerelease,
                f"{data_name}: gunner grenades {stock} stock, {second} second animation"
                f" ({'second expected' if rerelease else 'stock only expected'})")
+
+        flashes, log = run_monster(data_name, "monster_guncmdr")
+        logs.append(log)
+        commander = sum(count for flash, count in flashes.items() if flash in GUNCMDR_FLASHES)
+        gunner = sum(count for flash, count in flashes.items() if flash in GUNNER_FLASHES)
+        kinds = sorted(flashes)
+        if rerelease:
+            report(commander > 0 and gunner == 0, f"{data_name}: Gunner Commander fires its own weapons"
+                   f" ({commander} shots, flashes {kinds})")
+        else:
+            report(gunner > 0 and commander == 0, f"{data_name}: monster_guncmdr is the gunner without the"
+                   f" re-release model ({gunner} gunner shots)")
 
         flashes, log = run_monster(data_name, "monster_soldier")
         logs.append(log)

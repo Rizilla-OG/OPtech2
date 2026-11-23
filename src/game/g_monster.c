@@ -32,7 +32,7 @@ void monster_start_go(edict_t *self);
 
 /* Monster weapons */
 
-static void
+void /* optech2: shared */
 monster_muzzleflash2(const edict_t *self, const vec3_t start, int flashtype)
 {
 	gi.WriteByte(svc_muzzleflash2);

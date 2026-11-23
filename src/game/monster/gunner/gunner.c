@@ -1459,6 +1459,16 @@ SP_monster_guncmdr(edict_t *self)
 		return;
 	}
 
+	/* optech2: the re-release Gunner Commander when the model has its
+	   frames; else (classic data) the gunner it was */
+	self->s.modelindex = gi.modelindex("models/monsters/gunner/tris.md2");
+
+	if (guncmdr_model_ok(self))
+	{
+		SP_monster_guncmdr_rerelease(self);
+		return;
+	}
+
 	// Force recaching at next footstep to ensure
 	// that the sound indices are correct.
 	sound_step = 0;

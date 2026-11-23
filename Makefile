@@ -1335,6 +1335,7 @@ GAME_OBJS_ = \
 	src/game/monster/grunt/grunt1.o \
 	src/game/monster/grunt/grunt2.o \
 	src/game/monster/gunner/gunner.o \
+	src/game/monster/guncmdr/guncmdr.o \
 	src/game/monster/hknight/hknight.o \
 	src/game/monster/hover/hover.o \
 	src/game/monster/infantry/infantry.o \

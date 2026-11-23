@@ -692,6 +692,7 @@ typedef struct
 	float next_duck_time;
 	float duck_wait_time;
 	float dodge_time; /* optech2: no new dodge before this (re-release) */
+	float melee_debounce_time; /* optech2: no new melee before this (re-release) */
 	edict_t *last_player_enemy;
 	qboolean blindfire;				/* will the monster blindfire? */
 	float blind_fire_delay;
@@ -1156,6 +1157,9 @@ void monster_fire_railgun(edict_t *self, vec3_t start, vec3_t aimdir,
 void monster_fire_bfg(edict_t *self, vec3_t start, vec3_t aimdir,
 		int damage, int speed, int kick, float damage_radius,
 		int flashtype);
+qboolean guncmdr_model_ok(edict_t *self); /* optech2: guncmdr.c */
+void SP_monster_guncmdr_rerelease(edict_t *self); /* optech2: guncmdr.c */
+void monster_muzzleflash2(const edict_t *self, const vec3_t start, int flashtype); /* optech2 */
 void monster_fire_ionripper(edict_t *self, vec3_t start, vec3_t dir, int damage,
 		int speed, int flashtype, int effect);
 void monster_fire_heat(edict_t *self, vec3_t start, vec3_t dir, int damage,

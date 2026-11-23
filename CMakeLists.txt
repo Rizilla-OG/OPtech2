@@ -465,6 +465,7 @@ set(Game-Source
 	${GAME_SRC_DIR}/monster/gladiator/gladiator.c
 	${GAME_SRC_DIR}/monster/guardian/guardian.c
 	${GAME_SRC_DIR}/monster/gunner/gunner.c
+	${GAME_SRC_DIR}/monster/guncmdr/guncmdr.c
 	${GAME_SRC_DIR}/monster/grunt/grunt1.c
 	${GAME_SRC_DIR}/monster/grunt/grunt2.c
 	${GAME_SRC_DIR}/monster/hknight/hknight.c
@@ -516,6 +517,7 @@ set(Game-Header
 	${GAME_SRC_DIR}/monster/flyer/flyer.h
 	${GAME_SRC_DIR}/monster/gladiator/gladiator.h
 	${GAME_SRC_DIR}/monster/gunner/gunner.h
+	${GAME_SRC_DIR}/monster/guncmdr/guncmdr.h
 	${GAME_SRC_DIR}/monster/hover/hover.h
 	${GAME_SRC_DIR}/monster/infantry/infantry.h
 	${GAME_SRC_DIR}/monster/insane/insane.h

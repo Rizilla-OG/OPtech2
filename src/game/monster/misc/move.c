@@ -1257,6 +1257,7 @@ static const struct
 	float leap;
 } nav_jumpers[] = {
 	{"monster_berserk", 40, 192},
+	{"monster_guncmdr", 40, 192},
 	{"monster_gunner", 40, 192},
 	{"monster_infantry", 40, 192},
 	{"monster_mutant", 68, 320},
