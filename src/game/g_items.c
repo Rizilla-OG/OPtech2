@@ -792,9 +792,12 @@ static float compass_points[MAX_CLIENTS][MAX_TEMP_POI_POINTS + 1][3];
 static void
 Compass_Beep(edict_t *ent)
 {
-	gi.WriteByte(svc_stufftext);
-	gi.WriteString("play misc/help_marker.wav\n");
-	gi.unicast(ent, false);
+	/* optech2: a sound for this player only, not a stuffed "play" (which
+	   became chat on a client without sound) */
+	if (gi_optech2 && gi_optech2->LocalSound)
+	{
+		gi_optech2->LocalSound(ent, gi.soundindex("misc/help_marker.wav"), 1.0f);
+	}
 }
 
 void

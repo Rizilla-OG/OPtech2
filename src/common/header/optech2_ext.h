@@ -223,7 +223,7 @@ typedef struct
  * table; a game library without it just doesn't get them.
  */
 #define OPTECH2_EXT_SERVER "optech2_server"
-#define OPTECH2_SERVER_EXT_VERSION 2
+#define OPTECH2_SERVER_EXT_VERSION 3 /* optech2: 3 adds LocalSound */
 
 typedef struct
 {
@@ -238,6 +238,10 @@ typedef struct
 	   smallest the monster fits */
 	int (*GetPathToGoalSized)(const optech2_path_request_t *request, optech2_path_info_t *info, float agent_radius,
 		float agent_height);
+
+	/* a sound only this player hears, at full volume wherever they are
+	   (the re-release's local_sound for its own player) */
+	void (*LocalSound)(struct edict_s *player, int soundindex, float volume);
 } optech2_server_import_t;
 
 typedef struct

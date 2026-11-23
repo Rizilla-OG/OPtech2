@@ -512,11 +512,57 @@ PF_LocalizationMessage(const char *message, int *sound_index)
 	return localmessage;
 }
 
+/* optech2: a sound for one player's ears only, numbered for their protocol */
+static void
+SV_LocalSound(edict_t *player, int soundindex, float volume)
+{
+	int number = player ? NUM_FOR_EDICT(player) : 0;
+	client_t *client;
+	int flags = SND_ATTENUATION; /* attenuation 0: no position, heard everywhere */
+
+	if ((number < 1) || (number > maxclients->value))
+	{
+		return;
+	}
+
+	client = &svs.clients[number - 1];
+
+	if (client->state < cs_spawned)
+	{
+		return;
+	}
+
+	if (volume != 1.0f)
+	{
+		flags |= SND_VOLUME;
+	}
+
+	MSG_WriteByte(&client->datagram, svc_sound);
+	MSG_WriteByte(&client->datagram, flags);
+
+	if (IS_QII97_PROTOCOL(client->protocol))
+	{
+		MSG_WriteByte(&client->datagram, soundindex);
+	}
+	else
+	{
+		MSG_WriteShort(&client->datagram, soundindex);
+	}
+
+	if (flags & SND_VOLUME)
+	{
+		MSG_WriteByte(&client->datagram, (int)(Q_clamp(volume, 0.0f, 1.0f) * 255));
+	}
+
+	MSG_WriteByte(&client->datagram, 0);
+}
+
 /* optech2: engine services for our game library (optech2_ext.h) */
 static const optech2_server_import_t sv_optech2_import = {
 	OPTECH2_SERVER_EXT_VERSION,
 	Nav_GetPathToGoal,
 	Nav_GetPathToGoalSized,
+	SV_LocalSound,
 };
 
 static const optech2_server_ext_t *sv_optech2_ext;
