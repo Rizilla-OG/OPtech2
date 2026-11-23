@@ -31,6 +31,7 @@
 #define MAX_POIS 64
 #define POI_FLAG_HIDE_ON_AIM 1
 #define HELP_ARROW_SCALE 6 /* the model is about 4 x 6 units */
+#define HELP_ARROW_SPACING 64 /* the closest two arrows of a trail get */
 
 typedef struct
 {
@@ -162,6 +163,19 @@ CL_Markers_HelpPath(qboolean first, const vec3_t pos, const vec3_t dir)
 	if (first)
 	{
 		help_arrow_count = 0;
+	}
+	else if (help_arrow_count > 0)
+	{
+		/* path corners can sit close together (a ledge, a step): keep the
+		   arrows apart instead of piling them up */
+		vec3_t delta;
+
+		VectorSubtract(pos, help_arrows[help_arrow_count - 1].origin, delta);
+
+		if (VectorLength(delta) < HELP_ARROW_SPACING)
+		{
+			return;
+		}
 	}
 
 	if (help_arrow_count >= MAX_HELP_ARROWS)

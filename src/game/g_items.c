@@ -993,6 +993,22 @@ Use_Compass(edict_t *ent, const gitem_t *item)
 			VectorMA(tr.endpos, 8, tr.plane.normal, tr.endpos);
 		}
 
+		/* optech2: down onto the floor, like the trail's other points (at
+		   body height the arrow floated big and tilted in the view) */
+		{
+			vec3_t down;
+			trace_t floor;
+
+			VectorCopy(tr.endpos, down);
+			down[2] -= 128;
+			floor = gi.trace(tr.endpos, NULL, NULL, down, NULL, MASK_SOLID);
+
+			if (floor.fraction < 1.0f)
+			{
+				VectorCopy(floor.endpos, tr.endpos);
+			}
+		}
+
 		VectorCopy(tr.endpos, points[client->help_draw_index]);
 	}
 
