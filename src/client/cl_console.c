@@ -40,9 +40,16 @@ cvar_t *con_alpha; /* optech2: how solid that panel is, 0..1 */
 static qboolean
 Con_TrueTypeFont(void)
 {
-	const char *font = Cvar_VariableString("r_ttffont");
+	/* optech2: the cvar found once (this runs for every character drawn;
+	   Cvar_VariableString walks the whole cvar list) */
+	static const cvar_t *r_ttffont_cvar;
 
-	return font && font[0];
+	if (!r_ttffont_cvar)
+	{
+		r_ttffont_cvar = Cvar_Get("r_ttffont", "Hack-Regular", CVAR_ARCHIVE); /* as the renderer registers it */
+	}
+
+	return r_ttffont_cvar && r_ttffont_cvar->string && r_ttffont_cvar->string[0];
 }
 
 static int

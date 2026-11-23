@@ -2518,7 +2518,8 @@ CL_ParseLocPrint(void)
 	}
 
 	{
-		const char *text = CL_DecodePlayerNames(formatted);
+		/* optech2: not in chat: what players type stays as typed */
+		const char *text = ((flags & 7) == PRINT_CHAT) ? formatted : CL_DecodePlayerNames(formatted);
 
 		Com_Printf("%s", text);
 		con.ormask = 0;
@@ -2662,8 +2663,9 @@ CL_ParseServerMessage(void)
 
 				/* optech2: re-release maps and games send "$key" texts */
 				{
-					const char *text = CL_DecodePlayerNames(
-						SV_LocalizationMessage(MSG_ReadString(&net_message), NULL));
+					const char *localized = SV_LocalizationMessage(MSG_ReadString(&net_message), NULL);
+					/* optech2: not in chat: what players type stays as typed */
+					const char *text = ((i & 7) == PRINT_CHAT) ? localized : CL_DecodePlayerNames(localized);
 
 					Com_Printf("%s", text);
 					con.ormask = 0;

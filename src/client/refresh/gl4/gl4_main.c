@@ -2215,7 +2215,7 @@ GetRefAPI(refimport_t imp)
 	exports.EndWorldRenderpass = GL4_EndWorldRenderpass;
 	exports.EndFrame = GL4_EndFrame;
 
-	// Tell the client that we'exports unsing the
+	// Tell the client that we're using the
 	// new renderer restart API.
 	ri.Vid_RequestRestart(RESTART_NO);
 

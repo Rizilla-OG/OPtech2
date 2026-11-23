@@ -383,11 +383,17 @@ void
 SCR_StatsAccumulate(long long server_us, long long game_us, long long client_us, long long render_us,
 	long long now)
 {
-	if (!window.start)
+	static long long last_call;
+
+	/* optech2: a fresh window after a gap (cl_perf was off): one spanning
+	   the whole gap showed about 0 fps */
+	if (!window.start || (last_call && (now - last_call > STATS_WINDOW_US)))
 	{
+		memset(&window, 0, sizeof(window));
 		window.start = now;
 	}
 
+	last_call = now;
 	window.server_sum += server_us;
 	window.game_sum += game_us;
 	window.client_sum += client_us;

@@ -75,6 +75,8 @@ static int cg_parked_index[CG_PARKED_STRINGS]; /* re-release index of each parke
 static int cg_parked_from[CG_PARKED_STRINGS]; /* our configstring index it shows */
 static int cg_parked_count; /* slots in use */
 static int cg_parked_next; /* slot to reuse when all are in use (oldest first) */
+static int cg_parked_used[CG_PARKED_STRINGS]; /* optech2: the player state build that last handed it out */
+static int cg_parked_build; /* optech2: counts player state builds */
 
 static int
 CG_RRGeneralEnd(void)
@@ -104,6 +106,7 @@ CG_ConfigStringIndexForModule(int ours)
 	{
 		if (cg_parked_from[i] == ours)
 		{
+			cg_parked_used[i] = cg_parked_build;
 			return cg_parked_index[i];
 		}
 	}
@@ -112,14 +115,28 @@ CG_ConfigStringIndexForModule(int ours)
 	{
 		cg_parked_from[cg_parked_count] = ours;
 		cg_parked_index[cg_parked_count] = CG_RRGeneralEnd() - 1 - cg_parked_count;
+		cg_parked_used[cg_parked_count] = cg_parked_build;
 		return cg_parked_index[cg_parked_count++];
 	}
 
 	/* all in use: reuse the oldest slot rather than hand back an index the
 	   module would read as a different string */
-	i = cg_parked_next;
-	cg_parked_next = (cg_parked_next + 1) % CG_PARKED_STRINGS;
+	/* optech2: not one already handed out in this build (it would show this
+	   string in the other stat's place) */
+	for (i = 0; i < CG_PARKED_STRINGS; i++)
+	{
+		int slot = (cg_parked_next + i) % CG_PARKED_STRINGS;
+
+		if (cg_parked_used[slot] != cg_parked_build)
+		{
+			break;
+		}
+	}
+
+	i = (cg_parked_next + i) % CG_PARKED_STRINGS;
+	cg_parked_next = (i + 1) % CG_PARKED_STRINGS;
 	cg_parked_from[i] = ours;
+	cg_parked_used[i] = cg_parked_build;
 	return cg_parked_index[i];
 }
 
@@ -377,6 +394,13 @@ CG_DrawColorPic(int x, int y, int w, int h, const char *name, const cg_rgba_t *c
 		}
 
 		Draw_FillColor(x, y, w, h, rgba);
+		return;
+	}
+
+	/* optech2: a fully faded picture isn't drawn (partly faded ones are
+	   drawn solid: no renderer draws pictures see-through yet) */
+	if (color && (color->a == 0))
+	{
 		return;
 	}
 
@@ -670,13 +694,14 @@ FX_EntityState(int entnum, vec3_t origin, vec3_t angles)
 		return false;
 	}
 
-	ent = CL_AllocEntity(entnum);
-
-	if (!ent)
+	/* optech2: only entities the client already has; allocating here could
+	   move cl_entities while CL_AddPacketEntities holds a pointer into it */
+	if (entnum >= cl_numentities)
 	{
 		return false;
 	}
 
+	ent = &cl_entities[entnum];
 	VectorCopy(ent->current.origin, origin);
 	VectorCopy(ent->current.angles, angles);
 	return true;
@@ -1208,6 +1233,7 @@ CL_CGame_PlayerState(cg_player_state_t *out)
 	{
 		qboolean string_stats[CG_MAX_STATS] = {false};
 
+		cg_parked_build++; /* optech2: a new build for parked string slots */
 		CG_FindStringStats(cl.configstrings[CS_STATUSBAR], string_stats);
 		CG_FindStringStats(cl.layout, string_stats);
 

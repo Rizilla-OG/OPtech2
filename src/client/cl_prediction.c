@@ -376,24 +376,23 @@ CL_PMpointcontents(const vec3_t point)
 void
 CL_UpdateUnderwaterSound(const vec3_t vieworg)
 {
-	static qboolean underwater;
 	qboolean now_underwater;
 
+	/* optech2: compared with the sound system's own flag (disconnecting
+	   clears it), not a private copy that outlived the connection */
 	now_underwater = (cls.state == ca_active) &&
 					 ((CL_PMpointcontents(vieworg) & MASK_WATER) != 0);
 
-	if (now_underwater && !underwater)
+	if (now_underwater && !snd_is_underwater)
 	{
-		underwater = true;
 		snd_is_underwater = true;
 
 #ifdef USE_OPENAL
 		AL_Underwater();
 #endif
 	}
-	else if (!now_underwater && underwater)
+	else if (!now_underwater && snd_is_underwater)
 	{
-		underwater = false;
 		snd_is_underwater = false;
 
 #ifdef USE_OPENAL

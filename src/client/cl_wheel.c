@@ -114,6 +114,14 @@ Wheel_SortSlots(const void *a, const void *b)
 	return first->item - second->item;
 }
 
+/* optech2: an item, picture and ammo slot that index something */
+static qboolean
+Wheel_SlotValid(const wheel_slot_t *slot)
+{
+	return (slot->item >= 0) && (slot->item < MAX_ITEMS) && (slot->image >= 0) &&
+		   (slot->image < MAX_IMAGES) && (slot->ammo >= -1) && (slot->ammo < MAX_WHEEL_ITEMS);
+}
+
 /* what the open wheel holds, in the game's order */
 static void
 Wheel_Gather(void)
@@ -149,6 +157,12 @@ Wheel_Gather(void)
 			slot->count = (slot->ammo >= 0) ? CL_CGame_WheelAmmo(slot->ammo) : -1;
 			slot->usable = (slot->ammo < 0) || (slot->count >= slot->min_ammo);
 			slot->active = (i == active);
+
+			/* optech2: numbers the game sent that index nothing: no slot */
+			if (!Wheel_SlotValid(slot))
+			{
+				wheel_slot_count--;
+			}
 		}
 	}
 	else
@@ -181,6 +195,11 @@ Wheel_Gather(void)
 			slot->count = Wheel_Field(text, 2, 0) ? -1 : count;
 			slot->usable = true;
 			slot->active = false;
+
+			if (!Wheel_SlotValid(slot))
+			{
+				wheel_slot_count--;
+			}
 		}
 	}
 

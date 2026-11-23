@@ -51,6 +51,9 @@ something unfinished; remove an entry in the commit that fixes it.
 
 ## Re-release support
 
+- Re-release HUD pictures with partial alpha draw solid: no renderer has a
+  see-through picture call (`Draw_FillColor` only does boxes). Fully
+  transparent ones are skipped. Needs a renderer API addition (all five).
 - Ghosting seen once (user, 2026-11-22, Vulkan, our game on re-release
   data): a pistol soldier turning to face the player looked like several
   copies of itself. Not reproduced since; no capture. If it comes back:

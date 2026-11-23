@@ -576,6 +576,26 @@ SV_UserinfoChanged(client_t *cl)
 	const char *val;
 	int i;
 
+	/* optech2: "##P<n>" in a name would show as another player's name on
+	   clients (re-release prints name players that way) */
+	{
+		char name[MAX_INFO_VALUE];
+
+		Q_strlcpy(name, Info_ValueForKey(cl->userinfo, "name"), sizeof(name));
+
+		if (strstr(name, "##"))
+		{
+			char *mark;
+
+			while ((mark = strstr(name, "##")) != NULL)
+			{
+				*mark = '_';
+			}
+
+			Info_SetValueForKey(cl->userinfo, "name", name);
+		}
+	}
+
 	/* call prog code to allow overrides */
 	ge->ClientUserinfoChanged(CL_EDICT(cl), cl->userinfo);
 
