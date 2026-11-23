@@ -640,11 +640,6 @@ VID_GetPalette24to8(const byte *d_8to24table, byte** d_16to8table)
 	*d_16to8table = NULL;
 	filesize = FS_LoadFile(tablefile, (void **)&table16to8);
 
-	if (!table16to8)
-	{
-		Com_Printf("%s: Couldn't load %s\n", __func__, tablefile);
-	}
-
 	*d_16to8table = malloc(0x10000);
 	if (!(*d_16to8table))
 	{
@@ -664,7 +659,14 @@ VID_GetPalette24to8(const byte *d_8to24table, byte** d_16to8table)
 		// create new one
 		unsigned int r;
 
-		Com_Printf("%s: Generate 16 to 8 bit table\n", __func__);
+		/* optech2: not an error, the re-release data has no 16to8.dat */
+		Com_Printf("%s: no usable %s, generating the 16 to 8 bit table\n",
+			__func__, tablefile);
+
+		if (table16to8)
+		{
+			FS_FreeFile((void *)table16to8);
+		}
 
 		for (r = 0; r < 32; r++)
 		{
