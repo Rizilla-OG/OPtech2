@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Medic animations play the frames id meant (re-release): the hyperblaster attack runs on to frame 34 instead of stopping mid-motion, the cable attack is frames 37-55 (Rogue's 33-60 began with the end of another animation). Iron maiden rockets fly at 650 on every skill (stock: 500 + 100 per skill), the heat-seeking one's at 500 (re-release).
 - Mutants leap slower (425 forward, 160 up; stock 600, 250) but their leap hits once whenever it connects (stock: only above 400 units a second, so most landings did nothing), and their deaths slide sideways with the fall, the body stopping to block partway (re-release).
 - Tanks blind-fire with the blaster too (whichever weapon has a clear shot, one volley), refire the blaster on every skill (stock: hard and up), and stand still after pounding a body instead of running off with no enemy (re-release).
 - Soldiers fight like the re-release's: the shotgun soldier cocks after every shot, also when an attack was cut short (it cocks first, then fires); soldiers refire half the time while they see you, on every skill (stock: only on nightmare); run-and-shoot a quarter of the time from 250 units out, on every skill, with blaster soldiers deciding midway and shotgun soldiers cocking on the run; shotgun soldiers use only their second attack up close (325 units); on first sight from 500 units out, a machine gun soldier opens with a burst when its shot is clear.

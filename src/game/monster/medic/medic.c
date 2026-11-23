@@ -978,15 +978,19 @@ static mframe_t medic_frames_attackHyperBlaster[] = {
 	{ai_charge, 0, medic_fire_blaster},
 	{ai_charge, 0, medic_fire_blaster},
 	{ai_charge, 0, medic_fire_blaster},
-	{ai_charge, 0, medic_fire_blaster}
-};
+	{ai_charge, 0, medic_fire_blaster},
+	/* optech2: on to frame 34, where the animation ends (re-release;
+	   it stopped mid-motion at 30) */
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 2, NULL},
+	{ai_charge, 3, medic_footstep}};
 
 mmove_t medic_move_attackHyperBlaster = {
 	FRAME_attack15,
-	FRAME_attack30,
+	FRAME_attack34,
 	medic_frames_attackHyperBlaster,
-	medic_run
-};
+	medic_run};
 
 static void
 medic_continue(edict_t *self)
@@ -1309,17 +1313,16 @@ medic_hook_retract(edict_t *self)
 	}
 }
 
+/* optech2: frames 37 to 55, as id intended (re-release; Rogue's 33-60
+   played the end of the hyperblaster animation first and ran on after) */
 static mframe_t medic_frames_attackCable[] = {
-	{ai_move, 2, NULL},
-	{ai_move, 3, NULL},
-	{ai_move, 5, NULL},
-	{ai_move, 4.4, NULL},
-	{ai_charge, 4.7, NULL},
-	{ai_charge, 5, NULL},
-	{ai_charge, 6, NULL},
-	{ai_charge, 4, medic_footstep},
-	{ai_charge, 0, NULL},
-	{ai_move, 0, medic_hook_launch},
+	{ai_charge, -4.7, NULL}, /* 37 */
+	{ai_charge, -5, NULL},
+	{ai_charge, -6, NULL},
+	{ai_charge, -4, NULL}, /* 40 */
+	{ai_charge, 0, medic_footstep},
+	{ai_move, 0, medic_hook_launch}, /* 42 */
+	{ai_move, 0, medic_cable_attack}, /* 43 */
 	{ai_move, 0, medic_cable_attack},
 	{ai_move, 0, medic_cable_attack},
 	{ai_move, 0, medic_cable_attack},
@@ -1327,25 +1330,18 @@ static mframe_t medic_frames_attackCable[] = {
 	{ai_move, 0, medic_cable_attack},
 	{ai_move, 0, medic_cable_attack},
 	{ai_move, 0, medic_cable_attack},
-	{ai_move, 0, medic_cable_attack},
-	{ai_move, 0, medic_cable_attack},
-	{ai_move, -15, medic_hook_retract},
+	{ai_move, 0, medic_cable_attack}, /* 51 */
+	{ai_move, 0, medic_hook_retract}, /* 52 */
 	{ai_move, -1.5, NULL},
 	{ai_move, -1.2, medic_footstep},
-	{ai_move, -3, NULL},
-	{ai_move, -2, NULL},
-	{ai_move, 0.3, NULL},
-	{ai_move, 0.7, NULL},
-	{ai_move, 1.2, NULL},
-	{ai_move, 1.3, NULL}                      /* 60 */
+	{ai_move, -3, NULL} /* 55 */
 };
 
 mmove_t medic_move_attackCable = {
-	FRAME_attack33,
-	FRAME_attack60,
+	FRAME_attack37,
+	FRAME_attack55,
 	medic_frames_attackCable,
-	medic_run
-};
+	medic_run};
 
 static void
 medic_start_spawn(edict_t *self)

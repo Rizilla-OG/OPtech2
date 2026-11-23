@@ -720,7 +720,9 @@ ChickRocket(edict_t *self)
 	M_ProjectFlashSource(self, monster_flash_offset[MZ2_CHICK_ROCKET_1],
 			forward, right, start);
 
-	rocketSpeed = 500 + (100 * skill->value); /* rock & roll.... :) */
+	/* optech2: the re-release's speeds: 650 on every skill (stock: 500 +
+	   100 per skill), the heat-seeking chick's slower 500 */
+	rocketSpeed = (self->s.skinnum > 1) ? 500 : 650;
 
 	if (blindfire)
 	{
