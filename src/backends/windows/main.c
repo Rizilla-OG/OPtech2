@@ -40,12 +40,32 @@
 #include "../../common/header/common.h"
 
 /*
+ * optech2: an unhandled exception (crash) writes a crash report, then
+ * lets Windows handle it as before.
+ */
+static LONG WINAPI
+CrashHandler(EXCEPTION_POINTERS *exception)
+{
+	char reason[96];
+
+	snprintf(reason, sizeof(reason), "Exception 0x%08lx at %p",
+		(unsigned long)exception->ExceptionRecord->ExceptionCode,
+		exception->ExceptionRecord->ExceptionAddress);
+	Crash_WriteReport(reason, NULL);
+
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+
+/*
  * Windows main function. Containts the
  * initialization code and the main loop
  */
 int
 main(int argc, char **argv)
 {
+	// optech2: crash reports
+	SetUnhandledExceptionFilter(CrashHandler);
+
 	// Setup FPU if necessary.
 	Sys_SetupFPU();
 

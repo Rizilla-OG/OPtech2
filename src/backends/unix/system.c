@@ -78,6 +78,12 @@ Sys_Error(const char *error, ...)
 	va_list argptr;
 	char string[1024];
 
+	/* optech2: format first, report before shutdown */
+	va_start(argptr, error);
+	vsnprintf(string, 1024, error, argptr);
+	va_end(argptr);
+	Crash_WriteReport("Fatal error", string);
+
 	/* change stdin to blocking */
 	if (fcntl(fileno(stdin), F_SETFL, fcntl(0, F_GETFL, 0) & ~FNDELAY))
 	{
@@ -91,9 +97,6 @@ Sys_Error(const char *error, ...)
 #endif
 	Qcommon_Shutdown();
 
-	va_start(argptr, error);
-	vsnprintf(string, 1024, error, argptr);
-	va_end(argptr);
 	fprintf(stderr, "Error: %s\n", string);
 
 	exit(1);

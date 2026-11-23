@@ -1033,6 +1033,12 @@ int Sys_Rename(const char *from, const char *to);
 void Sys_RemoveDir(const char *path);
 long long Sys_Microseconds(void);
 unsigned int Sys_ProcessId(void); /* optech2: for seeding per-process values */
+
+/* optech2: crash reports (crashreport.c) */
+void Crash_Init(void);
+void Crash_RecordConsole(const char *text);
+void Crash_SaveCommandLine(int argc, char **argv);
+const char *Crash_WriteReport(const char *reason, const char *message);
 void Sys_Nanosleep(int nanosec);
 void *Sys_GetProcAddress(void *handle, const char *sym);
 void Sys_FreeLibrary(void *handle);

@@ -374,6 +374,9 @@ Qcommon_Init(int argc, char **argv)
 	// Add and execute configuration files.
 	Qcommon_ExecConfigs(true);
 
+	// optech2: crash reports (crashtest command)
+	Crash_Init();
+
 	// Zone malloc statistics.
 	Cmd_AddCommand("z_stats", Z_Stats_f);
 

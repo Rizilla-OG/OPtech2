@@ -58,16 +58,25 @@ Sys_Error(const char *error, ...)
 {
 	va_list argptr;
 	char text[1024];
+	const char *report;
+
+	/* optech2: format first, report before shutdown */
+	va_start(argptr, error);
+	vsnprintf(text, sizeof(text), error, argptr);
+	va_end(argptr);
+	report = Crash_WriteReport("Fatal error", text);
+
+	if (report)
+	{
+		Q_strlcat(text, "\n\nCrash report: ", sizeof(text));
+		Q_strlcat(text, report, sizeof(text));
+	}
 
 #ifndef DEDICATED_ONLY
 	CL_Shutdown();
 #endif
 
 	Qcommon_Shutdown();
-
-	va_start(argptr, error);
-	vsnprintf(text, sizeof(text), error, argptr);
-	va_end(argptr);
 	fprintf(stderr, "Error: %s\n", text);
 	fprintf(stdout, "Error: %s\n", text);
 
