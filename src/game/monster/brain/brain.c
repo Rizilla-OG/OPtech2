@@ -368,7 +368,7 @@ mmove_t brain_move_duck = {
 
 void
 brain_dodge(edict_t *self, edict_t *attacker, float eta,
-	trace_t *trace /* unused */)
+	trace_t *trace /* unused */, qboolean gravity)
 {
 	if (!self || !attacker)
 	{
@@ -1152,7 +1152,7 @@ SP_monster_brain(edict_t *self)
 	self->monsterinfo.walk = brain_walk;
 	self->monsterinfo.run = brain_run;
 	self->monsterinfo.attack = brain_attack;
-	self->monsterinfo.dodge = brain_dodge;
+	self->monsterinfo.dodge = M_MonsterDodge; /* optech2: shared dodge with its duck / sidestep (re-release); brain_dodge stays for old saves */
 	self->monsterinfo.duck = brain_duck;
 	self->monsterinfo.unduck = monster_duck_up;
 	self->monsterinfo.melee = brain_melee;

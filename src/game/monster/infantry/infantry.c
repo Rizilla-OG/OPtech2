@@ -827,7 +827,7 @@ static const mmove_t infantry_move_duck_static = {
 
 void
 infantry_dodge(edict_t *self, edict_t *attacker, float eta /* unused */,
-	trace_t *trace /* unused */)
+	trace_t *trace /* unused */, qboolean gravity)
 {
 	if (!self || !attacker)
 	{
@@ -1137,7 +1137,7 @@ SP_monster_infantry(edict_t *self)
 	self->monsterinfo.stand = infantry_stand;
 	self->monsterinfo.walk = infantry_walk;
 	self->monsterinfo.run = infantry_run;
-	self->monsterinfo.dodge = infantry_dodge;
+	self->monsterinfo.dodge = M_MonsterDodge; /* optech2: shared dodge with its duck / sidestep (re-release); infantry_dodge stays for old saves */
 	self->monsterinfo.duck = infantry_duck;
 	self->monsterinfo.unduck = monster_duck_up;
 	self->monsterinfo.sidestep = infantry_sidestep;

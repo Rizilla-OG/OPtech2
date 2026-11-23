@@ -941,7 +941,7 @@ mmove_t medic_move_duck = {
 
 void
 medic_dodge(edict_t *self, edict_t *attacker, float eta,
-	trace_t *trace /* unused */)
+	trace_t *trace /* unused */, qboolean gravity)
 {
 	if (!self || !attacker)
 	{
@@ -2008,7 +2008,7 @@ SP_monster_medic(edict_t *self)
 	self->monsterinfo.stand = medic_stand;
 	self->monsterinfo.walk = medic_walk;
 	self->monsterinfo.run = medic_run;
-	self->monsterinfo.dodge = medic_dodge;
+	self->monsterinfo.dodge = M_MonsterDodge; /* optech2: shared dodge with its duck / sidestep (re-release); medic_dodge stays for old saves */
 	self->monsterinfo.duck = medic_duck;
 	self->monsterinfo.unduck = monster_duck_up;
 	self->monsterinfo.sidestep = medic_sidestep;

@@ -1387,7 +1387,7 @@ soldier_blocked(edict_t *self, float dist)
 
 void
 soldier_dodge(edict_t *self, edict_t *attacker, float eta,
-	trace_t *trace /* unused */)
+	trace_t *trace /* unused */, qboolean gravity)
 {
 	float r;
 
@@ -3009,7 +3009,7 @@ static const mmove_t soldierh_move_duck_static = {
 
 void
 soldierh_dodge(edict_t *self, edict_t *attacker, float eta,
-	trace_t *trace /* unused */)
+	trace_t *trace /* unused */, qboolean gravity)
 {
 	float r;
 
@@ -3328,7 +3328,7 @@ SP_monster_soldier_x(edict_t *self)
 	self->monsterinfo.stand = soldier_stand;
 	self->monsterinfo.walk = soldier_walk;
 	self->monsterinfo.run = soldier_run;
-	self->monsterinfo.dodge = soldier_dodge;
+	self->monsterinfo.dodge = M_MonsterDodge; /* optech2: shared dodge with its duck / sidestep (re-release); soldier_dodge stays for old saves */
 	self->monsterinfo.attack = soldier_attack;
 	self->monsterinfo.melee = NULL;
 	self->monsterinfo.sight = soldier_sight;

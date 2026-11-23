@@ -650,7 +650,7 @@ mmove_t chick_move_duck = {
 
 void
 chick_dodge(edict_t *self, edict_t *attacker, float eta /* unused */,
-	trace_t *trace /* unused */)
+	trace_t *trace /* unused */, qboolean gravity)
 {
 	if (!self || !attacker)
 	{
@@ -1227,7 +1227,7 @@ SP_monster_chick(edict_t *self)
 	self->monsterinfo.stand = chick_stand;
 	self->monsterinfo.walk = chick_walk;
 	self->monsterinfo.run = chick_run;
-	self->monsterinfo.dodge = chick_dodge;
+	self->monsterinfo.dodge = M_MonsterDodge; /* optech2: shared dodge with its duck / sidestep (re-release); chick_dodge stays for old saves */
 	self->monsterinfo.duck = chick_duck;
 	self->monsterinfo.unduck = monster_duck_up;
 	self->monsterinfo.sidestep = chick_sidestep;

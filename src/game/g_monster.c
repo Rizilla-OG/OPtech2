@@ -1665,7 +1665,7 @@ monster_dynamic_melee(edict_t *self)
 
 void
 monster_dynamic_dodge(edict_t *self, edict_t *attacker, float eta,
-	trace_t *trace /* unused */)
+	trace_t *trace /* unused */, qboolean gravity)
 {
 	if (!self || !attacker)
 	{
@@ -1852,6 +1852,89 @@ object_spawn(edict_t *self)
 	gi.linkentity(self);
 }
 
+/*
+ * optech2: re-release M_CheckDodge: active dodging. A monster looks for
+ * projectiles flagged FL_DODGE (bolts, rockets, grenades, BFG balls...)
+ * within 512 units, in front of it and moving; when one's flight over the
+ * next second would hit the monster, its dodge function picks a sidestep
+ * or a duck. Replaces stock Quake II's check when a player fires, which
+ * only saw shots aimed straight at a monster the moment they left the gun.
+ */
+static qboolean
+M_ProjectileInFront(const edict_t *self, const edict_t *projectile)
+{
+	vec3_t forward, to_projectile;
+
+	AngleVectors(self->s.angles, forward, NULL, NULL);
+	VectorSubtract(projectile->s.origin, self->s.origin, to_projectile);
+	VectorNormalize(to_projectile);
+
+	return DotProduct(to_projectile, forward) > 0.35f;
+}
+
+static void
+M_CheckDodge(edict_t *self)
+{
+	edict_t *nearby[MAX_EDICTS / 8];
+	vec3_t search_mins, search_maxs;
+	int count, i;
+
+	/* a recent dodge: don't try again for a bit */
+	if (self->monsterinfo.dodge_time > level.time)
+	{
+		return;
+	}
+
+	VectorSet(search_mins, self->absmin[0] - 512, self->absmin[1] - 512, self->absmin[2] - 512);
+	VectorSet(search_maxs, self->absmax[0] + 512, self->absmax[1] + 512, self->absmax[2] + 512);
+	count = gi.BoxEdicts(search_mins, search_maxs, nearby, sizeof(nearby) / sizeof(nearby[0]), AREA_SOLID);
+
+	for (i = 0; i < count; i++)
+	{
+		edict_t *projectile = nearby[i];
+		vec3_t flight_end, flown;
+		float speed, eta;
+		int mask;
+		trace_t trace;
+
+		if (!projectile->inuse || !(projectile->flags & FL_DODGE))
+		{
+			continue;
+		}
+
+		/* not moving */
+		if (DotProduct(projectile->velocity, projectile->velocity) < 16.0f)
+		{
+			continue;
+		}
+
+		/* behind us: we can't see it */
+		if (!M_ProjectileInFront(self, projectile))
+		{
+			continue;
+		}
+
+		/* will it hit us within a second? enough time to dodge */
+		VectorAdd(projectile->s.origin, projectile->velocity, flight_end);
+		mask = projectile->clipmask ? projectile->clipmask : MASK_SHOT;
+		trace = gi.trace(projectile->s.origin, projectile->mins, projectile->maxs,
+			flight_end, projectile, mask);
+
+		if (trace.ent != self)
+		{
+			continue;
+		}
+
+		VectorSubtract(trace.endpos, projectile->s.origin, flown);
+		speed = VectorLength(projectile->velocity);
+		eta = VectorLength(flown) / speed;
+
+		self->monsterinfo.dodge(self, projectile->owner ? projectile->owner : projectile, eta, &trace,
+			(projectile->movetype == MOVETYPE_BOUNCE) || (projectile->movetype == MOVETYPE_TOSS));
+		return;
+	}
+}
+
 void
 monster_think(edict_t *self)
 {
@@ -1865,6 +1948,12 @@ monster_think(edict_t *self)
 	{
 		self->nextthink = level.time + FRAMETIME;
 		return;
+	}
+
+	/* optech2: watch for projectiles to dodge (re-release) */
+	if ((self->health > 0) && self->monsterinfo.dodge)
+	{
+		M_CheckDodge(self);
 	}
 
 	M_MoveFrame(self);

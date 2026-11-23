@@ -96,6 +96,7 @@
 #define FL_DISGUISED 0x00008000             /* entity is in disguise, monsters will not recognize. */
 #define FL_NOGIB 0x00010000                 /* player has been vaporized by a nuke, drop no gibs */
 #define FL_FLASHLIGHT 0x00020000            /* enable flashlight */
+#define FL_DODGE 0x00040000 /* optech2: a projectile monsters try to dodge (re-release) */
 
 /* optech2: the think and animation step. Monsters, weapons and player
    animation still advance in 0.1 s steps; physics uses level.ticktime. */
@@ -649,7 +650,7 @@ typedef struct
 	void (*search)(edict_t *self);
 	void (*walk)(edict_t *self);
 	void (*run)(edict_t *self);
-	void (*dodge)(edict_t *self, edict_t *other, float eta, trace_t *tr);
+	void (*dodge)(edict_t *self, edict_t *other, float eta, trace_t *tr, qboolean gravity); /* optech2: gravity: a lobbed projectile */
 	void (*attack)(edict_t *self);
 	void (*melee)(edict_t *self);
 	void (*sight)(edict_t *self, edict_t *other);
@@ -690,6 +691,7 @@ typedef struct
 	float base_height;
 	float next_duck_time;
 	float duck_wait_time;
+	float dodge_time; /* optech2: no new dodge before this (re-release) */
 	edict_t *last_player_enemy;
 	qboolean blindfire;				/* will the monster blindfire? */
 	float blind_fire_delay;
@@ -1175,7 +1177,7 @@ void monster_dynamic_setinfo(edict_t *self);
 void monster_dynamic_melee(edict_t *self);
 void monster_dynamic_damage(edict_t *self);
 void monster_dynamic_dodge(edict_t *self, edict_t *attacker, float eta,
-	trace_t *trace /* unused */);
+	trace_t *trace /* unused */, qboolean gravity);
 void monster_dynamic_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
 	int damage, const vec3_t point);
 void monster_dynamic_die_noanim(edict_t *self, edict_t *inflictor, edict_t *attacker,
@@ -1292,7 +1294,6 @@ void fire_proximity_mine(edict_t *self, vec3_t start, vec3_t aimdir, int speed);
 void fire_dod(edict_t *self, vec3_t start, vec3_t dir);
 qboolean fire_iredlaser(edict_t *self, vec3_t start, vec3_t dir, float timer,
 	float damage, float damage_radius, qboolean quad);
-void check_dodge(edict_t *self, vec3_t start, vec3_t dir, int speed);
 void Grenade_Explode(edict_t *ent);
 
 /* g_target.c */
@@ -1475,7 +1476,7 @@ void PredictAim(edict_t *target, vec3_t start, float bolt_speed, qboolean eye_he
 		float offset, vec3_t aimdir, vec3_t aimpoint);
 qboolean below(edict_t *self, edict_t *other);
 void drawbbox(edict_t *self);
-void M_MonsterDodge(edict_t *self, edict_t *attacker, float eta, trace_t *tr);
+void M_MonsterDodge(edict_t *self, edict_t *attacker, float eta, trace_t *tr, qboolean gravity);
 void monster_duck_down(edict_t *self);
 void monster_duck_hold(edict_t *self);
 void monster_duck_up(edict_t *self);

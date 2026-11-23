@@ -198,6 +198,7 @@ static const savefield_t savefields_edict[] = {
 	{"monsterinfo.base_height", offsetof(edict_t, monsterinfo.base_height), sizeof(((edict_t *)0)->monsterinfo.base_height), SF_RAW},
 	{"monsterinfo.next_duck_time", offsetof(edict_t, monsterinfo.next_duck_time), sizeof(((edict_t *)0)->monsterinfo.next_duck_time), SF_RAW},
 	{"monsterinfo.duck_wait_time", offsetof(edict_t, monsterinfo.duck_wait_time), sizeof(((edict_t *)0)->monsterinfo.duck_wait_time), SF_RAW},
+	{"monsterinfo.dodge_time", offsetof(edict_t, monsterinfo.dodge_time), sizeof(((edict_t *)0)->monsterinfo.dodge_time), SF_RAW},
 	{"monsterinfo.last_player_enemy", offsetof(edict_t, monsterinfo.last_player_enemy), sizeof(((edict_t *)0)->monsterinfo.last_player_enemy), SF_EDICT},
 	{"monsterinfo.blindfire", offsetof(edict_t, monsterinfo.blindfire), sizeof(((edict_t *)0)->monsterinfo.blindfire), SF_RAW},
 	{"monsterinfo.blind_fire_delay", offsetof(edict_t, monsterinfo.blind_fire_delay), sizeof(((edict_t *)0)->monsterinfo.blind_fire_delay), SF_RAW},

@@ -1352,11 +1352,28 @@ drawbbox(edict_t *self)
 	VectorClear(newbox);
 }
 
-void
-M_MonsterDodge(edict_t *self, edict_t *attacker, float eta, trace_t *tr) // cppcheck-suppress constParameterPointer ; optech2: callback, type is fixed
+/* optech2: one line per dodge for automated tests (g_damagelog 1) */
+static void
+M_LogDodge(const edict_t *self, const char *kind, float eta, qboolean gravity)
 {
+	if (g_damagelog && g_damagelog->value)
+	{
+		gi.dprintf("dodgelog time %.3f monster %s %s eta %.2f%s\n", level.time,
+			self->classname, kind, eta, gravity ? " lobbed" : "");
+	}
+}
+
+void
+M_MonsterDodge(edict_t *self, edict_t *attacker, float eta, trace_t *tr, qboolean gravity) // cppcheck-suppress constParameterPointer ; optech2: callback, type is fixed
+{
+	/* optech2: the re-release's rules: called by active dodging
+	   (M_CheckDodge), lobbed projectiles aren't ducked, a 2.5 s window,
+	   sidesteps less often on easy and normal, ducks only for what hits
+	   within half a second, and a short rest after each dodge */
+	const float sidestep_chance[] = {0.25f, 0.5f, 1.0f, 1.0f};
 	float r = random();
 	float height;
+	int skill_level;
 	qboolean ducker = false, dodger = false;
 
 	if (!self || !attacker || !tr)
@@ -1371,7 +1388,7 @@ M_MonsterDodge(edict_t *self, edict_t *attacker, float eta, trace_t *tr) // cppc
 		return;
 	}
 
-	if ((self->monsterinfo.duck) && (self->monsterinfo.unduck))
+	if ((self->monsterinfo.duck) && (self->monsterinfo.unduck) && !gravity)
 	{
 		ducker = true;
 	}
@@ -1393,16 +1410,20 @@ M_MonsterDodge(edict_t *self, edict_t *attacker, float eta, trace_t *tr) // cppc
 		FoundTarget(self);
 	}
 
-	if ((eta < 0.1) || (eta > 5))
+	/* don't bother if it's going to hit anyway */
+	if ((eta < level.ticktime) || (eta > 2.5f))
 	{
 		return;
 	}
 
 	/* skill level determination.. */
-	if (r > (0.25 * ((skill->value) + 1)))
+	if (r > 0.5f)
 	{
 		return;
 	}
+
+	skill_level = (int)skill->value;
+	skill_level = (skill_level < 0) ? 0 : ((skill_level > 3) ? 3 : skill_level);
 
 	if (ducker)
 	{
@@ -1428,9 +1449,16 @@ M_MonsterDodge(edict_t *self, edict_t *attacker, float eta, trace_t *tr) // cppc
 		}
 
 		/* if we're ducking already, or the shot is at our knees */
-		if ((tr->endpos[2] <= height) || (self->monsterinfo.aiflags & AI_DUCKED))
+		if (!ducker || (tr->endpos[2] <= height) || (self->monsterinfo.aiflags & AI_DUCKED))
 		{
 			vec3_t right, diff;
+
+			/* on easy and normal, don't sidestep as often */
+			if (random() > sidestep_chance[skill_level])
+			{
+				self->monsterinfo.dodge_time = level.time + 0.8f + random() * 0.6f;
+				return;
+			}
 
 			AngleVectors(self->s.angles, NULL, right, NULL);
 			VectorSubtract(tr->endpos, self->s.origin, diff);
@@ -1455,11 +1483,14 @@ M_MonsterDodge(edict_t *self, edict_t *attacker, float eta, trace_t *tr) // cppc
 
 			/* call the monster specific code here */
 			self->monsterinfo.sidestep(self);
+			self->monsterinfo.dodge_time = level.time + 0.4f + random() * 1.6f;
+			M_LogDodge(self, "sidestep", eta, gravity);
 			return;
 		}
 	}
 
-	if (ducker)
+	/* no need to duck until it's about to hit */
+	if (ducker && (eta < 0.5f))
 	{
 		if (self->monsterinfo.next_duck_time > level.time)
 		{
@@ -1471,6 +1502,19 @@ M_MonsterDodge(edict_t *self, edict_t *attacker, float eta, trace_t *tr) // cppc
 		/* set this prematurely; it doesn't hurt, and prevents extra iterations */
 		self->monsterinfo.aiflags |= AI_DUCKED;
 		self->monsterinfo.duck(self, eta);
+
+		/* on easy and normal, duck longer */
+		if (skill_level == 0)
+		{
+			self->monsterinfo.duck_wait_time += 0.5f + random() * 0.5f;
+		}
+		else if (skill_level == 1)
+		{
+			self->monsterinfo.duck_wait_time += 0.1f + random() * 0.25f;
+		}
+
+		self->monsterinfo.dodge_time = level.time + 0.2f + random() * 0.5f;
+		M_LogDodge(self, "duck", eta, gravity);
 	}
 }
 

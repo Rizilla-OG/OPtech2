@@ -103,6 +103,10 @@ something unfinished; remove an entry in the commit that fixes it.
   rule, machine gun soldier run-and-shoot on sight, tank blaster blind fire,
   supertank grenades, shambler lightning offset search (our shambler is a
   different port), Gunner Commander (not in yet).
+- Active dodging is in (M_CheckDodge, shared M_MonsterDodge for soldier,
+  gunner, infantry, medic, iron maiden, brain). Left: the Xatrix soldiers
+  (soldierh) keep their own duck-only dodge (no duck / sidestep callbacks);
+  gekk and stalker keep theirs; berserker had the shared one already.
 
 ## Prediction
 

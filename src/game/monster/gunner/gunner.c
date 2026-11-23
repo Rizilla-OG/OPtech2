@@ -636,7 +636,7 @@ static const mmove_t gunner_move_duck_static = {
 
 void
 gunner_dodge(edict_t *self, edict_t *attacker, float eta /* unused */,
-	trace_t *trace /* unused */)
+	trace_t *trace /* unused */, qboolean gravity)
 {
 	if (!self || !attacker)
 	{
@@ -1378,7 +1378,7 @@ SP_monster_gunner(edict_t *self)
 	self->monsterinfo.stand = gunner_stand;
 	self->monsterinfo.walk = gunner_walk;
 	self->monsterinfo.run = gunner_run;
-	self->monsterinfo.dodge = gunner_dodge;
+	self->monsterinfo.dodge = M_MonsterDodge; /* optech2: shared dodge with its duck / sidestep (re-release); gunner_dodge stays for old saves */
 	self->monsterinfo.duck = gunner_duck;
 	self->monsterinfo.unduck = monster_duck_up;
 	self->monsterinfo.sidestep = gunner_sidestep;
@@ -1447,7 +1447,7 @@ SP_monster_guncmdr(edict_t *self)
 	self->monsterinfo.stand = gunner_stand;
 	self->monsterinfo.walk = gunner_walk;
 	self->monsterinfo.run = gunner_run;
-	self->monsterinfo.dodge = gunner_dodge;
+	self->monsterinfo.dodge = M_MonsterDodge; /* optech2: shared dodge with its duck / sidestep (re-release); gunner_dodge stays for old saves */
 	self->monsterinfo.duck = gunner_duck;
 	self->monsterinfo.unduck = monster_duck_up;
 	self->monsterinfo.sidestep = gunner_sidestep;

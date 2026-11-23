@@ -767,17 +767,17 @@ extern qboolean parasite_checkattack (edict_t *);
 extern qboolean spider_checkattack (edict_t *);
 extern qboolean turret_checkattack (edict_t *);
 // monsterinfo.dodge
-extern void M_MonsterDodge (edict_t *, edict_t *, float, trace_t *trace);
-extern void brain_dodge (edict_t *, edict_t *, float, trace_t *trace);
-extern void chick_dodge (edict_t *, edict_t *, float, trace_t *trace);
-extern void gekk_dodge (edict_t *, edict_t *, float, trace_t *trace);
-extern void gunner_dodge (edict_t *, edict_t *, float, trace_t *trace);
-extern void infantry_dodge (edict_t *, edict_t *, float, trace_t *trace);
-extern void medic_dodge (edict_t *, edict_t *, float, trace_t *trace);
-extern void monster_dynamic_dodge (edict_t *, edict_t *, float, trace_t *trace);
-extern void soldier_dodge (edict_t *, edict_t *, float, trace_t *trace);
-extern void soldierh_dodge (edict_t *, edict_t *, float, trace_t *trace);
-extern void stalker_dodge (edict_t *, edict_t *, float, trace_t *trace);
+extern void M_MonsterDodge(edict_t *, edict_t *, float, trace_t *trace, qboolean);
+extern void brain_dodge(edict_t *, edict_t *, float, trace_t *trace, qboolean);
+extern void chick_dodge(edict_t *, edict_t *, float, trace_t *trace, qboolean);
+extern void gekk_dodge(edict_t *, edict_t *, float, trace_t *trace, qboolean);
+extern void gunner_dodge(edict_t *, edict_t *, float, trace_t *trace, qboolean);
+extern void infantry_dodge(edict_t *, edict_t *, float, trace_t *trace, qboolean);
+extern void medic_dodge(edict_t *, edict_t *, float, trace_t *trace, qboolean);
+extern void monster_dynamic_dodge(edict_t *, edict_t *, float, trace_t *trace, qboolean);
+extern void soldier_dodge(edict_t *, edict_t *, float, trace_t *trace, qboolean);
+extern void soldierh_dodge(edict_t *, edict_t *, float, trace_t *trace, qboolean);
+extern void stalker_dodge(edict_t *, edict_t *, float, trace_t *trace, qboolean);
 // monsterinfo.idle
 extern void badass_idle (edict_t *);
 extern void brain_idle (edict_t *);

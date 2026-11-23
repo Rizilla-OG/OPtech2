@@ -126,10 +126,8 @@ fire_flechette(edict_t *self, vec3_t start, vec3_t dir, int damage,
 
 	gi.linkentity(flechette);
 
-	if (self->client)
-	{
-		check_dodge(self, flechette->s.origin, dir, speed);
-	}
+	/* optech2: monsters nearby watch for it and dodge (re-release) */
+	flechette->flags |= FL_DODGE;
 }
 
 void
@@ -1633,10 +1631,8 @@ fire_blaster2(edict_t *self, vec3_t start, vec3_t dir, int damage,
 	bolt->classname = "bolt";
 	gi.linkentity(bolt);
 
-	if (self->client)
-	{
-		check_dodge(self, bolt->s.origin, dir, speed);
-	}
+	/* optech2: monsters nearby watch for it and dodge (re-release) */
+	bolt->flags |= FL_DODGE;
 
 	tr = gi.trace(self->s.origin, NULL, NULL, bolt->s.origin, bolt, MASK_SHOT);
 
@@ -1917,10 +1913,8 @@ fire_tracker(edict_t *self, vec3_t start, vec3_t dir, int damage,
 		bolt->think = G_FreeEdict;
 	}
 
-	if (self->client)
-	{
-		check_dodge(self, bolt->s.origin, dir, speed);
-	}
+	/* optech2: monsters nearby watch for it and dodge (re-release) */
+	bolt->flags |= FL_DODGE;
 
 	tr = gi.trace(self->s.origin, NULL, NULL, bolt->s.origin, bolt, MASK_SHOT);
 

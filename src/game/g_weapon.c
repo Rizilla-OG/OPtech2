@@ -33,46 +33,6 @@
 extern void SP_item_foodcube(edict_t *best);
 
 /*
- * This is a support routine used when a client is firing
- * a non-instant attack weapon.  It checks to see if a
- * monster's dodge function should be called.
- */
-void
-check_dodge(edict_t *self, vec3_t start, vec3_t dir, int speed)
-{
-	vec3_t end;
-	trace_t tr;
-
-	if (!self)
-	{
-		return;
-	}
-
-	/* easy mode only ducks one quarter the time */
-	if (skill->value == SKILL_EASY)
-	{
-		if (random() > 0.25)
-		{
-			return;
-		}
-	}
-
-	VectorMA(start, 8192, dir, end);
-	tr = gi.trace(start, NULL, NULL, end, self, MASK_SHOT);
-
-	if ((tr.ent) && (tr.ent->svflags & SVF_MONSTER) && (tr.ent->health > 0) &&
-		(tr.ent->monsterinfo.dodge) && infront(tr.ent, self))
-	{
-		float eta;
-		vec3_t v;
-
-		VectorSubtract(tr.endpos, start, v);
-		eta = (VectorLength(v) - tr.ent->maxs[0]) / speed;
-		tr.ent->monsterinfo.dodge(tr.ent, self, eta, &tr);
-	}
-}
-
-/*
  * Used for all impact (hit/punch/slash) attacks
  */
 qboolean
@@ -634,10 +594,8 @@ fire_blaster(edict_t *self, const vec3_t start, const vec3_t aimdir, int damage,
 
 	gi.linkentity(bolt);
 
-	if (self->client)
-	{
-		check_dodge(self, bolt->s.origin, forward, speed);
-	}
+	/* optech2: monsters nearby watch for it and dodge (re-release) */
+	bolt->flags |= FL_DODGE;
 
 	tr = gi.trace(self->s.origin, NULL, NULL, bolt->s.origin, bolt, MASK_SHOT);
 
@@ -687,10 +645,8 @@ fire_blueblaster(edict_t *self, const vec3_t start, const vec3_t aimdir, int dam
 	bolt->classname = "bolt";
 	gi.linkentity(bolt);
 
-	if (self->client)
-	{
-		check_dodge(self, bolt->s.origin, forward, speed);
-	}
+	/* optech2: monsters nearby watch for it and dodge (re-release) */
+	bolt->flags |= FL_DODGE;
 
 	tr = gi.trace(self->s.origin, NULL, NULL, bolt->s.origin, bolt, MASK_SHOT);
 
@@ -881,6 +837,7 @@ fire_grenade(edict_t *self, vec3_t start, vec3_t aimdir, int damage, int speed,
 	grenade->dmg = damage;
 	grenade->dmg_radius = damage_radius;
 	grenade->classname = "grenade";
+	grenade->flags |= FL_DODGE; /* optech2: monsters step out of its way (re-release) */
 
 	gi.linkentity(grenade);
 }
@@ -930,6 +887,7 @@ fire_grenade2(edict_t *self, vec3_t start, vec3_t aimdir, int damage,
 	grenade->dmg = damage;
 	grenade->dmg_radius = damage_radius;
 	grenade->classname = "hgrenade";
+	grenade->flags |= FL_DODGE; /* optech2: monsters step out of its way (re-release) */
 
 	if (held)
 	{
@@ -1068,10 +1026,8 @@ fire_rocket(edict_t *self, vec3_t start, vec3_t dir, int damage,
 	rocket->s.sound = gi.soundindex("weapons/rockfly.wav");
 	rocket->classname = "rocket";
 
-	if (self->client)
-	{
-		check_dodge(self, rocket->s.origin, dir, speed);
-	}
+	/* optech2: monsters nearby watch for it and dodge (re-release) */
+	rocket->flags |= FL_DODGE;
 
 	gi.linkentity(rocket);
 }
@@ -1446,10 +1402,8 @@ fire_bfg(edict_t *self, vec3_t start, vec3_t dir, int damage,
 	bfg->teammaster = bfg;
 	bfg->teamchain = NULL;
 
-	if (self->client)
-	{
-		check_dodge(self, bfg->s.origin, dir, speed);
-	}
+	/* optech2: monsters nearby watch for it and dodge (re-release) */
+	bfg->flags |= FL_DODGE;
 
 	gi.linkentity(bfg);
 }
@@ -1550,10 +1504,8 @@ fire_ionripper(edict_t *self, vec3_t start, vec3_t dir, int damage,
 	ion->dmg_radius = 100;
 	gi.linkentity(ion);
 
-	if (self->client)
-	{
-		check_dodge(self, ion->s.origin, dir, speed);
-	}
+	/* optech2: monsters nearby watch for it and dodge (re-release) */
+	ion->flags |= FL_DODGE;
 
 	tr = gi.trace(self->s.origin, NULL, NULL, ion->s.origin, ion, MASK_SHOT);
 
@@ -1662,10 +1614,8 @@ fire_heat(edict_t *self, vec3_t start, vec3_t dir, int damage, int speed,
 	heat->dmg_radius = damage_radius;
 	heat->s.sound = gi.soundindex("weapons/rockfly.wav");
 
-	if (self->client)
-	{
-		check_dodge(self, heat->s.origin, dir, speed);
-	}
+	/* optech2: monsters nearby watch for it and dodge (re-release) */
+	heat->flags |= FL_DODGE;
 
 	gi.linkentity(heat);
 }
@@ -1765,10 +1715,8 @@ fire_plasma(edict_t *self, vec3_t start, vec3_t dir, int damage,
 	plasma->s.modelindex = gi.modelindex("sprites/s_photon.sp2");
 	plasma->s.effects |= EF_PLASMA | EF_ANIM_ALLFAST;
 
-	if (self->client)
-	{
-		check_dodge(self, plasma->s.origin, dir, speed);
-	}
+	/* optech2: monsters nearby watch for it and dodge (re-release) */
+	plasma->flags |= FL_DODGE;
 
 	gi.linkentity(plasma);
 }
@@ -2489,10 +2437,8 @@ fire_plasma_bolt(edict_t *self, const vec3_t start, const vec3_t aimdir, int dam
 
 	gi.linkentity(bolt);
 
-	if (self->client)
-	{
-		check_dodge(self, bolt->s.origin, forward, speed);
-	}
+	/* optech2: monsters nearby watch for it and dodge (re-release) */
+	bolt->flags |= FL_DODGE;
 
 	tr = gi.trace(self->s.origin, NULL, NULL, bolt->s.origin, bolt, MASK_SHOT);
 
@@ -2567,10 +2513,8 @@ fire_hellfury_projectile(edict_t *self, const vec3_t start, const vec3_t aimdir,
 	rocket->s.sound = gi.soundindex("weapons/rockfly.wav");
 	rocket->classname = "rocket";
 
-	if (self->client)
-	{
-		check_dodge(self, rocket->s.origin, dir, speed);
-	}
+	/* optech2: monsters nearby watch for it and dodge (re-release) */
+	rocket->flags |= FL_DODGE;
 
 	gi.linkentity(rocket);
 }
