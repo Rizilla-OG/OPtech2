@@ -41,6 +41,7 @@ typedef char cg_stats_fit[(MAX_XSTATS >= CG_MAX_STATS) ? 1 : -1];
 #define CGAME_TAG_OFFSET 1000
 
 static cvar_t *cl_cgame; /* library to load instead of the game folder's game library */
+static cvar_t *cl_hud_safezone; /* optech2: share of the screen the HUD keeps clear at its edges */
 static void *cgame_library;
 static cgame_export_t *cgame;
 static const optech2_pmove_ext_t *cgame_pmove; /* the game library's player movement, or NULL */
@@ -971,6 +972,7 @@ CL_CGame_Load(void)
 	if (!cl_cgame)
 	{
 		cl_cgame = Cvar_Get("cl_cgame", "", 0);
+		cl_hud_safezone = Cvar_Get("cl_hud_safezone", "0.02", CVAR_ARCHIVE);
 	}
 
 	if (cl_cgame->string[0])
@@ -1242,6 +1244,15 @@ CL_CGame_DrawHUD(void)
 	screen.height = scr_vrect.height / scale;
 
 	memset(&safe_margin, 0, sizeof(safe_margin));
+
+	/* optech2: a margin at the screen's edges, as the re-release's safe
+	   zone (its layouts put the coop lives 16 units from the right edge,
+	   which ran off the screen without one) */
+	if (cl_hud_safezone && (cl_hud_safezone->value > 0) && (cl_hud_safezone->value < 0.25f))
+	{
+		safe_margin.x = (int)(scr_vrect.width * cl_hud_safezone->value);
+		safe_margin.y = (int)(scr_vrect.height * cl_hud_safezone->value);
+	}
 
 	cgame->DrawHUD(0, &data, screen, safe_margin, scale, cl.playernum, &ps);
 }
