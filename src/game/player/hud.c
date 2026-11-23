@@ -280,7 +280,9 @@ G_SetLevelEntry(void)
 
 	level.level_entry = 0;
 
-	if (deathmatch->value)
+	/* not in deathmatch, and not for a cinematic or picture "level"
+	   (intro.cin: it showed as "ntro.cin" on the end of unit screen) */
+	if (deathmatch->value || strchr(level.mapname, '.') || (level.mapname[0] == '*'))
 	{
 		return;
 	}

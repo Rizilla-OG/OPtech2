@@ -497,7 +497,9 @@ CG_DrawBind(int32_t isplit, const char *binding, const char *purpose, int x, int
 	const char *key = CG_GetKeyBinding(binding);
 	char text[256];
 
-	snprintf(text, sizeof(text), "[%s] %s", key[0] ? key : binding, purpose);
+	/* optech2: the purpose is a localization key ("$map_item_wheel") */
+	snprintf(text, sizeof(text), "[%s] %s", key[0] ? key : binding,
+		(purpose && (purpose[0] == '$')) ? SV_LocalizationMessage(purpose, NULL) : (purpose ? purpose : ""));
 	Draw_StringScaled(x - (int)(strlen(text) * Draw_CharAdvance() * 0.5f * scale), y, (float)scale, false, text);
 	return 10 * scale;
 }
