@@ -1478,6 +1478,8 @@ qboolean below(edict_t *self, edict_t *other);
 void drawbbox(edict_t *self);
 void M_MonsterDodge(edict_t *self, edict_t *attacker, float eta, trace_t *tr, qboolean gravity);
 void monster_duck_down(edict_t *self);
+qboolean M_CalculatePitchToFire(const edict_t *self, const vec3_t target, const vec3_t start, vec3_t aim,
+	float speed, float time_remaining, qboolean mortar, qboolean destroy_on_touch); /* optech2 */
 void monster_duck_hold(edict_t *self);
 void monster_duck_up(edict_t *self);
 qboolean has_valid_enemy(const edict_t *self);

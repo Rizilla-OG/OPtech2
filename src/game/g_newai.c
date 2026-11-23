@@ -1518,6 +1518,108 @@ M_MonsterDodge(edict_t *self, edict_t *attacker, float eta, trace_t *tr, qboolea
 	}
 }
 
+/*
+ * optech2: re-release M_CalculatePitchToFire: picks a launch pitch that
+ * lands a lobbed projectile on (or near) the target. Tries pitches from
+ * steep to shallow (mortar: steep ones only), simulating each flight with
+ * gravity and bounces in 0.1 s steps for up to time_remaining; keeps the
+ * one that touches the enemy, a player, or a floor within 128 units of the
+ * target. Our grenades get a 200 upward kick at launch (fire_grenade),
+ * which the flight includes. On success aim gets the new direction.
+ */
+qboolean
+M_CalculatePitchToFire(const edict_t *self, const vec3_t target, const vec3_t start, vec3_t aim,
+	float speed, float time_remaining, qboolean mortar, qboolean destroy_on_touch)
+{
+	static const float pitches[] = {-80, -70, -60, -50, -40, -30, -20, -10, -5};
+	const float sim_time = 0.1f;
+	const float launch_kick = 200.0f; /* fire_grenade's upward kick */
+	float best_pitch = 0;
+	float best_dist = -1; /* none yet */
+	vec3_t pitched_aim;
+	size_t i;
+
+	vectoangles(aim, pitched_aim);
+
+	for (i = 0; i < sizeof(pitches) / sizeof(pitches[0]); i++)
+	{
+		vec3_t forward, up, velocity, origin;
+		float time_left = time_remaining;
+
+		if (mortar && (pitches[i] >= -30))
+		{
+			break;
+		}
+
+		pitched_aim[PITCH] = pitches[i];
+		AngleVectors(pitched_aim, forward, NULL, up);
+		VectorScale(forward, speed, velocity);
+		VectorMA(velocity, launch_kick, up, velocity);
+		VectorCopy(start, origin);
+
+		while (time_left > 0)
+		{
+			vec3_t end;
+			trace_t tr;
+
+			velocity[2] -= sv_gravity->value * sim_time;
+			VectorMA(origin, sim_time, velocity, end);
+			tr = gi.trace(origin, NULL, NULL, end, NULL, MASK_SHOT);
+			VectorCopy(tr.endpos, origin);
+
+			if (tr.fraction < 1.0f)
+			{
+				vec3_t to_target;
+				float dist, backoff;
+				int axis;
+
+				if (tr.surface && (tr.surface->flags & SURF_SKY))
+				{
+					break;
+				}
+
+				VectorAdd(origin, tr.plane.normal, origin);
+
+				/* bounce, as MOVETYPE_BOUNCE does */
+				backoff = DotProduct(velocity, tr.plane.normal) * 1.6f;
+
+				for (axis = 0; axis < 3; axis++)
+				{
+					velocity[axis] -= tr.plane.normal[axis] * backoff;
+				}
+
+				VectorSubtract(origin, target, to_target);
+				dist = DotProduct(to_target, to_target);
+
+				if ((tr.ent == self->enemy) || (tr.ent && tr.ent->client) ||
+					((tr.plane.normal[2] >= 0.7f) && (dist < (128.0f * 128.0f)) &&
+						((best_dist < 0) || (dist < best_dist))))
+				{
+					best_pitch = pitches[i];
+					best_dist = dist;
+				}
+
+				if (destroy_on_touch || (tr.contents & (CONTENTS_MONSTER | CONTENTS_DEADMONSTER)) ||
+					(tr.ent && tr.ent->client))
+				{
+					break;
+				}
+			}
+
+			time_left -= sim_time;
+		}
+	}
+
+	if (best_dist < 0)
+	{
+		return false;
+	}
+
+	pitched_aim[PITCH] = best_pitch;
+	AngleVectors(pitched_aim, aim, NULL, NULL);
+	return true;
+}
+
 void
 monster_duck_down(edict_t *self)
 {

@@ -400,14 +400,45 @@ mmove_t supertank_move_backward = {
 	NULL
 };
 
+mmove_t supertank_move_attack4;
+
+/* optech2: the re-release's grenade launcher: lobs a grenade, picking
+   a speed and pitch that land it at the enemy */
+static void
+supertankGrenade(edict_t *self)
+{
+	vec3_t forward, right, start, aim_point;
+	float speed;
+	int flash_number;
+
+	if (!self || !self->enemy || !self->enemy->inuse)
+	{
+		return;
+	}
+
+	flash_number = (self->s.frame == supertank_move_attack4.firstframe) ? MZ2_SUPERTANK_GRENADE_1 : MZ2_SUPERTANK_GRENADE_2;
+
+	AngleVectors(self->s.angles, forward, right, NULL);
+	M_ProjectFlashSource(self, monster_flash_offset[flash_number], forward, right, start);
+	PredictAim(self->enemy, start, 0, false, crandom() * 0.1f, forward, aim_point);
+
+	for (speed = 500; speed < 1000; speed += 100)
+	{
+		if (M_CalculatePitchToFire(self, aim_point, start, forward, speed, 2.5f, true, false))
+		{
+			monster_fire_grenade(self, start, forward, 50, speed, flash_number);
+			break;
+		}
+	}
+}
+
 static mframe_t supertank_frames_attack4[] = {
+	{ai_move, 0, supertankGrenade},
 	{ai_move, 0, NULL},
 	{ai_move, 0, NULL},
+	{ai_move, 0, supertankGrenade},
 	{ai_move, 0, NULL},
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL}
-};
+	{ai_move, 0, NULL}};
 
 mmove_t supertank_move_attack4 = {
 	FRAME_attak4_1,
@@ -703,7 +734,7 @@ supertank_attack(edict_t *self)
 {
 	vec3_t vec;
 	float range;
-	qboolean chaingun_clear, rocket_clear;
+	qboolean chaingun_clear, rocket_clear, grenade_clear;
 
 	if (!self)
 	{
@@ -717,15 +748,35 @@ supertank_attack(edict_t *self)
 	   (re-release); with none, keep moving */
 	chaingun_clear = M_CheckClearShot(self, monster_flash_offset[MZ2_SUPERTANK_MACHINEGUN_1], NULL);
 	rocket_clear = M_CheckClearShot(self, monster_flash_offset[MZ2_SUPERTANK_ROCKET_1], NULL);
+	grenade_clear = M_CheckClearShot(self, monster_flash_offset[MZ2_SUPERTANK_GRENADE_1], NULL);
 
-	/* fire rockets more often at distance */
+	/* fire rockets more often at distance; optech2: grenades (re-release)
+	   when the enemy is far, or above it, now and then otherwise */
 	if (chaingun_clear && (!rocket_clear || (range <= 160) || (random() < 0.3)))
 	{
-		self->monsterinfo.currentmove = &supertank_move_attack1;
+		if (grenade_clear && ((range >= 350) || (vec[2] > 120) || (random() < 0.2)))
+		{
+			self->monsterinfo.currentmove = &supertank_move_attack4;
+		}
+		else
+		{
+			self->monsterinfo.currentmove = &supertank_move_attack1;
+		}
 	}
 	else if (rocket_clear)
 	{
-		self->monsterinfo.currentmove = &supertank_move_attack2;
+		if (grenade_clear && ((vec[2] > 120) || (random() < 0.2)))
+		{
+			self->monsterinfo.currentmove = &supertank_move_attack4;
+		}
+		else
+		{
+			self->monsterinfo.currentmove = &supertank_move_attack2;
+		}
+	}
+	else if (grenade_clear)
+	{
+		self->monsterinfo.currentmove = &supertank_move_attack4;
 	}
 }
 
