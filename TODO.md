@@ -98,11 +98,9 @@ something unfinished; remove an entry in the commit that fixes it.
   re-hear within the window rescues it). Fix the hand-off, then narrow the
   window (code review, 2026-11-23).
 - Clear-shot checks (M_CheckClearShot) are in for soldier, gunner, infantry,
-  gladiator (and Xatrix's), iron maiden, parasite, tank and supertank. Left
-  for the per-monster tweaks: the re-release's shotgun soldier close-range
-  rule, machine gun soldier run-and-shoot on sight, tank blaster blind fire,
-  supertank grenades, shambler lightning offset search (our shambler is a
-  different port), Gunner Commander (not in yet).
+  gladiator (and Xatrix's), iron maiden, parasite, tank and supertank. Left:
+  shambler lightning offset search (our shambler is a different port),
+  Gunner Commander (not in yet).
 - Active dodging is in (M_CheckDodge, shared M_MonsterDodge for soldier,
   gunner, infantry, medic, iron maiden, brain). Left: the Xatrix soldiers
   (soldierh) keep their own duck-only dodge (no duck / sidestep callbacks);

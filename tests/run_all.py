@@ -78,6 +78,7 @@ CHECKS = [
     Check("monster-defs", "mod/monster_check.py"),
     Check("clear-shot", "monsters/clear_shot_check.py", needs_map=("optech2_cover.bsp", "maps/make_cover_map.py")),
     Check("dodging", "monsters/dodge_check.py", needs_map=("optech2_ledge.bsp", "maps/make_ledge_map.py")),
+    Check("monster-attacks", "monsters/attacks_check.py", needs_map=("optech2_cover.bsp", "maps/make_cover_map.py")),
     Check("navigation", "nav/nav_check.py", needs_map=("optech2_nav.bsp", "maps/make_nav_map.py")),
     Check("monster-nav", "nav/monster_nav_check.py", needs_map=("optech2_nav.bsp", "maps/make_nav_map.py")),
     Check("ledge-drops", "nav/ledge_check.py", needs_map=("optech2_ledge.bsp", "maps/make_ledge_map.py")),
