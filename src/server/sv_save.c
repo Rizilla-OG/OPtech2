@@ -625,22 +625,42 @@ SV_Autosave_f(void)
 
 /*
  * optech2: the re-release engine's "restart_level" (its games run it when
- * the level should start over): the autosave slot again
+ * the level should start over). Single player: the autosave slot again.
+ * Multiplayer (coop: everyone died), or with no autosave: the map again,
+ * from the entrance the players came in by (the autosave can be an old
+ * single player one, and a dedicated server writes none).
  */
 void
 SV_RestartLevel_f(void)
 {
-	fileHandle_t f;
+	fileHandle_t f = 0;
+	qboolean multiplayer = Cvar_VariableValue("coop") || Cvar_VariableValue("deathmatch") ||
+						   Cvar_VariableValue("maxclients") > 1;
 
-	FS_FOpenFile("save/save0/server.ssv", &f, true);
+	if (!multiplayer)
+	{
+		FS_FOpenFile("save/save0/server.ssv", &f, true);
+	}
 
 	if (!f)
 	{
-		/* optech2: no autosave (coop, or our own game): the map again */
-		if (sv.name[0])
+		char level[MAX_SAVE_TOKEN_CHARS];
+		const char *map = svs.mapcmd[0] ? svs.mapcmd : sv.name;
+		const char *plus;
+
+		/* "*intro.cin+base1$start": the level part, not the unit start */
+		if (map[0] == '*')
 		{
-			Com_Printf("restart_level: no autosave, starting %s again\n", sv.name);
-			Cbuf_AddText(va("gamemap \"%s\"\n", sv.name));
+			map++;
+		}
+
+		plus = strchr(map, '+');
+		Q_strlcpy(level, plus ? plus + 1 : map, sizeof(level));
+
+		if (level[0] && !strstr(level, ".cin") && !strstr(level, ".pcx"))
+		{
+			Com_Printf("restart_level: starting %s again\n", level);
+			Cbuf_AddText(va("gamemap \"%s\"\n", level));
 		}
 		else
 		{

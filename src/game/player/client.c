@@ -1146,7 +1146,9 @@ player_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
 
 		if (g_coop_enable_lives->value && (self->client->pers.lives > 0))
 		{
+			/* also in what a respawn restores, or it comes back */
 			self->client->pers.lives--;
+			self->client->resp.coop_respawn.lives = self->client->pers.lives;
 		}
 
 		for (i = 1; i <= game.maxclients; i++)

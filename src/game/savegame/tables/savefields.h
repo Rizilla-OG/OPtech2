@@ -519,6 +519,7 @@ static const savefield_t savefields_level[] = {
 	{"level_entry", offsetof(level_locals_t, level_entry), sizeof(((level_locals_t *)0)->level_entry), SF_RAW},
 	{"coop_level_restart_time", offsetof(level_locals_t, coop_level_restart_time), sizeof(((level_locals_t *)0)->coop_level_restart_time), SF_RAW},
 	{"intermission_eou", offsetof(level_locals_t, intermission_eou), sizeof(((level_locals_t *)0)->intermission_eou), SF_RAW},
+	{"showeou", offsetof(level_locals_t, showeou), sizeof(((level_locals_t *)0)->showeou), SF_RAW},
 	{"valid_poi", offsetof(level_locals_t, valid_poi), sizeof(((level_locals_t *)0)->valid_poi), SF_RAW},
 	{"current_poi", offsetof(level_locals_t, current_poi), sizeof(((level_locals_t *)0)->current_poi), SF_RAW},
 	{"current_poi_image", offsetof(level_locals_t, current_poi_image), sizeof(((level_locals_t *)0)->current_poi_image), SF_RAW},

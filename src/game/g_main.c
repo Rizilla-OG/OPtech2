@@ -463,6 +463,16 @@ ExitLevel(void)
 	if (level.intermission_eou)
 	{
 		memset(game.level_entries, 0, sizeof(game.level_entries));
+
+		/* and coop players get all their lives back, as the re-release */
+		if (coop->value && g_coop_enable_lives->value)
+		{
+			for (i = 0; i < game.maxclients; i++)
+			{
+				game.clients[i].pers.lives = (int)g_coop_num_lives->value + 1;
+				game.clients[i].resp.coop_respawn.lives = game.clients[i].pers.lives;
+			}
+		}
 	}
 
 	Com_sprintf(command, sizeof(command), "gamemap \"%s\"\n", level.changemap);

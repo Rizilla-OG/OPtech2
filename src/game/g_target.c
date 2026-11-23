@@ -302,6 +302,12 @@ SP_target_help(edict_t *ent)
 	}
 
 	ent->use = Use_Target_Help;
+
+	/* optech2: flag 2 sets the compass's objective: its marker picture */
+	if (ent->spawnflags & 2)
+	{
+		ent->noise_index = gi.imageindex(st.image ? st.image : "friend");
+	}
 }
 
 /* ========================================================== */

@@ -1418,8 +1418,13 @@ Cmd_Wave_f(edict_t *ent)
 			gi.WriteByte(208);
 			gi.WriteByte(0);
 			gi.unicast(player, false);
-			gi.sound(player, CHAN_AUTO, gi.soundindex("misc/help_marker.wav"), 1, ATTN_NONE, 0);
 			gi.cprintf(player, PRINT_HIGH, "%s pinged a location.\n", ent->client->pers.netname);
+		}
+
+		/* one beep, heard everywhere (one per player stacked up) */
+		if (tr.fraction < 1.0f)
+		{
+			gi.sound(ent, CHAN_AUTO, gi.soundindex("misc/help_marker.wav"), 1, ATTN_NONE, 0);
 		}
 	}
 

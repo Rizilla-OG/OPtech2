@@ -788,6 +788,15 @@ Drop_Radar(edict_t *ent, const gitem_t *item)
 
 static float compass_points[MAX_CLIENTS][MAX_TEMP_POI_POINTS + 1][3];
 
+/* the compass's beep, for this player only (the re-release's local sound) */
+static void
+Compass_Beep(edict_t *ent)
+{
+	gi.WriteByte(svc_stufftext);
+	gi.WriteString("play misc/help_marker.wav\n");
+	gi.unicast(ent, false);
+}
+
 void
 P_SendLevelPOI(edict_t *ent)
 {
@@ -828,6 +837,14 @@ Compass_Update(edict_t *ent, qboolean first)
 		return;
 	}
 
+	/* past the trail's points: done */
+	if ((client->help_draw_index < 0) || (client->help_draw_index >= client->help_draw_count) ||
+		(client->help_draw_index > MAX_TEMP_POI_POINTS))
+	{
+		client->help_draw_points = false;
+		return;
+	}
+
 	points = compass_points[number];
 
 	/* don't draw too many points */
@@ -839,7 +856,7 @@ Compass_Update(edict_t *ent, qboolean first)
 		return;
 	}
 
-	if (client->help_draw_index == client->help_draw_count - 1)
+	if (client->help_draw_index >= client->help_draw_count - 1)
 	{
 		VectorSubtract(client->help_poi_location, points[client->help_draw_index], dir);
 	}
@@ -857,9 +874,9 @@ Compass_Update(edict_t *ent, qboolean first)
 	gi.unicast(ent, false);
 
 	P_SendLevelPOI(ent);
-	gi.sound(ent, CHAN_AUTO, gi.soundindex("misc/help_marker.wav"), 1, ATTN_NORM, 0);
+	Compass_Beep(ent);
 
-	if (client->help_draw_index == client->help_draw_count - 1)
+	if (client->help_draw_index >= client->help_draw_count - 1)
 	{
 		client->help_draw_points = false;
 		return;
@@ -924,7 +941,7 @@ Use_Compass(edict_t *ent, const gitem_t *item)
 	if (!gi_optech2->GetPathToGoal(&request, &info) || (info.point_count <= 0))
 	{
 		P_SendLevelPOI(ent);
-		gi.sound(ent, CHAN_AUTO, gi.soundindex("misc/help_marker.wav"), 1, ATTN_NORM, 0);
+		Compass_Beep(ent);
 		return;
 	}
 
@@ -943,6 +960,14 @@ Use_Compass(edict_t *ent, const gitem_t *item)
 		}
 
 		client->help_draw_index = i;
+	}
+
+	/* the whole trail is close by: just the objective's marker */
+	if (client->help_draw_index >= client->help_draw_count)
+	{
+		client->help_draw_points = false;
+		P_SendLevelPOI(ent);
+		return;
 	}
 
 	/* an extra point in front if the player faces away from the first */

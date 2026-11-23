@@ -1783,7 +1783,7 @@ monster_think(edict_t *self)
 
 	/* optech2: re-release hackflags 1: always after the (first) player */
 	if (self->inuse && (self->hackflags & HACKFLAG_ATTACK_PLAYER) && !self->enemy &&
-		g_edicts[1].inuse && (self->think == monster_think))
+		!self->deadflag && (self->health > 0) && g_edicts[1].inuse && (self->think == monster_think))
 	{
 		self->enemy = &g_edicts[1];
 		FoundTarget(self);

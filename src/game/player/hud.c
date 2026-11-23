@@ -87,7 +87,7 @@ MoveClientToIntermission(edict_t *ent)
 	gi.linkentity(ent);
 
 	/* add the layout; optech2: not over the end of unit screen */
-	if (deathmatch->value || (coop->value && !level.intermission_eou))
+	if (deathmatch->value || (coop->value && !level.showeou))
 	{
 		DeathmatchScoreboardMessage(ent, NULL);
 		gi.unicast(ent, true);
@@ -145,11 +145,16 @@ BeginIntermission(const edict_t *targ)
 	level.intermissiontime = level.time;
 	level.changemap = targ->map;
 	level.intermission_eou = false; /* optech2 */
+	level.showeou = false;
 	G_UpdateLevelEntry(); /* optech2: the stats this level leaves with */
 
 	if (level.changemap && strstr(level.changemap, "*")) /* optech2: a map can leave it out */
 	{
 		level.intermission_eou = true; /* optech2: leaving the unit */
+
+		/* and the end of unit screen goes up (not for "no end of unit"
+		   changes), so the coop scoreboard doesn't */
+		level.showeou = !deathmatch->value && !(targ->spawnflags & SPAWNFLAG_CHANGELEVEL_NO_END_OF_UNIT);
 
 		if (coop->value)
 		{
@@ -259,8 +264,7 @@ BeginIntermission(const edict_t *targ)
 
 	/* optech2: the end of unit screen, as the re-release (not for "no end
 	   of unit" changes, Quake II 64's camera endings) */
-	if (level.intermission_eou && !deathmatch->value &&
-		!(targ->spawnflags & SPAWNFLAG_CHANGELEVEL_NO_END_OF_UNIT))
+	if (level.showeou)
 	{
 		G_EndOfUnitMessage();
 	}
@@ -358,7 +362,8 @@ G_SetLevelEntry(void)
 		{
 			level_entry_t *entry = &game.level_entries[i];
 
-			if (!entry->map_name[0] || !strncmp(entry->map_name, name, length))
+			/* the whole name: "lab1" isn't "lab10" */
+			if (!entry->map_name[0] || (!strncmp(entry->map_name, name, length) && !entry->map_name[length]))
 			{
 				found = entry;
 				break;
@@ -484,6 +489,7 @@ G_EndOfUnitMessage(void)
 	gi.WriteByte(svc_layout);
 	gi.WriteString(layout);
 	gi.multicast(vec3_origin, MULTICAST_ALL);
+	level.showeou = true;
 }
 
 void
@@ -1102,7 +1108,7 @@ G_SetStats(edict_t *ent)
 	{
 		/* optech2: the end of unit screen stays up */
 		if (ent->client->showscores || ent->client->showhelp ||
-			(level.intermissiontime && level.intermission_eou))
+			(level.intermissiontime && level.showeou))
 		{
 			ent->client->ps_rrstats[STAT_LAYOUTS] |= LAYOUTS_LAYOUT;
 		}

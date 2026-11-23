@@ -463,6 +463,7 @@ typedef struct
 	int level_entry; /* optech2: this level's game.level_entries index + 1; 0 none */
 	float coop_level_restart_time; /* optech2: everyone died in coop: restart then */
 	qboolean intermission_eou; /* optech2: leaving the unit */
+	qboolean showeou; /* optech2: the end of unit screen is up */
 
 	qboolean valid_poi;
 	vec3_t current_poi;

@@ -135,15 +135,24 @@ CG_FindStringStats(const char *layout, qboolean *string_stats)
 		return;
 	}
 
-	while ((p = strstr(p, "stat_string")))
+	/* optech2: every "stat_...string..." command: stat_string,
+	   loc_stat_string, loc_stat_rstring, loc_stat_cstring2 (the coop
+	   respawn text) and the like; not stat_pname (a player number) */
+	while ((p = strstr(p, "stat_")))
 	{
+		const char *token = p;
 		int stat;
 
-		p += strlen("stat_string");
+		p += strlen("stat_");
 
 		while (*p && *p != ' ')
 		{
-			p++; /* "_multiline" and the like */
+			p++;
+		}
+
+		if (!strstr(token, "string") || (strstr(token, "string") > p))
+		{
+			continue;
 		}
 
 		stat = atoi(p);
