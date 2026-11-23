@@ -580,7 +580,9 @@ SV_RateDrop(client_t *c)
 	/* optech2: rate is bytes per second, so sum the messages of the last
 	   second: sv.tickrate of them (was always the last 10, which at 60 Hz
 	   is 1/6 s and let clients receive 6x their rate) */
-	for (i = 0; i < sv.tickrate && i < RATE_MESSAGES; i++)
+	/* optech2: the last second's frames (this frame's slot isn't written
+	   yet and still holds one from RATE_MESSAGES frames ago) */
+	for (i = 1; i <= sv.tickrate && i < RATE_MESSAGES; i++)
 	{
 		total += c->message_size[(sv.framenum - i + RATE_MESSAGES) % RATE_MESSAGES];
 	}

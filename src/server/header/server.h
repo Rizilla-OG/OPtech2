@@ -193,7 +193,8 @@ typedef struct
 										/* used to check late spawns */
 
 	client_t *clients;                  /* [maxclients->value]; */
-	int num_client_entities;            /* maxclients->value * UPDATE_BACKUP * MAX_PACKET_ENTITIES */
+	int num_client_entities; /* maxclients->value * UPDATE_BACKUP * packet_entities */
+	int packet_entities; /* optech2: a frame's entity cap: MAX_PACKET_ENTITIES, less on big servers */
 	int next_client_entities;           /* next client_entity to use */
 	entity_xstate_t *client_entities;    /* [num_client_entities] */
 
@@ -348,6 +349,7 @@ void *SV_RR_GameImport(void);
 game_export_t *SV_RR_Connect(void *game_export);
 void SV_RR_PrepFrame(void);
 qboolean SV_RR_CanSave(void);
+qboolean SV_GameRunsAtTickrate(void); /* optech2 */
 qboolean SV_RR_VisibleTo(const edict_t *shadow, const edict_t *client_shadow); /* optech2 */
 int SV_RR_ChooseSlot(const char *userinfo); /* optech2 */
 void SV_RR_LoopSound(const edict_t *shadow, float *volume, float *attenuation); /* optech2 */
@@ -356,6 +358,7 @@ void SV_RR_FillPlayerState(int edict_number, player_xstate_t *ps);
 
 /* optech2: true while the level being left is saved (gamemap) */
 extern qboolean sv_level_transition;
+extern qboolean sv_restart_level; /* optech2: the next gamemap starts its level afresh */
 
 /* loadtime optimizations */
 

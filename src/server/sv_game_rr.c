@@ -105,12 +105,16 @@ RR_NumForEdict(const rr_edict_t *ent)
 static edict_t *
 RR_ShadowOf(const rr_edict_t *ent)
 {
-	if (!ent)
+	int number;
+
+	if (!ent || !rr_shadows)
 	{
 		return NULL;
 	}
 
-	return rr_shadows + RR_NumForEdict(ent);
+	/* optech2: only edicts we have a shadow for (a save can bring more) */
+	number = RR_NumForEdict(ent);
+	return ((number >= 0) && (number < rr_shadow_count)) ? rr_shadows + number : NULL;
 }
 
 static rr_edict_t *
@@ -198,6 +202,11 @@ RR_ConvertHighEffects(uint64_t effects)
 static void
 RR_PullCollision(edict_t *shadow, const rr_edict_t *ent)
 {
+	if (!shadow || !ent)
+	{
+		return;
+	}
+
 	shadow->inuse = ent->inuse;
 	shadow->svflags = (int)ent->svflags; /* bits 0-2 are the classic ones */
 	shadow->solid = (solid_t)ent->solid;
@@ -291,9 +300,18 @@ RR_PullPlayerState(gclient_t *client, const rr_gclient_t *game_client)
 static void
 RR_PullEdict(int number)
 {
-	const rr_edict_t *ent = RR_EdictNum(number);
-	edict_t *shadow = rr_shadows + number;
+	const rr_edict_t *ent;
+	edict_t *shadow;
 	float scale;
+
+	/* optech2: only edicts we have a shadow for */
+	if (!rr_shadows || (number < 0) || (number >= rr_shadow_count))
+	{
+		return;
+	}
+
+	ent = RR_EdictNum(number);
+	shadow = rr_shadows + number;
 
 	RR_PullCollision(shadow, ent);
 
@@ -316,7 +334,8 @@ RR_PullEdict(int number)
 	shadow->rrs.effects = RR_ConvertHighEffects(ent->s.effects);
 	shadow->rrs.alpha = ent->s.alpha;
 
-	if (ent->client && (number >= 1) && (number <= rr_shadow_count))
+	if (ent->client && (number >= 1) && (number <= rr_shadow_count) && (number <= MAX_CLIENTS) &&
+		(number <= maxclients->value))
 	{
 		shadow->client = rr_shadow_clients + (number - 1);
 		RR_PullPlayerState(shadow->client, ent->client);
@@ -412,6 +431,16 @@ RR_Clip(rr_edict_t *entity, const float *start, const float *mins,
 	trace_t trace;
 
 	shadow = RR_ShadowOf(entity);
+
+	if (!shadow)
+	{
+		/* optech2: nothing to clip against */
+		memset(&trace, 0, sizeof(trace));
+		trace.fraction = 1;
+		VectorCopy(end, trace.endpos);
+		return RR_ConvertTrace(&trace);
+	}
+
 	RR_PullCollision(shadow, entity);
 	trace = SV_ClipToEntity(start, mins, maxs, end, shadow, (int)contentmask);
 	return RR_ConvertTrace(&trace);
@@ -457,7 +486,11 @@ RR_UnlinkEntity(rr_edict_t *ent)
 {
 	edict_t *shadow = RR_ShadowOf(ent);
 
-	SV_UnlinkEdict(shadow);
+	if (shadow)
+	{
+		SV_UnlinkEdict(shadow);
+	}
+
 	ent->linked = false;
 }
 
@@ -1094,6 +1127,11 @@ RR_Sound(rr_edict_t *ent, uint8_t channel, int soundindex, float volume,
 		return;
 	}
 
+	if (!RR_ShadowOf(ent))
+	{
+		return; /* optech2: an edict without a shadow */
+	}
+
 	RR_PullEdict(RR_NumForEdict(ent));
 	RR_SetAsidePending();
 	SV_StartSound(NULL, RR_ShadowOf(ent), channel, soundindex, volume,
@@ -1108,6 +1146,11 @@ RR_PositionedSound(const float *origin, rr_edict_t *ent, uint8_t channel,
 	if (!ent)
 	{
 		return;
+	}
+
+	if (!RR_ShadowOf(ent))
+	{
+		return; /* optech2: an edict without a shadow */
 	}
 
 	RR_PullEdict(RR_NumForEdict(ent));
@@ -1698,6 +1741,7 @@ Classic_Shutdown(void)
 	RR_FreeExtraConfigStrings();
 	SV_WorldSyncEdict = NULL;
 	sv_rerelease_game = false;
+	rr_ge = NULL; /* optech2: the library unloads next; nothing may call into it */
 	Cmd_RemoveCommand("rr_edicts");
 }
 
@@ -1816,6 +1860,17 @@ Classic_ReadGame(const char *filename)
 	RR_ForgetShadows();
 	rr_ge->ReadGameJson(json);
 	free(json);
+
+	/* optech2: the save's game may have room for another number of edicts:
+	   a shadow for each again (the old ones were forgotten above) */
+	if (((int)rr_ge->max_edicts != rr_shadow_count) && (rr_shadow_count < MAX_EDICTS ||
+														   (int)rr_ge->max_edicts < MAX_EDICTS))
+	{
+		Z_Free(rr_shadows);
+		Z_Free(rr_shadow_clients);
+		RR_AllocShadows();
+	}
+
 	RR_PullAll();
 }
 
@@ -1907,7 +1962,7 @@ SV_RR_LoopSound(const edict_t *shadow, float *volume, float *attenuation)
 {
 	const rr_edict_t *ent;
 
-	if (!rr_ge || !rr_shadows || shadow < rr_shadows || shadow >= rr_shadows + rr_ge->max_edicts)
+	if (!rr_ge || !rr_shadows || shadow < rr_shadows || shadow >= rr_shadows + rr_shadow_count)
 	{
 		return;
 	}

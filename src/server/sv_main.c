@@ -177,7 +177,9 @@ SV_GiveMsec(void)
 {
 	int i;
 
-	if (sv.framenum & 15)
+	/* optech2: every 1.6 s of game time (16 frames at the stock 10 Hz),
+	   whatever the tick rate: at 60 Hz 16 frames let a client move 6x */
+	if (sv.framenum % ((sv.tickrate > 0 ? sv.tickrate : 10) * 16 / 10))
 	{
 		return;
 	}
@@ -435,14 +437,18 @@ SV_Frame(int usec)
 	if (!sv_timedemo->value && (svs.realtime < sv.time))
 	{
 		/* never let the time get too far off */
-		if (sv.time - svs.realtime > 1000 / sv.tickrate) /* optech2: was 100 */
+		/* optech2: was 100; the frame length rounded up, as sv.time steps
+		   16/17/17 ms at 60 Hz (rounding down nudged time 4% fast) */
+		const int frame_ms = (1000 + sv.tickrate - 1) / sv.tickrate;
+
+		if (sv.time - svs.realtime > frame_ms)
 		{
 			if (sv_showclamp->value)
 			{
 				Com_Printf("sv lowclamp\n");
 			}
 
-			svs.realtime = sv.time - 1000 / sv.tickrate;
+			svs.realtime = sv.time - frame_ms;
 		}
 
 		NET_Sleep(sv.time - svs.realtime);
@@ -696,7 +702,7 @@ SV_FinalMessage(const char *message, qboolean reconnect)
 	 *     with the maxclients value from when the current server was started (see SV_InitGame())
 	 *     so we can just calculate the right number of clients from that
 	 */
-	int numClients = svs.num_client_entities / ( UPDATE_BACKUP * MAX_PACKET_ENTITIES );
+	int numClients = svs.packet_entities ? svs.num_client_entities / (UPDATE_BACKUP * svs.packet_entities) : 0;
 	for (i = 0, cl = svs.clients; i < numClients; i++, cl++)
 	{
 		if (cl->state >= cs_connected)

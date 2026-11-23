@@ -261,7 +261,8 @@ SV_CheckForSavegame(qboolean isautosave)
 		previousState = sv.state;
 		sv.state = ss_loading;
 
-		for (i = 0; i < 100; i++)
+		/* optech2: ten seconds at any tick rate (was 100 frames, 1.7 s at 60 Hz) */
+		for (i = 0; i < 10 * sv.tickrate; i++)
 		{
 			ge->RunFrame();
 		}
@@ -306,7 +307,7 @@ SV_SpawnServer(char *server, char *spawnpoint, server_state_t serverstate,
 	DebugDraw_Clear(); /* optech2: no debug drawing left from the last map */
 	svs.realtime = 0;
 	/* optech2: frames per second for this map (the game reads the same cvar) */
-	sv.tickrate = Q_clamp((int)sv_tickrate->value, 10, 120);
+	sv.tickrate = SV_GameRunsAtTickrate() ? Q_clamp((int)sv_tickrate->value, 10, 120) : 10;
 	sv.loadgame = loadgame;
 	sv.attractloop = attractloop;
 
@@ -568,7 +569,11 @@ SV_InitGame(void)
 	svs.gamemode = gamemode;
 	svs.spawncount = randk();
 	svs.clients = Z_Malloc(sizeof(client_t) * maxclients->value);
-	svs.num_client_entities = maxclients->value * UPDATE_BACKUP * MAX_PACKET_ENTITIES;
+	/* optech2: the full 1024 entities a frame for up to 16 players; bigger
+	   servers get fewer (every client keeps UPDATE_BACKUP frames of them:
+	   256 players at 1024 took about 500 MB) */
+	svs.packet_entities = (maxclients->value <= 16) ? MAX_PACKET_ENTITIES : ((maxclients->value <= 64) ? MAX_PACKET_ENTITIES / 2 : MAX_PACKET_ENTITIES / 4);
+	svs.num_client_entities = maxclients->value * UPDATE_BACKUP * svs.packet_entities;
 	svs.client_entities = Z_Malloc( sizeof(entity_xstate_t) * svs.num_client_entities);
 
 	/* init network stuff */

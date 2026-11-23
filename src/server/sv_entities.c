@@ -823,9 +823,21 @@ SV_BuildClientFrame(client_t *client)
 
 		if (ent != clent)
 		{
-			vec3_t delta;
+			vec3_t delta, center;
 
-			VectorSubtract(org, ent->s.origin, delta);
+			/* the middle of its box: brush models (doors, lifts) have
+			   their origin at 0 0 0 and would rank as far away */
+			if (ent->solid == SOLID_BSP)
+			{
+				VectorAdd(ent->absmin, ent->absmax, center);
+				VectorScale(center, 0.5f, center);
+			}
+			else
+			{
+				VectorCopy(ent->s.origin, center);
+			}
+
+			VectorSubtract(org, center, delta);
 			visible_entities[visible_count].distance = VectorLengthSquared(delta);
 		}
 
@@ -837,14 +849,14 @@ SV_BuildClientFrame(client_t *client)
 	   visible, send the nearest ones (the player's own entity is at
 	   distance 0), not simply the lowest entity numbers: those are often
 	   map items, and every monster spawned later went missing. */
-	if (visible_count > MAX_PACKET_ENTITIES)
+	if (visible_count > svs.packet_entities)
 	{
 		Com_DPrintf("%s: %d visible entities, sending the nearest %d\n",
-			__func__, visible_count, MAX_PACKET_ENTITIES);
+			__func__, visible_count, svs.packet_entities);
 
 		qsort(visible_entities, visible_count, sizeof(visible_entities[0]),
 			SV_CompareVisibleDistance);
-		visible_count = MAX_PACKET_ENTITIES;
+		visible_count = svs.packet_entities;
 
 		/* deltas need the entities in number order */
 		qsort(visible_entities, visible_count, sizeof(visible_entities[0]),

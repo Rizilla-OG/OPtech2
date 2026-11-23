@@ -537,6 +537,20 @@ SV_ConnectGameExtensions(void)
 	}
 }
 
+/* optech2: the loaded game runs at sv_tickrate: our own game library (its
+   extension) and re-release ones (they read gi.tick_rate). Classic game
+   libraries count 0.1 s per frame and would run that many times too fast. */
+qboolean
+SV_GameRunsAtTickrate(void)
+{
+	if (!ge || (ge->apiversion == GAME_API_R97_VERSION))
+	{
+		return false;
+	}
+
+	return (sv_optech2_ext != NULL) || sv_rerelease_game;
+}
+
 /*
  * Called when either the entire server is being killed, or
  * it is changing to a different game directory.
