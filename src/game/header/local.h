@@ -1205,6 +1205,7 @@ void object_think(edict_t *self);
 void object_spawn(edict_t *self);
 void M_ProjectFlashSource(const edict_t *self, const vec3_t offset, const vec3_t forward,
 	const vec3_t right, vec3_t result);
+qboolean M_CheckClearShot(edict_t *self, const vec3_t offset, vec3_t start); /* optech2 */
 
 void monster_fire_blaster2(edict_t *self, vec3_t start, vec3_t dir, int damage,
 		int speed, int flashtype, int effect);

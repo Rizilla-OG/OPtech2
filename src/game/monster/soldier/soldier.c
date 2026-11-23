@@ -1277,18 +1277,24 @@ soldier_attack(edict_t *self)
 	}
 	else
 	{
+		/* optech2: only attacks whose muzzle has a clear line to the
+		   enemy (re-release); with none, keep running. Run-shoot
+		   above isn't checked: it only starts at a distance */
 		if (self->s.skinnum < 4)
 		{
-			if (random() < 0.5)
+			qboolean attack1_clear = M_CheckClearShot(self, monster_flash_offset[MZ2_SOLDIER_BLASTER_1], NULL);
+			qboolean attack2_clear = M_CheckClearShot(self, monster_flash_offset[MZ2_SOLDIER_BLASTER_2], NULL);
+
+			if (attack1_clear && (!attack2_clear || (random() < 0.5)))
 			{
 				self->monsterinfo.currentmove = &soldier_move_attack1;
 			}
-			else
+			else if (attack2_clear)
 			{
 				self->monsterinfo.currentmove = &soldier_move_attack2;
 			}
 		}
-		else
+		else if (M_CheckClearShot(self, monster_flash_offset[MZ2_SOLDIER_MACHINEGUN_4], NULL))
 		{
 			self->monsterinfo.currentmove = &soldier_move_attack4;
 		}

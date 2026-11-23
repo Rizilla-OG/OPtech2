@@ -661,6 +661,17 @@ parasite_attack(edict_t *self)
 		return;
 	}
 
+	/* optech2: no drain without a clear line from the proboscis
+	   (re-release; the drain's own offset) */
+	{
+		const vec3_t proboscis_offset = {24, 0, 6};
+
+		if (!M_CheckClearShot(self, proboscis_offset, NULL))
+		{
+			return;
+		}
+	}
+
 	self->monsterinfo.currentmove = &parasite_move_drain;
 }
 

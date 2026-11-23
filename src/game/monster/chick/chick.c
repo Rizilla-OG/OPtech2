@@ -894,6 +894,13 @@ chick_rerocket(edict_t *self)
 		return;
 	}
 
+	/* optech2: no next rocket into a wall or a friend (re-release) */
+	if (!M_CheckClearShot(self, monster_flash_offset[MZ2_CHICK_ROCKET_1], NULL))
+	{
+		self->monsterinfo.currentmove = &chick_move_end_attack1;
+		return;
+	}
+
 	if (self->enemy->health > 0)
 	{
 		if (ai_range(self, self->enemy) > RANGE_MELEE)
@@ -1023,6 +1030,12 @@ void
 chick_attack(edict_t *self)
 {
 	if (!self)
+	{
+		return;
+	}
+
+	/* optech2: no rocket attack without a clear shot (re-release) */
+	if (!M_CheckClearShot(self, monster_flash_offset[MZ2_CHICK_ROCKET_1], NULL))
 	{
 		return;
 	}

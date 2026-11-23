@@ -985,6 +985,7 @@ tank_attack(edict_t *self)
 	vec3_t vec;
 	float range;
 	float r;
+	qboolean chain_clear, blaster_clear;
 
 	if (!self || !self->enemy || !self->enemy->inuse)
 	{
@@ -1031,6 +1032,12 @@ tank_attack(edict_t *self)
 			return;
 		}
 
+		/* optech2: not into a wall (re-release) */
+		if (!M_CheckClearShot(self, monster_flash_offset[MZ2_TANK_ROCKET_1], NULL))
+		{
+			return;
+		}
+
 		// turn on manual steering to signal both manual steering and blindfire
 		self->monsterinfo.aiflags |= AI_MANUAL_STEERING;
 		self->monsterinfo.currentmove = &tank_move_attack_fire_rocket;
@@ -1044,40 +1051,45 @@ tank_attack(edict_t *self)
 
 	r = random();
 
+	/* optech2: each weapon only with a clear shot from its muzzle
+	   (re-release); with none, keep running */
+	chain_clear = M_CheckClearShot(self, monster_flash_offset[MZ2_TANK_MACHINEGUN_5], NULL);
+	blaster_clear = M_CheckClearShot(self, monster_flash_offset[MZ2_TANK_BLASTER_1], NULL);
+
 	if (range <= 125)
 	{
-		if (r < 0.4)
+		if (chain_clear && (r < 0.4))
 		{
 			self->monsterinfo.currentmove = &tank_move_attack_chain;
 		}
-		else
+		else if (blaster_clear)
 		{
 			self->monsterinfo.currentmove = &tank_move_attack_blast;
 		}
 	}
 	else if (range <= 250)
 	{
-		if (r < 0.5)
+		if (chain_clear && (r < 0.5))
 		{
 			self->monsterinfo.currentmove = &tank_move_attack_chain;
 		}
-		else
+		else if (blaster_clear)
 		{
 			self->monsterinfo.currentmove = &tank_move_attack_blast;
 		}
 	}
 	else
 	{
-		if (r < 0.33)
+		if (chain_clear && (r < 0.33))
 		{
 			self->monsterinfo.currentmove = &tank_move_attack_chain;
 		}
-		else if (r < 0.66)
+		else if ((r < 0.66) && M_CheckClearShot(self, monster_flash_offset[MZ2_TANK_ROCKET_1], NULL))
 		{
 			self->monsterinfo.currentmove = &tank_move_attack_pre_rocket;
 			self->pain_debounce_time = level.time + 5.0;    /* no pain for a while */
 		}
-		else
+		else if (blaster_clear)
 		{
 			self->monsterinfo.currentmove = &tank_move_attack_blast;
 		}

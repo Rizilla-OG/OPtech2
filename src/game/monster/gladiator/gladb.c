@@ -324,6 +324,12 @@ gladb_attack(edict_t *self)
 		}
 	}
 
+	/* optech2: no charge without a clear shot (re-release) */
+	if (!M_CheckClearShot(self, monster_flash_offset[MZ2_GLADIATOR_RAILGUN_1], NULL))
+	{
+		return;
+	}
+
 	/* charge up the railgun */
 	gi.sound(self, CHAN_WEAPON, sound_gun, 1, ATTN_NORM, 0);
 	VectorCopy(self->enemy->s.origin, self->pos1); /* save for aiming the shot */

@@ -1027,7 +1027,8 @@ infantry_attack(edict_t *self)
 	{
 		self->monsterinfo.currentmove = &infantry_move_attack2;
 	}
-	else
+	/* optech2: shoot only with a clear shot (re-release); else keep running */
+	else if (M_CheckClearShot(self, monster_flash_offset[MZ2_INFANTRY_MACHINEGUN_1], NULL))
 	{
 		self->monsterinfo.currentmove = &infantry_move_attack1;
 	}

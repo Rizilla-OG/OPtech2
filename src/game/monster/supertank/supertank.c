@@ -703,6 +703,7 @@ supertank_attack(edict_t *self)
 {
 	vec3_t vec;
 	float range;
+	qboolean chaingun_clear, rocket_clear;
 
 	if (!self)
 	{
@@ -712,21 +713,19 @@ supertank_attack(edict_t *self)
 	VectorSubtract(self->enemy->s.origin, self->s.origin, vec);
 	range = VectorLength(vec);
 
-	if (range <= 160)
+	/* optech2: each weapon only with a clear shot from its muzzle
+	   (re-release); with none, keep moving */
+	chaingun_clear = M_CheckClearShot(self, monster_flash_offset[MZ2_SUPERTANK_MACHINEGUN_1], NULL);
+	rocket_clear = M_CheckClearShot(self, monster_flash_offset[MZ2_SUPERTANK_ROCKET_1], NULL);
+
+	/* fire rockets more often at distance */
+	if (chaingun_clear && (!rocket_clear || (range <= 160) || (random() < 0.3)))
 	{
 		self->monsterinfo.currentmove = &supertank_move_attack1;
 	}
-	else
+	else if (rocket_clear)
 	{
-		/* fire rockets more often at distance */
-		if (random() < 0.3)
-		{
-			self->monsterinfo.currentmove = &supertank_move_attack1;
-		}
-		else
-		{
-			self->monsterinfo.currentmove = &supertank_move_attack2;
-		}
+		self->monsterinfo.currentmove = &supertank_move_attack2;
 	}
 }
 

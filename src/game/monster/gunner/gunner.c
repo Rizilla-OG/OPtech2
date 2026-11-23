@@ -724,6 +724,12 @@ gunner_grenade_check(edict_t *self)
 		return false;
 	}
 
+	/* optech2: not when the grenade muzzle is blocked (re-release) */
+	if (!M_CheckClearShot(self, monster_flash_offset[MZ2_GUNNER_GRENADE_1], NULL))
+	{
+		return false;
+	}
+
 	/* if the player is above my head, use machinegun. */
 
 	/* check for flag telling us that we're blindfiring */
@@ -1018,8 +1024,11 @@ gunner_attack(edict_t *self)
 		return;
 	}
 
-	/* gunner needs to use his chaingun if he's being attacked by a tesla. */
-	if ((ai_range(self, self->enemy) == RANGE_MELEE) || self->bad_area)
+	/* gunner needs to use his chaingun if he's being attacked by a tesla.
+	   optech2: up close only with a clear shot, and the chaingun only
+	   with a clear shot either (re-release); with none, keep running */
+	if (self->bad_area || ((ai_range(self, self->enemy) == RANGE_MELEE) &&
+							  M_CheckClearShot(self, monster_flash_offset[MZ2_GUNNER_MACHINEGUN_1], NULL)))
 	{
 		self->monsterinfo.currentmove = &gunner_move_attack_chain;
 	}
@@ -1029,7 +1038,7 @@ gunner_attack(edict_t *self)
 		{
 			self->monsterinfo.currentmove = &gunner_move_attack_grenade;
 		}
-		else
+		else if (M_CheckClearShot(self, monster_flash_offset[MZ2_GUNNER_MACHINEGUN_1], NULL))
 		{
 			self->monsterinfo.currentmove = &gunner_move_attack_chain;
 		}

@@ -97,6 +97,12 @@ something unfinished; remove an entry in the commit that fixes it.
   ai_run (the stand-to-run hand-off loses the sound target at 60 Hz; a
   re-hear within the window rescues it). Fix the hand-off, then narrow the
   window (code review, 2026-11-23).
+- Clear-shot checks (M_CheckClearShot) are in for soldier, gunner, infantry,
+  gladiator (and Xatrix's), iron maiden, parasite, tank and supertank. Left
+  for the per-monster tweaks: the re-release's shotgun soldier close-range
+  rule, machine gun soldier run-and-shoot on sight, tank blaster blind fire,
+  supertank grenades, shambler lightning offset search (our shambler is a
+  different port), Gunner Commander (not in yet).
 
 ## Prediction
 

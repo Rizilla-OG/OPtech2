@@ -48,6 +48,14 @@ monster_muzzleflash2(const edict_t *self, const vec3_t start, int flashtype)
 		gi.WriteByte(flashtype - 255);
 	}
 	gi.multicast(start, MULTICAST_PVS);
+
+	/* optech2: one line per monster shot for automated tests (g_damagelog 1),
+	   also shots stopped at the muzzle that never hit anything */
+	if (g_damagelog && g_damagelog->value)
+	{
+		gi.dprintf("shotlog time %.3f monster %s flash %d at %.0f %.0f %.0f\n",
+			level.time, self->classname, flashtype, self->s.origin[0], self->s.origin[1], self->s.origin[2]);
+	}
 }
 
 void
@@ -391,6 +399,86 @@ M_ProjectFlashSource(const edict_t *self, const vec3_t offset, const vec3_t forw
 	}
 
 	G_ProjectSource(self->s.origin, scaled_offset, forward, right, result);
+}
+
+/*
+ * optech2: re-release M_CheckClearShot: would a shot fired from this flash
+ * offset reach the enemy? True when the line from the muzzle to the
+ * enemy's eyes (or, failing that, its origin; the blind fire target when
+ * firing blind) hits the enemy, any player, or nothing near. Lets a
+ * monster skip an attack whose muzzle sits behind a wall or a friend.
+ * Ours also needs the line from the monster's middle to the muzzle clear.
+ * start gets the muzzle position (may be NULL).
+ */
+qboolean
+M_CheckClearShot(edict_t *self, const vec3_t offset, vec3_t start)
+{
+	const int shot_mask = MASK_SHOT & ~CONTENTS_DEADMONSTER;
+	vec3_t aim_angles, forward, right, muzzle, target;
+	qboolean firing_blind;
+	trace_t trace;
+
+	/* no enemy, just do whatever */
+	if (!self || !self->enemy)
+	{
+		return false;
+	}
+
+	/* aim where the monster is turning to, not where it faces now */
+	VectorSet(aim_angles, self->s.angles[PITCH], self->ideal_yaw, 0);
+	AngleVectors(aim_angles, forward, right, NULL);
+	M_ProjectFlashSource(self, offset, forward, right, muzzle);
+
+	if (start)
+	{
+		VectorCopy(muzzle, start);
+	}
+
+	/* optech2: shots start with a trace from the monster's middle to the
+	   muzzle (fire_blaster, fire_lead...); a muzzle reaching over cover
+	   still has its shot stopped there */
+	trace = gi.trace(self->s.origin, NULL, NULL, muzzle, self, shot_mask);
+
+	if ((trace.fraction < 1.0f) && (trace.ent != self->enemy) &&
+		!(trace.ent && trace.ent->client))
+	{
+		return false;
+	}
+
+	firing_blind = (self->monsterinfo.attack_state == AS_BLIND) ||
+				   (self->monsterinfo.aiflags & (AI_MANUAL_STEERING | AI_LOST_SIGHT));
+
+	if (firing_blind)
+	{
+		VectorCopy(self->monsterinfo.blind_fire_target, target);
+	}
+	else
+	{
+		VectorCopy(self->enemy->s.origin, target);
+		target[2] += self->enemy->viewheight;
+	}
+
+	trace = gi.trace(muzzle, NULL, NULL, target, self, shot_mask);
+
+	if ((trace.ent == self->enemy) || (trace.ent && trace.ent->client) ||
+		((trace.fraction > 0.8f) && !trace.startsolid))
+	{
+		return true;
+	}
+
+	/* the eyes may be hidden behind a ledge while the body isn't */
+	if (!firing_blind)
+	{
+		trace = gi.trace(muzzle, NULL, NULL, self->enemy->s.origin, self, shot_mask);
+
+		if ((trace.ent == self->enemy) || (trace.ent && trace.ent->client) ||
+			((trace.fraction > 0.8f) && !trace.startsolid))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 /* ================================================================== */
