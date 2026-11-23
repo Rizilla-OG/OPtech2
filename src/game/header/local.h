@@ -852,6 +852,7 @@ extern cvar_t *g_monster_freeze; /* optech2: 1 = monsters stand still (they stil
 extern cvar_t *g_coop_squad_respawn; /* optech2: dead coop players come back near a teammate */
 extern cvar_t *g_coop_enable_lives; /* optech2: coop players have lives */
 extern cvar_t *g_coop_num_lives;
+extern cvar_t *g_classic_balance; /* optech2: 1 = the 1997 numbers instead of the re-release's */
 extern cvar_t *g_skip_cameras; /* optech2: 1 = every camera scene can be skipped (a key after 2 s) */
 extern cvar_t *g_monster_nav; /* optech2: 0 = monsters chase the stock way, without paths; 2 = and log ledge drops; 3 = and draw paths */
 extern cvar_t *sv_maxvelocity;

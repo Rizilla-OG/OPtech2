@@ -901,7 +901,8 @@ SP_monster_jorg(edict_t *self)
 	VectorSet(self->mins, -80, -80, 0);
 	VectorSet(self->maxs, 80, 80, 140);
 
-	self->health = 3000 * st.health_multiplier;
+	/* optech2: 8000 as in the re-release; 3000 with g_classic_balance 1 */
+	self->health = (g_classic_balance->value ? 3000 : 8000) * st.health_multiplier;
 	self->gib_health = -2000;
 	self->mass = 1000;
 

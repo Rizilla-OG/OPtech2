@@ -1130,7 +1130,8 @@ SP_monster_turret(edict_t *self)
 	self->movetype = MOVETYPE_NONE;
 	self->solid = SOLID_BBOX;
 
-	self->health = 240 * st.health_multiplier;
+	/* optech2: 50 as in the re-release; 240 with g_classic_balance 1 */
+	self->health = (g_classic_balance->value ? 240 : 50) * st.health_multiplier;
 	self->gib_health = -100;
 	self->mass = 250;
 	self->yaw_speed = 45;

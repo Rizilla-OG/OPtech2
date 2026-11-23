@@ -422,6 +422,7 @@ InitGame(void)
 	sv_tickrate = gi.cvar("sv_tickrate", "60", CVAR_SERVERINFO | CVAR_LATCH); /* optech2 */
 	g_damagelog = gi.cvar("g_damagelog", "0", 0); /* optech2: 1 = print every hit (tests) */
 	g_skip_cameras = gi.cvar("g_skip_cameras", "0", CVAR_ARCHIVE); /* optech2: off, as the re-release */
+	g_classic_balance = gi.cvar("g_classic_balance", "0", CVAR_ARCHIVE); /* optech2: re-release numbers by default */
 	g_coop_squad_respawn = gi.cvar("g_coop_squad_respawn", "1", CVAR_LATCH); /* optech2: re-release defaults */
 	g_coop_enable_lives = gi.cvar("g_coop_enable_lives", "0", CVAR_LATCH);
 	g_coop_num_lives = gi.cvar("g_coop_num_lives", "2", CVAR_LATCH);

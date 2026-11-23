@@ -71,6 +71,7 @@ cvar_t *sv_tickrate; /* optech2 */
 cvar_t *g_damagelog; /* optech2 */
 cvar_t *g_monster_nav; /* optech2 */
 cvar_t *g_skip_cameras; /* optech2 */
+cvar_t *g_classic_balance; /* optech2 */
 cvar_t *g_coop_squad_respawn; /* optech2 */
 cvar_t *g_coop_enable_lives; /* optech2 */
 cvar_t *g_coop_num_lives; /* optech2 */

@@ -109,7 +109,7 @@ def session(name, with_mod, soldier):
         try:
             result = subprocess.run(["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(DATA_DIR)] + arguments +
                                     ["+set", "fixedtime", "16667", "+set", "vid_renderer", "soft", "+set", "r_vsync", "0", "+set", "cl_maxfps", "60",
-                                     "+set", "s_initsound", "0", "+set", "skill", "1", "+exec", "monsters.cfg"],
+                                     "+set", "s_initsound", "0", "+set", "g_classic_balance", "1", "+set", "skill", "1", "+exec", "monsters.cfg"],
                                     env=environment, stdin=subprocess.DEVNULL, capture_output=True, text=True,
                                     timeout=90, check=False)
             log = result.stdout + result.stderr

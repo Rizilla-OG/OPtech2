@@ -1124,7 +1124,8 @@ SP_monster_infantry(edict_t *self)
 	VectorSet(self->maxs, 16, 16, 32);
 
 	self->health = 100 * st.health_multiplier;
-	self->gib_health = -40;
+	/* optech2: -65 as in the re-release; -40 with g_classic_balance 1 */
+	self->gib_health = g_classic_balance->value ? -40 : -65;
 	self->mass = 200;
 
 	monster_infantry_fix(self);

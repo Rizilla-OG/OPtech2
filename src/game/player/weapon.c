@@ -2740,10 +2740,16 @@ weapon_railgun_fire(edict_t *ent)
 		damage = 100;
 		kick = 200;
 	}
-	else
+	else if (g_classic_balance->value)
 	{
 		damage = 150;
 		kick = 250;
+	}
+	else
+	{
+		/* optech2: the re-release's single player numbers */
+		damage = 125;
+		kick = 225;
 	}
 
 	damage = WDef(ent, WDEF_DAMAGE, damage); /* optech2: item definition */
@@ -3165,13 +3171,15 @@ weapon_tracker_fire(edict_t *self)
 		return;
 	}
 
+	/* optech2: the re-release's numbers (45, 135); 30, 45 with
+	   g_classic_balance 1 */
 	if (deathmatch->value)
 	{
-		damage = 30;
+		damage = g_classic_balance->value ? 30 : 45;
 	}
 	else
 	{
-		damage = 45;
+		damage = g_classic_balance->value ? 45 : 135;
 	}
 
 	if (is_quad)
