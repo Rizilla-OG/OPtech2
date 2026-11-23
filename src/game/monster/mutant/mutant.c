@@ -417,9 +417,11 @@ mutant_jump_touch(edict_t *self, edict_t *other,
 		return;
 	}
 
-	if (other->takedamage)
+	/* optech2: one hit per leap, whenever it's still moving (re-release;
+	   stock: only above 400 units a second) */
+	if ((self->style == 1) && other->takedamage)
 	{
-		if (VectorLength(self->velocity) > 400)
+		if (VectorLength(self->velocity) > 30)
 		{
 			vec3_t point;
 			vec3_t normal;
@@ -431,6 +433,7 @@ mutant_jump_touch(edict_t *self, edict_t *other,
 			damage = 40 + 10 * random();
 			T_Damage(other, self, self, self->velocity, point,
 					normal, damage, damage, 0, MOD_UNKNOWN);
+			self->style = 0;
 		}
 	}
 
@@ -461,11 +464,14 @@ mutant_jump_takeoff(edict_t *self)
 	gi.sound(self, CHAN_VOICE, sound_sight, 1, ATTN_NORM, 0);
 	AngleVectors(self->s.angles, forward, NULL, NULL);
 	self->s.origin[2] += 1;
-	VectorScale(forward, 600, self->velocity);
-	self->velocity[2] = 250;
+	/* optech2: the re-release's slower leap (stock 600 forward, 250 up),
+	   that hits once (style) */
+	VectorScale(forward, 425, self->velocity);
+	self->velocity[2] = 160;
 	self->groundentity = NULL;
 	self->monsterinfo.aiflags |= AI_DUCKED;
 	self->monsterinfo.attack_finished = level.time + 3;
+	self->style = 1;
 	self->touch = mutant_jump_touch;
 }
 
@@ -726,17 +732,49 @@ mutant_dead(edict_t *self)
 	M_FlyCheck(self);
 }
 
+/* optech2: the deaths slide sideways as the animation falls, and the
+   body stops blocking partway through (re-release) */
+static void
+mutant_shrink(edict_t *self)
+{
+	if (!self)
+	{
+		return;
+	}
+
+	self->maxs[2] = 0;
+	self->svflags |= SVF_DEADMONSTER;
+	gi.linkentity(self);
+}
+
+static void
+ai_move_slide_right(edict_t *self, float dist)
+{
+	if (self)
+	{
+		M_walkmove(self, self->s.angles[YAW] + 90, dist);
+	}
+}
+
+static void
+ai_move_slide_left(edict_t *self, float dist)
+{
+	if (self)
+	{
+		M_walkmove(self, self->s.angles[YAW] - 90, dist);
+	}
+}
+
 static mframe_t mutant_frames_death1[] = {
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL}
-};
+	{ai_move_slide_right, 0, NULL},
+	{ai_move_slide_right, 0, NULL},
+	{ai_move_slide_right, 0, NULL},
+	{ai_move_slide_right, 2, NULL},
+	{ai_move_slide_right, 5, NULL},
+	{ai_move_slide_right, 7, mutant_shrink},
+	{ai_move_slide_right, 6, NULL},
+	{ai_move_slide_right, 2, NULL},
+	{ai_move_slide_right, 0, NULL}};
 
 mmove_t mutant_move_death1 = {
 	FRAME_death101,
@@ -746,17 +784,16 @@ mmove_t mutant_move_death1 = {
 };
 
 static mframe_t mutant_frames_death2[] = {
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL},
-	{ai_move, 0, NULL}
-};
+	{ai_move_slide_left, 0, NULL},
+	{ai_move_slide_left, 0, NULL},
+	{ai_move_slide_left, 0, NULL},
+	{ai_move_slide_left, 1, NULL},
+	{ai_move_slide_left, 3, mutant_shrink},
+	{ai_move_slide_left, 6, NULL},
+	{ai_move_slide_left, 8, NULL},
+	{ai_move_slide_left, 5, NULL},
+	{ai_move_slide_left, 2, NULL},
+	{ai_move_slide_left, 0, NULL}};
 
 mmove_t mutant_move_death2 = {
 	FRAME_death201,
