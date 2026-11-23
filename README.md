@@ -27,7 +27,7 @@ and assets keep loading and serve as test content.
   monster definitions in text files, and monster navigation (paths, three monster sizes, ledge drops,
   lifts, jumps, leaps, ladders and teleporters from the re-release's navigation files), re-release
   game libraries (game API 2023: id's game and mods built on it, such as q2arpg) with their saves,
-  level changes and movement prediction, weapon and powerup wheels (hold Q / E), kill feed and chat,
+  level changes and movement prediction, weapon and powerup wheels (hold E / Q), kill feed and chat,
   colored text, autosave and Restart level, WASD default keys, a modern console (see-through panel,
   Hack TrueType font), the Vulkan renderer in the default build, and the re-release's game features in
   the stock game: compass trail, co-op squad respawn and lives, end-of-unit screen, re-release weapon and
