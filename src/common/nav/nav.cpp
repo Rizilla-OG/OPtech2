@@ -2112,9 +2112,41 @@ Nav_GetPathToGoalSized(const optech2_path_request_t *request, optech2_path_info_
 
 	if (request->points && request->point_count > 0)
 	{
-		const int copy = corner_count < request->point_count ? corner_count : (int)request->point_count;
+		/* optech2: the points every move_dist along the path, as the
+		   re-release engine returns them (the compass draws an arrow on
+		   each); corners only when no move_dist is given */
+		const float step = request->move_dist;
+		const int capacity = (int)request->point_count;
+		int written = 0;
 
-		memcpy(request->points, corners, sizeof(corners[0]) * copy);
+		for (int i = 0; i < corner_count && written < capacity; i++)
+		{
+			if (i > 0 && step > 1.0f)
+			{
+				const float segment = Distance(corners[i - 1], corners[i]);
+
+				for (float along = step; along < segment - step * 0.5f && written < capacity; along += step)
+				{
+					const float fraction = along / segment;
+
+					for (int axis = 0; axis < 3; axis++)
+					{
+						request->points[written][axis] = corners[i - 1][axis] +
+							(corners[i][axis] - corners[i - 1][axis]) * fraction;
+					}
+
+					written++;
+				}
+			}
+
+			if (written < capacity)
+			{
+				memcpy(request->points[written], corners[i], sizeof(corners[i]));
+				written++;
+			}
+		}
+
+		info->point_count = written;
 	}
 
 	if (request->draw_time > 0)

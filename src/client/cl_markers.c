@@ -26,12 +26,12 @@
 #include "header/client.h"
 
 #define MAX_HELP_ARROWS 64
-#define HELP_ARROW_LIFE_MS 4000
-#define HELP_ARROW_FADE_MS 1000
+#define HELP_ARROW_LIFE_MS 10000 /* the re-release: 10 s, fading slowly */
+#define HELP_ARROW_FADE_MS 5000
 #define MAX_POIS 64
 #define POI_FLAG_HIDE_ON_AIM 1
-#define HELP_ARROW_SCALE 6 /* the model is about 4 x 6 units */
-#define HELP_ARROW_SPACING 64 /* the closest two arrows of a trail get */
+#define HELP_ARROW_SCALE 3 /* the model is about 4 x 6 units */
+#define HELP_ARROW_SPACING 32 /* the closest two arrows of a trail get */
 
 typedef struct
 {
