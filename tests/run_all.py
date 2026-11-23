@@ -61,6 +61,7 @@ CHECKS = [
     Check("damage", "tickrate/damage_check.py"),
     Check("savegame", "savegame/save_check.py"),
     Check("multiplayer", "multiplayer/mp_check.py"),
+    Check("coop", "multiplayer/coop_check.py"),
     Check("network", "multiplayer/net_check.py", slow=True),
     Check("packet-split", "multiplayer/split_check.py"),
     Check("limits-map", "maps/limits_check.py", needs_map=("optech2_limits.bsp", "maps/make_limits_map.py")),

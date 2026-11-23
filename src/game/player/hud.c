@@ -316,6 +316,17 @@ G_SetLevelEntry(void)
 		Q_strlcpy(found->pretty_name, level.level_name[0] ? level.level_name : level.mapname,
 			sizeof(found->pretty_name));
 		found->visit_order = highest_order + 1;
+
+		/* a new level gives coop players a life back */
+		if (coop->value && g_coop_enable_lives->value)
+		{
+			for (i = 0; i < game.maxclients; i++)
+			{
+				int most = (int)g_coop_num_lives->value + 1;
+
+				game.clients[i].pers.lives = (game.clients[i].pers.lives + 1 < most) ? game.clients[i].pers.lives + 1 : most;
+			}
+		}
 	}
 
 	/* every map this one leads to gets an entry, so ones not visited
@@ -1157,6 +1168,10 @@ G_SetStats(edict_t *ent)
 	}
 
 	G_SetWheelStats(ent);
+
+	/* optech2: coop lives and why a dead player waits */
+	ent->client->ps_rrstats[STAT_LIVES] = (coop->value && g_coop_enable_lives->value) ? ent->client->pers.lives + 1 : 0;
+	ent->client->ps_rrstats[STAT_COOP_RESPAWN] = ent->client->coop_respawn_state ? CONFIG_COOP_RESPAWN_STRING + (ent->client->coop_respawn_state - 1) : 0;
 }
 
 void

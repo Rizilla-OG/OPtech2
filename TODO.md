@@ -56,6 +56,9 @@ something unfinished; remove an entry in the commit that fixes it.
 - Re-release `CS_CD_LOOP_COUNT` (map music loop count, "0" on Quake II 64
   maps) reaches the client but isn't used: its meaning isn't known (the
   original's cd_loopcount switched to track 11 after that many loops).
+- Re-release HUD layouts use `xr -16` for the coop lives number, which runs
+  off the right edge here (the software renderer refuses to draw it); the
+  re-release probably keeps a screen safe-area margin. Check the HUD safe area.
 - Re-release pathfinding: requests carry no mover size, so every monster
   gets the player-sized mesh (a Tank may be sent through a gap only a soldier
   fits); the re-release's own nodes have the same limit.

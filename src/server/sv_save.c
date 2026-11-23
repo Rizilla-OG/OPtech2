@@ -636,7 +636,17 @@ SV_RestartLevel_f(void)
 
 	if (!f)
 	{
-		Com_Printf("restart_level: no autosave to restart from\n");
+		/* optech2: no autosave (coop, or our own game): the map again */
+		if (sv.name[0])
+		{
+			Com_Printf("restart_level: no autosave, starting %s again\n", sv.name);
+			Cbuf_AddText(va("gamemap \"%s\"\n", sv.name));
+		}
+		else
+		{
+			Com_Printf("restart_level: no autosave to restart from\n");
+		}
+
 		return;
 	}
 

@@ -1138,6 +1138,53 @@ player_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
 		}
 	}
 
+	/* optech2: coop squad respawn and lives, as the re-release */
+	if (!self->deadflag && coop->value && (g_coop_squad_respawn->value || g_coop_enable_lives->value))
+	{
+		qboolean all_dead = true;
+		int i;
+
+		if (g_coop_enable_lives->value && (self->client->pers.lives > 0))
+		{
+			self->client->pers.lives--;
+		}
+
+		for (i = 1; i <= game.maxclients; i++)
+		{
+			const edict_t *player = &g_edicts[i];
+
+			if (player->inuse && player->client && (player != self) &&
+				((player->health > 0) || (g_coop_enable_lives->value && (player->client->pers.lives > 0))))
+			{
+				all_dead = false;
+				break;
+			}
+		}
+
+		if (self->client->pers.lives > 0 && g_coop_enable_lives->value)
+		{
+			all_dead = false;
+		}
+
+		if (all_dead)
+		{
+			level.coop_level_restart_time = level.time + 5;
+
+			for (i = 1; i <= game.maxclients; i++)
+			{
+				if (g_edicts[i].inuse && g_edicts[i].client)
+				{
+					gi.centerprintf(&g_edicts[i], "$g_coop_lose");
+				}
+			}
+		}
+		else
+		{
+			/* in 3 seconds, a respawn or spectating */
+			self->client->respawn_time = level.time + 3;
+		}
+	}
+
 	self->deadflag = DEAD_DEAD;
 
 	gi.linkentity(self);
@@ -1255,6 +1302,12 @@ InitClientPersistant(edict_t *ent)
 
 	client->pers.weapon = item;
 	client->pers.lastweapon = item;
+
+	/* optech2: coop lives */
+	if (coop->value && g_coop_enable_lives->value)
+	{
+		client->pers.lives = (int)g_coop_num_lives->value + 1;
+	}
 
 	/* optech2: everyone has the compass outside deathmatch, as in the re-release */
 	if (!deathmatch->value && (item = FindItem("compass")) != NULL)
@@ -1961,6 +2014,314 @@ body_die(edict_t *self, edict_t *inflictor /* unused */,
 	}
 }
 
+/*
+ * optech2: the re-release's coop squad respawn (ported from its
+ * p_client.cpp): a dead player comes back next to a teammate who is out of
+ * combat and on solid ground, or watches until one is; with lives on, a
+ * player out of lives watches until the next level.
+ */
+static qboolean use_squad_respawn;
+static vec3_t squad_respawn_position, squad_respawn_angles;
+
+/* any monster after this player (NULL: after any player) */
+static qboolean
+G_MonstersSearchingFor(const edict_t *player)
+{
+	int i;
+
+	for (i = game.maxclients + 1; i < globals.num_edicts; i++)
+	{
+		const edict_t *ent = &g_edicts[i];
+
+		if (!ent->inuse || !(ent->svflags & SVF_MONSTER) || (ent->health <= 0))
+		{
+			continue;
+		}
+
+		if (!player && (!ent->enemy || !ent->enemy->client))
+		{
+			continue;
+		}
+		else if (player && (ent->enemy != player))
+		{
+			continue;
+		}
+
+		if ((ent->monsterinfo.aiflags & AI_LOST_SIGHT) && (level.time > ent->monsterinfo.trail_time + 5))
+		{
+			continue;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+/* a spot behind the player to put a teammate */
+static qboolean
+G_FindRespawnSpot(edict_t *player, vec3_t spot)
+{
+	static const float yaw_spread[] = {0, 90, 45, -45, -90};
+	vec3_t mins = {-16, -16, -24}, maxs = {16, 16, 32};
+	const float back_distance = 128, up_distance = 128, player_viewheight = 22;
+	const int mask = MASK_PLAYERSOLID | CONTENTS_LAVA | CONTENTS_SLIME;
+	trace_t tr;
+	int i;
+
+	tr = gi.trace(player->s.origin, mins, maxs, player->s.origin, player, MASK_PLAYERSOLID);
+
+	if (tr.startsolid || tr.allsolid)
+	{
+		return false;
+	}
+
+	for (i = 0; i < (int)(sizeof(yaw_spread) / sizeof(yaw_spread[0])); i++)
+	{
+		vec3_t angles = {0, 0, 0}, forward, start, end, eye;
+		float z_diff;
+
+		angles[YAW] = player->s.angles[YAW] + 180 + yaw_spread[i];
+
+		/* up, back, then down */
+		VectorCopy(player->s.origin, start);
+		VectorCopy(start, end);
+		end[2] += up_distance;
+		tr = gi.trace(start, mins, maxs, end, player, mask);
+
+		if (tr.startsolid || tr.allsolid || (tr.contents & (CONTENTS_LAVA | CONTENTS_SLIME)))
+		{
+			continue;
+		}
+
+		AngleVectors(angles, forward, NULL, NULL);
+		VectorCopy(tr.endpos, start);
+		VectorMA(start, back_distance, forward, end);
+		tr = gi.trace(start, mins, maxs, end, player, mask);
+
+		if (tr.startsolid || tr.allsolid || (tr.contents & (CONTENTS_LAVA | CONTENTS_SLIME)))
+		{
+			continue;
+		}
+
+		VectorCopy(tr.endpos, start);
+		VectorCopy(start, end);
+		end[2] -= up_distance * 4;
+		tr = gi.trace(start, mins, maxs, end, player, mask);
+
+		/* stuck, floating, or on something that isn't the world */
+		if (tr.startsolid || tr.allsolid || (tr.contents & (CONTENTS_LAVA | CONTENTS_SLIME)) ||
+			(tr.fraction == 1.0f) || (tr.ent != world))
+		{
+			continue;
+		}
+
+		VectorCopy(tr.endpos, eye);
+		eye[2] += player_viewheight;
+
+		if ((gi.pointcontents(eye) & MASK_WATER) || (tr.plane.normal[2] < 0.7f))
+		{
+			continue;
+		}
+
+		VectorCopy(tr.endpos, spot);
+		z_diff = fabsf(player->s.origin[2] - tr.endpos[2]);
+
+		if (z_diff > STEPSIZE * 4)
+		{
+			continue;
+		}
+
+		/* a step or more up or down: they must still see the player */
+		if (z_diff > STEPSIZE)
+		{
+			vec3_t player_eye;
+
+			tr = gi.trace(player->s.origin, NULL, NULL, spot, player, mask);
+
+			if (tr.fraction != 1.0f)
+			{
+				continue;
+			}
+
+			VectorCopy(player->s.origin, player_eye);
+			player_eye[2] += player_viewheight;
+			VectorCopy(spot, eye);
+			eye[2] += player_viewheight;
+			tr = gi.trace(player_eye, NULL, NULL, eye, player, mask);
+
+			if (tr.fraction != 1.0f)
+			{
+				continue;
+			}
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+/* a teammate to respawn on, and where */
+static edict_t *
+G_FindSquadRespawnTarget(vec3_t spot)
+{
+	qboolean monsters_after_anybody = G_MonstersSearchingFor(NULL);
+	int i;
+
+	for (i = 1; i <= game.maxclients; i++)
+	{
+		edict_t *player = &g_edicts[i];
+
+		if (!player->inuse || !player->client || player->deadflag || (player->health <= 0) ||
+			player->client->resp.spectator)
+		{
+			continue;
+		}
+
+		if ((player->client->last_damage_time >= level.time) || G_MonstersSearchingFor(player) ||
+			(monsters_after_anybody && (player->client->last_firing_time >= level.time)))
+		{
+			player->client->coop_respawn_state = COOP_RESPAWN_IN_COMBAT;
+			continue;
+		}
+
+		if ((player->groundentity != world) || (player->waterlevel >= 3))
+		{
+			player->client->coop_respawn_state = COOP_RESPAWN_BAD_AREA;
+			continue;
+		}
+
+		if (!G_FindRespawnSpot(player, spot))
+		{
+			player->client->coop_respawn_state = COOP_RESPAWN_BLOCKED;
+			continue;
+		}
+
+		return player;
+	}
+
+	return NULL;
+}
+
+/* PutClientInServer takes the squad spot once */
+qboolean
+G_SquadRespawnSpot(vec3_t origin, vec3_t angles)
+{
+	if (!use_squad_respawn)
+	{
+		return false;
+	}
+
+	VectorCopy(squad_respawn_position, origin);
+	VectorCopy(squad_respawn_angles, angles);
+	return true;
+}
+
+/* false: the usual click to respawn */
+qboolean
+G_CoopRespawn(edict_t *ent)
+{
+	enum
+	{
+		RESPAWN_NONE,
+		RESPAWN_SPECTATE,
+		RESPAWN_SQUAD,
+		RESPAWN_START
+	} state = RESPAWN_NONE;
+
+	if (!coop->value || (!g_coop_squad_respawn->value && !g_coop_enable_lives->value))
+	{
+		return false;
+	}
+
+	if (g_coop_enable_lives->value && (ent->client->pers.lives <= 0))
+	{
+		state = RESPAWN_SPECTATE;
+		ent->client->coop_respawn_state = COOP_RESPAWN_NO_LIVES;
+	}
+
+	if (state == RESPAWN_NONE)
+	{
+		if (g_coop_squad_respawn->value)
+		{
+			qboolean all_dead = true;
+			int i;
+
+			for (i = 1; i <= game.maxclients; i++)
+			{
+				if (g_edicts[i].inuse && (g_edicts[i].health > 0) && g_edicts[i].client &&
+					!g_edicts[i].client->resp.spectator)
+				{
+					all_dead = false;
+					break;
+				}
+			}
+
+			if (all_dead)
+			{
+				state = RESPAWN_START;
+			}
+			else
+			{
+				vec3_t spot;
+				edict_t *good_player = G_FindSquadRespawnTarget(spot);
+
+				if (good_player)
+				{
+					state = RESPAWN_SQUAD;
+					VectorCopy(spot, squad_respawn_position);
+					VectorCopy(good_player->s.angles, squad_respawn_angles);
+					squad_respawn_angles[ROLL] = 0;
+					use_squad_respawn = true;
+				}
+				else
+				{
+					state = RESPAWN_SPECTATE;
+				}
+			}
+		}
+		else
+		{
+			state = RESPAWN_START;
+		}
+	}
+
+	if ((state == RESPAWN_SQUAD) || (state == RESPAWN_START))
+	{
+		ent->client->resp.spectator = false;
+		ent->svflags &= ~SVF_NOCLIENT;
+		respawn(ent);
+		ent->client->latched_buttons = 0;
+		use_squad_respawn = false;
+	}
+	else if (state == RESPAWN_SPECTATE)
+	{
+		if (!ent->client->coop_respawn_state)
+		{
+			ent->client->coop_respawn_state = COOP_RESPAWN_WAITING;
+		}
+
+		if (!ent->client->resp.spectator)
+		{
+			/* watch a teammate meanwhile */
+			CopyToBodyQue(ent);
+			ent->client->resp.spectator = true;
+			ent->solid = SOLID_NOT;
+			ent->takedamage = DAMAGE_NO;
+			ent->s.modelindex = 0;
+			ent->svflags |= SVF_NOCLIENT;
+			ent->client->ps.blend[3] = 0;
+			ent->client->ps.rdflags = 0;
+			ent->movetype = MOVETYPE_NOCLIP;
+			gi.linkentity(ent);
+			GetChaseTarget(ent);
+		}
+	}
+
+	return true;
+}
+
 void
 CopyToBodyQue(edict_t *ent)
 {
@@ -2444,6 +2805,9 @@ PutClientInServer(edict_t *ent)
 	{
 		SelectSpawnPoint(ent, spawn_origin, spawn_angles);
 	}
+
+	/* optech2: coop squad respawn: next to a teammate instead */
+	G_SquadRespawnSpot(spawn_origin, spawn_angles);
 
 	index = ent - g_edicts - 1;
 	client = ent->client;
@@ -3533,10 +3897,22 @@ ClientBeginServerFrame(edict_t *ent)
 
 	client->weapon_thunk = false;
 
-	if (ent->deadflag)
+	if (ent->deadflag || (coop->value && client->resp.spectator && client->coop_respawn_state))
 	{
+		/* optech2: not while a coop level is about to start over; coop
+		   squad respawn and lives decide on their own */
+		if (level.coop_level_restart_time)
+		{
+			return;
+		}
+
+		if ((level.time > client->respawn_time) && G_CoopRespawn(ent))
+		{
+			return;
+		}
+
 		/* wait for any button just going down */
-		if (level.time > client->respawn_time)
+		if (ent->deadflag && (level.time > client->respawn_time))
 		{
 			/* in deathmatch, only wait for attack button */
 			if (deathmatch->value)

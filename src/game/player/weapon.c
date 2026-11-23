@@ -1117,6 +1117,7 @@ Weapon_Generic2(edict_t *ent, int FRAME_ACTIVATE_LAST, int FRAME_FIRE_LAST,
 			{
 				ent->client->ps.gunframe = FRAME_FIRE_FIRST;
 				ent->client->weaponstate = WEAPON_FIRING;
+				ent->client->last_firing_time = level.time + COOP_DAMAGE_FIRING_TIME; /* optech2: coop squad respawn */
 
 				PlayerApplyAttack(ent);
 			}
@@ -1432,6 +1433,7 @@ Throw_Generic(edict_t *ent, int FRAME_FIRE_LAST, int FRAME_IDLE_LAST, int FRAME_
 			{
 				ent->client->ps.gunframe = 1;
 				ent->client->weaponstate = WEAPON_FIRING;
+				ent->client->last_firing_time = level.time + COOP_DAMAGE_FIRING_TIME; /* optech2: coop squad respawn */
 				ent->client->grenade_time = 0;
 			}
 			else
@@ -3706,6 +3708,7 @@ Weapon_Trap(edict_t *ent)
 			{
 				ent->client->ps.gunframe = 1;
 				ent->client->weaponstate = WEAPON_FIRING;
+				ent->client->last_firing_time = level.time + COOP_DAMAGE_FIRING_TIME; /* optech2: coop squad respawn */
 				ent->client->grenade_time = 0;
 			}
 			else
@@ -4251,6 +4254,7 @@ Weapon_ProximityMines(edict_t *ent)
 
 			ent->client->ps.gunframe = 1;
 			ent->client->weaponstate = WEAPON_FIRING;
+			ent->client->last_firing_time = level.time + COOP_DAMAGE_FIRING_TIME; /* optech2: coop squad respawn */
 			ent->client->grenade_time = 0;
 			return;
 		}

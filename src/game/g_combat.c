@@ -1074,6 +1074,12 @@ T_Damage(edict_t *targ, edict_t *inflictor, edict_t *attacker, vec3_t dir,
 		client->damage_armor += asave;
 		client->damage_blood += take;
 		client->damage_knockback += knockback;
+
+		/* optech2: not a safe spot to squad respawn on for a while */
+		if (take || psave || asave)
+		{
+			client->last_damage_time = level.time + COOP_DAMAGE_RESPAWN_TIME;
+		}
 		VectorCopy(point, client->damage_from);
 	}
 }

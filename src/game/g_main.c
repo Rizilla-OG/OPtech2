@@ -71,6 +71,9 @@ cvar_t *sv_tickrate; /* optech2 */
 cvar_t *g_damagelog; /* optech2 */
 cvar_t *g_monster_nav; /* optech2 */
 cvar_t *g_skip_cameras; /* optech2 */
+cvar_t *g_coop_squad_respawn; /* optech2 */
+cvar_t *g_coop_enable_lives; /* optech2 */
+cvar_t *g_coop_num_lives; /* optech2 */
 cvar_t *g_monster_freeze; /* optech2 */
 
 cvar_t *sv_rollspeed;
@@ -519,6 +522,57 @@ G_RunFrame(void)
 
 	/* choose a client for monsters to target this frame */
 	AI_SetSightClient();
+
+	/* optech2: coop, everyone dead: the level starts over */
+	if ((level.coop_level_restart_time > 0) && (level.time > level.coop_level_restart_time))
+	{
+		level.coop_level_restart_time = 0;
+		gi.AddCommandString("restart_level\n");
+	}
+
+	/* optech2: why each dead coop player waits */
+	if (coop->value && (g_coop_enable_lives->value || g_coop_squad_respawn->value))
+	{
+		qboolean any_out_of_lives = false;
+
+		for (i = 1; i <= game.maxclients; i++)
+		{
+			const edict_t *player = &g_edicts[i];
+
+			if (player->inuse && player->client && (player->health <= 0) && (player->client->pers.lives <= 0) &&
+				g_coop_enable_lives->value)
+			{
+				any_out_of_lives = true;
+			}
+		}
+
+		for (i = 1; i <= game.maxclients; i++)
+		{
+			gclient_t *client = g_edicts[i].client;
+
+			if (!g_edicts[i].inuse || !client)
+			{
+				continue;
+			}
+
+			if (client->respawn_time >= level.time)
+			{
+				client->coop_respawn_state = COOP_RESPAWN_WAITING;
+			}
+			else if (g_coop_enable_lives->value && (g_edicts[i].health <= 0) && (client->pers.lives <= 0))
+			{
+				client->coop_respawn_state = COOP_RESPAWN_NO_LIVES;
+			}
+			else if (any_out_of_lives)
+			{
+				client->coop_respawn_state = COOP_RESPAWN_NO_LIVES;
+			}
+			else if ((g_edicts[i].health > 0) && !client->resp.spectator)
+			{
+				client->coop_respawn_state = COOP_RESPAWN_NONE;
+			}
+		}
+	}
 
 	/* optech2: time spent in this level, for the end of unit screen */
 	if (level.level_entry && !level.intermissiontime && g_edicts[1].inuse && g_edicts[1].client &&

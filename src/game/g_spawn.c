@@ -1702,6 +1702,27 @@ SP_worldspawn(edict_t *ent)
 		{
 			gi.configstring(CS_STATUSBAR, roarke_statusbar);
 		}
+		else if (coop->value)
+		{
+			/* optech2: the re-release's coop lines: why a dead player waits
+			   (top) and lives (top right), and their texts */
+			static char coop_statusbar[2048];
+			int i;
+			static const char *const respawn_texts[] = {
+				"$g_coop_respawn_in_combat", "$g_coop_respawn_bad_area", "$g_coop_respawn_blocked",
+				"$g_coop_respawn_waiting", "$g_coop_respawn_no_lives"};
+
+			Com_sprintf(coop_statusbar, sizeof(coop_statusbar), "%s"
+																"if %d xv 0 yt 0 loc_stat_cstring2 %d endif "
+																"if %d xr -16 yt 2 lives_num %d xr 0 yt 28 loc_rstring 0 $g_lives endif ",
+				single_statusbar, STAT_COOP_RESPAWN, STAT_COOP_RESPAWN, STAT_LIVES, STAT_LIVES);
+			gi.configstring(CS_STATUSBAR, coop_statusbar);
+
+			for (i = 0; i < (int)(sizeof(respawn_texts) / sizeof(respawn_texts[0])); i++)
+			{
+				gi.configstring(CONFIG_COOP_RESPAWN_STRING + i, respawn_texts[i]);
+			}
+		}
 		else
 		{
 			gi.configstring(CS_STATUSBAR, single_statusbar);

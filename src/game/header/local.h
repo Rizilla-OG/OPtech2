@@ -461,6 +461,7 @@ typedef struct
 
 	/* optech2: re-release points of interest (target_poi, the compass) */
 	int level_entry; /* optech2: this level's game.level_entries index + 1; 0 none */
+	float coop_level_restart_time; /* optech2: everyone died in coop: restart then */
 	qboolean intermission_eou; /* optech2: leaving the unit */
 
 	qboolean valid_poi;
@@ -848,6 +849,9 @@ extern cvar_t *sv_gravity;
 extern cvar_t *sv_tickrate; /* optech2: server frames per second, set by the server */
 extern cvar_t *g_damagelog; /* optech2: print every hit, for tests */
 extern cvar_t *g_monster_freeze; /* optech2: 1 = monsters stand still (they still take damage); for tests */
+extern cvar_t *g_coop_squad_respawn; /* optech2: dead coop players come back near a teammate */
+extern cvar_t *g_coop_enable_lives; /* optech2: coop players have lives */
+extern cvar_t *g_coop_num_lives;
 extern cvar_t *g_skip_cameras; /* optech2: 1 = every camera scene can be skipped (a key after 2 s) */
 extern cvar_t *g_monster_nav; /* optech2: 0 = monsters chase the stock way, without paths; 2 = and log ledge drops; 3 = and draw paths */
 extern cvar_t *sv_maxvelocity;
@@ -973,6 +977,8 @@ qboolean ItemHasValidModel(const gitem_t *item);
 void SetItemNames(void);
 void Compass_Update(edict_t *ent, qboolean first); /* optech2 */
 void G_SetLevelEntry(void); /* optech2 */
+qboolean G_CoopRespawn(edict_t *ent); /* optech2 */
+qboolean G_SquadRespawnSpot(vec3_t origin, vec3_t angles); /* optech2 */
 void G_UpdateLevelEntry(void); /* optech2 */
 void G_EndOfUnitMessage(void); /* optech2 */
 void P_SendLevelPOI(edict_t *ent); /* optech2 */
@@ -1619,6 +1625,7 @@ typedef struct
 	height_fog_t wanted_heightfog;
 	/* relative time value, copied from last touched trigger */
 	float fog_transition_time;
+	int lives; /* optech2: coop lives left (g_coop_enable_lives) */
 } client_persistant_t;
 
 /* client data that stays across deathmatch respawns */
@@ -1758,6 +1765,9 @@ struct gclient_s
 	int flood_whenhead;             /* head pointer for when said */
 
 	float respawn_time;             /* can respawn when time > this */
+	int coop_respawn_state; /* optech2: why a dead coop player waits (COOP_RESPAWN_) */
+	float last_damage_time; /* optech2: hurt recently until this (coop squad respawn) */
+	float last_firing_time; /* optech2: fired recently until this (coop squad respawn) */
 
 	edict_t *chase_target;          /* player we are chasing */
 	qboolean update_chase;          /* need to update chase info? */
@@ -2172,6 +2182,20 @@ void PMenu_Select(edict_t *ent);
 #define NUM_POWERUP_STATS 3
 #define STAT_ACTIVE_WHEEL_WEAPON 47
 #define STAT_HIT_MARKER 50 /* damage the player landed this frame (hit markers) */
+#define STAT_COOP_RESPAWN 48 /* why a dead coop player waits: a configstring */
+#define STAT_LIVES 49 /* coop lives + 1, 0 = not shown */
+
+/* optech2: the re-release's coop respawn states, and where their texts go
+   (CONFIG_COOP_RESPAWN_STRING: CS_GENERAL + 259, then one per state) */
+#define COOP_RESPAWN_NONE 0
+#define COOP_RESPAWN_IN_COMBAT 1
+#define COOP_RESPAWN_BAD_AREA 2
+#define COOP_RESPAWN_BLOCKED 3
+#define COOP_RESPAWN_WAITING 4
+#define COOP_RESPAWN_NO_LIVES 5
+#define CONFIG_COOP_RESPAWN_STRING (CS_GENERAL + 259)
+#define COOP_DAMAGE_RESPAWN_TIME 2.0f
+#define COOP_DAMAGE_FIRING_TIME 2.5f
 #define WHEEL_AMMO_MAX 12 /* ammo counts that fit the ammo stats */
 #define WHEEL_POWERUP_MAX 23 /* powerup counts that fit the powerup stats */
 #define AMMO_VALUE_INFINITE 511
