@@ -188,6 +188,9 @@ soldier_cock(edict_t *self)
 	{
 		gi.sound(self, CHAN_WEAPON, sound_cock, 1, ATTN_NORM, 0);
 	}
+
+	/* optech2: cocked: the shotgun can fire again (re-release) */
+	self->dmg = 0;
 }
 
 static mframe_t soldier_frames_stand1[] = {
@@ -802,6 +805,9 @@ soldier_fire(edict_t *self, int in_flash_number)
 		monster_fire_shotgun(self, start, aim, 2, 1,
 				DEFAULT_SHOTGUN_HSPREAD, DEFAULT_SHOTGUN_VSPREAD,
 				DEFAULT_SHOTGUN_COUNT, flash_index);
+
+		/* optech2: it has to cock before the next shot (re-release) */
+		self->dmg = 1;
 	}
 	else
 	{
@@ -867,8 +873,8 @@ soldier_attack1_refire1(edict_t *self)
 		return;
 	}
 
-	if (((skill->value == SKILL_HARDPLUS) &&
-		 (random() < 0.5)) || (ai_range(self, self->enemy) == RANGE_MELEE))
+	/* optech2: refire half the time while in sight, on every skill (re-release) */
+	if (((random() < 0.5) && visible(self, self->enemy)) || (ai_range(self, self->enemy) == RANGE_MELEE))
 	{
 		self->monsterinfo.nextframe = soldier_move_attack1.firstframe + 1;
 	}
@@ -901,16 +907,31 @@ soldier_attack1_refire2(edict_t *self)
 		return;
 	}
 
-	if (((skill->value == SKILL_HARDPLUS) &&
-		 (random() < 0.5)) || (ai_range(self, self->enemy) == RANGE_MELEE))
+	/* optech2: refire half the time while in sight, always after an
+	   interrupted cock (re-release) */
+	if (((self->radius_dmg || (random() < 0.5)) && visible(self, self->enemy)) ||
+		(ai_range(self, self->enemy) == RANGE_MELEE))
 	{
 		self->monsterinfo.nextframe = soldier_move_attack1.firstframe + 1;
+		self->radius_dmg = 0;
+	}
+}
+
+/* optech2: a shotgun that fired and wasn't cocked since (an attack cut
+   short) goes to cocking first, then fires (re-release) */
+static void
+soldier_attack1_shotgun_check(edict_t *self)
+{
+	if (self && self->dmg)
+	{
+		self->monsterinfo.nextframe = soldier_move_attack1.firstframe + 5;
+		self->radius_dmg = 1;
 	}
 }
 
 static mframe_t soldier_frames_attack1[] = {
 	{ai_charge, 0, NULL},
-	{ai_charge, 0, NULL},
+	{ai_charge, 0, soldier_attack1_shotgun_check},
 	{ai_charge, 0, soldier_fire1},
 	{ai_charge, 0, NULL},
 	{ai_charge, 0, NULL},
@@ -920,8 +941,7 @@ static mframe_t soldier_frames_attack1[] = {
 	{ai_charge, 0, soldier_attack1_refire2},
 	{ai_charge, 0, NULL},
 	{ai_charge, 0, NULL},
-	{ai_charge, 0, NULL}
-};
+	{ai_charge, 0, NULL}};
 
 static const mmove_t soldier_move_attack1_static = {
 	FRAME_attak101,
@@ -965,8 +985,8 @@ soldier_attack2_refire1(edict_t *self)
 		return;
 	}
 
-	if (((skill->value == SKILL_HARDPLUS) &&
-		 (random() < 0.5)) || (ai_range(self, self->enemy) == RANGE_MELEE))
+	/* optech2: refire half the time while in sight, on every skill (re-release) */
+	if (((random() < 0.5) && visible(self, self->enemy)) || (ai_range(self, self->enemy) == RANGE_MELEE))
 	{
 		self->monsterinfo.nextframe = soldier_move_attack2.firstframe + 3;
 	}
@@ -999,17 +1019,30 @@ soldier_attack2_refire2(edict_t *self)
 		return;
 	}
 
-	if (((skill->value == SKILL_HARDPLUS) &&
-		 (random() < 0.5)) || (ai_range(self, self->enemy) == RANGE_MELEE))
+	/* optech2: as attack1's refire (re-release) */
+	if (((self->radius_dmg || (random() < 0.5)) && visible(self, self->enemy)) ||
+		(ai_range(self, self->enemy) == RANGE_MELEE))
 	{
 		self->monsterinfo.nextframe = soldier_move_attack2.firstframe + 3;
+		self->radius_dmg = 0;
+	}
+}
+
+/* optech2: as attack1's: cock first if it hasn't since firing (re-release) */
+static void
+soldier_attack2_shotgun_check(edict_t *self)
+{
+	if (self && self->dmg)
+	{
+		self->monsterinfo.nextframe = soldier_move_attack2.firstframe + 9;
+		self->radius_dmg = 1;
 	}
 }
 
 static mframe_t soldier_frames_attack2[] = {
 	{ai_charge, 0, NULL},
 	{ai_charge, 0, NULL},
-	{ai_charge, 0, NULL},
+	{ai_charge, 0, soldier_attack2_shotgun_check},
 	{ai_charge, 0, NULL},
 	{ai_charge, 0, soldier_fire2},
 	{ai_charge, 0, NULL},
@@ -1024,8 +1057,7 @@ static mframe_t soldier_frames_attack2[] = {
 	{ai_charge, 0, soldier_attack2_refire2},
 	{ai_charge, 0, NULL},
 	{ai_charge, 0, NULL},
-	{ai_charge, 0, NULL}
-};
+	{ai_charge, 0, NULL}};
 
 static const mmove_t soldier_move_attack2_static = {
 	FRAME_attak201,
@@ -1089,7 +1121,12 @@ soldier_attack3_refire(edict_t *self)
 		return;
 	}
 
-	if ((level.time + 0.4) < self->monsterinfo.duck_wait_time)
+	/* optech2: a shotgun that needs cocking stays down instead (re-release) */
+	if (self->dmg)
+	{
+		monster_duck_hold(self);
+	}
+	else if ((level.time + 0.4) < self->monsterinfo.duck_wait_time)
 	{
 		self->monsterinfo.nextframe = soldier_move_attack3.firstframe + 2;
 	}
@@ -1154,8 +1191,13 @@ soldier_fire8(edict_t *self)
 	soldier_fire(self, 7);
 }
 
+/* optech2: the re-release's run-and-shoot refires. Blaster soldiers decide
+   midway: keep running and shooting a quarter of the time while the
+   enemy is in sight and at least 500 units off, else run on; shotgun
+   soldiers cock on the way and decide at the end (always refiring after
+   an interrupted cock) */
 static void
-soldier_attack6_refire(edict_t *self)
+soldier_attack6_refire1(edict_t *self)
 {
 	if (!self)
 	{
@@ -1166,43 +1208,85 @@ soldier_attack6_refire(edict_t *self)
 	monster_done_dodge(self);
 	soldier_stop_charge(self);
 
-	if (!self->enemy)
+	if (!self->enemy || (self->s.skinnum > 1))
 	{
 		return;
 	}
 
-	if (self->enemy->health <= 0)
+	if ((self->enemy->health <= 0) || (realrange(self, self->enemy) < 500) ||
+		!visible(self, self->enemy)) /* don't endlessly run into walls */
 	{
+		soldier_run(self);
 		return;
 	}
 
-	if (ai_range(self, self->enemy) < RANGE_NEAR)
-	{
-		return;
-	}
-
-	if ((skill->value == SKILL_HARDPLUS) || ((random() < (0.25 * ((float)skill->value)))))
+	if (random() < 0.25)
 	{
 		self->monsterinfo.nextframe = soldier_move_attack6.firstframe + 2;
+	}
+	else
+	{
+		soldier_run(self);
+	}
+}
+
+static void
+soldier_attack6_refire2(edict_t *self)
+{
+	if (!self)
+	{
+		return;
+	}
+
+	/* make sure dodge & charge bits are cleared */
+	monster_done_dodge(self);
+	soldier_stop_charge(self);
+
+	if (!self->enemy || (self->s.skinnum < 2))
+	{
+		return;
+	}
+
+	if ((self->enemy->health <= 0) ||
+		(!self->radius_dmg && (realrange(self, self->enemy) < 500)) ||
+		!visible(self, self->enemy)) /* don't endlessly run into walls */
+	{
+		return;
+	}
+
+	if (self->radius_dmg || (random() < 0.25))
+	{
+		self->monsterinfo.nextframe = soldier_move_attack6.firstframe + 2;
+		self->radius_dmg = 0;
+	}
+}
+
+/* optech2: cock first if it hasn't since firing (re-release) */
+static void
+soldier_attack6_shotgun_check(edict_t *self)
+{
+	if (self && self->dmg)
+	{
+		self->monsterinfo.nextframe = soldier_move_attack6.firstframe + 8;
+		self->radius_dmg = 1;
 	}
 }
 
 static mframe_t soldier_frames_attack6[] = {
 	{ai_run, 10, soldier_start_charge},
-	{ai_run, 4, NULL},
+	{ai_run, 4, soldier_attack6_shotgun_check},
 	{ai_run, 12, soldier_footstep},
 	{ai_run, 11, soldier_fire8},
 	{ai_run, 13, monster_done_dodge},
 	{ai_run, 18, NULL},
 	{ai_run, 15, soldier_footstep},
-	{ai_run, 14, NULL},
+	{ai_run, 14, soldier_attack6_refire1},
 	{ai_run, 11, NULL},
 	{ai_run, 8, soldier_footstep},
-	{ai_run, 11, NULL},
+	{ai_run, 11, soldier_cock},
 	{ai_run, 12, NULL},
 	{ai_run, 12, soldier_footstep},
-	{ai_run, 17, soldier_attack6_refire}
-};
+	{ai_run, 17, soldier_attack6_refire2}};
 
 static const mmove_t soldier_move_attack6_static = {
 	FRAME_runs01,
@@ -1268,10 +1352,12 @@ soldier_attack(edict_t *self)
 
 	r = random();
 
+	/* optech2: run and shoot a quarter of the time on every skill, from
+	   250 units out (re-release) */
 	if ((!(self->monsterinfo.aiflags & (AI_BLOCKED | AI_STAND_GROUND))) &&
-		(ai_range(self, self->enemy) >= RANGE_NEAR) &&
-		((r < (skill->value * 0.25)) &&
-		 (self->s.skinnum <= 3)))
+		(realrange(self, self->enemy) >= 250) &&
+		((r < 0.25) &&
+			(self->s.skinnum <= 3)))
 	{
 		self->monsterinfo.currentmove = &soldier_move_attack6;
 	}
@@ -1282,7 +1368,9 @@ soldier_attack(edict_t *self)
 		   above isn't checked: it only starts at a distance */
 		if (self->s.skinnum < 4)
 		{
-			qboolean attack1_clear = M_CheckClearShot(self, monster_flash_offset[MZ2_SOLDIER_BLASTER_1], NULL);
+			/* optech2: shotgun soldiers only use attack2 up close (re-release) */
+			qboolean attack1_clear = !((self->s.skinnum >= 2) && (realrange(self, self->enemy) <= 325)) &&
+									 M_CheckClearShot(self, monster_flash_offset[MZ2_SOLDIER_BLASTER_1], NULL);
 			qboolean attack2_clear = M_CheckClearShot(self, monster_flash_offset[MZ2_SOLDIER_BLASTER_2], NULL);
 
 			if (attack1_clear && (!attack2_clear || (random() < 0.5)))
@@ -1318,13 +1406,19 @@ soldier_sight(edict_t *self, edict_t *other /* unused */)
 		gi.sound(self, CHAN_VOICE, sound_sight2, 1, ATTN_NORM, 0);
 	}
 
-	if ((skill->value > SKILL_EASY) && (self->enemy) &&
-		(ai_range(self, self->enemy) >= RANGE_NEAR))
+	/* optech2: from 500 units out, and only when it can see the enemy, a
+	   quarter of the time: run and shoot, or for machine gunners (whose
+	   run-and-shoot looks odd) a burst if their shot is clear (re-release) */
+	if (self->enemy && (realrange(self, self->enemy) >= 500) &&
+		visible(self, self->enemy) && (random() > 0.75))
 	{
-		/*	don't let machinegunners run & shoot */
-		if ((random() > 0.75) && (self->s.skinnum <= 3))
+		if (self->s.skinnum <= 3)
 		{
 			self->monsterinfo.currentmove = &soldier_move_attack6;
+		}
+		else if (M_CheckClearShot(self, monster_flash_offset[MZ2_SOLDIER_MACHINEGUN_4], NULL))
+		{
+			self->monsterinfo.currentmove = &soldier_move_attack4;
 		}
 	}
 }
