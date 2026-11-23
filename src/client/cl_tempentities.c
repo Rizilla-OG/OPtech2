@@ -231,10 +231,14 @@ CL_AllocExplosion(void)
 /*
  * Resource registration
  */
+static int step_material_count; /* optech2: materials looked up this level */
+
 void
 CL_RegisterTEntSounds(void)
 {
 	int i;
+
+	step_material_count = 0; /* optech2: sounds are registered again */
 
 	cl_sfx_ric1 = S_RegisterSound("world/ric1.wav");
 	cl_sfx_ric2 = S_RegisterSound("world/ric2.wav");
@@ -1817,6 +1821,75 @@ CL_AddTEnts(void)
 	CL_AddExplosions();
 	CL_AddLasers();
 	CL_ProcessSustain();
+}
+
+/* optech2: step sounds by surface material, player/steps/<material>1-5.wav
+   (the re-release's; most materials have 4, a few 5). Which ones exist is
+   looked up once per material and level. */
+#define MAX_STEP_MATERIALS 32
+#define MAX_STEP_VERSIONS 5
+
+typedef struct
+{
+	char material[32];
+	int version_count;
+	struct sfx_s *versions[MAX_STEP_VERSIONS];
+} step_material_t;
+
+static step_material_t step_materials[MAX_STEP_MATERIALS];
+
+struct sfx_s *
+CL_MaterialFootstepSfx(const char *material)
+{
+	step_material_t *entry = NULL;
+	int i;
+
+	if (!material || !material[0])
+	{
+		return NULL;
+	}
+
+	for (i = 0; i < step_material_count; i++)
+	{
+		if (!Q_stricmp(step_materials[i].material, material))
+		{
+			entry = &step_materials[i];
+			break;
+		}
+	}
+
+	if (!entry)
+	{
+		if (step_material_count >= MAX_STEP_MATERIALS)
+		{
+			return NULL;
+		}
+
+		entry = &step_materials[step_material_count++];
+		memset(entry, 0, sizeof(*entry));
+		Q_strlcpy(entry->material, material, sizeof(entry->material));
+
+		for (i = 1; i <= MAX_STEP_VERSIONS; i++)
+		{
+			char path[MAX_QPATH];
+
+			Com_sprintf(path, sizeof(path), "sound/player/steps/%s%i.wav", material, i);
+
+			if (FS_LoadFile(path, NULL) <= 0)
+			{
+				break;
+			}
+
+			entry->versions[entry->version_count++] = S_RegisterSound(path + 6); /* past "sound/" */
+		}
+	}
+
+	if (entry->version_count == 0)
+	{
+		return NULL;
+	}
+
+	return entry->versions[randk() % entry->version_count];
 }
 
 struct sfx_s *

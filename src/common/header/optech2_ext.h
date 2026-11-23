@@ -170,6 +170,10 @@ typedef struct
 	void (*RegisterPic)(const char *name); /* precache only */
 	void (*AddEntity)(const optech2_entity_t *ent); /* this frame only */
 	void (*AddLight)(const vec3_t org, float intensity, float r, float g, float b); /* this frame only */
+
+	/* a random step sound for this surface material ("clank", "ladder"...)
+	   from player/steps/; NULL when the material has none */
+	struct sfx_s *(*FootstepSfx)(const char *material);
 } optech2_fx_import_t;
 
 typedef struct

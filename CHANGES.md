@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Footsteps on every material: step sounds come from the re-release's `player/steps/<material>N.wav`, picking only versions that exist (most materials have 4, some 5); they were looked for in `player/` with 1-5, a missing file, so most floors (and ladders) were silent. One engine lookup (`FootstepSfx` in the effects import) serves the engine and the game library.
 - Compass trail like the re-release's: path points come back every `move_dist` units along the path, not only at its corners (a straight hall drew 2 arrows), so arrows run evenly the whole way; arrows are half the size and last 10 s, fading over the last 5.
 - Compass trail: the extra arrow in front of the player sits on the floor like the others (it floated at body height, big and tilted, right in the view), and arrows closer than 64 units to the previous one are left out (corners close together piled them up).
 - Code review fixes, game effects: the game library's effects drop their models when the renderer goes away (new `ClearModels` in the effects extension, version 6; `vid_restart` with an explosion on screen could crash); trails refresh the client state before drawing (they used the last frame's, or the last level's) and clearing effects clears it; `snd_restart` registers the library's effect sounds again; the header says AllocDlight never returns NULL; power screen hit sounds count from 0 on each new client frame.

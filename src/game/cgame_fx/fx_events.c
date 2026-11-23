@@ -92,35 +92,9 @@ CL_EntityEvent(int number, int event, const vec3_t origin)
 				trace_t trace;
 				trace = fxi->Trace(origin, mins, maxs, dir, MASK_DEADSOLID);
 
-				/* ladder does not have separate material */
-				if ((trace.contents & CONTENTS_LADDER))
-				{
-					char name[MAX_QPATH];
-					int step;
-
-					/* material has sometime 5 steps versions */
-					step = randk() % 5;
-
-					Com_sprintf(name, sizeof(name), "player/ladder%i.wav",
-						step + 1);
-
-					sfx = S_RegisterSound(name);
-				}
-
-				/* step sound based onb material */
-				if (!sfx && trace.surface->material[0])
-				{
-					char name[MAX_QPATH];
-					int step;
-
-					/* material has sometime 5 steps versions */
-					step = randk() % 5;
-
-					Com_sprintf(name, sizeof(name), "player/%s%i.wav",
-						trace.surface->material, step + 1);
-
-					sfx = S_RegisterSound(name);
-				}
+				/* optech2: the re-release's player/steps/ sounds; a ladder has
+				   no material of its own */
+				sfx = fxi->FootstepSfx((trace.contents & CONTENTS_LADDER) ? "ladder" : trace.surface->material);
 
 				/* no material steps sound found */
 				if (!sfx)

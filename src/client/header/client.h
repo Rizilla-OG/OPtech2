@@ -506,6 +506,7 @@ void CL_AddTEnts(void);
 void CL_AddLightStyles(void);
 void CL_AddShadowLights(void);
 struct sfx_s *CL_RandomFootstepSfx(void);
+struct sfx_s *CL_MaterialFootstepSfx(const char *material); /* optech2 */
 struct model_s *CL_PowerScreenModel(void);
 
 void CL_SetSky(void);

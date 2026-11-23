@@ -2289,35 +2289,9 @@ CL_EntityEvent(entity_xstate_t *ent)
 				trace_t trace;
 				trace = CM_BoxTrace(ent->origin, dir, mins, maxs, 0, MASK_DEADSOLID);
 
-				/* ladder does not have separate material */
-				if ((trace.contents & CONTENTS_LADDER))
-				{
-					char name[MAX_QPATH];
-					int step;
-
-					/* material has sometime 5 steps versions */
-					step = randk() % 5;
-
-					Com_sprintf(name, sizeof(name), "player/ladder%i.wav",
-						step + 1);
-
-					sfx = S_RegisterSound(name);
-				}
-
-				/* step sound based onb material */
-				if (!sfx && trace.surface->material[0])
-				{
-					char name[MAX_QPATH];
-					int step;
-
-					/* material has sometime 5 steps versions */
-					step = randk() % 5;
-
-					Com_sprintf(name, sizeof(name), "player/%s%i.wav",
-						trace.surface->material, step + 1);
-
-					sfx = S_RegisterSound(name);
-				}
+				/* optech2: the re-release's player/steps/ sounds; a ladder has
+				   no material of its own */
+				sfx = CL_MaterialFootstepSfx((trace.contents & CONTENTS_LADDER) ? "ladder" : trace.surface->material);
 
 				/* no material steps sound found */
 				if (!sfx)

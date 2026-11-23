@@ -831,7 +831,8 @@ static const optech2_fx_import_t fx_import = {
 	S_RegisterSound, FX_StartSound,
 	FX_Trace,
 	FX_GetState, FX_EntityState, FX_CvarValue, FX_PaletteColor,
-	R_RegisterModel, FX_RegisterPic, FX_AddEntity, FX_AddLight};
+	R_RegisterModel, FX_RegisterPic, FX_AddEntity, FX_AddLight,
+	CL_MaterialFootstepSfx};
 
 /* the game library's effects, if it has them */
 static void
