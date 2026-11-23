@@ -176,6 +176,16 @@ Defs_String(const char *text)
 	return copy;
 }
 
+/* optech2: Defs_String, or fallback when the string pool is full (a field
+   then keeps its old value instead of becoming NULL) */
+static const char *
+Defs_StringOr(const char *text, const char *fallback)
+{
+	const char *copy = Defs_String(text);
+
+	return copy ? copy : fallback;
+}
+
 static void
 Defs_FreeStrings(void)
 {
@@ -327,27 +337,27 @@ Defs_SetItemField(gitem_t *item, const char *where, const char *key, const char 
 
 	if (!Q_stricmp(key, "pickup_name"))
 	{
-		item->pickup_name = Defs_String(value);
+		item->pickup_name = Defs_StringOr(value, item->pickup_name);
 	}
 	else if (!Q_stricmp(key, "pickup_sound"))
 	{
-		item->pickup_sound = value[0] ? Defs_String(value) : NULL;
+		item->pickup_sound = value[0] ? Defs_StringOr(value, item->pickup_sound) : NULL;
 	}
 	else if (!Q_stricmp(key, "world_model"))
 	{
-		item->world_model = Defs_String(value);
+		item->world_model = Defs_StringOr(value, item->world_model);
 	}
 	else if (!Q_stricmp(key, "view_model"))
 	{
-		item->view_model = value[0] ? Defs_String(value) : NULL;
+		item->view_model = value[0] ? Defs_StringOr(value, item->view_model) : NULL;
 	}
 	else if (!Q_stricmp(key, "icon"))
 	{
-		item->icon = Defs_String(value);
+		item->icon = Defs_StringOr(value, item->icon);
 	}
 	else if (!Q_stricmp(key, "ammo"))
 	{
-		item->ammo = value[0] ? Defs_String(value) : NULL;
+		item->ammo = value[0] ? Defs_StringOr(value, item->ammo) : NULL;
 	}
 	else if (Defs_SetWeaponField(item, where, key, value))
 	{
@@ -355,11 +365,11 @@ Defs_SetItemField(gitem_t *item, const char *where, const char *key, const char 
 	}
 	else if (!Q_stricmp(key, "gives"))
 	{
-		item->gives = value[0] ? Defs_String(value) : NULL;
+		item->gives = value[0] ? Defs_StringOr(value, item->gives) : NULL;
 	}
 	else if (!Q_stricmp(key, "precaches"))
 	{
-		item->precaches = Defs_String(value);
+		item->precaches = Defs_StringOr(value, item->precaches);
 	}
 	else if (!Q_stricmp(key, "flags"))
 	{
@@ -521,9 +531,18 @@ Defs_ApplyItemBlock(const char *file, int *item_count)
 			return;
 		}
 
+		const char *name = Defs_String(classname);
+
+		/* optech2: no room for its name: no new item */
+		if (!name)
+		{
+			gi.dprintf("%s: out of room for names; skipped\n", where);
+			return;
+		}
+
 		item = &itemlist[(*item_count)++];
 		*item = *base_item;
-		item->classname = Defs_String(classname);
+		item->classname = name;
 		item->pickup_name = item->classname; /* until it gets its own */
 	}
 	else if (base)

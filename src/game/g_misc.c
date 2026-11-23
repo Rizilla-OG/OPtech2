@@ -4767,7 +4767,7 @@ target_poi_use(edict_t *ent, edict_t *other /* unused */, edict_t *activator)
 	}
 }
 
-static void
+void
 target_poi_setup(edict_t *self)
 {
 	edict_t *m;

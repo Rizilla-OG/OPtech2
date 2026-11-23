@@ -739,6 +739,14 @@ Think_Weapon(edict_t *ent)
 		ChangeWeapon(ent);
 	}
 
+	/* optech2: no weapon frame will run (dead, no weapon): recoil ends now,
+	   or the view stays kicked until a respawn */
+	if (!ent->client->pers.weapon || !ent->client->pers.weapon->weaponthink)
+	{
+		VectorClear(ent->client->kick_origin);
+		VectorClear(ent->client->kick_angles);
+	}
+
 	/* call active weapon think routine */
 	if (ent->client->pers.weapon && ent->client->pers.weapon->weaponthink)
 	{

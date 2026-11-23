@@ -35,6 +35,7 @@ static vec3_t forward, right, up;
 static float xyspeed;
 
 static float bobmove;
+static float bobstep; /* optech2: bobmove for one server frame (bobmove is per 0.1 s) */
 static int bobcycle; /* odd cycles are right foot going forward */
 static float bobfracsin; /* sin(bobfrac*M_PI) */
 
@@ -1298,7 +1299,7 @@ G_SetClientEvent(edict_t *ent)
 	{
 		if (ent->groundentity && (xyspeed > 225))
 		{
-			if ((int)(current_client->bobtime + bobmove) != bobcycle)
+			if ((int)(current_client->bobtime + bobstep) != bobcycle)
 			{
 				ent->s.event = EV_FOOTSTEP;
 			}
@@ -1308,7 +1309,7 @@ G_SetClientEvent(edict_t *ent)
 	{
 		if (ent->groundentity)
 		{
-			if ((int)(current_client->bobtime + bobmove) != bobcycle)
+			if ((int)(current_client->bobtime + bobstep) != bobcycle)
 			{
 				ent->s.event = EV_FOOTSTEP;
 			}
@@ -1316,7 +1317,7 @@ G_SetClientEvent(edict_t *ent)
 	}
 	else if (g_footsteps->value >= 3)
 	{
-		if ((int)(current_client->bobtime + bobmove) != bobcycle)
+		if ((int)(current_client->bobtime + bobstep) != bobcycle)
 		{
 			ent->s.event = EV_FOOTSTEP;
 		}
@@ -1674,6 +1675,7 @@ ClientEndServerFrame(edict_t *ent)
 		}
 	}
 
+	bobstep = bobmove * tickScale; /* optech2: footsteps check the same step (G_SetClientEvent) */
 	bobtime = (current_client->bobtime += bobmove * tickScale); /* optech2: bobmove is per 0.1 s */
 
 	if (current_client->ps.pmove.pm_flags & PMF_DUCKED)

@@ -88,6 +88,16 @@ something unfinished; remove an entry in the commit that fixes it.
 - `fxtest` only sends position + direction; stock types with other data
   can't be sent with it.
 
+## Monster AI
+
+- FindTarget keeps a noise or sight for FRAMETIME * tickrate framenums, and
+  framenum counts at 10 Hz, so 0.6 s at 60 Hz (stock: one think). Narrowing
+  it to 1-2 framenums breaks hearing (monster-nav check): the monster hears
+  in the first frame and sets the noise as its enemy, but never reaches
+  ai_run (the stand-to-run hand-off loses the sound target at 60 Hz; a
+  re-hear within the window rescues it). Fix the hand-off, then narrow the
+  window (code review, 2026-11-23).
+
 ## Prediction
 
 - Jumping on a moving lift could miss a tick around takeoff and landing

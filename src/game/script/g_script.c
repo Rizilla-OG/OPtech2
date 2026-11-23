@@ -478,7 +478,14 @@ Script_Spawn(lua_State *L)
 	ent->s.origin[0] = (float)luaL_checknumber(L, 2);
 	ent->s.origin[1] = (float)luaL_checknumber(L, 3);
 	ent->s.origin[2] = (float)luaL_checknumber(L, 4);
+	ed_spawn_failed = false;
 	ED_CallSpawn(ent);
+
+	/* optech2: an unknown classname leaves an edict nobody uses: free it */
+	if (ent->inuse && ed_spawn_failed)
+	{
+		G_FreeEdict(ent);
+	}
 
 	if (ent->inuse)
 	{

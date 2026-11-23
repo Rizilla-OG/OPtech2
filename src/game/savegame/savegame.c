@@ -691,7 +691,9 @@ ReadString(FILE *f, int len, int tag)
 		return NULL;
 	}
 
-	if (len < 0 || len > MAX_TOKEN_CHARS)
+	/* optech2: up to a script's saved state (1 MB, game.state), which
+	   saved fine but failed to load past MAX_TOKEN_CHARS */
+	if (len < 0 || len > (1024 * 1024 + 1))
 	{
 		fclose(f);
 		if (reading_raw_format)

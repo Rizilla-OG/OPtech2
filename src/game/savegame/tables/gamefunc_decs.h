@@ -442,6 +442,8 @@ extern void Use_Multi (edict_t *, edict_t *, edict_t *);
 extern void Use_Plat (edict_t *, edict_t *, edict_t *);
 extern void Use_Plat2 (edict_t *, edict_t *, edict_t *);
 extern void Use_Target_Help (edict_t *, edict_t *, edict_t *);
+extern void target_poi_use(edict_t *, edict_t *, edict_t *);
+extern void target_poi_setup(edict_t *);
 extern void Use_Target_Speaker (edict_t *, edict_t *, edict_t *);
 extern void Use_Target_Tent (edict_t *, edict_t *, edict_t *);
 extern void actor_use (edict_t *, edict_t *, edict_t *);

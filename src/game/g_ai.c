@@ -739,7 +739,10 @@ FindTarget(edict_t *self)
 	/* optech2: a sight or noise counts for one monster think (0.1 s), as at
 	   stock's 10 Hz; "the last frame" missed most of them at 60 Hz, where
 	   monsters think every 6th frame. The wider window also reaches back
-	   before the first sight or noise of a level: check there is one. */
+	   before the first sight or noise of a level: check there is one.
+	   (level.framenum counts at 10 Hz, so this keeps a noise for 0.6 s,
+	   longer than stock; a one-think window loses the sound target
+	   between ai_stand and ai_run at 60 Hz - see TODO) */
 	think_frames = (int)(FRAMETIME * level.tickrate + 0.5f);
 
 	if (think_frames < 1)

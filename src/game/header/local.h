@@ -977,6 +977,7 @@ void PrecacheItem(const gitem_t *it);
 void InitItems(void);
 qboolean ItemHasValidModel(const gitem_t *item);
 void SetItemNames(void);
+extern qboolean ed_spawn_failed; /* optech2: set when a spawn found no spawn function */
 void Compass_Update(edict_t *ent, qboolean first); /* optech2 */
 void G_SetLevelEntry(void); /* optech2 */
 qboolean G_CoopRespawn(edict_t *ent); /* optech2 */

@@ -744,10 +744,14 @@ G_SetPackedStat(short *start, int stat_count, int bits_per_value, int id, int va
 	int byte = bit_offset / 8;
 	int bit_shift = bit_offset % 8;
 	unsigned int mask = ((1u << bits_per_value) - 1) << bit_shift;
-	unsigned char bytes[2 * 8];
+	unsigned char bytes[2 * 8 + 1] = {0};
 	unsigned int word;
+	qboolean two_bytes = (bit_shift + bits_per_value > 8);
 
-	if ((stat_count > 8) || (byte + 2 > stat_count * 2))
+	/* optech2: the value's last byte must be in the stats; the next byte
+	   only matters when the value runs into it (ids at the very end, like
+	   powerup slots 20-22, fit in the last byte) */
+	if ((stat_count > 8) || (byte >= stat_count * 2) || (two_bytes && (byte + 1 >= stat_count * 2)))
 	{
 		return;
 	}
@@ -756,7 +760,12 @@ G_SetPackedStat(short *start, int stat_count, int bits_per_value, int id, int va
 	word = bytes[byte] | (bytes[byte + 1] << 8);
 	word = (word & ~mask) | (((unsigned int)value << bit_shift) & mask);
 	bytes[byte] = word & 0xff;
-	bytes[byte + 1] = (word >> 8) & 0xff;
+
+	if (two_bytes)
+	{
+		bytes[byte + 1] = (word >> 8) & 0xff;
+	}
+
 	memcpy(start, bytes, stat_count * 2);
 }
 
