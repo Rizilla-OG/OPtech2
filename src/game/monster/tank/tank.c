@@ -460,7 +460,7 @@ TankBlaster(edict_t *self)
 	vec3_t dir;
 	int flash_number;
 
-	if (!self)
+	if (!self || !self->enemy || !self->enemy->inuse)
 	{
 		return;
 	}
@@ -482,9 +482,22 @@ TankBlaster(edict_t *self)
 	M_ProjectFlashSource(self, monster_flash_offset[flash_number],
 			forward, right, start);
 
-	VectorCopy(self->enemy->s.origin, end);
-	end[2] += self->enemy->viewheight;
-	VectorSubtract(end, start, dir);
+	/* optech2: blind fire with the blaster too, aimed as the rockets (re-release) */
+	if (self->monsterinfo.aiflags & AI_MANUAL_STEERING)
+	{
+		VectorCopy(self->monsterinfo.blind_fire_target, end);
+
+		if (!blind_rocket_ok(self, start, right, end, 20.0f, dir))
+		{
+			return;
+		}
+	}
+	else
+	{
+		VectorCopy(self->enemy->s.origin, end);
+		end[2] += self->enemy->viewheight;
+		VectorSubtract(end, start, dir);
+	}
 
 	monster_fire_blaster(self, start, dir, 30, 800, flash_number, EF_BLASTER);
 }
@@ -729,17 +742,23 @@ tank_reattack_blaster(edict_t *self)
 		return;
 	}
 
-	if (skill->value >= SKILL_HARD)
+	/* optech2: one blind volley only (re-release) */
+	if (self->monsterinfo.aiflags & AI_MANUAL_STEERING)
 	{
-		if (visible(self, self->enemy))
+		self->monsterinfo.aiflags &= ~AI_MANUAL_STEERING;
+		self->monsterinfo.currentmove = &tank_move_attack_post_blast;
+		return;
+	}
+
+	/* optech2: refire on every skill, not only hard and up (re-release) */
+	if (self->enemy && visible(self, self->enemy))
+	{
+		if (self->enemy->health > 0)
 		{
-			if (self->enemy->health > 0)
+			if (random() <= 0.6)
 			{
-				if (random() <= 0.6)
-				{
-					self->monsterinfo.currentmove = &tank_move_reattack_blast;
-					return;
-				}
+				self->monsterinfo.currentmove = &tank_move_reattack_blast;
+				return;
 			}
 		}
 	}
@@ -756,7 +775,11 @@ tank_poststrike(edict_t *self)
 	}
 
 	self->enemy = NULL;
-	tank_run(self);
+
+	/* optech2: done with the body: stand until something new shows up
+	   (re-release), instead of running off with no enemy */
+	self->monsterinfo.pausetime = level.time + 100000000;
+	self->monsterinfo.stand(self);
 }
 
 static mframe_t tank_frames_attack_strike[] = {
@@ -1032,15 +1055,30 @@ tank_attack(edict_t *self)
 			return;
 		}
 
-		/* optech2: not into a wall (re-release) */
-		if (!M_CheckClearShot(self, monster_flash_offset[MZ2_TANK_ROCKET_1], NULL))
+		/* optech2: rockets or the blaster, whichever has a clear shot (re-release) */
+		qboolean rocket_clear = M_CheckClearShot(self, monster_flash_offset[MZ2_TANK_ROCKET_1], NULL);
+
+		blaster_clear = M_CheckClearShot(self, monster_flash_offset[MZ2_TANK_BLASTER_1], NULL);
+
+		if (!rocket_clear && !blaster_clear)
 		{
 			return;
 		}
 
 		// turn on manual steering to signal both manual steering and blindfire
 		self->monsterinfo.aiflags |= AI_MANUAL_STEERING;
-		self->monsterinfo.currentmove = &tank_move_attack_fire_rocket;
+
+		if (rocket_clear && (!blaster_clear || (random() < 0.5)))
+		{
+			self->monsterinfo.currentmove = &tank_move_attack_fire_rocket;
+		}
+		else
+		{
+			/* straight to the shots */
+			self->monsterinfo.currentmove = &tank_move_attack_blast;
+			self->monsterinfo.nextframe = tank_move_attack_blast.firstframe + 7;
+		}
+
 		self->monsterinfo.attack_finished = level.time + 3.0 + 2*random();
 		self->pain_debounce_time = level.time + 5.0; // no pain for a while
 		return;
