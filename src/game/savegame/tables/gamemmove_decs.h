@@ -289,6 +289,7 @@ extern mmove_t guardian_move_run;
 extern mmove_t guardian_move_walk;
 extern mmove_t gunner_move_attack_chain;
 extern mmove_t gunner_move_attack_grenade;
+extern mmove_t gunner_move_attack_grenade2;
 extern mmove_t gunner_move_death;
 extern mmove_t gunner_move_duck;
 extern mmove_t gunner_move_endfire_chain;

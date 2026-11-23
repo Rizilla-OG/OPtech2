@@ -288,6 +288,7 @@
 	{"guardian_move_walk", &guardian_move_walk},
 	{"gunner_move_attack_chain", &gunner_move_attack_chain},
 	{"gunner_move_attack_grenade", &gunner_move_attack_grenade},
+	{"gunner_move_attack_grenade2", &gunner_move_attack_grenade2},
 	{"gunner_move_death", &gunner_move_death},
 	{"gunner_move_duck", &gunner_move_duck},
 	{"gunner_move_endfire_chain", &gunner_move_endfire_chain},

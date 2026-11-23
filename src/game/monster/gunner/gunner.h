@@ -245,4 +245,13 @@
 #define FRAME_jump09 217
 #define FRAME_jump10 218
 
+/* optech2: frames only the re-release's gunner model has (its second
+   grenade animation; the model holds the Gunner Commander's too) */
+#define FRAME_attak301 225
+#define FRAME_attak305 229
+#define FRAME_attak309 233
+#define FRAME_attak312 236
+#define FRAME_attak315 239
+#define FRAME_attak324 248
+
 #define MODEL_SCALE 1.150000

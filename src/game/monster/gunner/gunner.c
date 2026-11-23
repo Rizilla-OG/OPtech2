@@ -711,7 +711,6 @@ gunner_grenade_check(edict_t *self)
 {
 	vec3_t start;
 	vec3_t forward, right;
-	trace_t tr;
 	vec3_t target, dir;
 
 	if (!self)
@@ -730,24 +729,8 @@ gunner_grenade_check(edict_t *self)
 		return false;
 	}
 
-	/* if the player is above my head, use machinegun. */
-
-	/* check for flag telling us that we're blindfiring */
-	if (self->monsterinfo.aiflags & AI_MANUAL_STEERING)
-	{
-		if (self->s.origin[2] + self->viewheight <
-			self->monsterinfo.blind_fire_target[2])
-		{
-			return false;
-		}
-	}
-	else if (self->absmax[2] <= self->enemy->absmin[2])
-	{
-		return false;
-	}
-
-	/* check to see that we can trace to the player
-	   before we start tossing grenades around. */
+	/* optech2: the re-release's check: not too close, and a lob that
+	   lands (pitch solver) instead of a straight line to the target */
 	AngleVectors(self->s.angles, forward, right, NULL);
 	M_ProjectFlashSource(self, monster_flash_offset[MZ2_GUNNER_GRENADE_1],
 			forward, right, start);
@@ -763,21 +746,15 @@ gunner_grenade_check(edict_t *self)
 	}
 
 	/* see if we're too close */
-	VectorSubtract(self->s.origin, target, dir);
+	VectorSubtract(target, start, dir);
 
 	if (VectorLength(dir) < 100)
 	{
 		return false;
 	}
 
-	tr = gi.trace(start, vec3_origin, vec3_origin, target, self, MASK_SHOT);
-
-	if ((tr.ent == self->enemy) || (tr.fraction == 1))
-	{
-		return true;
-	}
-
-	return false;
+	VectorNormalize(dir);
+	return M_CalculatePitchToFire(self, target, start, dir, 600, 2.5f, false, false);
 }
 
 static void
@@ -807,26 +784,35 @@ GunnerGrenade(edict_t *self)
 		blindfire = true;
 	}
 
-	if (self->s.frame == (gunner_move_attack_grenade.firstframe + 4))
+	/* optech2: the re-release's spread, and its second animation's shots */
+	if ((self->s.frame == (gunner_move_attack_grenade.firstframe + 4)) ||
+		(self->s.frame == FRAME_attak309))
 	{
-		spread = .02;
+		spread = -0.10;
 		flash_number = MZ2_GUNNER_GRENADE_1;
 	}
-	else if (self->s.frame == (gunner_move_attack_grenade.firstframe + 7))
+	else if ((self->s.frame == (gunner_move_attack_grenade.firstframe + 7)) ||
+			 (self->s.frame == FRAME_attak312))
 	{
-		spread = .05;
+		spread = -0.05;
 		flash_number = MZ2_GUNNER_GRENADE_2;
 	}
-	else if (self->s.frame == (gunner_move_attack_grenade.firstframe + 10))
+	else if ((self->s.frame == (gunner_move_attack_grenade.firstframe + 10)) ||
+			 (self->s.frame == FRAME_attak315))
 	{
-		spread = .08;
+		spread = 0.05;
 		flash_number = MZ2_GUNNER_GRENADE_3;
 	}
 	else
 	{
 		self->monsterinfo.aiflags &= ~AI_MANUAL_STEERING;
-		spread = .11;
+		spread = 0.10;
 		flash_number = MZ2_GUNNER_GRENADE_4;
+	}
+
+	if ((self->s.frame >= FRAME_attak301) && (self->s.frame <= FRAME_attak324))
+	{
+		flash_number = MZ2_GUNNER_GRENADE2_1 + (MZ2_GUNNER_GRENADE_4 - flash_number);
 	}
 
 	/* if we're shooting blind and we still can't see our enemy */
@@ -842,7 +828,8 @@ GunnerGrenade(edict_t *self)
 	}
 	else
 	{
-		VectorCopy(self->s.origin, target);
+		/* optech2: the enemy (was the gunner's own origin, so it never aimed up) */
+		VectorCopy(self->enemy->s.origin, target);
 	}
 
 	AngleVectors(self->s.angles, forward, right, up);
@@ -877,6 +864,9 @@ GunnerGrenade(edict_t *self)
 
 	VectorMA(forward, spread, right, aim);
 	VectorMA(aim, pitch, up, aim);
+
+	/* optech2: a pitch that lands it, if there is one (re-release) */
+	M_CalculatePitchToFire(self, target, start, aim, 600, 2.5f, false, false);
 
 	monster_fire_grenade(self, start, aim, 50, 600, flash_number);
 }
@@ -933,8 +923,62 @@ static const mmove_t gunner_move_endfire_chain_static = {
 	gunner_run
 };
 
+/* optech2: face the blind fire target (re-release) */
+static void
+gunner_blind_check(edict_t *self)
+{
+	if (self && (self->monsterinfo.aiflags & AI_MANUAL_STEERING))
+	{
+		vec3_t aim;
+
+		VectorSubtract(self->monsterinfo.blind_fire_target, self->s.origin, aim);
+		self->ideal_yaw = vectoyaw(aim);
+	}
+}
+
+/* optech2: the re-release model's second grenade animation */
+static mframe_t gunner_frames_attack_grenade2[] = {
+	{ai_charge, 0, gunner_blind_check},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, GunnerGrenade},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, GunnerGrenade},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, GunnerGrenade},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, GunnerGrenade},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL},
+	{ai_charge, 0, NULL}};
+
+mmove_t gunner_move_attack_grenade2 = {
+	FRAME_attak305,
+	FRAME_attak324,
+	gunner_frames_attack_grenade2,
+	gunner_run};
+
+/* optech2: either grenade animation when the model has the second */
+static mmove_t *
+gunner_grenade_move(edict_t *self)
+{
+	if ((M_ModelNumFrames(self) > FRAME_attak324) && (random() < 0.5))
+	{
+		return &gunner_move_attack_grenade2;
+	}
+
+	return &gunner_move_attack_grenade;
+}
+
 static mframe_t gunner_frames_attack_grenade[] = {
-	{ai_charge, 0, NULL},
+	{ai_charge, 0, gunner_blind_check},
 	{ai_charge, 0, NULL},
 	{ai_charge, 0, NULL},
 	{ai_charge, 0, NULL},
@@ -954,8 +998,7 @@ static mframe_t gunner_frames_attack_grenade[] = {
 	{ai_charge, 0, NULL},
 	{ai_charge, 0, NULL},
 	{ai_charge, 0, NULL},
-	{ai_charge, 0, NULL}
-};
+	{ai_charge, 0, NULL}};
 
 static const mmove_t gunner_move_attack_grenade_static = {
 	FRAME_attak101,
@@ -1015,7 +1058,7 @@ gunner_attack(edict_t *self)
 		if (gunner_grenade_check(self))
 		{
 			/* if the check passes, go for the attack */
-			self->monsterinfo.currentmove = &gunner_move_attack_grenade;
+			self->monsterinfo.currentmove = gunner_grenade_move(self);
 			self->monsterinfo.attack_finished = level.time + 2 * random();
 		}
 
@@ -1036,7 +1079,7 @@ gunner_attack(edict_t *self)
 	{
 		if ((random() <= 0.5) && gunner_grenade_check(self))
 		{
-			self->monsterinfo.currentmove = &gunner_move_attack_grenade;
+			self->monsterinfo.currentmove = gunner_grenade_move(self);
 		}
 		else if (M_CheckClearShot(self, monster_flash_offset[MZ2_GUNNER_MACHINEGUN_1], NULL))
 		{
@@ -1248,8 +1291,9 @@ gunner_duck(edict_t *self, float eta)
 
 	if ((self->monsterinfo.currentmove == &gunner_move_attack_chain) ||
 		(self->monsterinfo.currentmove == &gunner_move_fire_chain) ||
-		(self->monsterinfo.currentmove == &gunner_move_attack_grenade)
-		)
+		(self->monsterinfo.currentmove == &gunner_move_attack_grenade) ||
+		(self->monsterinfo.currentmove == &gunner_move_attack_grenade2) /* optech2 */
+	)
 	{
 		/* if we're shooting, and not on easy, don't dodge */
 		if (skill->value > SKILL_EASY)
@@ -1293,8 +1337,9 @@ gunner_sidestep(edict_t *self)
 
 	if ((self->monsterinfo.currentmove == &gunner_move_attack_chain) ||
 		(self->monsterinfo.currentmove == &gunner_move_fire_chain) ||
-		(self->monsterinfo.currentmove == &gunner_move_attack_grenade)
-		)
+		(self->monsterinfo.currentmove == &gunner_move_attack_grenade) ||
+		(self->monsterinfo.currentmove == &gunner_move_attack_grenade2) /* optech2 */
+	)
 	{
 		/* if we're shooting, and not on easy, don't dodge */
 		if (skill->value > SKILL_EASY)
