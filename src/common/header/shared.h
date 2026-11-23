@@ -537,7 +537,10 @@ typedef struct cvar_s
 	/* optech2: (int)value, as the re-release cvar_t has it here */
 	int integer;
 
-	/* Added by YQ2 (after integer: the re-release layout comes first). */
+	/* Added by YQ2 (after integer: the re-release layout comes first).
+	   optech2: this moved default_string by one field, so game libraries
+	   built against Yamagi's headers that read it must be rebuilt against
+	   ours (stock Quake II game libraries don't read it). */
 	char *default_string;
 } cvar_t;
 

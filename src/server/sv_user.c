@@ -338,7 +338,8 @@ SV_Configstrings_f(void)
 
 		cs = sv.configstrings[i];
 
-		if (*cs != '\0')
+		/* optech2: strings this client's protocol has no slot for are left out */
+		if ((*cs != '\0') && (P_ConvertConfigStringTo(i, sv_client->protocol) >= 0))
 		{
 			if (!_EnoughSpaceInBuffer(msg, MSG_ConfigString_Size(cs), opt & OPTIMIZE_MSGUTIL))
 			{

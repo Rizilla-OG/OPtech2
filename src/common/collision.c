@@ -1776,6 +1776,8 @@ CMod_ReadEntFile(const char *name, const byte *cmod_base, const lump_t *l, char 
 	return bufLen;
 }
 
+static char *cm_pending_entfile; /* optech2: the .ent buffer of a load in progress */
+
 static void
 CMod_LoadEntityString(const char *name, const char **map_entitystring, int *numentitychars,
 	const byte *cmod_base, const lump_t *l, char *entFileBuffer, int entFileLength)
@@ -1786,6 +1788,7 @@ CMod_LoadEntityString(const char *name, const char **map_entitystring, int *nume
 
 		memcpy(entity, entFileBuffer, entFileLength);
 		FS_FreeFile(entFileBuffer);
+		cm_pending_entfile = NULL; /* optech2: freed here, as normal */
 
 		*numentitychars = entFileLength;
 		*map_entitystring = entity;
@@ -1922,7 +1925,16 @@ CM_LoadCachedMap(const char *name, model_t *mod)
 	hunkSize += Mod_CalcLumpHunkSize(&header->lumps[LUMP_VISIBILITY],
 		1, 1, 0);
 	/* optech2: room for the exact .ent override, was a fixed MAX_MAP_ENTSTRING */
+	/* optech2: a load that dropped with an error (ERR_DROP) after reading
+	   the .ent file never freed it: free it now */
+	if (cm_pending_entfile)
+	{
+		FS_FreeFile(cm_pending_entfile);
+		cm_pending_entfile = NULL;
+	}
+
 	entFileLength = CMod_ReadEntFile(name, cmod_base, &header->lumps[LUMP_ENTITIES], &entFileBuffer);
+	cm_pending_entfile = entFileBuffer;
 	hunkSize += Mod_CalcLumpHunkSize(&header->lumps[LUMP_ENTITIES],
 		1, 1, (entFileLength > 0) ? entFileLength : 0);
 	hunkSize += Mod_CalcLumpHunkSize(&header->lumps[LUMP_MODELS],

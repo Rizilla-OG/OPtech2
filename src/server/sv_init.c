@@ -120,7 +120,8 @@ SV_FindIndex(const char *name, int start, int max, qboolean create)
 		return 0;
 	}
 
-	if (sv.state != ss_loading)
+	/* optech2: not when the protocol has no slot for it */
+	if ((sv.state != ss_loading) && (P_ConvertConfigStringTo(start + i, protocol) >= 0))
 	{
 		/* send the update to everyone */
 		MSG_WriteChar(&sv.multicast, svc_configstring);

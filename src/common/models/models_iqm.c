@@ -478,12 +478,52 @@ Mod_LoadModel_IQM(const char *mod_name, const void *buffer, int modfilelen)
 	meshes = (const iqm_mesh_t *)(data + header.ofs_meshes);
 	triangles = (const unsigned int *)(data + header.ofs_triangles);
 
-	for (i = 0; i < header.num_meshes; i++)
 	{
-		if ((size_t)meshes[i].first_triangle + meshes[i].num_triangles > header.num_triangles ||
-			(size_t)meshes[i].first_vertex + meshes[i].num_vertexes > header.num_vertexes)
+		size_t mesh_triangles = 0;
+
+		for (i = 0; i < header.num_meshes; i++)
 		{
-			Com_Printf("%s: %s has a broken mesh %u\n", __func__, mod_name, i);
+			if ((size_t)meshes[i].first_triangle + meshes[i].num_triangles > header.num_triangles ||
+				(size_t)meshes[i].first_vertex + meshes[i].num_vertexes > header.num_vertexes)
+			{
+				Com_Printf("%s: %s has a broken mesh %u\n", __func__, mod_name, i);
+				return NULL;
+			}
+
+			mesh_triangles += meshes[i].num_triangles;
+		}
+
+		/* optech2: the meshes are copied one after another into a list of
+		   num_triangles: overlapping meshes would write past it */
+		if (mesh_triangles > header.num_triangles)
+		{
+			Com_Printf("%s: %s has overlapping meshes\n", __func__, mod_name);
+			return NULL;
+		}
+	}
+
+	/* optech2: each frame holds one value per set bit of the pose masks:
+	   more bits than num_framechannels would read past the frame data */
+	if (header.num_frames)
+	{
+		const iqm_pose_t *pose_list = (const iqm_pose_t *)(data + header.ofs_poses);
+		size_t channels = 0;
+		int c;
+
+		for (i = 0; i < header.num_poses; i++)
+		{
+			for (c = 0; c < 10; c++)
+			{
+				if (pose_list[i].mask & (1u << c))
+				{
+					channels++;
+				}
+			}
+		}
+
+		if (channels > header.num_framechannels)
+		{
+			Com_Printf("%s: %s has more pose channels than frame data\n", __func__, mod_name);
 			return NULL;
 		}
 	}

@@ -67,6 +67,8 @@ RR_BuildSurfaces(void)
 	}
 }
 
+static unsigned rr_surfaces_checksum; /* optech2: the map the table was built for */
+
 void
 RR_FreeSurfaces(void)
 {
@@ -91,10 +93,13 @@ RR_ConvertSurface(const csurface_t *surface)
 	}
 
 	/* a new map since the table was built: build it again */
+	/* optech2: and the map's checksum: a new map can land at the same
+	   address with as many surfaces */
 	if (!rr_surfaces || (rr_surfaces_map != CM_MapSurfaces(0)) ||
-		(rr_surfaces_count != CM_MapSurfacesNum()))
+		(rr_surfaces_count != CM_MapSurfacesNum()) || (rr_surfaces_checksum != CM_MapChecksum()))
 	{
 		RR_BuildSurfaces();
+		rr_surfaces_checksum = CM_MapChecksum();
 	}
 
 	if (!rr_surfaces)

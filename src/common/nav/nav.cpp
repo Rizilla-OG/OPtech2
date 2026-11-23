@@ -889,6 +889,25 @@ FindLifts(const NavGeometry &geometry, const dtNavMeshQuery *query, int agent, s
    traversal's points, else at the two nodes. */
 static unsigned nav_release_checksum; /* of the file, 0 without one: part of the cache's checksum */
 
+/* optech2: what the cache was built from: the map, its entities (lifts come
+   from them, and a .ent file can change them with the same map) and the
+   re-release's navigation file */
+static unsigned
+Nav_CacheChecksum(void)
+{
+	int size = 0;
+	const char *entities = CM_EntityString(&size);
+	unsigned hash = 2166136261u;
+	int i;
+
+	for (i = 0; entities && (i < size) && entities[i]; i++)
+	{
+		hash = (hash ^ (unsigned char)entities[i]) * 16777619u;
+	}
+
+	return CM_MapChecksum() ^ nav_release_checksum ^ hash;
+}
+
 static float
 NavReadFloat(const unsigned char *data)
 {
@@ -1519,7 +1538,7 @@ SaveCache(void)
 	header = NavFileHeader();
 	memcpy(header.magic, "OTNV", 4);
 	header.version = NAV_FILE_VERSION;
-	header.checksum = CM_MapChecksum() ^ nav_release_checksum;
+	header.checksum = Nav_CacheChecksum();
 	NavSettings(header.settings);
 	fwrite(&header, sizeof(header), 1, file);
 
@@ -1596,7 +1615,7 @@ LoadCache(void)
 	NavSettings(settings);
 
 	if (fread(&header, sizeof(header), 1, file) != 1 || memcmp(header.magic, "OTNV", 4) ||
-		header.version != NAV_FILE_VERSION || header.checksum != (CM_MapChecksum() ^ nav_release_checksum) ||
+		header.version != NAV_FILE_VERSION || header.checksum != Nav_CacheChecksum() ||
 		memcmp(header.settings, settings, sizeof(settings)))
 	{
 		fclose(file);

@@ -102,15 +102,34 @@ Cmd_Delay_f(void)
 
 	delayMilliseconds = (int)strtol(Cmd_Argv(1), NULL, 10);
 
-	/* the command may be quoted ("say hi") or loose words (say hi) */
-	for (i = 2; i < Cmd_Argc(); i++)
+	/* the command may be quoted ("say hi"), taken as is, or loose words
+	   (say "a b"), whose spaced words keep their quotes */
+	if (Cmd_Argc() == 3)
 	{
-		if (i > 2)
+		Q_strlcpy(command, Cmd_Argv(2), sizeof(command));
+	}
+	else
+	{
+		for (i = 2; i < Cmd_Argc(); i++)
 		{
-			Q_strlcat(command, " ", sizeof(command));
-		}
+			const char *word = Cmd_Argv(i);
 
-		Q_strlcat(command, Cmd_Argv(i), sizeof(command));
+			if (i > 2)
+			{
+				Q_strlcat(command, " ", sizeof(command));
+			}
+
+			if (strchr(word, ' ') || !word[0])
+			{
+				Q_strlcat(command, "\"", sizeof(command));
+				Q_strlcat(command, word, sizeof(command));
+				Q_strlcat(command, "\"", sizeof(command));
+			}
+			else
+			{
+				Q_strlcat(command, word, sizeof(command));
+			}
+		}
 	}
 
 	for (i = 0; i < MAX_DELAYED_COMMANDS; i++)
@@ -118,11 +137,9 @@ Cmd_Delay_f(void)
 		if (!delayed_commands[i].inUse)
 		{
 			delayed_commands[i].inUse = true;
-			/* optech2: with fixedtime the engine clock (it starts at 0, the
-			   same on every run), else the real clock as before */
-			int now = (Cvar_VariableValue("fixedtime") > 0) ? curtime : Sys_Milliseconds();
-
-			delayed_commands[i].runAtMilliseconds = now + delayMilliseconds;
+			/* optech2: the engine clock, as Cmd_RunDelayedCommands checks it
+			   (with fixedtime it starts at 0, the same on every run) */
+			delayed_commands[i].runAtMilliseconds = curtime + delayMilliseconds;
 			Q_strlcpy(delayed_commands[i].command, command, sizeof(delayed_commands[i].command));
 			return;
 		}
@@ -147,7 +164,11 @@ Cmd_RunDelayedCommands(void)
 			/* free the slot first: the command may schedule another delay */
 			Q_strlcpy(command, delayed_commands[i].command, sizeof(command));
 			delayed_commands[i].inUse = false;
-			Cmd_ExecuteString(command);
+
+			/* the front of the command buffer, run right after this: it
+			   splits ";" and handles quotes */
+			Q_strlcat(command, "\n", sizeof(command));
+			Cbuf_InsertText(command);
 		}
 	}
 }

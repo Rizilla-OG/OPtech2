@@ -646,7 +646,8 @@ SV_ServerRecord_f(void)
 
 	for (i = 0; i < MAX_CONFIGSTRINGS; i++)
 	{
-		if (sv.configstrings[i][0])
+		/* optech2: strings the protocol has no slot for are left out */
+		if (sv.configstrings[i][0] && (P_ConvertConfigStringTo(i, protocol) >= 0))
 		{
 			MSG_WriteByte(&buf, svc_configstring);
 
