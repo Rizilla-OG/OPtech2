@@ -51,6 +51,14 @@ something unfinished; remove an entry in the commit that fixes it.
 
 ## Re-release support
 
+- Re-release bots (deferred, the last open item of the re-release parity
+  list): the re-release keeps its bot brain in the engine (`Bot_RegisterEdict`,
+  `Bot_MoveToPoint`, `Bot_FollowActor` and the game's `Bot_*` exports), so its
+  games' bots need an engine-side bot AI on our navigation mesh (moving,
+  following, picking items and targets). Only for re-release games' deathmatch
+  and coop bots; our own game has its own bots. Pick it up with the next
+  multiplayer work (after M3, or as part of M5), when the nav mesh has had the
+  lift, jump and ladder work it needs for players too.
 - Quake II 64: `hackflags` key ignored (monster/camera behaviour), camera
   scenes can't be skipped.
 - Re-release `CS_CD_LOOP_COUNT` (map music loop count, "0" on Quake II 64
