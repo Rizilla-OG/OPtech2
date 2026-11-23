@@ -227,8 +227,14 @@ SP_info_player_start(edict_t *self)
 		self->nextthink = level.time + FRAMETIME;
 	}
 
-	/* Fix coop spawn points */
-	SP_FixCoopSpots(self);
+	/* Fix coop spawn points. optech2: only unnamed starts, in coop: a
+	   named start renamed to another named start within 550 units lost
+	   level change spawn points that sit close together (mgu3m2's
+	   from_m3a beside from_m1: "Couldn't find spawn point") */
+	if (coop->value && !self->targetname)
+	{
+		SP_FixCoopSpots(self);
+	}
 }
 
 /*
