@@ -29,6 +29,7 @@
 #include "boss2.h"
 
 #define BOSS2_ROCKET_SPEED	750
+#define SPAWNFLAG_BOSS2_N64 8 /* optech2: Quake II 64's hornet: hyperblaster, rocket volleys (re-release) */
 
 void boss2_run(edict_t *self);
 static void boss2_dead(edict_t *self);
@@ -406,6 +407,122 @@ mmove_t boss2_move_attack_mg = {
 	NULL
 };
 
+/* optech2: the Quake II 64 hornet's hyperblaster (re-release),
+   alternating guns */
+static void
+Boss2HyperBlaster(edict_t *self)
+{
+	vec3_t forward, right, start, target;
+	int flash_number;
+
+	if (!self || !self->enemy || !self->enemy->inuse)
+	{
+		return;
+	}
+
+	flash_number = (self->s.frame & 1) ? MZ2_BOSS2_MACHINEGUN_L2 : MZ2_BOSS2_MACHINEGUN_R2;
+
+	AngleVectors(self->s.angles, forward, right, NULL);
+	M_ProjectFlashSource(self, monster_flash_offset[flash_number], forward, right, start);
+	VectorCopy(self->enemy->s.origin, target);
+	target[2] += self->enemy->viewheight;
+	VectorSubtract(target, start, forward);
+	VectorNormalize(forward);
+
+	monster_fire_blaster(self, start, forward, 2, 1000, flash_number,
+		(self->s.frame % 4) ? 0 : EF_HYPERBLASTER);
+}
+
+static void
+Boss2HyperBlasterLast(edict_t *self)
+{
+	Boss2HyperBlaster(self);
+	boss2_reattack_mg(self);
+}
+
+static mframe_t boss2_frames_attack_hb[] = {
+	{ai_charge, 2, Boss2HyperBlaster},
+	{ai_charge, 2, Boss2HyperBlaster},
+	{ai_charge, 2, Boss2HyperBlaster},
+	{ai_charge, 2, Boss2HyperBlaster},
+	{ai_charge, 2, Boss2HyperBlaster},
+	{ai_charge, 2, Boss2HyperBlasterLast}};
+
+mmove_t boss2_move_attack_hb = {
+	FRAME_attack10,
+	FRAME_attack15,
+	boss2_frames_attack_hb,
+	NULL};
+
+/* optech2: the Quake II 64 hornet's rockets: one every 4 frames from
+   stepping launch tubes, mostly leading a player (re-release) */
+static void
+Boss2Rocket64(edict_t *self)
+{
+	vec3_t forward, right, start, dir, target;
+	float scale;
+
+	if (!self || !self->enemy || !self->enemy->inuse)
+	{
+		return;
+	}
+
+	AngleVectors(self->s.angles, forward, right, NULL);
+	M_ProjectFlashSource(self, monster_flash_offset[MZ2_BOSS2_ROCKET_1], forward, right, start);
+
+	scale = (self->rrs.scale[0] > 0) ? self->rrs.scale[0] : 1.0f;
+	start[2] += 10.0f * scale;
+	VectorMA(start, -2.0f * scale, right, start);
+	VectorMA(start, -((self->count++ % 4) * 8.0f * scale), right, start);
+
+	if (self->enemy->client && (random() < 0.9f))
+	{
+		float flight_time;
+
+		VectorSubtract(self->enemy->s.origin, start, dir);
+		flight_time = VectorLength(dir) / BOSS2_ROCKET_SPEED;
+		VectorMA(self->enemy->s.origin, flight_time - 0.3f, self->enemy->velocity, target);
+	}
+	else
+	{
+		VectorCopy(self->enemy->s.origin, target);
+		target[2] -= 15;
+	}
+
+	VectorSubtract(target, start, dir);
+	VectorNormalize(dir);
+
+	monster_fire_rocket(self, start, dir, 35, BOSS2_ROCKET_SPEED, MZ2_BOSS2_ROCKET_1);
+}
+
+static mframe_t boss2_frames_attack_rocket2[] = {
+	{ai_charge, 2, Boss2Rocket64},
+	{ai_charge, 2, NULL},
+	{ai_charge, 2, NULL},
+	{ai_charge, 2, NULL},
+	{ai_charge, 2, Boss2Rocket64},
+	{ai_charge, 2, NULL},
+	{ai_charge, 2, NULL},
+	{ai_charge, 2, NULL},
+	{ai_charge, 2, Boss2Rocket64},
+	{ai_charge, 2, NULL},
+	{ai_charge, 2, NULL},
+	{ai_charge, 2, NULL},
+	{ai_charge, 2, Boss2Rocket64},
+	{ai_charge, 2, NULL},
+	{ai_charge, 2, NULL},
+	{ai_charge, 2, NULL},
+	{ai_charge, 2, Boss2Rocket64},
+	{ai_charge, 2, NULL},
+	{ai_charge, 2, NULL},
+	{ai_charge, 2, NULL}};
+
+mmove_t boss2_move_attack_rocket2 = {
+	FRAME_attack20,
+	FRAME_attack39,
+	boss2_frames_attack_rocket2,
+	boss2_run};
+
 static mframe_t boss2_frames_attack_post_mg[] = {
 	{ai_charge, 2, NULL},
 	{ai_charge, 2, NULL},
@@ -606,20 +723,15 @@ boss2_attack(edict_t *self)
 	VectorSubtract(self->enemy->s.origin, self->s.origin, vec);
 	range = VectorLength(vec);
 
-	if (range <= 125)
+	/* optech2: the Quake II 64 hornet goes straight to its hyperblaster
+	   and has its own rocket volleys (re-release) */
+	if ((range <= 125) || (random() <= 0.6))
 	{
-		self->monsterinfo.currentmove = &boss2_move_attack_pre_mg;
+		self->monsterinfo.currentmove = (self->spawnflags & SPAWNFLAG_BOSS2_N64) ? &boss2_move_attack_hb : &boss2_move_attack_pre_mg;
 	}
 	else
 	{
-		if (random() <= 0.6)
-		{
-			self->monsterinfo.currentmove = &boss2_move_attack_pre_mg;
-		}
-		else
-		{
-			self->monsterinfo.currentmove = &boss2_move_attack_rocket;
-		}
+		self->monsterinfo.currentmove = (self->spawnflags & SPAWNFLAG_BOSS2_N64) ? &boss2_move_attack_rocket2 : &boss2_move_attack_rocket;
 	}
 }
 
@@ -631,7 +743,7 @@ boss2_attack_mg(edict_t *self)
 		return;
 	}
 
-	self->monsterinfo.currentmove = &boss2_move_attack_mg;
+	self->monsterinfo.currentmove = (self->spawnflags & SPAWNFLAG_BOSS2_N64) ? &boss2_move_attack_hb : &boss2_move_attack_mg;
 }
 
 static void
@@ -646,7 +758,7 @@ boss2_reattack_mg(edict_t *self)
 	{
 		if (random() <= 0.7)
 		{
-			self->monsterinfo.currentmove = &boss2_move_attack_mg;
+			boss2_attack_mg(self);
 		}
 		else
 		{
@@ -920,6 +1032,9 @@ SP_monster_boss2(edict_t *self)
 
 	self->monsterinfo.currentmove = &boss2_move_stand;
 	self->monsterinfo.scale = MODEL_SCALE;
+
+	/* optech2: doesn't dodge or flinch at shots (re-release) */
+	self->monsterinfo.aiflags |= AI_IGNORE_SHOTS;
 
 	flymonster_start(self);
 }

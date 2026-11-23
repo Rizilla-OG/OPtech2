@@ -69,6 +69,8 @@ extern mmove_t berserk_move_stand;
 extern mmove_t berserk_move_stand_fidget;
 extern mmove_t berserk_move_walk;
 extern mmove_t boss2_move_attack_mg;
+extern mmove_t boss2_move_attack_hb;
+extern mmove_t boss2_move_attack_rocket2;
 extern mmove_t boss2_move_attack_post_mg;
 extern mmove_t boss2_move_attack_pre_mg;
 extern mmove_t boss2_move_attack_rocket;

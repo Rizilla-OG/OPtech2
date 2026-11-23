@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Quake II 64's hornet (`monster_boss2` with spawnflag 8): hyperblaster from alternating guns and its own rocket volleys, one every 4 frames from stepping launch tubes, as the re-release. The hornet no longer dodges or flinches at shots (`AI_IGNORE_SHOTS`).
 - Medic animations play the frames id meant (re-release): the hyperblaster attack runs on to frame 34 instead of stopping mid-motion, the cable attack is frames 37-55 (Rogue's 33-60 began with the end of another animation). Iron maiden rockets fly at 650 on every skill (stock: 500 + 100 per skill), the heat-seeking one's at 500 (re-release).
 - Mutants leap slower (425 forward, 160 up; stock 600, 250) but their leap hits once whenever it connects (stock: only above 400 units a second, so most landings did nothing), and their deaths slide sideways with the fall, the body stopping to block partway (re-release).
 - Tanks blind-fire with the blaster too (whichever weapon has a clear shot, one volley), refire the blaster on every skill (stock: hard and up), and stand still after pounding a body instead of running off with no enemy (re-release).
