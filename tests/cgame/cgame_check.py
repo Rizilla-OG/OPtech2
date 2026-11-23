@@ -33,7 +33,8 @@ CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 MODULE_SOURCE = REPO_DIR / "tests" / "cgame" / "test_cgame.c"
 OUTPUT_DIR = REPO_DIR / "build" / "cgame-check"
 DOC_SHOT = REPO_DIR / "docs" / "screenshots" / "m2_test_cgame_hud.png"
-DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
+# the data set: run_all.py --data sets OPTECH2_DATA_DIR (classic by default)
+DEFAULT_DATA_DIR = Path(os.environ.get("OPTECH2_DATA_DIR", Path.home() / ".local/share/Steam/steamapps/common/Quake 2"))
 RERELEASE_DATA_DIR = DEFAULT_DATA_DIR / "rerelease"  # has localization/ (Q2Game.kpf); used when present
 
 

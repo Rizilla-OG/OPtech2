@@ -31,7 +31,8 @@ from pathlib import Path
 REPO_DIR = Path(__file__).resolve().parent.parent.parent
 CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 OUTPUT_DIR = REPO_DIR / "build" / "weapon-defs-check"
-DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
+# the data set: run_all.py --data sets OPTECH2_DATA_DIR (classic by default)
+DATA_DIR = Path(os.environ.get("OPTECH2_DATA_DIR", Path.home() / ".local/share/Steam/steamapps/common/Quake 2"))
 PLAYER_SPOT = "128 -320 32 0 135 0"     # open room on base1 (as in tests/tickrate/damage_check.py)
 TARGET_SPOT = "-13 -179 64 0 315 0"     # 200 units in front of the player, facing them
 

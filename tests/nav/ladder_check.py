@@ -41,7 +41,8 @@ SERVER_BINARY = REPO_DIR / "build" / "release" / "OpenTech2-server"
 CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 MAP_FILE = REPO_DIR / "build" / "maps" / "optech2_ladder.bsp"
 OUTPUT_DIR = REPO_DIR / "build" / "ladder-check"
-DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
+# the data set: run_all.py --data sets OPTECH2_DATA_DIR (classic by default)
+DATA_DIR = Path(os.environ.get("OPTECH2_DATA_DIR", Path.home() / ".local/share/Steam/steamapps/common/Quake 2"))
 MONSTER = "monster_berserk"
 WEST_SPOT = "-256 -256 24 0 90 0"        # west floor, facing the balcony
 EAST_SPOT = "256 -400 24 0 90 0"         # east floor, south of the teleporter

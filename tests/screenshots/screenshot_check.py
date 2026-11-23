@@ -29,7 +29,8 @@ REPO_DIR = CHECK_DIR.parent.parent
 GAME_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 REFERENCE_DIR = CHECK_DIR / "reference"
 OUTPUT_DIR = REPO_DIR / "build" / "screenshot-check"
-DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
+# the data set: run_all.py --data sets OPTECH2_DATA_DIR (classic by default)
+DEFAULT_DATA_DIR = Path(os.environ.get("OPTECH2_DATA_DIR", Path.home() / ".local/share/Steam/steamapps/common/Quake 2"))
 
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
 FRAMES_AFTER_MAP_LOAD = 900   # wait for the map to load and the client to connect

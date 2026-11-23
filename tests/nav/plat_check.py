@@ -39,7 +39,8 @@ SERVER_BINARY = REPO_DIR / "build" / "release" / "OpenTech2-server"
 CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 MAP_FILE = REPO_DIR / "build" / "maps" / "optech2_plat.bsp"
 OUTPUT_DIR = REPO_DIR / "build" / "plat-check"
-DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
+# the data set: run_all.py --data sets OPTECH2_DATA_DIR (classic by default)
+DATA_DIR = Path(os.environ.get("OPTECH2_DATA_DIR", Path.home() / ".local/share/Steam/steamapps/common/Quake 2"))
 MONSTER = "monster_berserk"
 FLOOR_SPOT = "256 -400 24 0 90 0"       # on the floor, far enough back to see up onto the balcony
 BALCONY_SPOT = "-256 168 344 0 270 0"   # up on the balcony near its edge (it sees the player below)

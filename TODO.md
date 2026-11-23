@@ -130,7 +130,7 @@ something unfinished; remove an entry in the commit that fixes it.
 
 ## Renderer performance
 
-- Vulkan is CPU-bound on big maps (user, 2026-11-23): 16 fps on mgu2m1 (Call of
+- Vulkan is CPU-bound on big maps (riz, 2026-11-23): 16 fps on mgu2m1 (Call of
   the Machine, 22 MB QBSP, re-release data), render submit 63 ms/frame on one
   core, GPU 0% busy; GL3 is fast at the same spot. ref_vk (vkQuake2) rebuilds
   and uploads world surface vertices on the CPU every frame. Fix: keep world

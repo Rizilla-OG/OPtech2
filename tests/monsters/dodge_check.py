@@ -33,7 +33,8 @@ from pathlib import Path
 REPO_DIR = Path(__file__).resolve().parent.parent.parent
 CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 OUTPUT_DIR = REPO_DIR / "build" / "dodge-check"
-DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
+# the data set: run_all.py --data sets OPTECH2_DATA_DIR (classic by default)
+DATA_DIR = Path(os.environ.get("OPTECH2_DATA_DIR", Path.home() / ".local/share/Steam/steamapps/common/Quake 2"))
 MAP_FILE = REPO_DIR / "build" / "maps" / "optech2_ledge.bsp"
 # the monster stands on the high ledge (320 up, too high to drop) and can't
 # come down to the player, who shoots up at it from the floor, 430 units out

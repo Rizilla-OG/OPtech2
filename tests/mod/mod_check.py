@@ -34,7 +34,8 @@ MOD_DIR = REPO_DIR / "mods" / "testmod"
 CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 OUTPUT_DIR = REPO_DIR / "build" / "mod-check"
 DOC_SHOT = REPO_DIR / "docs" / "screenshots" / "m2_testmod_testgun.png"
-DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
+# the data set: run_all.py --data sets OPTECH2_DATA_DIR (classic by default)
+DATA_DIR = Path(os.environ.get("OPTECH2_DATA_DIR", Path.home() / ".local/share/Steam/steamapps/common/Quake 2"))
 ENGINE_PARTS = ("src/client/", "src/server/", "src/common/", "src/backends/")
 SHARED_GAME_CODE = ("src/common/shared/",)  # compiled into the game library too
 JUMP_AT_MS = 5000

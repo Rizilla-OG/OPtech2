@@ -33,7 +33,8 @@ REPO_DIR = Path(__file__).resolve().parent.parent.parent
 CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 MAP_FILE = REPO_DIR / "build" / "maps" / "optech2_cover.bsp"
 OUTPUT_DIR = REPO_DIR / "build" / "clear-shot-check"
-DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
+# the data set: run_all.py --data sets OPTECH2_DATA_DIR (classic by default)
+DATA_DIR = Path(os.environ.get("OPTECH2_DATA_DIR", Path.home() / ".local/share/Steam/steamapps/common/Quake 2"))
 MONSTER = "monster_soldier_ss"
 CROSS_MS = 12000                        # the player steps over to the soldier's side
 CLEAR_SPOT = "0 300 24 0 270 0"         # north side, facing the soldier

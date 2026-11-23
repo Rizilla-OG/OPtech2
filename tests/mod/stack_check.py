@@ -31,7 +31,8 @@ SERVER_BINARY = REPO_DIR / "build" / "release" / "OpenTech2-server"
 CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 GAME_LIBRARY = REPO_DIR / "build" / "release" / "baseq2" / "game.so"
 OUTPUT_DIR = REPO_DIR / "build" / "stack-check"
-DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
+# the data set: run_all.py --data sets OPTECH2_DATA_DIR (classic by default)
+DATA_DIR = Path(os.environ.get("OPTECH2_DATA_DIR", Path.home() / ".local/share/Steam/steamapps/common/Quake 2"))
 
 
 def make_mods(home):

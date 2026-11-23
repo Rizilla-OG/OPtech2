@@ -28,7 +28,8 @@ BENCHMARK_DIR = Path(__file__).resolve().parent
 REPO_DIR = BENCHMARK_DIR.parent.parent
 GAME_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 BASELINE_PATH = BENCHMARK_DIR / "baseline.json"
-DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
+# the data set: run_all.py --data sets OPTECH2_DATA_DIR (classic by default)
+DEFAULT_DATA_DIR = Path(os.environ.get("OPTECH2_DATA_DIR", Path.home() / ".local/share/Steam/steamapps/common/Quake 2"))
 
 DEMOS = ["demo1.dm2", "demo2.dm2"]
 RUNS_PER_DEMO = 3

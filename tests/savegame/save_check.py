@@ -38,7 +38,8 @@ from pathlib import Path
 REPO_DIR = Path(__file__).resolve().parent.parent.parent
 CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 OUTPUT_DIR = REPO_DIR / "build" / "save-check"
-DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
+# the data set: run_all.py --data sets OPTECH2_DATA_DIR (classic by default)
+DEFAULT_DATA_DIR = Path(os.environ.get("OPTECH2_DATA_DIR", Path.home() / ".local/share/Steam/steamapps/common/Quake 2"))
 GAME_TIMEOUT_SECONDS = 90
 SAVE_NAME = "optech2check"
 

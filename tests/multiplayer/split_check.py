@@ -41,7 +41,8 @@ REPO_DIR = CHECK_DIR.parent.parent
 CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 SERVER_BINARY = REPO_DIR / "build" / "release" / "OpenTech2-server"
 OUTPUT_DIR = REPO_DIR / "build" / "split-check"
-DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
+# the data set: run_all.py --data sets OPTECH2_DATA_DIR (classic by default)
+DEFAULT_DATA_DIR = Path(os.environ.get("OPTECH2_DATA_DIR", Path.home() / ".local/share/Steam/steamapps/common/Quake 2"))
 
 SERVER_PORT = 27997
 GAME_TIMEOUT_SECONDS = 120

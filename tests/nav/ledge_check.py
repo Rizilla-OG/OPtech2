@@ -37,7 +37,8 @@ SERVER_BINARY = REPO_DIR / "build" / "release" / "OpenTech2-server"
 CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 MAP_FILE = REPO_DIR / "build" / "maps" / "optech2_ledge.bsp"
 OUTPUT_DIR = REPO_DIR / "build" / "ledge-check"
-DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
+# the data set: run_all.py --data sets OPTECH2_DATA_DIR (classic by default)
+DATA_DIR = Path(os.environ.get("OPTECH2_DATA_DIR", Path.home() / ".local/share/Steam/steamapps/common/Quake 2"))
 MONSTER = "monster_berserk"
 LOW_SPOT = "-256 128 152 0 270 0"    # on the low ledge near its lip (it sees the player over it)
 HIGH_SPOT = "352 128 344 0 270 0"   # on the high ledge near its lip

@@ -35,7 +35,8 @@ REPO_DIR = CHECK_DIR.parent.parent
 CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 SERVER_BINARY = REPO_DIR / "build" / "release" / "OpenTech2-server"
 OUTPUT_DIR = REPO_DIR / "build" / "mp-check"
-DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
+# the data set: run_all.py --data sets OPTECH2_DATA_DIR (classic by default)
+DEFAULT_DATA_DIR = Path(os.environ.get("OPTECH2_DATA_DIR", Path.home() / ".local/share/Steam/steamapps/common/Quake 2"))
 
 SERVER_PORT = 27999           # not the default 27910, so a real server on this machine is left alone
 MAP_NAME = "q2dm1"

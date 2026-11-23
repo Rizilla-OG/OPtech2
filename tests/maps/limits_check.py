@@ -31,7 +31,8 @@ CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 MAP_FILE = REPO_DIR / "build" / "maps" / "optech2_limits.bsp"
 OUTPUT_DIR = REPO_DIR / "build" / "limits-check"
 DOC_SHOT_DIR = REPO_DIR / "docs" / "screenshots"
-DEFAULT_DATA_DIR = Path.home() / ".local/share/Steam/steamapps/common/Quake 2"
+# the data set: run_all.py --data sets OPTECH2_DATA_DIR (classic by default)
+DEFAULT_DATA_DIR = Path(os.environ.get("OPTECH2_DATA_DIR", Path.home() / ".local/share/Steam/steamapps/common/Quake 2"))
 GAME_TIMEOUT_SECONDS = 90
 
 STOCK_LIMIT = 256
