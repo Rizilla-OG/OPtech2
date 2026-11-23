@@ -62,14 +62,12 @@ static int
 SV_FindIndex(const char *name, int start, int max, qboolean create)
 {
 	size_t len, space;
-	int i, protocol;
+	int i;
 
 	if (!name || !name[0])
 	{
 		return 0;
 	}
-
-	protocol = sv_client ? sv_client->protocol : SV_GetRecomendedProtocol();
 
 	for (i = 1; i < max && sv.configstrings[start + i][0]; i++)
 	{
@@ -120,14 +118,18 @@ SV_FindIndex(const char *name, int start, int max, qboolean create)
 		return 0;
 	}
 
-	/* optech2: not when the protocol has no slot for it */
-	if ((sv.state != ss_loading) && (P_ConvertConfigStringTo(start + i, protocol) >= 0))
+	/* optech2: the update goes to everyone, so numbered for the server's
+	   protocol, not the client being handled now (an old protocol client
+	   there has no slot for some strings and dropped them for all); not
+	   when that protocol has no slot for it */
+	if ((sv.state != ss_loading) &&
+		(P_ConvertConfigStringTo(start + i, SV_GetRecomendedProtocol()) >= 0))
 	{
 		/* send the update to everyone */
 		MSG_WriteChar(&sv.multicast, svc_configstring);
 		/* i in native server range */
 		MSG_WriteConfigString(&sv.multicast,
-			P_ConvertConfigStringTo(start + i, protocol), name);
+			P_ConvertConfigStringTo(start + i, SV_GetRecomendedProtocol()), name);
 		SV_Multicast(vec3_origin, MULTICAST_ALL_R);
 	}
 

@@ -154,15 +154,18 @@ Wheel_Gather(void)
 			slot->ammo = Wheel_Field(text, 2, -1);
 			slot->min_ammo = Wheel_Field(text, 3, 1);
 			slot->sort = Wheel_Field(text, 5, i);
-			slot->count = (slot->ammo >= 0) ? CL_CGame_WheelAmmo(slot->ammo) : -1;
-			slot->usable = (slot->ammo < 0) || (slot->count >= slot->min_ammo);
-			slot->active = (i == active);
 
-			/* optech2: numbers the game sent that index nothing: no slot */
+			/* optech2: numbers the game sent that index nothing: no slot
+			   (checked before the ammo index reaches the game library) */
 			if (!Wheel_SlotValid(slot))
 			{
 				wheel_slot_count--;
+				continue;
 			}
+
+			slot->count = (slot->ammo >= 0) ? CL_CGame_WheelAmmo(slot->ammo) : -1;
+			slot->usable = (slot->ammo < 0) || (slot->count >= slot->min_ammo);
+			slot->active = (i == active);
 		}
 	}
 	else

@@ -519,7 +519,9 @@ G_RunFrame(void)
 		int tick;
 		int thinkFrameNumber;
 
-		level.tickrate = Q_clamp((int)sv_tickrate->value, 10, 120); /* same clamp as the server */
+		/* same clamp as the server; 10 Hz when its extension didn't
+		   connect (the server then runs us at 10 Hz) */
+		level.tickrate = gi_optech2 ? Q_clamp((int)sv_tickrate->value, 10, 120) : 10;
 		level.ticktime = 1.0f / level.tickrate;
 		tick = (int)(level.time * level.tickrate + 0.5f) + 1;
 		level.time = (float)((double)tick / level.tickrate);

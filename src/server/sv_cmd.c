@@ -173,14 +173,15 @@ SV_DemoMap_f(void)
  * Clears the archived maps, plays the inter.cin cinematic, then
  * goes to map jail.bsp.
  */
-qboolean sv_restart_level; /* optech2: restart_level asked for the next gamemap */
-
 void
 SV_GameMap_f(void)
 {
 	char *map, mapvalue[MAX_QPATH];
+	qboolean restart_level; /* optech2: "gamemap <level> restart", from restart_level */
 
-	if (Cmd_Argc() != 2)
+	restart_level = (Cmd_Argc() == 3) && !strcmp(Cmd_Argv(2), "restart");
+
+	if ((Cmd_Argc() != 2) && !restart_level)
 	{
 		Com_Printf("USAGE: gamemap <map>\n");
 		return;
@@ -205,13 +206,12 @@ SV_GameMap_f(void)
 		/* wipe all the *.sav files */
 		SV_WipeSavegame("current");
 	}
-	else if (sv_restart_level)
+	else if (restart_level)
 	{
 		/* optech2: restart_level: the level starts afresh, so neither save
 		   it nor keep the copy saved when it was entered last */
 		char name[MAX_OSPATH], savename[MAX_OSPATH];
 
-		sv_restart_level = false;
 		Q_strlcpy(savename, sv.name, sizeof(savename));
 		SV_CleanLevelFileName(savename);
 		Com_sprintf(name, sizeof(name), "%s/save/current/%s.sav", FS_Gamedir(), savename);

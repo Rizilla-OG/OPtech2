@@ -676,7 +676,7 @@ ED_CallSpawnStock(edict_t *ent)
 	}
 
 	gi.dprintf("%s doesn't have a spawn function\n", ent->classname);
-	ed_spawn_failed = true; /* optech2: callers that care can free it */
+	ed_spawn_failed = ent; /* optech2: callers that care can free it */
 }
 
 /*
@@ -684,7 +684,7 @@ ED_CallSpawnStock(edict_t *ent)
  * (g_defs.c): a new monster spawns as its "base" first, then gets its own
  * classname back.
  */
-qboolean ed_spawn_failed; /* optech2: the last spawn found no spawn function */
+edict_t *ed_spawn_failed; /* optech2: the last entity that found no spawn function */
 
 void
 ED_CallSpawn(edict_t *ent)

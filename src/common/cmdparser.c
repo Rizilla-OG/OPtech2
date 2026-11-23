@@ -103,7 +103,7 @@ Cmd_Delay_f(void)
 	delayMilliseconds = (int)strtol(Cmd_Argv(1), NULL, 10);
 
 	/* the command may be quoted ("say hi"), taken as is, or loose words
-	   (say "a b"), whose spaced words keep their quotes */
+	   (bind x "a;b"), each quoted again so spaces and ";" stay inside it */
 	if (Cmd_Argc() == 3)
 	{
 		Q_strlcpy(command, Cmd_Argv(2), sizeof(command));
@@ -119,16 +119,9 @@ Cmd_Delay_f(void)
 				Q_strlcat(command, " ", sizeof(command));
 			}
 
-			if (strchr(word, ' ') || !word[0])
-			{
-				Q_strlcat(command, "\"", sizeof(command));
-				Q_strlcat(command, word, sizeof(command));
-				Q_strlcat(command, "\"", sizeof(command));
-			}
-			else
-			{
-				Q_strlcat(command, word, sizeof(command));
-			}
+			Q_strlcat(command, "\"", sizeof(command));
+			Q_strlcat(command, word, sizeof(command));
+			Q_strlcat(command, "\"", sizeof(command));
 		}
 	}
 
@@ -148,6 +141,49 @@ Cmd_Delay_f(void)
 	Com_Printf("delay: more than %d commands waiting, '%s' dropped\n", MAX_DELAYED_COMMANDS, command);
 }
 
+/* optech2: run a delayed command line now, split at ";" outside quotes
+   like the command buffer does (not through the buffer: a "wait" there
+   would hold it up) */
+static void
+Cmd_ExecuteDelayedLine(const char *text)
+{
+	char line[256];
+	int length = 0;
+	qboolean quoted = false;
+
+	for (;; text++)
+	{
+		if (*text == '"')
+		{
+			quoted = !quoted;
+		}
+
+		if (!*text || ((*text == ';' || *text == '\n') && !quoted))
+		{
+			line[length] = 0;
+
+			if (length > 0)
+			{
+				Cmd_ExecuteString(line);
+			}
+
+			length = 0;
+
+			if (!*text)
+			{
+				return;
+			}
+
+			continue;
+		}
+
+		if (length < (int)sizeof(line) - 1)
+		{
+			line[length++] = *text;
+		}
+	}
+}
+
 /* optech2: run every delayed command whose time has come */
 static void
 Cmd_RunDelayedCommands(void)
@@ -164,11 +200,7 @@ Cmd_RunDelayedCommands(void)
 			/* free the slot first: the command may schedule another delay */
 			Q_strlcpy(command, delayed_commands[i].command, sizeof(command));
 			delayed_commands[i].inUse = false;
-
-			/* the front of the command buffer, run right after this: it
-			   splits ";" and handles quotes */
-			Q_strlcat(command, "\n", sizeof(command));
-			Cbuf_InsertText(command);
+			Cmd_ExecuteDelayedLine(command);
 		}
 	}
 }

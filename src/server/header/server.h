@@ -358,7 +358,6 @@ void SV_RR_FillPlayerState(int edict_number, player_xstate_t *ps);
 
 /* optech2: true while the level being left is saved (gamemap) */
 extern qboolean sv_level_transition;
-extern qboolean sv_restart_level; /* optech2: the next gamemap starts its level afresh */
 
 /* loadtime optimizations */
 

@@ -825,9 +825,12 @@ SV_BuildClientFrame(client_t *client)
 		{
 			vec3_t delta, center;
 
-			/* the middle of its box: brush models (doors, lifts) have
-			   their origin at 0 0 0 and would rank as far away */
-			if (ent->solid == SOLID_BSP)
+			/* the middle of its box: brush models (doors, lifts, and
+			   non-solid ones like func_illusionary) have their origin
+			   at 0 0 0 and would rank as far away */
+			if ((ent->solid == SOLID_BSP) ||
+				((ent->s.modelindex > 0) && (ent->s.modelindex < MAX_MODELS) &&
+					(sv.configstrings[CS_MODELS + ent->s.modelindex][0] == '*')))
 			{
 				VectorAdd(ent->absmin, ent->absmax, center);
 				VectorScale(center, 0.5f, center);

@@ -191,6 +191,7 @@ static const functionList_t fnlist_prethink =
 
 static const fnlist_entry_t fnentries_think[] =
 	{
+		{"target_poi_setup", (byte *)target_poi_setup},
 		{"AI_Think", (byte *)AI_Think},
 		{"AngleMove_Begin", (byte *)AngleMove_Begin},
 		{"AngleMove_Done", (byte *)AngleMove_Done},
@@ -484,7 +485,6 @@ static const fnlist_entry_t fnentries_use[] =
 		{"Use_Plat2", (byte *)Use_Plat2},
 		{"Use_Target_Help", (byte *)Use_Target_Help},
 		{"target_poi_use", (byte *)target_poi_use},
-		{"target_poi_setup", (byte *)target_poi_setup},
 		{"Use_Target_Speaker", (byte *)Use_Target_Speaker},
 		{"Use_Target_Tent", (byte *)Use_Target_Tent},
 		{"actor_use", (byte *)actor_use},

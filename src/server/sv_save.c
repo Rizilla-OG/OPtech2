@@ -660,9 +660,8 @@ SV_RestartLevel_f(void)
 		if (level[0] && !strstr(level, ".cin") && !strstr(level, ".pcx"))
 		{
 			/* the level from its start, not as it was left */
-			sv_restart_level = true;
 			Com_Printf("restart_level: starting %s again\n", level);
-			Cbuf_AddText(va("gamemap \"%s\"\n", level));
+			Cbuf_AddText(va("gamemap \"%s\" restart\n", level));
 		}
 		else
 		{
