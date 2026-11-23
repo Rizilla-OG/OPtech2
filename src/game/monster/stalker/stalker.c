@@ -71,6 +71,12 @@ stalker_ok_to_transition(edict_t *self)
 
 	if (STALKER_ON_CEILING(self))
 	{
+		/* optech2: knocked off the ceiling: always fall (re-release) */
+		if (!self->groundentity)
+		{
+			return true;
+		}
+
 		max_dist = -384;
 		margin = self->mins[2] - 8;
 	}

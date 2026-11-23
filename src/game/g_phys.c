@@ -1440,6 +1440,20 @@ SV_Physics_Step(edict_t *ent)
 		return;
 	}
 
+	/* optech2: a monster on upside-down gravity (a stalker on the ceiling)
+	   knocked off it falls down instead of floating up forever (re-release) */
+	if ((ent->svflags & SVF_MONSTER) && (ent->gravityVector[2] > 0) &&
+		wasonground && !ent->groundentity)
+	{
+		ent->gravityVector[2] = -1;
+		ent->s.angles[ROLL] += 180.0f;
+
+		if (ent->s.angles[ROLL] > 360.0f)
+		{
+			ent->s.angles[ROLL] -= 360.0f;
+		}
+	}
+
 	SV_RunThink(ent);
 }
 

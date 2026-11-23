@@ -1914,7 +1914,7 @@ SP_monster_gekk(edict_t *self)
 
 	self->monsterinfo.walk = gekk_walk;
 	self->monsterinfo.run = gekk_run_start;
-	self->monsterinfo.dodge = gekk_dodge;
+	self->monsterinfo.dodge = NULL; /* optech2: off, as the re-release ("this dodge is bad"); gekk_dodge stays for old saves */
 	self->monsterinfo.attack = gekk_jump;
 	self->monsterinfo.melee = gekk_melee;
 	self->monsterinfo.sight = gekk_sight;

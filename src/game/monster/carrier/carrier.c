@@ -67,11 +67,8 @@ CarrierCoopCheck(edict_t *self)
 	edict_t *ent;
 	trace_t tr;
 
-	/* if we're not in coop, this is a noop */
-	if (!coop || !coop->value)
-	{
-		return;
-	}
+	/* optech2: in single player too, so it fires them when the player
+	   gets below it (re-release; was co-op only) */
 
 	/* if we are, and we have recently fired, bail */
 	if (self->wait > level.time)
