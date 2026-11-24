@@ -48,6 +48,17 @@
 #include <windows.h>
 #endif
 
+/* optech2: compiler string for the report; MSVC has no __VERSION__ */
+#if defined(_MSC_VER)
+#define CRASH_STR2(x) #x
+#define CRASH_STR(x) CRASH_STR2(x)
+#define CRASH_COMPILER "MSVC " CRASH_STR(_MSC_FULL_VER)
+#elif defined(__VERSION__)
+#define CRASH_COMPILER __VERSION__
+#else
+#define CRASH_COMPILER "unknown"
+#endif
+
 #define CONSOLE_TAIL_SIZE 16384 /* bytes of recent console output kept */
 #define BACKTRACE_DEPTH 48
 
@@ -283,7 +294,7 @@ Crash_WriteReport(const char *reason, const char *message)
 	fprintf(report, "%-14s%s\n", "Version:", YQ2VERSION);
 	fprintf(report, "%-14s%s %s\n", "Platform:", YQ2OSTYPE, YQ2ARCH);
 	fprintf(report, "%-14s%s\n", "Built:", __DATE__ " " __TIME__);
-	fprintf(report, "%-14s%s\n", "Compiler:", __VERSION__);
+	fprintf(report, "%-14s%s\n", "Compiler:", CRASH_COMPILER);
 	fprintf(report, "%-14s%.1f s\n", "Uptime:", Sys_Milliseconds() / 1000.0f);
 
 	/* backtrace first: if the game state below is broken, this is out */
