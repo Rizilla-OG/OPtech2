@@ -1931,6 +1931,15 @@ static char* basename( char* n )
 }
 #endif // _MSC_VER
 
+static qboolean fs_rerelease_data; /* optech2: the re-release's Q2Game.kpf was found */
+
+/* optech2: running on the re-release's data (its Q2Game.kpf is mounted) */
+qboolean
+FS_RereleaseData(void)
+{
+	return fs_rerelease_data;
+}
+
 static void
 FS_AddKPFpack(void)
 {
@@ -1948,6 +1957,8 @@ FS_AddKPFpack(void)
 	{
 		pack = FS_LoadPK3("Q2Game.kpf");
 	}
+
+	fs_rerelease_data = (pack != NULL); /* optech2 */
 
 	if (pack)
 	{

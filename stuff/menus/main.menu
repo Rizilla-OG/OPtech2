@@ -1,0 +1,43 @@
+// optech2: the main menu in the re-release look. The classic look keeps
+// the stock menu with its pictures (menu_builtin main).
+{
+"title" "QUAKE II"
+"if" "styled"
+}
+{
+"type" "action"
+"label" "Single Player"
+"alttext" "$m_main_game"
+"command" "menu_game"
+}
+{
+"type" "action"
+"label" "Multiplayer"
+"alttext" "$m_main_multiplayer"
+"command" "menu_multiplayer"
+}
+{
+"type" "action"
+"label" "Options"
+"alttext" "$m_main_options"
+"command" "menu_options"
+}
+{
+"type" "action"
+"label" "Video"
+"alttext" "$m_main_video"
+"command" "menu_video"
+}
+{
+"type" "action"
+"label" "Mods"
+"command" "menu_mods"
+"if" "mods"
+}
+{
+"type" "action"
+"label" "Quit"
+"alttext" "$m_main_quit"
+"command" "menu_quit"
+"gap" "10"
+}

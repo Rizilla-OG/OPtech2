@@ -889,6 +889,7 @@ strlist_t FS_ListMods(void);
 /* properly handles partial reads */
 
 void FS_FreeFile(void *buffer);
+qboolean FS_RereleaseData(void); /* optech2: the re-release's Q2Game.kpf is mounted */
 void FS_CreatePath(const char *path);
 
 /* MISC */

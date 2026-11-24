@@ -867,7 +867,7 @@ IN_Update(void)
 				}
 				else if (cls.key_dest == key_menu)
 				{
-					DataMenu_MouseMove(event.motion.xrel, event.motion.yrel); /* optech2: the menu pointer */
+					Menu_MouseMove(event.motion.xrel, event.motion.yrel); /* optech2: the menu pointer */
 				}
 				break;
 

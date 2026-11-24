@@ -1428,6 +1428,7 @@ CLIENT_OBJS_ := \
 	src/client/menu/menu.o \
 	src/client/menu/datamenu.o \
 	src/client/menu/menu_lua.o \
+	src/client/menu/menustyle.o \
 	src/game/lua/lapi.o \
 	src/game/lua/lauxlib.o \
 	src/game/lua/lbaselib.o \

@@ -18,7 +18,9 @@ them with "presskey" (developer 1), then prints the cvars they changed:
      makes items whose action functions and commands run, "if lua:" leaves
      an item out, an endless loop is stopped and the page carries on, and
      a script with a syntax error is reported while its page still opens
-  9. optech2: the re-release style (ui_menustyle 1) looks different, and the
+  9. optech2: ui_menustyle -1 picks the look by data set, and the stock C
+     menus take the re-release look too (key bindings)
+     optech2: the re-release style (ui_menustyle 1) looks different, and the
      mouse works it: menu_pointer + a click steps a choice and sets a slider
      from the pointer, right click goes back
  10. optech2: the shipped pages (baseq2/menus: options, multiplayer, game,
@@ -302,6 +304,22 @@ def main():
            f"mouse: a click on the slider bar's middle sets it (menutest_slider {cvar(style_log, 'menutest_slider')})")
     report("style done" in style_log, "mouse: right click goes back without trouble")
     log += style_log
+
+    # optech2: ui_menustyle -1 (the default) picks the look by data set: the re-release look on its data,
+    # classic on the classic data; the stock C menus (key bindings here) take the look too
+    keys_shots = {}
+    for style in (-1, 0, 1):
+        _, shots_for_style = run(f"keys-style{style}", ["menu_keys", "clear", "screenshot png"], mods=False, style=style)
+        keys_shots[style] = shots_for_style[0][:-40] if shots_for_style else None
+    if any(shot is None for shot in keys_shots.values()):
+        report(False, "look by data set: a screenshot is missing (see keys-style*.log)")
+    else:
+        expected = 1 if DATA_DIR.name == "rerelease" else 0
+        report(differing(keys_shots[-1], keys_shots[expected]) == 0,
+               f"ui_menustyle -1 is the {'re-release' if expected else 'classic'} look on this data "
+               f"({differing(keys_shots[-1], keys_shots[expected])} pixels differ)")
+        report(differing(keys_shots[0], keys_shots[1]) > 500,
+               f"a stock C menu (key bindings) takes the re-release look ({differing(keys_shots[0], keys_shots[1])} pixels)")
 
     # optech2: the shipped pages against the stock menus, shots 1.5 s apart (same cursor frame)
     shipped = ["set crosshair 2", "set crosshair_color_r 0", "set crosshair_color_g 1", "set crosshair_color_b 1",

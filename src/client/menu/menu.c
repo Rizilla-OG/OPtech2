@@ -352,6 +352,12 @@ Default_MenuKey(menuframework_s *m, int key)
 		return NULL;
 	}
 
+	/* optech2: the mouse on the re-release look: clicks on rows, right button back, the wheel */
+	if (Menu_StyledMouse(m, key, &key, &sound_name))
+	{
+		return sound_name;
+	}
+
 	menu_key = Key_GetMenuKey(key);
 
 	item = Menu_ItemAtCursor(m);
@@ -946,6 +952,42 @@ KeyCursorDrawFunc(menuframework_s *menu)
 	Draw_CharScaled(menu->x, (menu->y + menu->cursor * 9) * scale, c, scale);
 }
 
+/* optech2: a binding page's keys in the re-release look's value column
+   ("A or B", "???", or a prompt while waiting for the key); false in the
+   classic look, which draws them itself */
+static qboolean
+M_StyledBindingValue(const menuaction_s *action, const int keys[2], qboolean gamepad)
+{
+	char text[96];
+
+	if (!Menu_Styled())
+	{
+		return false;
+	}
+
+	if (menukeyitem_bind && (Menu_ItemAtCursor(action->generic.parent) == action))
+	{
+		Q_strlcpy(text, "press a key...", sizeof(text));
+	}
+	else if (keys[0] == -1)
+	{
+		Q_strlcpy(text, "???", sizeof(text));
+	}
+	else if (keys[1] == -1)
+	{
+		Q_strlcpy(text, gamepad ? Key_KeynumToString_Joy(keys[0]) : Key_KeynumToString(keys[0]), sizeof(text));
+	}
+	else
+	{
+		Com_sprintf(text, sizeof(text), "%s or %s",
+			gamepad ? Key_KeynumToString_Joy(keys[0]) : Key_KeynumToString(keys[0]),
+			gamepad ? Key_KeynumToString_Joy(keys[1]) : Key_KeynumToString(keys[1]));
+	}
+
+	Menu_StyledValue(text);
+	return true;
+}
+
 static void
 DrawKeyBindingFunc(void *self)
 {
@@ -954,6 +996,11 @@ DrawKeyBindingFunc(void *self)
 	float scale = SCR_GetMenuScale();
 
 	M_FindKeysForCommand(bindnames[a->generic.localdata[0]][0], keys, KEYS_KEYBOARD_MOUSE);
+
+	if (M_StyledBindingValue(a, keys, false))
+	{
+		return;
+	}
 
 	if (keys[0] == -1)
 	{
@@ -1105,6 +1152,11 @@ MultiplayerDrawKeyBindingFunc(void *self)
 	float scale = SCR_GetMenuScale();
 
 	M_FindKeysForCommand(multiplayer_key_bindnames[a->generic.localdata[0]][0], keys, KEYS_ALL);
+
+	if (M_StyledBindingValue(a, keys, false))
+	{
+		return;
+	}
 
 	if (keys[0] == -1)
 	{
@@ -1302,6 +1354,11 @@ DrawControllerButtonBindingFunc(void *self)
 
 	M_FindKeysForCommand(controller_bindnames[a->generic.localdata[0]][0], keys, KEYS_CONTROLLER);
 
+	if (M_StyledBindingValue(a, keys, true))
+	{
+		return;
+	}
+
 	if (keys[0] == -1)
 	{
 		Menu_DrawString(a->generic.x + a->generic.parent->x + RCOLUMN_OFFSET * scale,
@@ -1473,6 +1530,11 @@ DrawControllerAltButtonBindingFunc(void *self)
 	float scale = SCR_GetMenuScale();
 
 	M_FindKeysForCommand(controller_alt_bindnames[a->generic.localdata[0]][0], keys, KEYS_CONTROLLER_ALT);
+
+	if (M_StyledBindingValue(a, keys, true))
+	{
+		return;
+	}
 
 	if (keys[0] == -1)
 	{
@@ -7313,6 +7375,7 @@ M_Menu_PlayerConfig_f(void)
 	}
 
 	Menu_SetStatusBar(&s_multiplayer_menu, NULL);
+	s_player_config_menu.style_right = -8; /* optech2: the model is drawn right of the middle */
 	s_player_config_menu.draw  = PlayerConfig_MenuDraw;
 	s_player_config_menu.key   = Default_MenuKey;
 	s_player_config_menu.close = PlayerConfig_MenuClose;
@@ -7431,6 +7494,11 @@ M_MenuCondition(const char *name, qboolean *known)
 	if (!Q_strncasecmp(name, "game=", 5)) /* optech2: game=ctf, game=rogue... (game=baseq2 for none) */
 	{
 		return M_IsGame(name + 5);
+	}
+
+	if (!Q_stricmp(name, "styled")) /* optech2: the re-release menu look is on */
+	{
+		return Menu_Styled();
 	}
 
 	if (!Q_stricmp(name, "ingame"))

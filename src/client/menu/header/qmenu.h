@@ -50,6 +50,7 @@ extern const char *menu_out_sound;
 #define QMF_HIGHLIGHT_IF_FOCUS  0x00000008
 #define QMF_INACTIVE            0x00000010
 #define QMF_HIDDEN              0x00000020
+#define QMF_SUBMENU 0x00000040 /* optech2: opens another menu: the re-release look shows ">" */
 
 enum {
 	KEYS_ALL	= 0,
@@ -73,6 +74,15 @@ typedef struct _tag_menuframework
 	const char *(*key)(struct _tag_menuframework *m, int k);
 	void (*close)(struct _tag_menuframework *m);
 	void (*cursordraw)(struct _tag_menuframework *m);
+
+	/* optech2: where the re-release look drew the rows (pixels), for the mouse */
+	int style_x, style_width, style_row_height;
+	float style_scale;
+	int style_row_top[MAXMENUITEMS];
+	/* optech2: not 0: the re-release look's panel ends this many units right
+	   of the screen's middle (negative: left of it), for menus with a
+	   picture beside them (player setup's model) */
+	int style_right;
 } menuframework_s;
 
 typedef struct
@@ -162,6 +172,13 @@ void *Menu_ItemAtCursor(const menuframework_s *m);
 qboolean Menu_SelectItem(const menuframework_s *s);
 void Menu_SetStatusBar(menuframework_s *menu, const char *string);
 qboolean Menu_SlideItem(const menuframework_s *s, int dir);
+
+/* optech2: the re-release look (menustyle.c) */
+qboolean Menu_Styled(void);
+void Menu_DrawStyled(menuframework_s *menu);
+void Menu_StyledValue(const char *text);
+qboolean Menu_StyledMouse(menuframework_s *menu, int key, int *replacement, const char **sound_name);
+void Menu_SetPointer(float x, float y);
 
 void Menu_DrawCharacter(int cx, int cy, int num);
 void Menu_DrawString(int x, int y, const char *string);

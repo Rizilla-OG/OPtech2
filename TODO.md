@@ -107,7 +107,9 @@ something unfinished; remove an entry in the commit that fixes it.
   row bar, mouse; the stock C menus and the main menu keep the classic
   look until they're data pages); 5 modder docs (done 2026-11-24: mods/MENUS.md).
   Left: more stock menus as pages (keys, load/save, servers, player setup,
-  video, gamepad, main menu with its pics), each needing menu.* functions.
+  video, gamepad), each needing menu.* functions. Every menu has the
+  re-release look since 2026-11-24 (menustyle.c); still classic inside it:
+  join server's "searching" popup, credits, the quit picture.
 - Later: game library menus in C through an extension hook (draw + keys),
   for libraries like q2arpg that want their own; engine/data menus stay the
   fallback for re-release games.

@@ -568,6 +568,7 @@ set(Client-Source
 	${CLIENT_SRC_DIR}/menu/menu.c
 	${CLIENT_SRC_DIR}/menu/datamenu.c
 	${CLIENT_SRC_DIR}/menu/menu_lua.c
+	${CLIENT_SRC_DIR}/menu/menustyle.c
 	# optech2: Lua for data menus (the client keeps its own copy, hidden like the game's)
 	${GAME_SRC_DIR}/lua/lapi.c
 	${GAME_SRC_DIR}/lua/lauxlib.c

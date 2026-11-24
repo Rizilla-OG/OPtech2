@@ -490,6 +490,13 @@ Menu_Draw(menuframework_s *menu)
 	menucommon_s *item;
 	float scale = SCR_GetMenuScale();
 
+	/* optech2: the re-release look draws every menu its own way */
+	if (Menu_Styled())
+	{
+		Menu_DrawStyled(menu);
+		return;
+	}
+
 	/* draw contents */
 	for (i = 0; i < menu->nitems; i++)
 	{

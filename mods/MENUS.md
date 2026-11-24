@@ -62,8 +62,7 @@ comment. The first block is the page, every block after it an item:
 | `status` | a status line; `$name` is a cvar's value (`dmflags = $dmflags`) |
 | `if` | a condition (below): when it doesn't hold, the page isn't there and the stock menu of the same name opens instead |
 | `open` | a function of the page's script, run before the items are built |
-| `x` | pixels (menu scale) right of the screen's middle (left if negative) |
-| `y` | the classic look only: the top, in pixels from the screen's middle; centered without it (the re-release look always puts the panel under the banner's place) |
+| `x`, `y` | the classic look only: pixels (menu scale) from the screen's middle; centered without `y` (the re-release look always centers its panel under the banner's place) |
 
 ### Items
 
@@ -207,12 +206,17 @@ and `game.lua` (in the source: `stuff/menus/`).
 
 ## The look
 
-`ui_menustyle 1` (the default) draws pages the re-release's way: a dark
-panel, a bar on the selected row, values on the right, sliders as bars.
+`ui_menustyle -1` (the default) picks the look by the game data: the
+re-release look on the re-release's data, the classic Quake II look on the
+classic data; `1` and `0` force one. The re-release look draws every menu,
+pages and stock C menus alike: a dark panel, a bar on the selected row,
+values on the right, sliders as bars, a heading directly above an unnamed
+value drawn on its row, and on the main menu a text list (`menus/main.menu`,
+whose `"if" "styled"` leaves the classic look its pictures; `styled` is a
+condition too).
 The mouse works it: hover selects, a click picks (a choice steps to its
 next option, a click on a slider's bar sets it), the right button goes
-back, the wheel moves. `ui_menustyle 0` draws pages in the classic Quake II
-look. A page too tall for the screen is drawn smaller.
+back, the wheel moves. A page too tall for the screen is drawn smaller.
 
 ## Checking a page
 
