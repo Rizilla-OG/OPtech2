@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Fixed: with bloom on (GL3, GL4) the re-release menu look lost its panels and the sliders showed as white bars: the bloom pass left the blend function additive for the 2D drawing after it. The video page showed the mode [320 240] for auto and custom: choices now hold 64 options (the 35 video modes).
 - Mods: a folder with a game library this build can load (game.so / game_x64.so; .dll on Windows) is listed as a mod even without a pak, so q2arpg (`q2rpg` in the user folder) shows in the mods menu and runs from it. Game libraries load with the user folder as the working directory, so files they write by relative path (q2arpg's `q2rpg/loot_stats.csv`) land there and never where the game was started.
 - Menus: player setup is a data page (`menus/playerconfig.menu`, `playerconfig.lua`), drawn as the stock one: page keys `preview` `player` (the turning model and skin icon) and `panel_right`, `menu.playermodels()`, item key `cursor`; an item without a label is its widget alone. Every stock menu now has a data page (the C menus stay as `menu_builtin`). `data-menus` compares it and checks a skin change.
 - Menus: join server is a data page (`menus/joinserver.menu`, `joinserver.lua`), drawn as the stock one: it searches the LAN on opening and is built again as servers answer (`menu.servers()`, `menu_searchservers`); data pages draw the stock menus' popup ("searching..."). `data-menus` compares it.

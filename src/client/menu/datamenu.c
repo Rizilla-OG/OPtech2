@@ -79,7 +79,7 @@ void M_Banner(const char *name);
 
 #define DATAMENU_MAX_PAGES 16
 #define DATAMENU_MAX_ITEMS 64 /* optech2: what a menuframework_s holds */
-#define DATAMENU_MAX_OPTIONS 32
+#define DATAMENU_MAX_OPTIONS 64 /* optech2: 64: the video modes (33 + auto + custom) */
 #define DATAMENU_LINE_HEIGHT 10
 
 enum

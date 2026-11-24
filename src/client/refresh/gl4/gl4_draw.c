@@ -770,6 +770,9 @@ GL4_ApplyBloomPass(GLuint sceneTex, int w, int h)
 
 	/* restore engine blending */
 	glDisable(GL_BLEND);
+	/* optech2: and the blend function: 2D drawing after it (menu panels, fills) only enables
+	   blending and was added on top (ONE, ONE), so translucent panels vanished */
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	gl4state.uniCommonData.color = HMM_Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	GL4_UpdateUBOCommon();
 
