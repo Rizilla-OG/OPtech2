@@ -1683,8 +1683,14 @@ WriteLevel(const char *filename)
 
 	fclose(f);
 
-	/* Store AI navigation data */
-	AITools_SaveNodes();
+	/* Store AI navigation data. optech2: only in deathmatch, where the
+	   bots use it: it relinks every node pair, rewrites the node file and
+	   reloads navigation, adding the item nodes again each time (the save
+	   got slower with every save in single player) */
+	if (deathmatch->value)
+	{
+		AITools_SaveNodes();
+	}
 }
 
 /* ========================================================== */

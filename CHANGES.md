@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Saving outside deathmatch no longer rebuilds the bot navigation nodes: every save relinked all node pairs, rewrote the node file and reloaded navigation, which added the item nodes again (45 more nodes on each save on mgu2m2), so saves got slower the longer you played. Bots only play deathmatch, where it still runs.
 - Fixed (GL3, GL4): the screen turned orange or white at some view angles on maps with re-release flares and fog (Call of the Machine, mgu2m2). A flare last in a draw batch left additive blending on, so the full screen blend drawn next (fog, height fog, damage) added its whole colour however faint it was. The batch now restores normal blending after a flare.
 - Software renderer draws the big re-release maps (Call of the Machine: mgu3m3, mgu3m2 quit with "D_SCAlloc: bad cache width 304"): surface cache blocks may be up to 4096 pixels wide (were 256 and 64 KB), a surface too big for a quarter of the cache is cached at a coarser mip instead, the cache is 4x the 1997 size, and a surface built while the light buffers ran short is built again next frame instead of staying cached unlit. New check `big-maps` (re-release data).
 - Fixed: "Couldn't find spawn point" on level changes into maps whose spawn points sit close together (Call of the Machine: mgu3m3 back to mgu3m2, `from_m3a`): every named player start was renamed to the first named start within 550 units (an old coop spot fix). That fix now only touches unnamed starts in coop.
