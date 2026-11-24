@@ -68,10 +68,8 @@
 "options" "off=0;2x=2;4x=4;8x=8;16x=16"
 }
 {
-"type" "choice"
-"label" "multisampling"
-"cvar" "ui_v_msaa"
-"options" "off=0;2x=2;4x=4;8x=8;16x=16"
+"type" "list"
+"source" "msaa"
 }
 {
 "type" "list"

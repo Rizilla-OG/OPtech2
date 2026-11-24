@@ -445,6 +445,20 @@ GL4_Init(void)
 
 	Com_Printf("\n\nProbing for OpenGL extensions:\n");
 
+	/* optech2: the most MSAA samples: the video menu offers no more (the window may
+	   have been refused more already: vid_msaa_max, set by the video backend) */
+	{
+		GLint max_samples = 0;
+		const cvar_t *msaa_max = ri.Cvar_Get("vid_msaa_max", "-1", 0);
+
+		glGetIntegerv(GL_MAX_SAMPLES, &max_samples);
+		Com_Printf(" - Multisampling: Max %dx\n", max_samples);
+
+		if ((max_samples > 0) && ((msaa_max->value < 0) || (max_samples < msaa_max->value)))
+		{
+			ri.Cvar_SetValue("vid_msaa_max", (float)max_samples);
+		}
+	}
 
 	/* Anisotropic */
 	Com_Printf(" - Anisotropic Filtering: ");

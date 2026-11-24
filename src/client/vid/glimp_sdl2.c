@@ -576,6 +576,7 @@ GLimp_InitGraphics(int fullscreen, int *pwidth, int *pheight)
 
 	/* Mkay, now the hard work. Let's create the window. */
 	const cvar_t *gl_msaa_samples = Cvar_Get("r_msaa_samples", "0", CVAR_ARCHIVE);
+	qboolean msaa_reverted = false; /* optech2: a sample count was refused */
 
 	while (1)
 	{
@@ -598,6 +599,7 @@ GLimp_InitGraphics(int fullscreen, int *pwidth, int *pheight)
 
 				/* Try to recover */
 				Cvar_SetValue("r_msaa_samples", msaa_samples);
+				msaa_reverted = true;
 
 				SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS,
 					msaa_samples > 0 ? 1 : 0);
@@ -627,6 +629,12 @@ GLimp_InitGraphics(int fullscreen, int *pwidth, int *pheight)
 		}
 		else
 		{
+			/* optech2: the most samples the driver gave a window: the video menu offers no more */
+			if (msaa_reverted)
+			{
+				Cvar_SetValue("vid_msaa_max", gl_msaa_samples->value);
+			}
+
 			break;
 		}
 	}

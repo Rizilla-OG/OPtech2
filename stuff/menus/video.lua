@@ -116,6 +116,21 @@ function renderer_settings()
 	return {}
 end
 
+-- optech2: the sample counts the GPU gives (vid_msaa_max, from the renderer; -1 = not known)
+function msaa()
+	local max = menu.value("vid_msaa_max")
+	local options = { "off=0" }
+
+	for _, samples in ipairs({ 2, 4, 8, 16 }) do
+		if max < 0 or samples <= max then
+			options[#options + 1] = samples .. "x=" .. samples
+		end
+	end
+
+	return { { type = "choice", label = "multisampling", cvar = "ui_v_msaa", options = table.concat(options, ";"),
+		status = max > 0 and ("your GPU allows up to " .. math.floor(max) .. "x") or nil } }
+end
+
 function filter()
 	local family = renderer_family()
 
