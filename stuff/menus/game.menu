@@ -1,33 +1,12 @@
 // optech2: the single player menu as a data page (stock: menu_builtin game).
-// With more than one episode (the re-release data) the stock menu lists
-// them instead, until data menus can make lists (Lua hooks).
+// Its first lines come from game.lua: the four skills, or with several
+// episodes (the re-release data) one line per episode.
 {
 "banner" "m_banner_game"
-"if" "!episodes"
 }
 {
-"type" "action"
-"label" "easy"
-"alttext" "$m_easy"
-"command" "menu_newgame 0"
-}
-{
-"type" "action"
-"label" "medium"
-"alttext" "$m_medium"
-"command" "menu_newgame 1"
-}
-{
-"type" "action"
-"label" "hard"
-"alttext" "$m_hard"
-"command" "menu_newgame 2"
-}
-{
-"type" "action"
-"label" "hard+"
-"alttext" "$m_nightmare"
-"command" "menu_newgame 3"
+"type" "list"
+"source" "first_lines"
 }
 {
 "type" "space"

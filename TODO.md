@@ -101,7 +101,9 @@ something unfinished; remove an entry in the commit that fixes it.
   load/save (slots), join/start server, address book, player setup (model
   preview), video, joy/gyro/sticks, mods, level select, credits, quit; the
   lists wait for step 3); 3 client Lua state +
-  hooks; 4 restyle; 5 modder docs.
+  hooks (done 2026-11-24: menu_lua.c, lists, lua actions, if lua:, open;
+  game page lists episodes; next lists to port: save/load slots, key
+  bindings, servers, mods, level select — need menu.* functions for each); 4 restyle; 5 modder docs.
 - Later: game library menus in C through an extension hook (draw + keys),
   for libraries like q2arpg that want their own; engine/data menus stay the
   fallback for re-release games.

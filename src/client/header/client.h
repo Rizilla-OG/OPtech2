@@ -664,6 +664,30 @@ void DataMenu_Init(void); /* optech2: data menus (menu/datamenu.c) */
 qboolean DataMenu_Override(const char *name); /* optech2 */
 qboolean DataMenu_Open(const char *name); /* optech2 */
 qboolean M_MenuCondition(const char *name, qboolean *known); /* optech2: menu/menu.c */
+int M_EpisodeCount(void); /* optech2 */
+const char *M_EpisodeName(int index); /* optech2 */
+int M_ModCount(void); /* optech2 */
+const char *M_ModName(int index); /* optech2 */
+qboolean DataMenu_Exists(const char *name); /* optech2 */
+
+/* optech2: Lua for data menus (menu/menu_lua.c): a list function's entry */
+typedef struct
+{
+	char label[64];
+	char alttext[64];
+	char status[128];
+	char command[256];
+	int action; /* optech2: its action function's number in the page, 0 = none */
+} menulua_entry_t;
+
+typedef qboolean (*menulua_entry_f)(const menulua_entry_t *entry, void *context);
+
+qboolean MenuLua_LoadPage(const char *page); /* optech2 */
+void MenuLua_Call(const char *page, const char *function); /* optech2 */
+qboolean MenuLua_Condition(const char *page, const char *function); /* optech2 */
+int MenuLua_List(const char *page, const char *function, menulua_entry_f add_entry, void *context); /* optech2 */
+void MenuLua_CallAction(const char *page, int action); /* optech2 */
+void MenuLua_Shutdown(void); /* optech2 */
 void M_Free(void);
 void M_Keydown(int key);
 void M_Draw(void);

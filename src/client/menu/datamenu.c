@@ -53,8 +53,13 @@
  * curl (built with HTTP downloads), ingame, game=<name> (the game cvar;
  * game=baseq2 also when it's empty), or else a cvar (true when not 0).
  *
- * The stock options, multiplayer and game menus ship as pages in
- * baseq2/menus/ (stuff/menus/ in the source).
+ * Lua (menu_lua.c): menus/<name>.lua runs when the page opens; "type"
+ * "list" "source" "fn" makes action items from fn()'s entries, "lua" "fn"
+ * on an action runs fn() on enter, "if" "lua:fn" asks fn(), and the page
+ * key "open" "fn" runs fn() before the items are built.
+ *
+ * The stock options, multiplayer, game, download options and deathmatch
+ * flags menus ship as pages in baseq2/menus/ (stuff/menus/ in the source).
  *
  * "menu <name>" opens a page. A page named like a stock menu replaces it
  * (menus/options.menu for menu_options, even from inside other menus);
@@ -104,6 +109,8 @@ typedef struct
 	char status[128];
 	char cvar[128]; /* optech2: a choice may set several, space separated */
 	char command[256];
+	char lua[64]; /* optech2: "lua": the page script's function run on enter */
+	int lua_action; /* optech2: a list entry's action function, 0 = none */
 	qboolean invert; /* optech2: "invert": yes makes the cvar negative, keeping its size */
 	int mask; /* optech2: "mask": the choice sets only these bits of the cvar (dmflags) */
 	char format[16];
@@ -123,6 +130,7 @@ typedef struct
 	int y_offset;
 	char status[128]; /* optech2: "status": the page's status line; $cvar expands */
 	char status_text[256];
+	qboolean has_script; /* optech2: menus/<name>.lua ran */
 	menuframework_s frame;
 	int item_count;
 	datamenu_item_t items[DATAMENU_MAX_ITEMS];
@@ -427,9 +435,10 @@ DataMenu_ChoiceChanged(void *self)
 
 /* optech2: "if": space separated names, all must hold; "!name" for not.
    A name is one of M_MenuCondition's (gamepad, tall, episodes,
-   levelselect, ingame) or else a cvar, true when not 0 */
+   levelselect, ingame...), "lua:fn" (the page script's fn() returns
+   true) or else a cvar, true when not 0 */
 static qboolean
-DataMenu_Condition(const char *expression)
+DataMenu_Condition(const datamenu_page_t *page, const char *expression)
 {
 	char words[8][64];
 	int count = DataMenu_Words(expression, words, 8);
@@ -446,7 +455,16 @@ DataMenu_Condition(const char *expression)
 			name++;
 		}
 
-		holds = M_MenuCondition(name, &known);
+		/* optech2: "lua:fn" asks the page script */
+		if (!Q_strncasecmp(name, "lua:", 4))
+		{
+			holds = page->has_script && MenuLua_Condition(page->name, name + 4);
+			known = true;
+		}
+		else
+		{
+			holds = M_MenuCondition(name, &known);
+		}
 
 		if (!known)
 		{
@@ -500,15 +518,33 @@ DataMenu_ExpandStatus(datamenu_page_t *page)
 	page->status_text[out] = '\0';
 }
 
+/* optech2: the page an item belongs to */
+static const datamenu_page_t *
+DataMenu_ItemPage(const datamenu_item_t *item)
+{
+	return (const datamenu_page_t *)((const byte *)item->widget.generic.parent - offsetof(datamenu_page_t, frame));
+}
+
 static void
 DataMenu_ActionSelected(void *self)
 {
 	const datamenu_item_t *item = (const datamenu_item_t *)self;
+	const datamenu_page_t *page = DataMenu_ItemPage(item);
 
 	if (item->command[0])
 	{
 		Cbuf_AddText(item->command);
 		Cbuf_AddText("\n");
+	}
+
+	if (page->has_script && item->lua[0])
+	{
+		MenuLua_Call(page->name, item->lua);
+	}
+
+	if (page->has_script && item->lua_action)
+	{
+		MenuLua_CallAction(page->name, item->lua_action);
 	}
 }
 
@@ -591,6 +627,7 @@ DataMenu_BuildItem(datamenu_item_t *item, const datamenu_pair_t *pairs, int pair
 	Q_strlcpy(item->status, DataMenu_Value(pairs, pair_count, "status", ""), sizeof(item->status));
 	Q_strlcpy(item->cvar, DataMenu_Value(pairs, pair_count, "cvar", ""), sizeof(item->cvar));
 	Q_strlcpy(item->command, DataMenu_Value(pairs, pair_count, "command", ""), sizeof(item->command));
+	Q_strlcpy(item->lua, DataMenu_Value(pairs, pair_count, "lua", ""), sizeof(item->lua));
 
 	generic->name = item->label;
 	generic->alttext = item->alttext[0] ? item->alttext : NULL;
@@ -658,6 +695,48 @@ DataMenu_BuildItem(datamenu_item_t *item, const datamenu_pair_t *pairs, int pair
 	return true;
 }
 
+/* optech2: where a list's entries go: the page and the next line */
+typedef struct
+{
+	datamenu_page_t *page;
+	int y;
+} datamenu_list_context_t;
+
+/* optech2: a list entry becomes an action item */
+static qboolean
+DataMenu_AddListEntry(const menulua_entry_t *entry, void *context)
+{
+	datamenu_list_context_t *list = (datamenu_list_context_t *)context;
+	datamenu_item_t *item;
+	menucommon_s *generic;
+
+	if (list->page->item_count >= DATAMENU_MAX_ITEMS)
+	{
+		return false;
+	}
+
+	item = &list->page->items[list->page->item_count];
+	memset(item, 0, sizeof(*item));
+	generic = &item->widget.generic;
+	item->kind = DATAMENU_ACTION;
+	Q_strlcpy(item->label, entry->label, sizeof(item->label));
+	Q_strlcpy(item->alttext, entry->alttext, sizeof(item->alttext));
+	Q_strlcpy(item->status, entry->status, sizeof(item->status));
+	Q_strlcpy(item->command, entry->command, sizeof(item->command));
+	item->lua_action = entry->action;
+	generic->type = MTYPE_ACTION;
+	generic->flags = QMF_LEFT_JUSTIFY;
+	generic->name = item->label;
+	generic->alttext = item->alttext[0] ? item->alttext : NULL;
+	generic->statusbar = item->status[0] ? item->status : NULL;
+	generic->y = list->y;
+	generic->callback = DataMenu_ActionSelected;
+
+	list->page->item_count++;
+	list->y += DATAMENU_LINE_HEIGHT;
+	return true;
+}
+
 /* optech2: a page slot: the one this name had, or a free one, or the first */
 static datamenu_page_t *
 DataMenu_PageSlot(const char *name)
@@ -711,6 +790,7 @@ DataMenu_Load(const char *name)
 	page = DataMenu_PageSlot(name);
 	memset(page, 0, sizeof(*page));
 	Q_strlcpy(page->name, name, sizeof(page->name));
+	page->has_script = MenuLua_LoadPage(name); /* optech2: menus/<name>.lua, if there is one */
 	cursor = text;
 
 	/* optech2: the page block */
@@ -724,11 +804,17 @@ DataMenu_Load(const char *name)
 		page->y_offset = atoi(DataMenu_Value(pairs, pair_count, "y", "0"));
 
 		/* optech2: a page whose "if" doesn't hold isn't there: the stock menu opens instead */
-		if (!DataMenu_Condition(DataMenu_Value(pairs, pair_count, "if", "")))
+		if (!DataMenu_Condition(page, DataMenu_Value(pairs, pair_count, "if", "")))
 		{
 			FS_FreeFile(text);
 			page->name[0] = '\0';
 			return NULL;
+		}
+
+		/* optech2: "open": the page script's function, run before the items are built */
+		if (page->has_script && DataMenu_Value(pairs, pair_count, "open", NULL))
+		{
+			MenuLua_Call(page->name, DataMenu_Value(pairs, pair_count, "open", ""));
 		}
 	}
 
@@ -744,12 +830,31 @@ DataMenu_Load(const char *name)
 		}
 
 		/* optech2: an item whose "if" doesn't hold is left out, with its line */
-		if (!DataMenu_Condition(DataMenu_Value(pairs, pair_count, "if", "")))
+		if (!DataMenu_Condition(page, DataMenu_Value(pairs, pair_count, "if", "")))
 		{
 			continue;
 		}
 
 		y += atoi(DataMenu_Value(pairs, pair_count, "gap", "0"));
+
+		/* optech2: "list": the page script's function makes the items */
+		if (!Q_stricmp(DataMenu_Value(pairs, pair_count, "type", ""), "list"))
+		{
+			datamenu_list_context_t list = {page, y};
+
+			if (page->has_script)
+			{
+				MenuLua_List(page->name, DataMenu_Value(pairs, pair_count, "source", ""), DataMenu_AddListEntry, &list);
+			}
+			else
+			{
+				Com_Printf("%s: a list needs menus/%s.lua\n", file_name, name);
+			}
+
+			y = list.y;
+			continue;
+		}
+
 		item = &page->items[page->item_count];
 
 		if (DataMenu_BuildItem(item, pairs, pair_count, y, file_name))
@@ -769,6 +874,21 @@ DataMenu_Load(const char *name)
 	}
 
 	return page;
+}
+
+/* optech2: is there a page file of this name (its "if" not asked) */
+qboolean
+DataMenu_Exists(const char *name)
+{
+	char file_name[MAX_QPATH];
+
+	if (!name[0] || strchr(name, '/') || strchr(name, '\\') || strstr(name, ".."))
+	{
+		return false;
+	}
+
+	Com_sprintf(file_name, sizeof(file_name), "menus/%s.menu", name);
+	return FS_LoadFile(file_name, NULL) > 0;
 }
 
 /* optech2: opens the data page of this name; false if there is none */

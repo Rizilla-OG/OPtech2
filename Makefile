@@ -1125,7 +1125,7 @@ assets:
 	$(MAKE) $(BINDIR)/baseq2/fonts/Hack-Regular.ttf
 	$(MAKE) $(BINDIR)/baseq2/yq2.cfg
 	${Q}mkdir -p $(BINDIR)/baseq2/menus
-	cp stuff/menus/*.menu $(BINDIR)/baseq2/menus/
+	cp stuff/menus/*.menu stuff/menus/*.lua $(BINDIR)/baseq2/menus/
 
 $(BINDIR)/baseq2/models/entity.dat: stuff/models/entity.dat
 	${Q}mkdir -p $(BINDIR)/baseq2/models
@@ -1427,6 +1427,34 @@ CLIENT_OBJS_ := \
 	src/client/input/gyro.o \
 	src/client/menu/menu.o \
 	src/client/menu/datamenu.o \
+	src/client/menu/menu_lua.o \
+	src/game/lua/lapi.o \
+	src/game/lua/lauxlib.o \
+	src/game/lua/lbaselib.o \
+	src/game/lua/lcode.o \
+	src/game/lua/lcorolib.o \
+	src/game/lua/lctype.o \
+	src/game/lua/ldebug.o \
+	src/game/lua/ldo.o \
+	src/game/lua/ldump.o \
+	src/game/lua/lfunc.o \
+	src/game/lua/lgc.o \
+	src/game/lua/llex.o \
+	src/game/lua/lmathlib.o \
+	src/game/lua/lmem.o \
+	src/game/lua/lobject.o \
+	src/game/lua/lopcodes.o \
+	src/game/lua/lparser.o \
+	src/game/lua/lstate.o \
+	src/game/lua/lstring.o \
+	src/game/lua/lstrlib.o \
+	src/game/lua/ltable.o \
+	src/game/lua/ltablib.o \
+	src/game/lua/ltm.o \
+	src/game/lua/lundump.o \
+	src/game/lua/lutf8lib.o \
+	src/game/lua/lvm.o \
+	src/game/lua/lzio.o \
 	src/client/menu/qmenu.o \
 	src/client/menu/videomenu.o \
 	src/client/sound/ogg.o \

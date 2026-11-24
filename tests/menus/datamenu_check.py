@@ -14,7 +14,11 @@ them with "presskey" (developer 1), then prints the cvars they changed:
   6. "menu_options" opens the data page (same shot as "menu options"),
      "menu_builtin options" the stock one (a different shot)
   7. "menu nothere" says there is no such page; no errors in the logs
-  8. optech2: the shipped pages (baseq2/menus: options, multiplayer, game,
+  8. optech2: a page with a script (luatest.lua): its open hook runs, a list
+     makes items whose action functions and commands run, "if lua:" leaves
+     an item out, an endless loop is stopped and the page carries on, and
+     a script with a syntax error is reported while its page still opens
+  9. optech2: the shipped pages (baseq2/menus: options, multiplayer, game,
      download options, deathmatch flags)
      draw exactly as the stock menus they replace (menu_builtin), and their
      choices show the cvars' values (crosshair colour from three cvars,
@@ -78,6 +82,67 @@ TEST_PAGE = """
 }
 """
 
+# optech2: a page with a script (menus/luatest.lua): a list, Lua actions, "if lua:", an open hook
+LUA_PAGE = """
+{
+"title" "Lua test"
+"open" "on_open"
+}
+{
+"type" "list"
+"source" "entries"
+}
+{
+"type" "action"
+"label" "hidden"
+"command" "set luatest_hidden 1"
+"if" "lua:hidden"
+}
+{
+"type" "action"
+"label" "endless loop"
+"lua" "runaway"
+}
+{
+"type" "action"
+"label" "after the loop"
+"lua" "after"
+"if" "lua:shown"
+}
+"""
+
+LUA_SCRIPT = """
+-- optech2: the check's page script
+function on_open()
+	menu.set("luatest_open", "1")
+end
+
+function entries()
+	return {
+		{ label = "first", action = function() menu.set("luatest_action", "first") end },
+		{ label = "second", command = "set luatest_command second" },
+	}
+end
+
+function shown() return true end
+function hidden() return false end
+function runaway() while true do end end
+
+function after()
+	menu.set("luatest_after", menu.value("luatest_after") + 1)
+end
+"""
+
+BROKEN_PAGE = """
+{
+"title" "Broken script"
+}
+{
+"type" "label"
+"label" "the page still opens"
+}
+"""
+
 OPTIONS_PAGE = """
 {
 "banner" "m_banner_options"
@@ -112,6 +177,10 @@ def run(name, script, mods=True):
         (mod_dir / "menus").mkdir(parents=True)
         (mod_dir / "menus" / "test.menu").write_text(TEST_PAGE)
         (mod_dir / "menus" / "options.menu").write_text(OPTIONS_PAGE)
+        (mod_dir / "menus" / "luatest.menu").write_text(LUA_PAGE)
+        (mod_dir / "menus" / "luatest.lua").write_text(LUA_SCRIPT)
+        (mod_dir / "menus" / "broken.menu").write_text(BROKEN_PAGE)
+        (mod_dir / "menus" / "broken.lua").write_text("this is not lua (\n")
         game_dir = Path(home) / ".opentech2" / "baseq2"
         game_dir.mkdir(parents=True)
         lines = ["set developer 1"]
@@ -166,6 +235,11 @@ def main():
         "presskey downarrow", "presskey downarrow", "presskey downarrow", "presskey downarrow", "presskey downarrow",
         "presskey downarrow", "presskey downarrow", "presskey downarrow", "presskey downarrow", "presskey rightarrow",
         "presskey escape", "dmflags",
+        # optech2: the Lua page: first (action function), second (command), the loop, after
+        "menu luatest", "presskey enter", "presskey downarrow", "presskey enter",
+        "presskey downarrow", "presskey enter", "presskey downarrow", "presskey enter", "presskey escape",
+        "luatest_open", "luatest_action", "luatest_command", "luatest_hidden", "luatest_after",
+        "menu broken", "presskey escape", "echo broken page done",
     ])
     if len(shots) < 2:
         report(False, "page drawn: a screenshot is missing (see drive.log)")
@@ -182,6 +256,15 @@ def main():
     dmflags = re.findall(r'"dmflags" is "([^"]*)"', log)
     report(dmflags[-2:] == ["16664", "16728"],
            f"dmflags bits: falling damage off sets 8, teamplay by skin sets 64 (dmflags {', '.join(dmflags[-2:])})")
+    report(cvar(log, "luatest_open") == "1", f"Lua: the page's open hook ran (luatest_open {cvar(log, 'luatest_open')})")
+    report(cvar(log, "luatest_action") == "first" and cvar(log, "luatest_command") == "second",
+           f"Lua: a list's entries run their action function and command "
+           f"({cvar(log, 'luatest_action')}, {cvar(log, 'luatest_command')})")
+    report(cvar(log, "luatest_hidden") in (None, ""), "Lua: an item whose if lua: is false is left out")
+    report("too many instructions" in log and cvar(log, "luatest_after") == "1",
+           f"Lua: an endless loop is stopped and the page goes on (luatest_after {cvar(log, 'luatest_after')})")
+    report("broken.lua" in log and "broken page done" in log,
+           "Lua: a script with a syntax error is reported and its page still opens")
     report("No menu page menus/nothere.menu" in log, "a missing page is reported")
 
     # optech2: shots 1.5 s apart: the menu cursor animates in 15 frames of 100 ms, so they catch the same frame
@@ -206,6 +289,13 @@ def main():
     for page in SHIPPED_PAGES:
         shipped += [f"menu_{page}", "clear", "screenshot png", "presskey escape", f"menu_builtin {page}"] + filler[:11] + [
                     "clear", "screenshot png", "presskey escape"] + filler[:12]
+    # optech2: with several episodes (the re-release data) enter on the game page's first line asks for the
+    # skill: the same skill menu as the stock page's (on the classic data it would start a game)
+    episodes = DATA_DIR.name == "rerelease"
+    if episodes:
+        shipped += ["menu_game", "presskey enter", "clear", "screenshot png", "presskey escape", "presskey escape",
+                    "menu_builtin game", "presskey enter"] + filler[:9] + ["clear", "screenshot png",
+                    "presskey escape", "presskey escape"]
     shipped_log, shipped_shots = run("shipped", shipped, mods=False)
     for index, page in enumerate(SHIPPED_PAGES):
         if len(shipped_shots) < 2 * index + 2:
@@ -215,9 +305,19 @@ def main():
         data, stock = shipped_shots[2 * index][:-40], shipped_shots[2 * index + 1][:-40]
         report(differing(data, stock) == 0,
                f"shipped menus/{page}.menu draws as the stock menu ({differing(data, stock)} pixels differ)")
+    if episodes:
+        index = len(SHIPPED_PAGES)
+        if len(shipped_shots) < 2 * index + 2:
+            report(False, "episode: a screenshot is missing (see shipped.log)")
+        else:
+            data, stock = shipped_shots[2 * index][:-40], shipped_shots[2 * index + 1][:-40]
+            report(differing(data, stock) == 0,
+                   f"an episode on the game page asks for the skill as the stock one ({differing(data, stock)} pixels differ)")
     log += shipped_log
 
-    errors = [line for line in log.splitlines() if re.search(r"error|unknown item|expected \{|missing", line, re.I)]
+    # optech2: the Lua cases' own errors are expected
+    errors = [line for line in log.splitlines() if re.search(r"error|unknown item|expected \{|missing", line, re.I)
+              and "too many instructions" not in line and "broken.lua" not in line]
     report(not errors, f"no errors in the logs{': ' + errors[0] if errors else ''}")
 
     print(f"\n{'PASS' if all(results) else 'FAIL'}: {sum(results)}/{len(results)} data menu checks")

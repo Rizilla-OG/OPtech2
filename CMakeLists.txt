@@ -567,6 +567,35 @@ set(Client-Source
 	${CLIENT_SRC_DIR}/input/gyro.c
 	${CLIENT_SRC_DIR}/menu/menu.c
 	${CLIENT_SRC_DIR}/menu/datamenu.c
+	${CLIENT_SRC_DIR}/menu/menu_lua.c
+	# optech2: Lua for data menus (the client keeps its own copy, hidden like the game's)
+	${GAME_SRC_DIR}/lua/lapi.c
+	${GAME_SRC_DIR}/lua/lauxlib.c
+	${GAME_SRC_DIR}/lua/lbaselib.c
+	${GAME_SRC_DIR}/lua/lcode.c
+	${GAME_SRC_DIR}/lua/lcorolib.c
+	${GAME_SRC_DIR}/lua/lctype.c
+	${GAME_SRC_DIR}/lua/ldebug.c
+	${GAME_SRC_DIR}/lua/ldo.c
+	${GAME_SRC_DIR}/lua/ldump.c
+	${GAME_SRC_DIR}/lua/lfunc.c
+	${GAME_SRC_DIR}/lua/lgc.c
+	${GAME_SRC_DIR}/lua/llex.c
+	${GAME_SRC_DIR}/lua/lmathlib.c
+	${GAME_SRC_DIR}/lua/lmem.c
+	${GAME_SRC_DIR}/lua/lobject.c
+	${GAME_SRC_DIR}/lua/lopcodes.c
+	${GAME_SRC_DIR}/lua/lparser.c
+	${GAME_SRC_DIR}/lua/lstate.c
+	${GAME_SRC_DIR}/lua/lstring.c
+	${GAME_SRC_DIR}/lua/lstrlib.c
+	${GAME_SRC_DIR}/lua/ltable.c
+	${GAME_SRC_DIR}/lua/ltablib.c
+	${GAME_SRC_DIR}/lua/ltm.c
+	${GAME_SRC_DIR}/lua/lundump.c
+	${GAME_SRC_DIR}/lua/lutf8lib.c
+	${GAME_SRC_DIR}/lua/lvm.c
+	${GAME_SRC_DIR}/lua/lzio.c
 	${CLIENT_SRC_DIR}/menu/qmenu.c
 	${CLIENT_SRC_DIR}/menu/videomenu.c
 	${CLIENT_SRC_DIR}/sound/ogg.c
@@ -1243,8 +1272,9 @@ add_custom_command(TARGET game POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different
 		${CMAKE_SOURCE_DIR}/stuff/yq2.cfg
 		${OPTECH2_FONT_DIR}/..)
-# optech2: the menu pages (data menus), stock menus as data files mods can replace
-add_custom_command(TARGET game POST_BUILD
+# optech2: the menu pages (data menus), stock menus as data files mods can
+# replace; copied on every build, so an edited page always lands
+add_custom_target(optech2_menus ALL
 	COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${CMAKE_SOURCE_DIR}/stuff/menus
 		${OPTECH2_FONT_DIR}/../menus)

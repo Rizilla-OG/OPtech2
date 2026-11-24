@@ -7442,6 +7442,58 @@ M_MenuCondition(const char *name, qboolean *known)
 	return false;
 }
 
+/* optech2: the episodes the single player menu offers (re-release data), for menu Lua */
+int
+M_EpisodeCount(void)
+{
+	LevelSelect_NamesInit();
+	return s_episode_count;
+}
+
+const char *
+M_EpisodeName(int index)
+{
+	return ((index >= 0) && (index < s_episode_count)) ? s_episodes[index].name : "";
+}
+
+/* optech2: the mods the mods menu offers, for menu Lua */
+int
+M_ModCount(void)
+{
+	Mods_NamesInit();
+	return modnames.num;
+}
+
+const char *
+M_ModName(int index)
+{
+	return ((index >= 0) && (index < modnames.num)) ? modnames.data[index] : "";
+}
+
+/* optech2: menu_episode <index>: picks an episode and asks for the skill, as the stock episode items */
+static void
+M_Episode_f(void)
+{
+	int index;
+
+	if (Cmd_Argc() != 2)
+	{
+		Com_Printf("usage: menu_episode <index>\n");
+		return;
+	}
+
+	index = atoi(Cmd_Argv(1));
+
+	if ((index < 0) || (index >= M_EpisodeCount()))
+	{
+		Com_Printf("menu_episode: no episode %d\n", index);
+		return;
+	}
+
+	s_selected_episode = index;
+	M_Menu_Skill_f();
+}
+
 /* optech2: menu_newgame <skill>: a new single player game, as the stock difficulty items */
 static void
 M_NewGame_f(void)
@@ -7484,6 +7536,7 @@ M_Init(void)
 	Cmd_AddCommand("menu_newgame", M_NewGame_f); /* optech2 */
 	Cmd_AddCommand("menu_console", M_GoToConsole_f); /* optech2 */
 	Cmd_AddCommand("menu_oggenable", M_OggEnable_f); /* optech2 */
+	Cmd_AddCommand("menu_episode", M_Episode_f); /* optech2 */
 	Cmd_AddCommand("menu_main", M_Menu_Main_f);
 	Cmd_AddCommand("menu_game", M_Menu_Game_f);
 	Cmd_AddCommand("menu_levelselect", Menu_LevelSelect_f);
