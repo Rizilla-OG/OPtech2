@@ -4263,6 +4263,9 @@ LevelSelect_SetStatusBar(campaign_t *c)
 	Menu_SetStatusBar(&s_game_menu, s_ls_status);
 }
 
+static void M_Menu_Skill_f(void);
+static int s_selected_episode;
+
 static void
 LevelSelectFunc(void *unused)
 {
@@ -4275,6 +4278,14 @@ LevelSelectFunc(void *unused)
 	}
 
 	M_PopMenu(false);
+
+	/* optech2: with episodes (re-release data) the single player page has no skill lines and an
+	   episode would replace the picked level: ask for the skill now, for the picked level (-1) */
+	if (c && s_ls_cmd && (s_episode_count > 1))
+	{
+		s_selected_episode = -1;
+		M_Menu_Skill_f();
+	}
 }
 
 static int
@@ -4462,7 +4473,6 @@ ModsFunc(void *unused)
 static menuaction_s s_episode_actions[MAX_EPISODES];
 static menuframework_s s_skill_menu;
 static menuaction_s s_skill_actions[4];
-static int s_selected_episode;
 
 static void
 SkillSelectFunc(void *self)
@@ -4470,7 +4480,11 @@ SkillSelectFunc(void *self)
 	const menucommon_s *item = (const menucommon_s *)self;
 
 	Cvar_ForceSet("skill", va("%d", item->localdata[0]));
-	s_ls_cmd = s_episodes[s_selected_episode].command;
+
+	if (s_selected_episode >= 0) /* optech2: -1: the level picked in level select */
+	{
+		s_ls_cmd = s_episodes[s_selected_episode].command;
+	}
 	StartGame();
 }
 
@@ -4498,7 +4512,7 @@ M_Menu_Skill_f(void)
 		Menu_AddItem(&s_skill_menu, (void *)&s_skill_actions[i]);
 	}
 
-	Menu_SetStatusBar(&s_skill_menu, s_episodes[s_selected_episode].name);
+	Menu_SetStatusBar(&s_skill_menu, (s_selected_episode >= 0) ? s_episodes[s_selected_episode].name : s_ls_status);
 	Menu_Center(&s_skill_menu);
 	s_skill_menu.draw = Default_MenuDraw;
 	s_skill_menu.key = Default_MenuKey;

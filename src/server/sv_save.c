@@ -460,6 +460,61 @@ SV_ReadServerFile(void)
 	Sys_SetWorkDir(workdir);
 }
 
+/* optech2: does the map a server.ssv starts on exist; f is at its start */
+static qboolean
+SV_SaveMapExists(FILE *f)
+{
+	char header[32 + MAX_SAVE_TOKEN_CHARS];
+	char map_name[MAX_QPATH];
+	char file_name[MAX_QPATH];
+	const char *start;
+	size_t length;
+
+	if (fread(header, 1, sizeof(header), f) != sizeof(header))
+	{
+		Com_Printf("Savegame is damaged (server.ssv too short)\n");
+		return false;
+	}
+
+	header[sizeof(header) - 1] = '\0';
+	start = header + 32; /* optech2: after the comment: the map command, "*base2$spawn", "x.cin+base1" */
+
+	if (*start == '*')
+	{
+		start++;
+	}
+
+	if (strchr(start, '+'))
+	{
+		start = strchr(start, '+') + 1; /* optech2: the map after a cinematic */
+	}
+
+	length = strcspn(start, "$+");
+
+	if (!length || (length >= sizeof(map_name)))
+	{
+		return true; /* optech2: nothing to check; the load reports it */
+	}
+
+	memcpy(map_name, start, length);
+	map_name[length] = '\0';
+
+	if (strchr(map_name, '.'))
+	{
+		return true; /* optech2: a cinematic, demo or picture */
+	}
+
+	Com_sprintf(file_name, sizeof(file_name), "maps/%s.bsp", map_name);
+
+	if (FS_LoadFile(file_name, NULL) <= 0)
+	{
+		Com_Printf("Can't load this save: its map %s is missing (a mod's or an old test map?)\n", file_name);
+		return false;
+	}
+
+	return true;
+}
+
 void
 SV_Loadgame_f(void)
 {
@@ -481,6 +536,7 @@ SV_Loadgame_f(void)
 	if (strstr(dir, "..") || strstr(dir, "/") || strstr(dir, "\\"))
 	{
 		Com_Printf("Bad savedir.\n");
+		return; /* optech2: it went on with the bad name */
 	}
 
 	/* make sure the server.ssv file exists */
@@ -504,6 +560,14 @@ SV_Loadgame_f(void)
 	else
 	{
 		isautosave = false;
+	}
+
+	/* optech2: a save of a map that is gone (a mod's or test map) ended in a fatal error
+	   while loading; refuse it before anything changes */
+	if (!SV_SaveMapExists(f))
+	{
+		fclose(f);
+		return;
 	}
 
 	fclose(f);

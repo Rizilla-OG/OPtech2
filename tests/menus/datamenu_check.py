@@ -425,9 +425,20 @@ def main():
                    f"an episode on the game page asks for the skill as the stock one ({differing(data, stock)} pixels differ)")
     log += shipped_log
 
+    # optech2: with episodes, a level picked in level select asks for the skill and starts that level
+    # (an episode line used to replace the pick); unit 2 starts with its cinematic
+    if episodes:
+        level_log, _ = run("levelselect", ["map base1"] + filler[:10] + [
+            "menu_game", "menu_levelselect", "presskey downarrow", "presskey downarrow", "presskey enter",
+            "presskey enter"] + filler[:14] + ["mapname"], mods=False)
+        report(cvar(level_log, "mapname") in ("eou1_.cin", "ware1"),
+               f"level select: the picked level starts after the skill (mapname {cvar(level_log, 'mapname')})")
+        log += level_log
+
     # optech2: the Lua cases' own errors are expected
     errors = [line for line in log.splitlines() if re.search(r"error|unknown item|expected \{|missing", line, re.I)
-              and "too many instructions" not in line and "broken.lua" not in line]
+              and "too many instructions" not in line and "broken.lua" not in line
+              and "vert coodinates error" not in line]  # optech2: a re-release model's load note (level select run)
     report(not errors, f"no errors in the logs{': ' + errors[0] if errors else ''}")
 
     print(f"\n{'PASS' if all(results) else 'FAIL'}: {sum(results)}/{len(results)} data menu checks")
