@@ -92,7 +92,12 @@ def run_scene(name, monster, monster_spot, weapon, ammo, unheard=False):
 
 
 def dodges(log, monster):
-    return re.findall(rf"dodgelog time [\d.]+ monster {monster} (\w+) eta [\d.]+( lobbed)?", log)
+    return re.findall(rf"dodgelog time [\d.]+ monster {monster} (sidestep|duck) eta [\d.]+( lobbed)?", log)
+
+
+def failed_rolls(log, monster):
+    # the skill roll said no: logged once per projectile, then no new roll until it arrives
+    return re.findall(rf"dodgelog time [\d.]+ monster {monster} nododge eta", log)
 
 
 def main():
@@ -110,10 +115,14 @@ def main():
     rockets = run_scene("rockets", "monster_soldier", MONSTER_SPOT, "rocket launcher", "rockets")
     rocket_dodges = dodges(rockets, "monster_soldier")
     hits = len(re.findall(r"damagelog time [\d.]+ attacker player target monster_soldier ", rockets))
-    report(len(rocket_dodges) >= 2,
+    rolls = len(rocket_dodges) + len(failed_rolls(rockets, "monster_soldier"))
+    report(len(rocket_dodges) >= 1,
            f"soldier dodges rockets in flight: {len(rocket_dodges)} dodges of {SHOTS} rockets "
            f"({sum(kind == 'sidestep' for kind, _ in rocket_dodges)} sidesteps, "
            f"{sum(kind == 'duck' for kind, _ in rocket_dodges)} ducks), {hits} hits")
+    # one roll per rocket: it used to roll again every think and nearly always dodge
+    report(rolls <= SHOTS,
+           f"soldier rolls once per rocket: {rolls} rolls for {SHOTS} rockets")
 
     grenades = run_scene("grenades", "monster_infantry", MONSTER_SPOT, "grenade launcher", "grenades")
     grenade_dodges = dodges(grenades, "monster_infantry")

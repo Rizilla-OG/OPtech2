@@ -28,6 +28,7 @@
 
 #include <signal.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "../../common/header/common.h"
 
@@ -90,8 +91,16 @@ signalhandler(int sig)
 	signal(SIGABRT, SIG_DFL);
 	signal(SIGBUS, SIG_DFL);
 
+	/* optech2: the report uses stdio and malloc, which aren't signal safe;
+	   if a held lock deadlocks it, SIGALRM ends the process after 5 s
+	   instead of hanging forever */
+	signal(SIGALRM, SIG_DFL);
+	alarm(5);
+
 	snprintf(reason, sizeof(reason), "Signal %d (%s)", sig, strsignal(sig));
 	Crash_WriteReport(reason, NULL);
+
+	alarm(0);
 
 	printf("\n=======================================================\n");
 	printf("\nOpenTech2 crashed! This should not happen...\n");

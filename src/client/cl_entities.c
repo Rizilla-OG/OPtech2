@@ -397,9 +397,10 @@ CL_AddPacketEntities(const frame_t *frame)
 					{
 						CL_EntityTrails(cent, s1, effects, &ent);
 					}
-
-					VectorCopy(ent.origin, cent->lerp_origin);
 				}
+
+				/* optech2: kept current for flares and beams too, as the engine's path does */
+				VectorCopy(ent.origin, cent->lerp_origin);
 
 				continue;
 			}

@@ -1108,6 +1108,7 @@ R_BuildPolygonFromSurface(const entity_t *currententity, const model_t *currentm
 {
 	medge_t *pedges, *r_pedge;
 	float tmins[2] = { 0, 0 };
+	float mip_scale = 1.0f; /* optech2: cached texels per world texel */
 	int i, lnumverts;
 	const float *vec;
 	vec5_t *pverts;
@@ -1159,8 +1160,14 @@ R_BuildPolygonFromSurface(const entity_t *currententity, const model_t *currentm
 	else
 	{
 		surfcache_t *scache;
+		int miplevel;
 
-		scache = D_CacheSurface(currententity, fa, 0);
+		/* optech2: big translucent faces get a coarser mip, as solid ones do */
+		miplevel = D_SurfaceMipLevel(fa, 0);
+		scache = D_CacheSurface(currententity, fa, miplevel);
+		mip_scale = 1.0f / (float)(1 << miplevel);
+		VectorScale(r_polydesc.vright, mip_scale, r_polydesc.vright);
+		VectorScale(r_polydesc.vup, mip_scale, r_polydesc.vup);
 
 		r_polydesc.pixels       = scache->data;
 		r_polydesc.pixel_width  = scache->width;
@@ -1172,8 +1179,8 @@ R_BuildPolygonFromSurface(const entity_t *currententity, const model_t *currentm
 
 	r_polydesc.dist = DotProduct( r_polydesc.vpn, pverts[0] );
 
-	r_polydesc.s_offset = fa->texinfo->vecs[0][3] - tmins[0];
-	r_polydesc.t_offset = fa->texinfo->vecs[1][3] - tmins[1];
+	r_polydesc.s_offset = (fa->texinfo->vecs[0][3] - tmins[0]) * mip_scale;
+	r_polydesc.t_offset = (fa->texinfo->vecs[1][3] - tmins[1]) * mip_scale;
 
 	// scrolling texture addition
 	if (fa->texinfo->flags & SURF_SCROLL)
@@ -1182,8 +1189,8 @@ R_BuildPolygonFromSurface(const entity_t *currententity, const model_t *currentm
 
 		R_FlowingScroll(&r_newrefdef, fa->texinfo->flags, &sscroll, &tscroll);
 
-		r_polydesc.s_offset += 2 * sscroll;
-		r_polydesc.t_offset += 2 * tscroll;
+		r_polydesc.s_offset += 2 * sscroll * mip_scale;
+		r_polydesc.t_offset += 2 * tscroll * mip_scale;
 	}
 
 	r_polydesc.nump = lnumverts;

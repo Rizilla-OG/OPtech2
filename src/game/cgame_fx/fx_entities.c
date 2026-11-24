@@ -344,6 +344,7 @@ FX_AddEntityModels(optech2_fx_entity_model_t *info)
 			VectorMA(cl.refdef.vieworg, 16.0f, cl.v_forward, ent.origin);
 			VectorMA(ent.origin, side, cl.v_right, ent.origin);
 			VectorMA(ent.origin, -8.0f, cl.v_up, ent.origin);
+			VectorCopy(ent.origin, info->origin); /* optech2: the engine gets the muzzle start */
 		}
 
 		ent.alpha = Q_clamp(fxi->CvarValue("cl_laseralpha"), 0.0f, 1.0f);

@@ -69,6 +69,7 @@ static qboolean console_tail_wrapped;
 static char command_line[1024]; /* as started, before +set args are used up */
 
 static qboolean report_written; /* one report per run */
+static qboolean report_ok; /* optech2: report_path names a finished report */
 static char report_path[MAX_OSPATH];
 
 /*
@@ -142,8 +143,17 @@ WriteConsoleTail(FILE *report)
 			skipped++;
 		}
 
-		start = (start + 1) % CONSOLE_TAIL_SIZE;
-		length = CONSOLE_TAIL_SIZE - skipped - 1;
+		if (skipped >= CONSOLE_TAIL_SIZE)
+		{
+			/* optech2: no newline in the whole ring, write all of it */
+			start = console_tail_next;
+			length = CONSOLE_TAIL_SIZE;
+		}
+		else
+		{
+			start = (start + 1) % CONSOLE_TAIL_SIZE;
+			length = CONSOLE_TAIL_SIZE - skipped - 1;
+		}
 	}
 
 	if (start + length > CONSOLE_TAIL_SIZE)
@@ -239,8 +249,8 @@ WriteCvar(FILE *report, const char *label, const char *name)
 /*
  * Writes the crash report. reason is what happened ("Fatal error",
  * "Signal 11 (SIGSEGV)"), message the error text or NULL. Returns the
- * report's path, or NULL if none was written (already written, or the
- * file couldn't be made).
+ * report's path (also when an earlier call already wrote it), or NULL if
+ * none could be made.
  */
 const char *
 Crash_WriteReport(const char *reason, const char *message)
@@ -254,7 +264,8 @@ Crash_WriteReport(const char *reason, const char *message)
 
 	if (report_written)
 	{
-		return NULL;
+		/* optech2: Com_Error writes it before Sys_Error asks again */
+		return report_ok ? report_path : NULL;
 	}
 
 	report_written = true;
@@ -323,6 +334,7 @@ Crash_WriteReport(const char *reason, const char *message)
 	WriteConsoleTail(report);
 
 	fclose(report);
+	report_ok = true;
 
 	fprintf(stderr, "Crash report written to %s\n", report_path);
 

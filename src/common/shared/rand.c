@@ -13,6 +13,7 @@
  * =======================================================================
  */
 
+#include <limits.h>
 #include <stdint.h>
 #include "../header/shared.h"
 
@@ -49,7 +50,12 @@ randk(void)
 	int r;
 
 	r = (int)KISS;
-	r = (r < 0) ? (r * -1) : r;
+	/* optech2: -INT_MIN overflows and stays negative; give 0 there,
+	   every other value as before so fixed sequences don't change */
+	if (r < 0)
+	{
+		r = (r == INT_MIN) ? 0 : -r;
+	}
 
 	return r;
 }

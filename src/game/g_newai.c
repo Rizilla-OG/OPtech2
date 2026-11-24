@@ -1419,6 +1419,11 @@ M_MonsterDodge(edict_t *self, edict_t *attacker, float eta, trace_t *tr, qboolea
 	/* skill level determination.. */
 	if (r > 0.5f)
 	{
+		/* optech2: a failed roll counts for this shot: no new roll until
+		   it arrives; M_CheckDodge rolled again every think and almost
+		   always won */
+		self->monsterinfo.dodge_time = level.time + eta;
+		M_LogDodge(self, "nododge", eta, gravity);
 		return;
 	}
 
@@ -1564,7 +1569,8 @@ M_CalculatePitchToFire(const edict_t *self, const vec3_t target, const vec3_t st
 
 			velocity[2] -= sv_gravity->value * sim_time;
 			VectorMA(origin, sim_time, velocity, end);
-			tr = gi.trace(origin, NULL, NULL, end, NULL, MASK_SHOT);
+			/* optech2: pass the shooter, its muzzle can sit inside its box */
+			tr = gi.trace(origin, NULL, NULL, end, (edict_t *)self, MASK_SHOT);
 			VectorCopy(tr.endpos, origin);
 
 			if (tr.fraction < 1.0f)

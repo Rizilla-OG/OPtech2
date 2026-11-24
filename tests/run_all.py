@@ -22,8 +22,9 @@ Data sets: OpenTech2 runs on the classic Quake II data or the re-release's.
 --data picks which the checks use (classic by default, "both" runs each
 check that can on both; a second run's results end in "@rr"). The folder
 reaches the checks as OPTECH2_DATA_DIR. Checks that choose their own data
-(the re-release game library checks, monster-attacks, cgame) run once; a few
-are tied to the classic data (see CLASSIC_ONLY below).
+(the re-release game library checks, monster-attacks, cgame) run once. A
+check made with data="classic" is skipped on the re-release data (none are
+today).
 
 Usage:
   run_all.py                 every check (classic data)
@@ -184,7 +185,7 @@ def main():
             continue
         skip = None
         if data_name == "rerelease" and check.data != "any":
-            skip = f"classic data only: {check.data}"
+            skip = "classic data only"
         elif arguments.headless and check.kind != "hidden":
             skip = f"needs a {check.kind} (--headless)"
         elif arguments.quick and check.slow and not arguments.only:

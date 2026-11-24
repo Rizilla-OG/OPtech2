@@ -1926,6 +1926,15 @@ M_CheckDodge(edict_t *self)
 			continue;
 		}
 
+		/* optech2: only dodge a player's shots or our current enemy's;
+		   a stray bolt from another monster mustn't start infighting,
+		   and an ownerless projectile is never an attacker */
+		if (!projectile->owner || (projectile->owner == self) ||
+			(!projectile->owner->client && (projectile->owner != self->enemy)))
+		{
+			continue;
+		}
+
 		/* not moving */
 		if (DotProduct(projectile->velocity, projectile->velocity) < 16.0f)
 		{
@@ -1953,7 +1962,7 @@ M_CheckDodge(edict_t *self)
 		speed = VectorLength(projectile->velocity);
 		eta = VectorLength(flown) / speed;
 
-		self->monsterinfo.dodge(self, projectile->owner ? projectile->owner : projectile, eta, &trace,
+		self->monsterinfo.dodge(self, projectile->owner, eta, &trace,
 			(projectile->movetype == MOVETYPE_BOUNCE) || (projectile->movetype == MOVETYPE_TOSS));
 		return;
 	}
