@@ -968,6 +968,11 @@ VID_MenuInit(void)
 void
 M_Menu_Video_f(void)
 {
+	if (DataMenu_Override("video")) /* optech2: menus/video.menu replaces it */
+	{
+		return;
+	}
+
 	VID_MenuInit();
 	s_opengl_menu.draw = Default_MenuDraw;
 	s_opengl_menu.key  = Default_MenuKey;

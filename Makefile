@@ -1424,6 +1424,7 @@ CLIENT_OBJS_ := \
 	src/client/curl/qcurl.o \
 	src/client/input/gyro.o \
 	src/client/menu/menu.o \
+	src/client/menu/datamenu.o \
 	src/client/menu/qmenu.o \
 	src/client/menu/videomenu.o \
 	src/client/sound/ogg.o \

@@ -96,7 +96,8 @@ M_IsGame(const char *gamename)
 	return false;
 }
 
-static void
+/* optech2: not static, data menus draw banners too */
+void
 M_Banner(const char *name)
 {
 	int w, h;
@@ -691,6 +692,11 @@ M_Main_Draw(menuframework_s *m)
 void
 M_Menu_Main_f(void)
 {
+	if (DataMenu_Override("main")) /* optech2: menus/main.menu replaces it */
+	{
+		return;
+	}
+
 	InitMainMenu();
 	s_main.draw = M_Main_Draw;
 	s_main.key  = Default_MenuKey;
@@ -784,6 +790,11 @@ Multiplayer_MenuInit(void)
 static void
 M_Menu_Multiplayer_f(void)
 {
+	if (DataMenu_Override("multiplayer")) /* optech2: menus/multiplayer.menu replaces it */
+	{
+		return;
+	}
+
 	Multiplayer_MenuInit();
 	s_multiplayer_menu.draw = Default_MenuDraw;
 	s_multiplayer_menu.key  = Default_MenuKey;
@@ -1056,6 +1067,11 @@ Keys_MenuKey(menuframework_s *m, int key)
 static void
 M_Menu_Keys_f(void)
 {
+	if (DataMenu_Override("keys")) /* optech2: menus/keys.menu replaces it */
+	{
+		return;
+	}
+
 	Keys_MenuInit();
 	s_keys_menu.draw = Default_MenuDraw;
 	s_keys_menu.key  = Keys_MenuKey;
@@ -1202,6 +1218,11 @@ MultiplayerKeys_MenuKey(menuframework_s *m, int key)
 static void
 M_Menu_Multiplayer_Keys_f(void)
 {
+	if (DataMenu_Override("multiplayer_keys")) /* optech2: menus/multiplayer_keys.menu replaces it */
+	{
+		return;
+	}
+
 	MultiplayerKeys_MenuInit();
 	s_multiplayer_keys_menu.draw = Default_MenuDraw;
 	s_multiplayer_keys_menu.key  = MultiplayerKeys_MenuKey;
@@ -1393,6 +1414,11 @@ ControllerButtons_MenuKey(menuframework_s *m, int key)
 static void
 M_Menu_ControllerButtons_f(void)
 {
+	if (DataMenu_Override("buttons")) /* optech2: menus/buttons.menu replaces it */
+	{
+		return;
+	}
+
 	ControllerButtons_MenuInit();
 	s_controller_buttons_menu.draw = Default_MenuDraw;
 	s_controller_buttons_menu.key  = ControllerButtons_MenuKey;
@@ -1562,6 +1588,11 @@ ControllerAltButtons_MenuKey(menuframework_s *m, int key)
 static void
 M_Menu_ControllerAltButtons_f(void)
 {
+	if (DataMenu_Override("altbuttons")) /* optech2: menus/altbuttons.menu replaces it */
+	{
+		return;
+	}
+
 	ControllerAltButtons_MenuInit();
 	s_controller_alt_buttons_menu.draw = Default_MenuDraw;
 	s_controller_alt_buttons_menu.key  = ControllerAltButtons_MenuKey;
@@ -1717,6 +1748,11 @@ Stick_MenuInit(void)
 static void
 M_Menu_Stick_f(void)
 {
+	if (DataMenu_Override("sticks")) /* optech2: menus/sticks.menu replaces it */
+	{
+		return;
+	}
+
 	Stick_MenuInit();
 	s_sticks_config_menu.draw = Default_MenuDraw;
 	s_sticks_config_menu.key  = Default_MenuKey;
@@ -2023,6 +2059,11 @@ Gyro_MenuInit(void)
 static void
 M_Menu_Gyro_f(void)
 {
+	if (DataMenu_Override("gyro")) /* optech2: menus/gyro.menu replaces it */
+	{
+		return;
+	}
+
 	Gyro_MenuInit();
 	s_gyro_menu.draw = Default_MenuDraw;
 	s_gyro_menu.key  = Default_MenuKey;
@@ -2281,6 +2322,11 @@ Joy_MenuInit(void)
 static void
 M_Menu_Joy_f(void)
 {
+	if (DataMenu_Override("joy")) /* optech2: menus/joy.menu replaces it */
+	{
+		return;
+	}
+
 	Joy_MenuInit();
 	s_joy_menu.draw = Default_MenuDraw;
 	s_joy_menu.key  = Default_MenuKey;
@@ -2751,6 +2797,11 @@ Options_MenuInit(void)
 static void
 M_Menu_Options_f(void)
 {
+	if (DataMenu_Override("options")) /* optech2: menus/options.menu replaces it */
+	{
+		return;
+	}
+
 	Options_MenuInit();
 	s_options_menu.draw = Default_MenuDraw;
 	s_options_menu.key  = Default_MenuKey;
@@ -3198,6 +3249,11 @@ M_Credits_Key(menuframework_s *m, int key)
 static void
 M_Menu_Credits_f(void)
 {
+	if (DataMenu_Override("credits")) /* optech2: menus/credits.menu replaces it */
+	{
+		return;
+	}
+
 	int count;
 	char *p;
 
@@ -3488,6 +3544,11 @@ Mods_MenuInit(void)
 static void
 M_Menu_Mods_f(void)
 {
+	if (DataMenu_Override("mods")) /* optech2: menus/mods.menu replaces it */
+	{
+		return;
+	}
+
 	Mods_MenuInit();
 	s_mods_menu.draw = Default_MenuDraw;
 	s_mods_menu.key  = Default_MenuKey;
@@ -4154,6 +4215,11 @@ LevelSelect_MenuInit(void)
 static void
 Menu_LevelSelect_f(void)
 {
+	if (DataMenu_Override("levelselect")) /* optech2: menus/levelselect.menu replaces it */
+	{
+		return;
+	}
+
 	if (M_GetActiveMenu() != &s_game_menu)
 	{
 		M_Menu_Game_f();
@@ -4474,6 +4540,11 @@ Game_MenuInit(void)
 static void
 M_Menu_Game_f(void)
 {
+	if (DataMenu_Override("game")) /* optech2: menus/game.menu replaces it */
+	{
+		return;
+	}
+
 	Game_MenuInit();
 	s_game_menu.draw  = Default_MenuDraw;
 	s_game_menu.key   = Default_MenuKey;
@@ -4855,6 +4926,11 @@ LoadGame_MenuKey(menuframework_s *m, int key)
 static void
 M_Menu_LoadGame_f(void)
 {
+	if (DataMenu_Override("loadgame")) /* optech2: menus/loadgame.menu replaces it */
+	{
+		return;
+	}
+
 	LoadSave_AdjustPage(0);
 	LoadGame_MenuInit();
 
@@ -5009,6 +5085,11 @@ SaveGame_MenuKey(menuframework_s *m, int key)
 static void
 M_Menu_SaveGame_f(void)
 {
+	if (DataMenu_Override("savegame")) /* optech2: menus/savegame.menu replaces it */
+	{
+		return;
+	}
+
 	if (!Com_ServerState())
 	{
 		return; /* not playing a game */
@@ -5203,6 +5284,11 @@ JoinServer_MenuInit(void)
 static void
 M_Menu_JoinServer_f(void)
 {
+	if (DataMenu_Override("joinserver")) /* optech2: menus/joinserver.menu replaces it */
+	{
+		return;
+	}
+
 	JoinServer_MenuInit();
 	s_joinserver_menu.draw = Default_MenuDraw;
 	s_joinserver_menu.key  = Default_MenuKey;
@@ -5690,6 +5776,11 @@ StartServer_MenuInit(void)
 static void
 M_Menu_StartServer_f(void)
 {
+	if (DataMenu_Override("startserver")) /* optech2: menus/startserver.menu replaces it */
+	{
+		return;
+	}
+
 	StartServer_MenuInit();
 	s_startserver_menu.draw = Default_MenuDraw;
 	s_startserver_menu.key  = Default_MenuKey;
@@ -6172,6 +6263,11 @@ DMOptions_MenuInit(void)
 static void
 M_Menu_DMOptions_f(void)
 {
+	if (DataMenu_Override("dmoptions")) /* optech2: menus/dmoptions.menu replaces it */
+	{
+		return;
+	}
+
 	DMOptions_MenuInit();
 	s_dmoptions_menu.draw = Default_MenuDraw;
 	s_dmoptions_menu.key  = Default_MenuKey;
@@ -6329,6 +6425,11 @@ DownloadOptions_MenuInit(void)
 static void
 M_Menu_DownloadOptions_f(void)
 {
+	if (DataMenu_Override("downloadoptions")) /* optech2: menus/downloadoptions.menu replaces it */
+	{
+		return;
+	}
+
 	DownloadOptions_MenuInit();
 	s_downloadoptions_menu.draw = Default_MenuDraw;
 	s_downloadoptions_menu.key  = Default_MenuKey;
@@ -6395,6 +6496,11 @@ AddressBook_MenuClose(menuframework_s *m)
 static void
 M_Menu_AddressBook_f(void)
 {
+	if (DataMenu_Override("addressbook")) /* optech2: menus/addressbook.menu replaces it */
+	{
+		return;
+	}
+
 	AddressBook_MenuInit();
 	s_addressbook_menu.draw  = Default_MenuDraw;
 	s_addressbook_menu.key   = Default_MenuKey;
@@ -7194,6 +7300,11 @@ PlayerConfig_MenuClose(menuframework_s *m)
 static void
 M_Menu_PlayerConfig_f(void)
 {
+	if (DataMenu_Override("playerconfig")) /* optech2: menus/playerconfig.menu replaces it */
+	{
+		return;
+	}
+
 	// cppcheck-suppress knownConditionTrueFalse ; optech2: stock check, kept in case the init can fail again
 	if (!PlayerConfig_MenuInit())
 	{
@@ -7255,6 +7366,11 @@ M_Quit_Draw(menuframework_s *m)
 static void
 M_Menu_Quit_f(void)
 {
+	if (DataMenu_Override("quit")) /* optech2: menus/quit.menu replaces it */
+	{
+		return;
+	}
+
 	s_quit_menu.draw = M_Quit_Draw;
 	s_quit_menu.key  = M_Quit_Key;
 
@@ -7270,6 +7386,7 @@ M_Init(void)
 
 	Cmd_AddCommand("playermodels", ListModels_f);
 
+	DataMenu_Init(); /* optech2: menu, menu_builtin */
 	Cmd_AddCommand("menu_main", M_Menu_Main_f);
 	Cmd_AddCommand("menu_game", M_Menu_Game_f);
 	Cmd_AddCommand("menu_levelselect", Menu_LevelSelect_f);

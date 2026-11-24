@@ -1209,6 +1209,8 @@ Key_Bindlist_f(void)
 	}
 }
 
+static void Key_PressKey_f(void); /* optech2 */
+
 void
 Key_Init(void)
 {
@@ -1281,6 +1283,49 @@ Key_Init(void)
 	Cmd_AddCommand("unbind", Key_Unbind_f);
 	Cmd_AddCommand("unbindall", Key_Unbindall_f);
 	Cmd_AddCommand("bindlist", Key_Bindlist_f);
+	Cmd_AddCommand("presskey", Key_PressKey_f); /* optech2 */
+}
+
+/* optech2: presskey <key>: a press and release, as if typed (developer 1
+   only), so checks can drive menus */
+static void
+Key_PressKey_f(void)
+{
+	int key;
+
+	if (Cmd_Argc() != 2)
+	{
+		Com_Printf("usage: presskey <key>   (needs developer 1)\n");
+		return;
+	}
+
+	if (!Cvar_VariableValue("developer"))
+	{
+		Com_Printf("presskey needs developer 1\n");
+		return;
+	}
+
+	key = Key_StringToKeynum(Cmd_Argv(1));
+
+	if (key == -1)
+	{
+		Com_Printf("presskey: unknown key \"%s\"\n", Cmd_Argv(1));
+		return;
+	}
+
+	/* optech2: "special" as the SDL backend sends non-text keys; typed
+	   characters go through Char_Event as well */
+	if ((key >= 32) && (key < 127))
+	{
+		Key_Event(key, true, false);
+		Char_Event(key);
+		Key_Event(key, false, false);
+	}
+	else
+	{
+		Key_Event(key, true, true);
+		Key_Event(key, false, true);
+	}
 }
 
 void

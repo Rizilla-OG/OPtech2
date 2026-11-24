@@ -660,6 +660,9 @@ void CL_EntityEvent(entity_xstate_t *ent);
 void CL_TrapParticles(entity_t *ent);
 
 void M_Init(void);
+void DataMenu_Init(void); /* optech2: data menus (menu/datamenu.c) */
+qboolean DataMenu_Override(const char *name); /* optech2 */
+qboolean DataMenu_Open(const char *name); /* optech2 */
 void M_Free(void);
 void M_Keydown(int key);
 void M_Draw(void);

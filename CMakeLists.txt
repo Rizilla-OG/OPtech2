@@ -566,6 +566,7 @@ set(Client-Source
 	${CLIENT_SRC_DIR}/curl/qcurl.c
 	${CLIENT_SRC_DIR}/input/gyro.c
 	${CLIENT_SRC_DIR}/menu/menu.c
+	${CLIENT_SRC_DIR}/menu/datamenu.c
 	${CLIENT_SRC_DIR}/menu/qmenu.c
 	${CLIENT_SRC_DIR}/menu/videomenu.c
 	${CLIENT_SRC_DIR}/sound/ogg.c

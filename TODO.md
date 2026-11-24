@@ -94,6 +94,11 @@ something unfinished; remove an entry in the commit that fixes it.
   server browser, conditions, custom widgets; needs a client-side Lua
   state), drawn by a restyled qmenu (TTF, scaling, mouse, gamepad, re-release
   look). Old C menus stay as the fallback.
+- Steps: 1 loader + `menu` command + overrides (done 2026-11-24,
+  src/client/menu/datamenu.c, check data-menus); 2 stock menus as data files
+  (needs built-in hooks for the C-only bits: key binding lists, save slots,
+  server list, video modes, player model preview); 3 client Lua state +
+  hooks; 4 restyle; 5 modder docs.
 - Later: game library menus in C through an extension hook (draw + keys),
   for libraries like q2arpg that want their own; engine/data menus stay the
   fallback for re-release games.
