@@ -788,6 +788,27 @@ SV_InitGameProgs(void)
 		qboolean rerelease;
 		void *api;
 
+		/* optech2: game libraries that write files by relative path (q2arpg's q2rpg/loot_stats.csv)
+		   write them in the user folder, never where the game was started (the Steam install):
+		   the working directory is the user folder, as play-q2arpg.sh did */
+		{
+			char user_dir[MAX_OSPATH];
+			char *slash;
+
+			Q_strlcpy(user_dir, FS_Gamedir(), sizeof(user_dir));
+			slash = strrchr(user_dir, '/');
+
+			if (slash && (slash != user_dir))
+			{
+				*slash = '\0';
+
+				if (!Sys_SetWorkDir(user_dir))
+				{
+					Com_DPrintf("Couldn't change to %s\n", user_dir);
+				}
+			}
+		}
+
 		/* optech2: a folder may have a re-release game library (game API 2023) instead */
 		api = Sys_GetGameAPI(&import, SV_RR_GameImport(), &rerelease);
 		ge = rerelease ? SV_RR_Connect(api) : (game_export_t *)api;

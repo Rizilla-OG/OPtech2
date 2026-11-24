@@ -1671,6 +1671,30 @@ HasValidPack(const char *dir)
 		}
 	}
 
+	/* optech2: a folder with a game library this build can load is a mod too (q2arpg ships no pak) */
+	{
+#if defined(_WIN32)
+		static const char *libraries[] = {"game.dll", "game_x64.dll", NULL};
+#elif defined(__APPLE__)
+		static const char *libraries[] = {"game.dylib", "game_x64.dylib", NULL};
+#else
+		static const char *libraries[] = {"game.so", "game_x64.so", NULL};
+#endif
+		int i;
+
+		for (i = 0; libraries[i]; i++)
+		{
+			char library[MAX_OSPATH];
+
+			Com_sprintf(library, sizeof(library), "%s/%s", dir, libraries[i]);
+
+			if (Sys_IsFile(library))
+			{
+				return true;
+			}
+		}
+	}
+
 	return false;
 }
 
