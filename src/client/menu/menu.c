@@ -4725,6 +4725,8 @@ StartGame(void)
 	cl.servercount = -1;
 	Cvar_SetValue("deathmatch", 0);
 	Cvar_SetValue("coop", 0);
+	/* optech2: and ctf: left at 1 after a CTF game it made the game force deathmatch on base1 */
+	Cvar_SetValue("ctf", 0);
 
 	Cbuf_AddText(cmd);
 	cls.key_dest = key_game;
