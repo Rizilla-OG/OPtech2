@@ -373,7 +373,8 @@ def main():
     if len(override_shots) < 3:
         report(False, "options override: a screenshot is missing (see override.log)")
     else:
-        data, stock_command, builtin = override_shots
+        # optech2: the bottom strip holds the version line, which can flicker between shots
+        data, stock_command, builtin = (shot[:-40] for shot in override_shots)
         report(differing(data, stock_command) == 0,
                f"menu_options opens menus/options.menu ({differing(data, stock_command)} pixels differ)")
         report(differing(data, builtin) > 500,
