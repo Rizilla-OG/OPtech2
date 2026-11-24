@@ -1132,8 +1132,17 @@ CL_CGame_ViewWeapon(const entity_t *gun, int gunindex, float fov)
 	VectorCopy(gun->origin, info.origin);
 	VectorCopy(gun->angles, info.angles);
 	info.fov = fov;
-	info.player_effects = player->current.effects;
-	info.player_renderfx = player->current.renderfx;
+	/* optech2: our entity not in this frame (noclient, spectator): its effects are stale */
+	if (player->serverframe == cl.frame.serverframe)
+	{
+		info.player_effects = player->current.effects;
+		info.player_renderfx = player->current.renderfx;
+	}
+	else
+	{
+		info.player_effects = 0;
+		info.player_renderfx = 0;
+	}
 
 	return cgame_fx->AddViewWeapon(&info);
 }

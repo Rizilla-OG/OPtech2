@@ -179,6 +179,7 @@ void Menu_DrawStyled(menuframework_s *menu);
 void Menu_StyledValue(const char *text);
 qboolean Menu_StyledMouse(menuframework_s *menu, int key, int *replacement, const char **sound_name);
 void Menu_SetPointer(float x, float y);
+qboolean M_MenuOnStack(const menuframework_s *menu); /* optech2: is it open (anywhere in the stack) */
 
 void Menu_DrawCharacter(int cx, int cy, int num);
 void Menu_DrawString(int x, int y, const char *string);

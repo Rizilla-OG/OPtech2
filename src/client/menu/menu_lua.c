@@ -150,14 +150,15 @@ MenuLua_Open(lua_State *L)
 {
 	const char *page = luaL_checkstring(L, 1);
 
-	/* optech2: through the command buffer, so a page never rebuilds under its own callback */
-	if (DataMenu_Exists(page))
+	/* optech2: through the command buffer, so a page never rebuilds under its own callback;
+	   a stock menu's command already opens its data page or falls back to the stock one */
+	if (Cmd_Exists(va("menu_%s", page)))
 	{
-		Cbuf_AddText(va("menu %s\n", page));
+		Cbuf_AddText(va("menu_%s\n", page));
 	}
 	else
 	{
-		Cbuf_AddText(va("menu_%s\n", page));
+		Cbuf_AddText(va("menu %s\n", page));
 	}
 
 	return 0;
@@ -413,6 +414,16 @@ MenuLua_LoadPage(const char *page)
 	return true;
 }
 
+/* optech2: t[field] without metamethods: runs outside any pcall, where a
+   script's __index could panic (abort) or loop forever */
+static void
+MenuLua_RawField(int index, const char *field)
+{
+	index = lua_absindex(menulua_state, index);
+	lua_pushstring(menulua_state, field);
+	lua_rawget(menulua_state, index);
+}
+
 /* optech2: pushes the page's function of this name; false (nothing pushed) if it has none */
 static qboolean
 MenuLua_PushFunction(const char *page, const char *function)
@@ -422,7 +433,7 @@ MenuLua_PushFunction(const char *page, const char *function)
 		return false;
 	}
 
-	lua_getfield(menulua_state, -1, function);
+	MenuLua_RawField(-1, function);
 	lua_remove(menulua_state, -2);
 
 	if (!lua_isfunction(menulua_state, -1))
@@ -467,7 +478,7 @@ MenuLua_Condition(const char *page, const char *function)
 static void
 MenuLua_EntryText(const char *field, char *out, size_t size)
 {
-	lua_getfield(menulua_state, -1, field);
+	MenuLua_RawField(-1, field);
 	Q_strlcpy(out, lua_isstring(menulua_state, -1) ? lua_tostring(menulua_state, -1) : "", size);
 	lua_pop(menulua_state, 1);
 }
@@ -495,7 +506,7 @@ MenuLua_List(const char *page, const char *function, menulua_entry_f add_entry, 
 		return 0;
 	}
 
-	count = (int)luaL_len(menulua_state, -1);
+	count = (int)lua_rawlen(menulua_state, -1); /* optech2: raw, see MenuLua_RawField */
 
 	for (i = 1; i <= count; i++)
 	{
@@ -516,14 +527,20 @@ MenuLua_List(const char *page, const char *function, menulua_entry_f add_entry, 
 		MenuLua_EntryText("command", entry.command, sizeof(entry.command));
 
 		/* optech2: an action function is kept in the page's __menu_actions by number */
-		lua_getfield(menulua_state, -1, "action");
+		MenuLua_RawField(-1, "action");
 
 		if (lua_isfunction(menulua_state, -1) && MenuLua_PushPage(page))
 		{
-			lua_getfield(menulua_state, -1, "__menu_actions");
-			entry.action = (int)luaL_len(menulua_state, -1) + 1;
-			lua_pushvalue(menulua_state, -3);
-			lua_rawseti(menulua_state, -2, entry.action);
+			MenuLua_RawField(-1, "__menu_actions");
+
+			/* optech2: a script may have replaced it; raw writes to a non-table would panic */
+			if (lua_istable(menulua_state, -1))
+			{
+				entry.action = (int)lua_rawlen(menulua_state, -1) + 1;
+				lua_pushvalue(menulua_state, -3);
+				lua_rawseti(menulua_state, -2, entry.action);
+			}
+
 			lua_pop(menulua_state, 2);
 		}
 
@@ -548,7 +565,14 @@ MenuLua_CallAction(const char *page, int action)
 		return;
 	}
 
-	lua_getfield(menulua_state, -1, "__menu_actions");
+	MenuLua_RawField(-1, "__menu_actions");
+
+	if (!lua_istable(menulua_state, -1))
+	{
+		lua_pop(menulua_state, 2);
+		return;
+	}
+
 	lua_rawgeti(menulua_state, -1, action);
 	lua_remove(menulua_state, -2);
 	lua_remove(menulua_state, -2);

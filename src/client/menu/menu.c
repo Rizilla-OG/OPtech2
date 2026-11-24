@@ -82,6 +82,23 @@ M_GetActiveMenu(void)
 		m_layers[m_menudepth - 1] : NULL;
 }
 
+/* optech2: is this menu open, anywhere in the stack */
+qboolean
+M_MenuOnStack(const menuframework_s *menu)
+{
+	int i;
+
+	for (i = 0; i < m_menudepth; i++)
+	{
+		if (m_layers[i] == menu)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static qboolean
 M_IsGame(const char *gamename)
 {
@@ -250,7 +267,8 @@ M_PushMenu(menuframework_s* menu)
 	}
 
 	/* menu was already opened further down the stack */
-	while (alreadyPresent && i <= m_menudepth)
+	/* optech2: down to depth i (it was i <= depth: at the bottom, i = 0, that never ended) */
+	while (alreadyPresent && (m_menudepth > i))
 	{
 		M_PopMenu(false);
 	}
@@ -1074,9 +1092,25 @@ Keys_MenuInit(void)
 	Menu_Center(&s_keys_menu);
 }
 
+/* optech2: a click on a binding row (re-release look) starts binding, as ENTER;
+   true when the click was used up (missed the rows) */
+static qboolean
+M_BindingMenuClick(menuframework_s *m, int *key, const char **sound_name)
+{
+	*sound_name = NULL;
+
+	if (*key != K_MOUSE1)
+	{
+		return false;
+	}
+
+	return Menu_StyledMouse(m, *key, key, sound_name);
+}
+
 static const char *
 Keys_MenuKey(menuframework_s *m, int key)
 {
+	const char *click_sound;
 	menuaction_s *item = (menuaction_s *)Menu_ItemAtCursor(m);
 
 	if (menukeyitem_bind)
@@ -1094,6 +1128,11 @@ Keys_MenuKey(menuframework_s *m, int key)
 		Menu_SetStatusBar(m, "ENTER to change, BACKSPACE to clear");
 		menukeyitem_bind = false;
 		return menu_out_sound;
+	}
+
+	if (M_BindingMenuClick(m, &key, &click_sound)) /* optech2 */
+	{
+		return click_sound;
 	}
 
 	key = Key_GetMenuKey(key);
@@ -1233,6 +1272,7 @@ MultiplayerKeys_MenuInit(void)
 static const char *
 MultiplayerKeys_MenuKey(menuframework_s *m, int key)
 {
+	const char *click_sound;
 	menuaction_s *item = (menuaction_s *)Menu_ItemAtCursor(m);
 
 	if (menukeyitem_bind)
@@ -1250,6 +1290,11 @@ MultiplayerKeys_MenuKey(menuframework_s *m, int key)
 		Menu_SetStatusBar(m, "ENTER to change, BACKSPACE to clear");
 		menukeyitem_bind = false;
 		return menu_out_sound;
+	}
+
+	if (M_BindingMenuClick(m, &key, &click_sound)) /* optech2 */
+	{
+		return click_sound;
 	}
 
 	key = Key_GetMenuKey(key);
@@ -1434,6 +1479,7 @@ ControllerButtons_MenuInit(void)
 static const char *
 ControllerButtons_MenuKey(menuframework_s *m, int key)
 {
+	const char *click_sound;
 	menuaction_s *item = (menuaction_s *)Menu_ItemAtCursor(m);
 
 	if (menukeyitem_bind)
@@ -1451,6 +1497,11 @@ ControllerButtons_MenuKey(menuframework_s *m, int key)
 		GamepadMenu_StatusPrompt(m);
 		menukeyitem_bind = false;
 		return menu_out_sound;
+	}
+
+	if (M_BindingMenuClick(m, &key, &click_sound)) /* optech2 */
+	{
+		return click_sound;
 	}
 
 	key = Key_GetMenuKey(key);
@@ -1611,6 +1662,7 @@ ControllerAltButtons_MenuInit(void)
 static const char *
 ControllerAltButtons_MenuKey(menuframework_s *m, int key)
 {
+	const char *click_sound;
 	menuaction_s *item = (menuaction_s *)Menu_ItemAtCursor(m);
 
 	if (menukeyitem_bind)
@@ -1630,6 +1682,11 @@ ControllerAltButtons_MenuKey(menuframework_s *m, int key)
 		GamepadMenu_StatusPrompt(m);
 		menukeyitem_bind = false;
 		return menu_out_sound;
+	}
+
+	if (M_BindingMenuClick(m, &key, &click_sound)) /* optech2 */
+	{
+		return click_sound;
 	}
 
 	key = Key_GetMenuKey(key);
@@ -4282,7 +4339,8 @@ Menu_LevelSelect_f(void)
 		return;
 	}
 
-	if (M_GetActiveMenu() != &s_game_menu)
+	/* optech2: not over the data game page either: reopening it would close it */
+	if ((M_GetActiveMenu() != &s_game_menu) && !DataMenu_IsOpen("game"))
 	{
 		M_Menu_Game_f();
 	}
@@ -5147,14 +5205,14 @@ SaveGame_MenuKey(menuframework_s *m, int key)
 static void
 M_Menu_SaveGame_f(void)
 {
-	if (DataMenu_Override("savegame")) /* optech2: menus/savegame.menu replaces it */
-	{
-		return;
-	}
-
 	if (!Com_ServerState())
 	{
 		return; /* not playing a game */
+	}
+
+	if (DataMenu_Override("savegame")) /* optech2: menus/savegame.menu replaces it */
+	{
+		return;
 	}
 
 	LoadSave_AdjustPage(0);
@@ -7731,4 +7789,5 @@ M_Free(void)
 	LevelSelect_Free();
 	CleanCachedMapsList();
 	PlayerModelFree();
+	MenuLua_Shutdown(); /* optech2: the menu pages' Lua state */
 }

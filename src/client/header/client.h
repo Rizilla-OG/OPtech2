@@ -669,6 +669,7 @@ const char *M_EpisodeName(int index); /* optech2 */
 int M_ModCount(void); /* optech2 */
 const char *M_ModName(int index); /* optech2 */
 qboolean DataMenu_Exists(const char *name); /* optech2 */
+qboolean DataMenu_IsOpen(const char *name); /* optech2 */
 void Menu_MouseMove(float dx, float dy); /* optech2: the menu pointer (menu/menustyle.c) */
 qboolean DataMenu_Styled(void); /* optech2: the re-release menu look is on */
 

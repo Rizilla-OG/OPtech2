@@ -777,7 +777,26 @@ DataMenu_AddListEntry(const menulua_entry_t *entry, void *context)
 	return true;
 }
 
-/* optech2: a page slot: the one this name had, or a free one, or the first */
+/* optech2: the open page of this name (in the menu stack), or NULL */
+static datamenu_page_t *
+DataMenu_OpenPage(const char *name)
+{
+	int i;
+
+	for (i = 0; i < DATAMENU_MAX_PAGES; i++)
+	{
+		if (datamenu_pages[i].name[0] && !Q_stricmp(datamenu_pages[i].name, name) &&
+			M_MenuOnStack(&datamenu_pages[i].frame))
+		{
+			return &datamenu_pages[i];
+		}
+	}
+
+	return NULL;
+}
+
+/* optech2: a page slot that isn't open: the one this name had, or a free one,
+   or any closed one; NULL when every slot is open (never overwrite an open page) */
 static datamenu_page_t *
 DataMenu_PageSlot(const char *name)
 {
@@ -785,7 +804,7 @@ DataMenu_PageSlot(const char *name)
 
 	for (i = 0; i < DATAMENU_MAX_PAGES; i++)
 	{
-		if (!Q_stricmp(datamenu_pages[i].name, name))
+		if (!Q_stricmp(datamenu_pages[i].name, name) && !M_MenuOnStack(&datamenu_pages[i].frame))
 		{
 			return &datamenu_pages[i];
 		}
@@ -793,14 +812,22 @@ DataMenu_PageSlot(const char *name)
 
 	for (i = 0; i < DATAMENU_MAX_PAGES; i++)
 	{
-		if (!datamenu_pages[i].name[0])
+		if (!datamenu_pages[i].name[0] && !M_MenuOnStack(&datamenu_pages[i].frame))
 		{
 			return &datamenu_pages[i];
 		}
 	}
 
-	Com_Printf("Too many data menu pages, reusing the first\n");
-	return &datamenu_pages[0];
+	for (i = 0; i < DATAMENU_MAX_PAGES; i++)
+	{
+		if (!M_MenuOnStack(&datamenu_pages[i].frame))
+		{
+			return &datamenu_pages[i];
+		}
+	}
+
+	Com_Printf("Too many data menu pages open\n");
+	return NULL;
 }
 
 /* optech2: loads menus/<name>.menu into a page; NULL if it doesn't exist or is empty */
@@ -828,6 +855,13 @@ DataMenu_Load(const char *name)
 	}
 
 	page = DataMenu_PageSlot(name);
+
+	if (!page)
+	{
+		FS_FreeFile(text);
+		return NULL;
+	}
+
 	memset(page, 0, sizeof(*page));
 	Q_strlcpy(page->name, name, sizeof(page->name));
 	page->has_script = MenuLua_LoadPage(name); /* optech2: menus/<name>.lua, if there is one */
@@ -916,6 +950,13 @@ DataMenu_Load(const char *name)
 	return page;
 }
 
+/* optech2: is the data page of this name open (anywhere in the menu stack) */
+qboolean
+DataMenu_IsOpen(const char *name)
+{
+	return DataMenu_OpenPage(name) != NULL;
+}
+
 /* optech2: is there a page file of this name (its "if" not asked) */
 qboolean
 DataMenu_Exists(const char *name)
@@ -935,8 +976,18 @@ DataMenu_Exists(const char *name)
 qboolean
 DataMenu_Open(const char *name)
 {
-	datamenu_page_t *page = DataMenu_Load(name);
+	datamenu_page_t *page = DataMenu_OpenPage(name);
 	int i;
+
+	/* optech2: already open: as the stock menus, close it (on top) or drop back to it;
+	   reloading it would wipe a page that is still in the stack */
+	if (page)
+	{
+		M_PushMenu(&page->frame);
+		return true;
+	}
+
+	page = DataMenu_Load(name);
 
 	if (!page)
 	{

@@ -499,7 +499,8 @@ Menu_StyledMouse(menuframework_s *menu, int key, int *replacement, const char **
 			menu->cursor = row;
 			item = (menucommon_s *)menu->items[row];
 
-			if ((item->type == MTYPE_SPINCONTROL) || (item->type == MTYPE_LIST))
+			/* optech2: a spin control steps (and wraps); a list box is selected as ENTER */
+			if (item->type == MTYPE_SPINCONTROL)
 			{
 				menulist_s *list = (menulist_s *)item;
 

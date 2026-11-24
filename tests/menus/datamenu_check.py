@@ -22,7 +22,11 @@ them with "presskey" (developer 1), then prints the cvars they changed:
      menus take the re-release look too (key bindings)
      optech2: the re-release style (ui_menustyle 1) looks different, and the
      mouse works it: menu_pointer + a click steps a choice and sets a slider
-     from the pointer, right click goes back
+     from the pointer, right click goes back, a click on a key binding row
+     binds the next key
+ 11. optech2: an open page outlives more pages than there are slots, and
+     reopening it drops back to it (it is at the bottom of the stack); list
+     tables with hostile __len / __index neither abort nor hang the game
  10. optech2: the shipped pages (baseq2/menus: options, multiplayer, game,
      download options, deathmatch flags)
      draw exactly as the stock menus they replace (menu_builtin), and their
@@ -164,6 +168,49 @@ OPTIONS_PAGE = """
 }
 """
 
+# optech2: many small pages, more than the 16 page slots, to check an open page is never reused
+SLOT_PAGES = 18
+SLOT_PAGE = """
+{{
+"title" "Slot page {index}"
+}}
+{{
+"type" "action"
+"label" "slot {index}"
+"command" "set slot_page {index}"
+}}
+"""
+
+# optech2: a list function returning tables with hostile metamethods (outside any pcall before)
+META_PAGE = """
+{
+"title" "Metamethods"
+}
+{
+"type" "list"
+"source" "bad_length"
+}
+{
+"type" "list"
+"source" "bad_entry"
+}
+{
+"type" "action"
+"label" "still here"
+"command" "set metatest_alive 1"
+}
+"""
+
+META_SCRIPT = """
+function bad_length()
+	return setmetatable({}, { __len = function() error("length") end })
+end
+
+function bad_entry()
+	return { setmetatable({}, { __index = function() while true do end end }) }
+end
+"""
+
 # optech2: the shipped pages compared with the stock menus they replace
 SHIPPED_PAGES = ("options", "multiplayer", "game", "downloadoptions", "dmoptions")
 
@@ -186,6 +233,10 @@ def run(name, script, mods=True, style=0):
         (mod_dir / "menus" / "luatest.lua").write_text(LUA_SCRIPT)
         (mod_dir / "menus" / "broken.menu").write_text(BROKEN_PAGE)
         (mod_dir / "menus" / "broken.lua").write_text("this is not lua (\n")
+        (mod_dir / "menus" / "metatest.menu").write_text(META_PAGE)
+        (mod_dir / "menus" / "metatest.lua").write_text(META_SCRIPT)
+        for index in range(SLOT_PAGES):
+            (mod_dir / "menus" / f"slot{index}.menu").write_text(SLOT_PAGE.format(index=index))
         game_dir = Path(home) / ".opentech2" / "baseq2"
         game_dir.mkdir(parents=True)
         # optech2: ui_menustyle 0 (classic) for the pixel comparisons with the stock menus
@@ -273,6 +324,20 @@ def main():
            "Lua: a script with a syntax error is reported and its page still opens")
     report("No menu page menus/nothere.menu" in log, "a missing page is reported")
 
+    # optech2: "test" stays open under 18 other pages opened and closed one by one (16 slots): it must still
+    # work after; reopening the open "test" drops back to it instead of reloading it under the stack
+    slot_script = ["set menutest_slider 0", "menu test"]
+    for index in range(SLOT_PAGES):
+        slot_script += [f"menu slot{index}", "presskey escape"]
+    slot_script += ["presskey rightarrow", "menu slot0", "menu test", "presskey rightarrow", "menutest_slider",
+                    "menu metatest", "set metatest_after 1", "metatest_after", "echo slots done"]
+    slot_log, _ = run("slots", slot_script)
+    report(cvar(slot_log, "menutest_slider") == "2",
+           f"an open page outlives 18 other pages and a reopen (menutest_slider {cvar(slot_log, 'menutest_slider')})")
+    report(cvar(slot_log, "metatest_after") == "1" and "slots done" in slot_log and "PANIC" not in slot_log,
+           "Lua: hostile __len / __index in a list's tables neither abort nor hang the game")
+    log += slot_log
+
     # optech2: shots 1.5 s apart: the menu cursor animates in 15 frames of 100 ms, so they catch the same frame
     filler = ["#pause"] * 14
     _, override_shots = run("override", [
@@ -304,6 +369,12 @@ def main():
            f"mouse: a click on the slider bar's middle sets it (menutest_slider {cvar(style_log, 'menutest_slider')})")
     report("style done" in style_log, "mouse: right click goes back without trouble")
     log += style_log
+
+    # optech2: a click on a key binding row (re-release look) starts binding, as enter
+    bind_log, _ = run("bind-click", ["unbind k", "menu_keys", "menu_pointer 320 171", "presskey mouse1",
+                                     "presskey k", "presskey escape", "bind k"], mods=False, style=1)
+    report('"k" = "+attack"' in bind_log, "mouse: a click on a key binding row binds the next key")
+    log += bind_log
 
     # optech2: ui_menustyle -1 (the default) picks the look by data set: the re-release look on its data,
     # classic on the classic data; the stock C menus (key bindings here) take the look too
