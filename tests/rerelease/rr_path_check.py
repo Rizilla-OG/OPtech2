@@ -16,6 +16,8 @@ stands in the south half (god mode), in view across the wall:
     REACH_SECONDS (it takes the slot right away; without paths it bumps
     along the wall and finds the gap much later, if at all),
   - no errors.
+  - optech2: a Tank (too wide for the slot) asks for paths on the mesh for
+    its size: they lead east to the gap, never into the slot.
 Without paths the re-release's monsters run straight at the wall and stay
 behind it.
 
@@ -54,6 +56,29 @@ SCRIPT = ["set cheats 1", "set sv_rr_pathlog 1", "map optech2_nav", 'delay 2500 
           f'delay 3100 "teleport {PLAYER_SPOT[0]} {PLAYER_SPOT[1]} 24 0 90 0"']
 SCRIPT += [f'delay {ms} "rr_edicts monster_berserk"' for ms in range(4000, END_MS, 1000)]
 SCRIPT += [f'delay {END_MS} "quit"']
+
+
+# optech2: the same with a Tank, whose paths must use the gap (it doesn't fit the slot)
+TANK_SCRIPT = [line.replace("monster_berserk spawnflags 8", "monster_tank") for line in SCRIPT[:7]]
+TANK_SCRIPT += ['delay 12000 "quit"']
+
+
+def run(script, game_library, name):
+    with tempfile.TemporaryDirectory(prefix="optech2-rr-path-") as home:
+        mod_dir = Path(home) / ".opentech2" / rr_game_check.MOD_NAME
+        (mod_dir / "maps").mkdir(parents=True)
+        shutil.copy(game_library, mod_dir / "game_x64.so")
+        shutil.copy(MAP_FILE, mod_dir / "maps" / MAP_FILE.name)
+        (mod_dir / "c.cfg").write_text("\n".join(script) + "\n")
+        environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
+        log_path = OUTPUT_DIR / f"{name}.log"
+        with open(log_path, "w") as log_file:
+            subprocess.run(["stdbuf", "-oL", str(rr_game_check.CLIENT_BINARY),
+                            "-datadir", str(rr_game_check.RERELEASE_DATA_DIR),
+                            "+set", "game", rr_game_check.MOD_NAME, "+set", "vid_renderer", "soft",
+                            "+set", "s_initsound", "0", "+set", "skill", "1", "+exec", "c.cfg"],
+                           env=environment, stdout=log_file, stderr=subprocess.STDOUT, timeout=90, check=False)
+        return log_path.read_text(errors="replace")
 
 
 def main():
@@ -106,6 +131,16 @@ def main():
     report(bool(reached) and reached[0] < REACH_SECONDS,
            f"it came within reach of the player {reached[0]:.0f} s after it spawned (under {REACH_SECONDS})"
            if reached else f"it came within reach of the player in {(END_MS - SPAWN_MS) / 1000:.0f} s")
+
+    tank_log = run(TANK_SCRIPT, game_library, "tank")
+    tank_paths = [(float(x), float(r)) for x, r in
+                  re.findall(r"^rr_path .*: code 4, \d+ points, next (-?[\d.]+) -?[\d.]+ -?[\d.]+, mover (\d+) x \d+",
+                             tank_log, re.M)]
+    wide = [x for x, radius in tank_paths if radius >= 24]
+    report(bool(wide) and all(x > SLOT_X[1] + 40 for x in wide),
+           f"a Tank's paths are for its size and head for the gap, not the slot "
+           f"({len(wide)} paths, first moves x {', '.join(f'{x:.0f}' for x in wide[:5]) or 'none'})")
+    log += tank_log
 
     bad = [line for line in log.splitlines() if "(BAD" in line or "ERROR" in line or "Game Error" in line]
     report(not bad, "no errors" + (f" ({bad[0].strip()[:90]})" if bad else ""))

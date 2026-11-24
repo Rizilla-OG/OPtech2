@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Re-release games' monster paths use the mesh for the monster's size (its request carries no mover, so the engine finds the monster at the request's start): a Tank is no longer sent through a gap only a soldier fits. `sv_rr_pathlog` shows the mover's size; `rr-paths` checks a Tank heading for the wide gap.
 - Re-release `func_eye` (Call of the Machine's hub cameras): turns to watch the nearest player in its view cone and radius and back afterwards, fires its targets the first time it sees one (`eye_position`, `pathtarget`, `radius`, `vision_cone`, `speed`); it was a still brush.
 - Monster navigation: each monster has its own drop height for ledges on its path (stock 256; Gladiators, Medics, Brains, Iron Maidens 192; Tanks, Shamblers, Arachnids 128; Supertank 64; bosses never), and monster definitions take `"drop_height"` (0-256). `ledge-drops` checks a Supertank staying on a 128 ledge and walking off it with `drop_height` 128.
 - Fixed: a single player game after a CTF game was played as deathmatch (ctf stayed 1 and the game forced deathmatch); starting one now clears ctf as it clears deathmatch and coop.

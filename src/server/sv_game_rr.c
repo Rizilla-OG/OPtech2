@@ -1372,15 +1372,44 @@ RR_BotFollowActor(const rr_edict_t *bot, const rr_edict_t *actor)
 	return 0;
 }
 
+/* optech2: the monster asking for a path: the re-release's request carries
+   no mover, but its monsters ask from their own origin; NULL if none is there */
+static const rr_edict_t *
+RR_PathMover(const float *start)
+{
+	uint32_t i;
+
+	if (!rr_ge || !rr_ge->edicts)
+	{
+		return NULL;
+	}
+
+	for (i = 1; i < rr_ge->num_edicts; i++)
+	{
+		const rr_edict_t *ent = RR_EdictNum((int)i);
+
+		if (ent->inuse && (ent->svflags & RR_SVF_MONSTER) && (fabsf(ent->s.origin[0] - start[0]) < 1.0f) &&
+			(fabsf(ent->s.origin[1] - start[1]) < 1.0f) && (fabsf(ent->s.origin[2] - start[2]) < 1.0f))
+		{
+			return ent;
+		}
+	}
+
+	return NULL;
+}
+
 /* optech2: the game's pathfinding (its monsters' M_NavPathToGoal, the
    compass, g_debug_monster_kills) on our navigation mesh: the request and
-   answer are the re-release's, field for field, in our own types. Paths
-   are for a player-sized mover, as the re-release's own nodes are. */
+   answer are the re-release's, field for field, in our own types. A
+   monster's path is on the mesh for its size (a Tank isn't sent through a
+   gap only a soldier fits); others are player-sized, as the re-release's
+   own nodes are. */
 static bool
 RR_GetPathToGoal(const rr_path_request_t *request, rr_path_info_t *info)
 {
 	optech2_path_request_t nav_request;
 	optech2_path_info_t nav_info;
+	float mover_radius = 0, mover_height = 0; /* optech2: 0: player-sized */
 	int found;
 
 	memset(&nav_request, 0, sizeof(nav_request));
@@ -1406,7 +1435,21 @@ RR_GetPathToGoal(const rr_path_request_t *request, rr_path_info_t *info)
 	}
 
 	memset(&nav_info, 0, sizeof(nav_info));
-	found = Nav_GetPathToGoal(&nav_request, &nav_info);
+
+	{
+		const rr_edict_t *mover = RR_PathMover(request->start);
+
+		if (mover)
+		{
+			mover_radius = Q_max(Q_max(-mover->mins[0], mover->maxs[0]), Q_max(-mover->mins[1], mover->maxs[1]));
+			mover_height = mover->maxs[2] - mover->mins[2];
+			found = Nav_GetPathToGoalSized(&nav_request, &nav_info, mover_radius, mover_height);
+		}
+		else
+		{
+			found = Nav_GetPathToGoal(&nav_request, &nav_info);
+		}
+	}
 
 	info->numPathPoints = nav_info.point_count;
 	info->pathDistSqr = nav_info.path_dist_sqr;
@@ -1420,10 +1463,10 @@ RR_GetPathToGoal(const rr_path_request_t *request, rr_path_info_t *info)
 
 	if (sv_rr_pathlog && sv_rr_pathlog->value)
 	{
-		Com_Printf("rr_path %.0f %.0f %.0f -> %.0f %.0f %.0f: code %d, %d points, next %.0f %.0f %.0f\n",
+		Com_Printf("rr_path %.0f %.0f %.0f -> %.0f %.0f %.0f: code %d, %d points, next %.0f %.0f %.0f, mover %.0f x %.0f\n",
 			request->start[0], request->start[1], request->start[2], request->goal[0], request->goal[1],
 			request->goal[2], info->returnCode, info->numPathPoints, info->firstMovePoint[0],
-			info->firstMovePoint[1], info->firstMovePoint[2]);
+			info->firstMovePoint[1], info->firstMovePoint[2], mover_radius, mover_height);
 	}
 
 	return found != 0;
