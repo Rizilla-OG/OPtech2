@@ -451,6 +451,13 @@ Default_MenuDraw(menuframework_s *m)
 	Menu_DrawPopup(320, 240, &m_popup);
 }
 
+/* optech2: the stock menus' popup ("searching...", "no maps"), drawn over data pages too */
+void
+M_DrawPopup(void)
+{
+	Menu_DrawPopup(320, 240, &m_popup);
+}
+
 /*
  * Draws an animating cursor with the point at
  * x,y. The pic will extend to the left of x,
@@ -5704,6 +5711,31 @@ M_AddToServerList(netadr_t adr, const char *info)
 	Q_strlcpy(local_server_netadr_strings[m_num_servers], s,
 			sizeof(local_server_netadr_strings[m_num_servers]));
 	m_num_servers++;
+
+	/* optech2: the data join server page shows it: build it again */
+	if (DataMenu_IsTop("joinserver"))
+	{
+		Cbuf_AddText("menu_reload\n");
+	}
+}
+
+/* optech2: for data pages (menu.servers): the server list's lines, as the stock menu shows them */
+int
+M_ServerSlotCount(void)
+{
+	return MAX_LOCAL_SERVERS;
+}
+
+const char *
+M_ServerName(int index)
+{
+	return ((index >= 0) && (index < MAX_LOCAL_SERVERS)) ? local_server_names[index] : "";
+}
+
+const char *
+M_ServerAddress(int index)
+{
+	return ((index >= 0) && (index < m_num_servers)) ? local_server_netadr_strings[index] : "";
 }
 
 static void
@@ -5769,6 +5801,18 @@ SearchLocalGamesFunc(void *self)
 	SearchLocalGames();
 }
 
+/* optech2: menu_searchservers: searches the LAN as join server's refresh, then shows the empty list */
+static void
+M_SearchServers_f(void)
+{
+	SearchLocalGames();
+
+	if (DataMenu_IsTop("joinserver"))
+	{
+		Cbuf_AddText("menu_reload\n");
+	}
+}
+
 static void
 JoinServer_MenuInit(void)
 {
@@ -5829,6 +5873,11 @@ JoinServer_MenuInit(void)
 static void
 M_Menu_JoinServer_f(void)
 {
+	if (DataMenu_Exists("joinserver") && !DataMenu_IsOpen("joinserver"))
+	{
+		SearchLocalGames(); /* optech2: as the stock page on opening, before its data page lists them */
+	}
+
 	if (DataMenu_Override("joinserver")) /* optech2: menus/joinserver.menu replaces it */
 	{
 		return;
@@ -8234,6 +8283,7 @@ M_Init(void)
 	Cmd_AddCommand("menu_deletesave", M_DeleteSave_f); /* optech2 */
 	Cmd_AddCommand("menu_close", M_Close_f); /* optech2 */
 	Cmd_AddCommand("menu_back", M_Back_f); /* optech2 */
+	Cmd_AddCommand("menu_searchservers", M_SearchServers_f); /* optech2 */
 	Cmd_AddCommand("menu_beginserver", M_StartServer_f); /* optech2 */
 	Cmd_AddCommand("menu_setmod", M_SetMod_f); /* optech2 */
 	Cmd_AddCommand("menu_pickstart", M_PickStart_f); /* optech2 */

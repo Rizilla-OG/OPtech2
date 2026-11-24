@@ -1,0 +1,32 @@
+// optech2: the join server menu as a data page (stock: menu_builtin joinserver).
+// Opening it searches the LAN; joinserver.lua lists what answers (the page is
+// built again as servers reply). The items are in the stock menu's order
+// (its heading comes second), placed with gaps.
+{
+"banner" "m_banner_join_server"
+"x" "-120"
+}
+{
+"type" "action"
+"label" "address book"
+"command" "menu_addressbook"
+}
+{
+"type" "label"
+"label" "connect to..."
+"alttext" "$m_connecting"
+"x" "80"
+"gap" "20"
+}
+{
+"type" "action"
+"label" "refresh server list"
+"command" "menu_searchservers"
+"status" "search for servers"
+"gap" "-30"
+}
+{
+"type" "list"
+"source" "servers"
+"gap" "20"
+}

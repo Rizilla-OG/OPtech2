@@ -215,6 +215,7 @@ The `menu` table:
 | `menu.modlist()` | `{ { name = "ctf", display = "...", description = "Quake II Capture The Flag" }, ... }`; `menu_setmod <name>` switches |
 | `menu.campaigns()` | `{ { name, index, levels = { "Unit 1: Base", ... } }, ... }`; `menu_pickstart <index> <level - 1>` picks one |
 | `menu.maps()` | the start server maps: `{ { title = "Outer Base", name = "base1", line = "title\nname" }, ... }`; `menu_beginserver <map> <rules>` starts one |
+| `menu.servers()` | the join server list's 8 slots: `{ { name = "<no server>", address = "" }, ... }`; the joinserver page is built again as servers answer |
 | `menu.save(slot)` | a save slot's (`"quick"`, `"save3"`) menu line and whether it holds a save: `line, valid` |
 | `menu.status(text)` | the page's status line until it reloads (`""` gives its own back); in `open` it sets the page being built |
 | `menu.reload()` | builds the page again after the call (its lists changed), keeping the selected line |
@@ -235,6 +236,7 @@ and `game.lua` (in the source: `stuff/menus/`).
 | `menu_joypreset` | applies `joy_sensitivity`'s preset speeds |
 | `menu_calibrategyro` | calibrates the gyro |
 | `menu_beginserver <map> <rules>` | starts a server as start server's begin (rules 0 deathmatch, 1 coop, 2 tag, 3 ctf), from `timelimit`, `fraglimit`, `capturelimit`, `hostname`, `ui_maxclients` |
+| `menu_searchservers` | searches the LAN for servers (join server's refresh) |
 | `menu_back` | closes the top menu, as escape |
 | `menu_close` | closes every menu (after a load or a save) |
 | `menu_reload` | builds the top data page again |

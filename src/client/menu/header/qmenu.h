@@ -192,7 +192,8 @@ void M_BindingCursorDraw(menuframework_s *menu);
 /* optech2: scrolling text (the credits), for data pages with "scroll" */
 void M_CreditsStart(const char *file_name);
 void M_CreditsDraw(void);
-void M_CreditsStop(void); /* optech2: is it open (anywhere in the stack) */
+void M_CreditsStop(void);
+void M_DrawPopup(void); /* optech2 */ /* optech2: is it open (anywhere in the stack) */
 
 void Menu_DrawCharacter(int cx, int cy, int num);
 void Menu_DrawString(int x, int y, const char *string);

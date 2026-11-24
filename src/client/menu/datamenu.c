@@ -739,6 +739,7 @@ DataMenu_Draw(menuframework_s *frame)
 
 	Menu_AdjustCursor(frame, 1);
 	Menu_Draw(frame);
+	M_DrawPopup(); /* optech2: as Default_MenuDraw */
 }
 
 static void
@@ -1114,6 +1115,15 @@ DataMenu_LoadPage(const char *name)
 	}
 
 	return page;
+}
+
+/* optech2: is the data page of this name the top menu */
+qboolean
+DataMenu_IsTop(const char *name)
+{
+	const datamenu_page_t *page = DataMenu_OpenPage(name);
+
+	return page && (M_GetTopMenu() == &page->frame);
 }
 
 /* optech2: is the data page of this name open (anywhere in the menu stack) */

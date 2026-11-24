@@ -215,7 +215,7 @@ end
 
 # optech2: the shipped pages compared with the stock menus they replace
 SHIPPED_PAGES = ("options", "multiplayer", "game", "downloadoptions", "dmoptions", "keys", "multiplayer_keys",
-                 "buttons", "altbuttons", "addressbook", "mods", "joy", "sticks", "gyro", "startserver")
+                 "buttons", "altbuttons", "addressbook", "mods", "joy", "sticks", "gyro", "startserver", "joinserver")
 
 results = []
 
@@ -485,7 +485,7 @@ def main():
             continue
         # optech2: the bottom strip holds the version line, which can flicker between shots
         data, stock = shipped_shots[2 * index][:-40], shipped_shots[2 * index + 1][:-40]
-        if page in ("joy", "gyro", "startserver"):
+        if page in ("joy", "gyro", "startserver", "joinserver"):
             # optech2: the data pages mark items opening a page with ">" (the stock C ones don't)
             data, stock = data[:, :488], stock[:, :488]
         if page == "options":

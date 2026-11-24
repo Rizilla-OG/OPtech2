@@ -354,6 +354,28 @@ MenuLua_Maps(lua_State *L)
 	return 1;
 }
 
+/* optech2: menu.servers(): the join server list's slots, { { name = "<no server>", address = "" }, ... } */
+static int
+MenuLua_Servers(lua_State *L)
+{
+	int count = M_ServerSlotCount();
+	int i;
+
+	lua_createtable(L, count, 0);
+
+	for (i = 0; i < count; i++)
+	{
+		lua_createtable(L, 0, 2);
+		lua_pushstring(L, M_ServerName(i));
+		lua_setfield(L, -2, "name");
+		lua_pushstring(L, M_ServerAddress(i));
+		lua_setfield(L, -2, "address");
+		lua_rawseti(L, -2, i + 1);
+	}
+
+	return 1;
+}
+
 static int
 MenuLua_Print(lua_State *L)
 {
@@ -424,6 +446,7 @@ MenuLua_OpenState(void)
 		{"modlist", MenuLua_ModList},
 		{"campaigns", MenuLua_Campaigns},
 		{"maps", MenuLua_Maps},
+		{"servers", MenuLua_Servers},
 		{NULL, NULL}};
 	static const char *removed[] = {"dofile", "loadfile", "require", NULL};
 	const luaL_Reg *library;

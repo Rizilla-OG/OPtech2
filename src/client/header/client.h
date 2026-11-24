@@ -678,6 +678,10 @@ int M_CampaignLevelCount(int campaign); /* optech2 */
 const char *M_CampaignLevelName(int campaign, int level); /* optech2 */
 qboolean DataMenu_Exists(const char *name); /* optech2 */
 qboolean DataMenu_IsOpen(const char *name); /* optech2 */
+qboolean DataMenu_IsTop(const char *name); /* optech2 */
+int M_ServerSlotCount(void); /* optech2 */
+const char *M_ServerName(int index); /* optech2 */
+const char *M_ServerAddress(int index); /* optech2 */
 void DataMenu_SetStatus(const char *text); /* optech2 */
 qboolean M_SaveSlot(const char *slot, char *comment, size_t size); /* optech2: menu/menu.c */
 void Menu_MouseMove(float dx, float dy); /* optech2: the menu pointer (menu/menustyle.c) */
