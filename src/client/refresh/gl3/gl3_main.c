@@ -793,6 +793,12 @@ void GL3_Draw3DBatchesNow()
 
 	if (curFlags & DCFlag_PolyOffsetFill)
 		glDisable(GL_POLYGON_OFFSET_FILL);
+
+	/* optech2: a flare last in the batch left additive blending on, so the
+	   next blended draw (the full screen blend: fog, height fog, damage)
+	   added its full colour: the screen went orange or white */
+	if (curFlags & DCFlag_Flare)
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 static qboolean
