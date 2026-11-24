@@ -1,0 +1,66 @@
+// optech2: the single player menu as a data page (stock: menu_builtin game).
+// With more than one episode (the re-release data) the stock menu lists
+// them instead, until data menus can make lists (Lua hooks).
+{
+"banner" "m_banner_game"
+"if" "!episodes"
+}
+{
+"type" "action"
+"label" "easy"
+"alttext" "$m_easy"
+"command" "menu_newgame 0"
+}
+{
+"type" "action"
+"label" "medium"
+"alttext" "$m_medium"
+"command" "menu_newgame 1"
+}
+{
+"type" "action"
+"label" "hard"
+"alttext" "$m_hard"
+"command" "menu_newgame 2"
+}
+{
+"type" "action"
+"label" "hard+"
+"alttext" "$m_nightmare"
+"command" "menu_newgame 3"
+}
+{
+"type" "space"
+}
+{
+"type" "action"
+"label" "load game"
+"alttext" "$m_load_game"
+"command" "menu_loadgame"
+}
+{
+"type" "action"
+"label" "save game"
+"alttext" "$m_save_game"
+"command" "menu_savegame"
+}
+{
+"type" "action"
+"label" "credits"
+"alttext" "$m_credits"
+"command" "menu_credits"
+}
+{
+"type" "action"
+"label" "level select"
+"command" "menu_levelselect"
+"gap" "10"
+"if" "levelselect"
+}
+{
+"type" "action"
+"label" "mods"
+"command" "menu_mods"
+"gap" "10"
+"if" "mods"
+}

@@ -29,12 +29,27 @@
  *   "min" "0" "max" "1" "step" "0.1"
  *   }
  *
+ * Page keys: banner or title, "x" (pixels from the screen's middle, menu
+ * scale), "y" (the same for the top; centered without it), "if" (when it
+ * doesn't hold the page isn't there and the stock menu opens instead).
+ *
  * Items: slider (cvar, min, max, step, format), choice (cvar, options
- * "name=value;name=value", command run after a change), toggle (a choice
- * of no=0;yes=1), action (command, run on enter), field (cvar, length,
- * committed when the page closes), label (text only), space (a blank
- * line). Any item takes "gap" (extra pixels above it), "status" (status
- * bar text) and "alttext" (a localization key for the label).
+ * "name=value;name=value", command run after a change; several cvars,
+ * space separated, take space separated values: "1 0.5 0"), toggle (a
+ * choice of no=0;yes=1), invert (yes makes the cvar negative, keeping its
+ * size: m_pitch), action (command, run on enter; "align" "right" lines it
+ * up with the other labels), field (cvar, length, committed when the page
+ * closes), label (text only), space (a blank line). Any item takes "gap"
+ * (extra pixels above it), "status" (status bar text), "alttext" (a
+ * localization key for the label) and "if" (left out when it doesn't
+ * hold).
+ *
+ * "if": names separated by spaces, all must hold, "!name" for not: gamepad,
+ * tall (room for the long options page), episodes, levelselect, mods,
+ * ingame, or else a cvar (true when not 0).
+ *
+ * The stock options, multiplayer and game menus ship as pages in
+ * baseq2/menus/ (stuff/menus/ in the source).
  *
  * "menu <name>" opens a page. A page named like a stock menu replaces it
  * (menus/options.menu for menu_options, even from inside other menus);
@@ -81,8 +96,9 @@ typedef struct
 	char label[64];
 	char alttext[64];
 	char status[128];
-	char cvar[64];
+	char cvar[128]; /* optech2: a choice may set several, space separated */
 	char command[256];
+	qboolean invert; /* optech2: "invert": yes makes the cvar negative, keeping its size */
 	char format[16];
 	int option_count;
 	char option_names[DATAMENU_MAX_OPTIONS][32];
@@ -95,6 +111,9 @@ typedef struct
 	char name[MAX_QPATH];
 	char banner[MAX_QPATH];
 	char title[64];
+	int x_offset; /* optech2: "x": pixels (menu scale) from the screen's middle */
+	qboolean fixed_y; /* optech2: "y" given: pixels from the screen's middle; else centered */
+	int y_offset;
 	menuframework_s frame;
 	int item_count;
 	datamenu_item_t items[DATAMENU_MAX_ITEMS];
@@ -224,25 +243,112 @@ DataMenu_ParseOptions(datamenu_item_t *item, const char *text)
 	item->option_name_list[item->option_count] = NULL;
 }
 
-/* optech2: the option matching the cvar now (numbers compare as numbers), 0 if none */
+/* optech2: splits "a b c" into up to max words; returns how many */
+static int
+DataMenu_Words(const char *text, char words[][64], int max)
+{
+	int count = 0;
+
+	while (*text && (count < max))
+	{
+		int length = 0;
+
+		while (*text == ' ')
+		{
+			text++;
+		}
+
+		if (!*text)
+		{
+			break;
+		}
+
+		while (*text && (*text != ' '))
+		{
+			if (length < 63)
+			{
+				words[count][length++] = *text;
+			}
+
+			text++;
+		}
+
+		words[count][length] = '\0';
+		count++;
+	}
+
+	return count;
+}
+
+#define DATAMENU_MAX_CHOICE_CVARS 4
+
+/* optech2: the option matching the cvars now: exactly (numbers as numbers),
+   else the nearest when all are numbers (crosshair colours), else 0 */
 static int
 DataMenu_CurrentOption(const datamenu_item_t *item)
 {
-	const char *current = Cvar_VariableString(item->cvar);
-	int i;
+	char cvars[DATAMENU_MAX_CHOICE_CVARS][64];
+	int cvar_count, i, nearest = 0;
+	float nearest_distance = -1;
+
+	if (item->invert)
+	{
+		return (Cvar_VariableValue(item->cvar) < 0) ? 1 : 0;
+	}
+
+	cvar_count = DataMenu_Words(item->cvar, cvars, DATAMENU_MAX_CHOICE_CVARS);
 
 	for (i = 0; i < item->option_count; i++)
 	{
-		const char *value = item->option_values[i];
+		char values[DATAMENU_MAX_CHOICE_CVARS][64];
+		int value_count = DataMenu_Words(item->option_values[i], values, DATAMENU_MAX_CHOICE_CVARS);
+		qboolean exact = (value_count == cvar_count);
+		int j;
 
-		if (!strcmp(value, current) ||
-			(Q_strisnum(value) && Q_strisnum(current) && (atof(value) == atof(current))))
+		for (j = 0; exact && (j < cvar_count); j++)
+		{
+			const char *current = Cvar_VariableString(cvars[j]);
+
+			if (strcmp(values[j], current) &&
+				!(Q_strisnum(values[j]) && Q_strisnum(current) && (atof(values[j]) == atof(current))))
+			{
+				exact = false;
+			}
+		}
+
+		if (exact)
 		{
 			return i;
 		}
+
+		/* optech2: not exact: how near, when all are numbers */
+		if (value_count == cvar_count)
+		{
+			qboolean numeric = true;
+			float distance = 0;
+
+			for (j = 0; j < cvar_count; j++)
+			{
+				const char *current = Cvar_VariableString(cvars[j]);
+
+				if (!Q_strisnum(values[j]) || !Q_strisnum(current))
+				{
+					numeric = false;
+					break;
+				}
+
+				distance += (float)((atof(values[j]) - atof(current)) * (atof(values[j]) - atof(current)));
+			}
+
+			if (numeric && ((nearest_distance < 0) || (distance < nearest_distance)))
+			{
+				nearest_distance = distance;
+				nearest = i;
+			}
+		}
 	}
 
-	return 0;
+	return nearest;
 }
 
 static void
@@ -256,9 +362,30 @@ DataMenu_ChoiceChanged(void *self)
 		return;
 	}
 
-	if (item->cvar[0])
+	if (item->invert)
 	{
-		Cvar_Set(item->cvar, item->option_values[option]);
+		float size = fabsf(Cvar_VariableValue(item->cvar));
+
+		Cvar_SetValue(item->cvar, option ? -size : size);
+	}
+	else if (item->cvar[0])
+	{
+		char cvars[DATAMENU_MAX_CHOICE_CVARS][64];
+		char values[DATAMENU_MAX_CHOICE_CVARS][64];
+		int cvar_count = DataMenu_Words(item->cvar, cvars, DATAMENU_MAX_CHOICE_CVARS);
+		int value_count = DataMenu_Words(item->option_values[option], values, DATAMENU_MAX_CHOICE_CVARS);
+
+		if (cvar_count == 1)
+		{
+			Cvar_Set(cvars[0], item->option_values[option]); /* optech2: one cvar takes the value whole */
+		}
+		else
+		{
+			for (int j = 0; (j < cvar_count) && (j < value_count); j++)
+			{
+				Cvar_Set(cvars[j], values[j]);
+			}
+		}
 	}
 
 	if (item->command[0])
@@ -266,6 +393,43 @@ DataMenu_ChoiceChanged(void *self)
 		Cbuf_AddText(item->command);
 		Cbuf_AddText("\n");
 	}
+}
+
+/* optech2: "if": space separated names, all must hold; "!name" for not.
+   A name is one of M_MenuCondition's (gamepad, tall, episodes,
+   levelselect, ingame) or else a cvar, true when not 0 */
+static qboolean
+DataMenu_Condition(const char *expression)
+{
+	char words[8][64];
+	int count = DataMenu_Words(expression, words, 8);
+	int i;
+
+	for (i = 0; i < count; i++)
+	{
+		const char *name = words[i];
+		qboolean negate = (name[0] == '!');
+		qboolean known, holds;
+
+		if (negate)
+		{
+			name++;
+		}
+
+		holds = M_MenuCondition(name, &known);
+
+		if (!known)
+		{
+			holds = (Cvar_VariableValue(name) != 0);
+		}
+
+		if (holds == negate)
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 static void
@@ -325,6 +489,17 @@ DataMenu_Draw(menuframework_s *frame)
 		Menu_DrawString((viddef.width - width) / 2, frame->y - 30, page->title);
 	}
 
+	/* optech2: choices follow their cvars (a command like "reset defaults" may change them) */
+	for (int i = 0; i < page->item_count; i++)
+	{
+		datamenu_item_t *item = (datamenu_item_t *)&page->items[i];
+
+		if ((item->kind == DATAMENU_CHOICE) && item->cvar[0])
+		{
+			item->widget.list.curvalue = DataMenu_CurrentOption(item);
+		}
+	}
+
 	Menu_AdjustCursor(frame, 1);
 	Menu_Draw(frame);
 }
@@ -360,13 +535,14 @@ DataMenu_BuildItem(datamenu_item_t *item, const datamenu_pair_t *pairs, int pair
 		Q_strlcpy(item->format, DataMenu_Value(pairs, pair_count, "format", "%.1f"), sizeof(item->format));
 		item->widget.slider.printformat = item->format;
 	}
-	else if (!Q_stricmp(type, "choice") || !Q_stricmp(type, "toggle"))
+	else if (!Q_stricmp(type, "choice") || !Q_stricmp(type, "toggle") || !Q_stricmp(type, "invert"))
 	{
 		item->kind = DATAMENU_CHOICE;
+		item->invert = !Q_stricmp(type, "invert");
 		generic->type = MTYPE_SPINCONTROL;
 		generic->callback = DataMenu_ChoiceChanged;
 		DataMenu_ParseOptions(item, DataMenu_Value(pairs, pair_count, "options",
-										Q_stricmp(type, "toggle") ? "" : "no=0;yes=1"));
+										Q_stricmp(type, "choice") ? "no=0;yes=1" : ""));
 		item->widget.list.itemnames = item->option_name_list;
 		item->widget.list.curvalue = item->cvar[0] ? DataMenu_CurrentOption(item) : 0;
 	}
@@ -374,7 +550,8 @@ DataMenu_BuildItem(datamenu_item_t *item, const datamenu_pair_t *pairs, int pair
 	{
 		item->kind = DATAMENU_ACTION;
 		generic->type = MTYPE_ACTION;
-		generic->flags = QMF_LEFT_JUSTIFY;
+		/* optech2: "align" "right" ends the label at the item column like other labels */
+		generic->flags = Q_stricmp(DataMenu_Value(pairs, pair_count, "align", "left"), "right") ? QMF_LEFT_JUSTIFY : 0;
 		generic->callback = DataMenu_ActionSelected;
 	}
 	else if (!Q_stricmp(type, "field"))
@@ -465,6 +642,17 @@ DataMenu_Load(const char *name)
 	{
 		Q_strlcpy(page->banner, DataMenu_Value(pairs, pair_count, "banner", ""), sizeof(page->banner));
 		Q_strlcpy(page->title, DataMenu_Value(pairs, pair_count, "title", ""), sizeof(page->title));
+		page->x_offset = atoi(DataMenu_Value(pairs, pair_count, "x", "0"));
+		page->fixed_y = (DataMenu_Value(pairs, pair_count, "y", NULL) != NULL);
+		page->y_offset = atoi(DataMenu_Value(pairs, pair_count, "y", "0"));
+
+		/* optech2: a page whose "if" doesn't hold isn't there: the stock menu opens instead */
+		if (!DataMenu_Condition(DataMenu_Value(pairs, pair_count, "if", "")))
+		{
+			FS_FreeFile(text);
+			page->name[0] = '\0';
+			return NULL;
+		}
 	}
 
 	/* optech2: the items */
@@ -476,6 +664,12 @@ DataMenu_Load(const char *name)
 		{
 			Com_Printf("%s: more than %d items, the rest are left out\n", file_name, DATAMENU_MAX_ITEMS);
 			break;
+		}
+
+		/* optech2: an item whose "if" doesn't hold is left out, with its line */
+		if (!DataMenu_Condition(DataMenu_Value(pairs, pair_count, "if", "")))
+		{
+			continue;
 		}
 
 		y += atoi(DataMenu_Value(pairs, pair_count, "gap", "0"));
@@ -512,7 +706,7 @@ DataMenu_Open(const char *name)
 		return false;
 	}
 
-	page->frame.x = viddef.width / 2;
+	page->frame.x = viddef.width / 2 + (int)(page->x_offset * SCR_GetMenuScale());
 	page->frame.nitems = 0;
 	page->frame.cursor = 0;
 	page->frame.draw = DataMenu_Draw;
@@ -524,7 +718,14 @@ DataMenu_Open(const char *name)
 		Menu_AddItem(&page->frame, &page->items[i].widget);
 	}
 
-	Menu_Center(&page->frame);
+	if (page->fixed_y)
+	{
+		page->frame.y = viddef.height / (2 * SCR_GetMenuScale()) + page->y_offset; /* optech2: as the stock menus place it */
+	}
+	else
+	{
+		Menu_Center(&page->frame);
+	}
 	Menu_AdjustCursor(&page->frame, 1);
 	M_PushMenu(&page->frame);
 	return true;
@@ -553,7 +754,7 @@ DataMenu_Menu_f(void)
 
 	if (!DataMenu_Open(Cmd_Argv(1)))
 	{
-		Com_Printf("No menu page menus/%s.menu\n", Cmd_Argv(1));
+		Com_Printf("No menu page menus/%s.menu (or its \"if\" doesn't hold)\n", Cmd_Argv(1));
 	}
 }
 

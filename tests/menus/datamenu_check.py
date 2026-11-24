@@ -14,6 +14,10 @@ them with "presskey" (developer 1), then prints the cvars they changed:
   6. "menu_options" opens the data page (same shot as "menu options"),
      "menu_builtin options" the stock one (a different shot)
   7. "menu nothere" says there is no such page; no errors in the logs
+  8. optech2: the shipped pages (baseq2/menus: options, multiplayer, game)
+     draw exactly as the stock menus they replace (menu_builtin), and their
+     choices show the cvars' values (crosshair colour from three cvars,
+     invert mouse from m_pitch's sign)
 
 Usage: datamenu_check.py   (exit 1 on failure)
 Logs and shots land in build/datamenu-check/.
@@ -97,7 +101,7 @@ def report(passed, text):
     print(f"{'ok' if passed else 'FAIL':<6}{text}")
 
 
-def run(name, script):
+def run(name, script, mods=True):
     """Runs the console script in the test mod; returns (log, [shots as arrays])."""
     with tempfile.TemporaryDirectory(prefix="optech2-datamenu-") as home:
         mod_dir = Path(home) / ".opentech2" / "menutest"
@@ -112,7 +116,7 @@ def run(name, script):
         lines.append(f'delay {1000 + len(script) * 100 + 300} "quit"')
         (game_dir / "m.cfg").write_text("\n".join(lines) + "\n")
         environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
-        result = subprocess.run([str(CLIENT_BINARY), "-datadir", str(DATA_DIR), "+set", "fs_mods", "menutest",
+        result = subprocess.run([str(CLIENT_BINARY), "-datadir", str(DATA_DIR), "+set", "fs_mods", "menutest" if mods else "",
                                  "+set", "fixedtime", "16667", "+set", "vid_renderer", "soft", "+set", "r_mode", "4",
                                  "+set", "r_vsync", "0", "+set", "s_initsound", "0", "+exec", "m.cfg"],
                                 env=environment, stdin=subprocess.DEVNULL, capture_output=True, text=True,
@@ -181,6 +185,23 @@ def main():
                f"menu_options opens menus/options.menu ({differing(data, stock_command)} pixels differ)")
         report(differing(data, builtin) > 500,
                f"menu_builtin options opens the stock menu ({differing(data, builtin)} pixels differ)")
+
+    # optech2: the shipped pages against the stock menus, shots 1.5 s apart (same cursor frame)
+    shipped = ["set crosshair 2", "set crosshair_color_r 0", "set crosshair_color_g 1", "set crosshair_color_b 1",
+               "set m_pitch -0.022"]
+    for page in ("options", "multiplayer", "game"):
+        shipped += [f"menu_{page}", "clear", "screenshot png", "presskey escape", f"menu_builtin {page}"] + filler[:11] + [
+                    "clear", "screenshot png", "presskey escape"] + filler[:12]
+    shipped_log, shipped_shots = run("shipped", shipped, mods=False)
+    for index, page in enumerate(("options", "multiplayer", "game")):
+        if len(shipped_shots) < 2 * index + 2:
+            report(False, f"shipped {page}: a screenshot is missing (see shipped.log)")
+            continue
+        # optech2: the bottom strip holds the version line, which can flicker between shots
+        data, stock = shipped_shots[2 * index][:-40], shipped_shots[2 * index + 1][:-40]
+        report(differing(data, stock) == 0,
+               f"shipped menus/{page}.menu draws as the stock menu ({differing(data, stock)} pixels differ)")
+    log += shipped_log
 
     errors = [line for line in log.splitlines() if re.search(r"error|unknown item|expected \{|missing", line, re.I)]
     report(not errors, f"no errors in the logs{': ' + errors[0] if errors else ''}")

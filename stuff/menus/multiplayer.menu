@@ -1,0 +1,25 @@
+// optech2: the multiplayer menu as a data page (stock: menu_builtin multiplayer)
+{
+"banner" "m_banner_multiplayer"
+"x" "-64"
+}
+{
+"type" "action"
+"label" " join network server"
+"command" "menu_joinserver"
+}
+{
+"type" "action"
+"label" " start network server"
+"command" "menu_startserver"
+}
+{
+"type" "action"
+"label" " player setup"
+"command" "menu_playerconfig"
+}
+{
+"type" "action"
+"label" " customize controls"
+"command" "menu_multiplayer_keys"
+}

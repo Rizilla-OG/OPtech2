@@ -1124,6 +1124,8 @@ assets:
 	$(MAKE) $(BINDIR)/baseq2/models/entity.dat
 	$(MAKE) $(BINDIR)/baseq2/fonts/Hack-Regular.ttf
 	$(MAKE) $(BINDIR)/baseq2/yq2.cfg
+	${Q}mkdir -p $(BINDIR)/baseq2/menus
+	cp stuff/menus/*.menu $(BINDIR)/baseq2/menus/
 
 $(BINDIR)/baseq2/models/entity.dat: stuff/models/entity.dat
 	${Q}mkdir -p $(BINDIR)/baseq2/models

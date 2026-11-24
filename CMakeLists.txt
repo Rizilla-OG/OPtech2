@@ -1243,6 +1243,11 @@ add_custom_command(TARGET game POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different
 		${CMAKE_SOURCE_DIR}/stuff/yq2.cfg
 		${OPTECH2_FONT_DIR}/..)
+# optech2: the menu pages (data menus), stock menus as data files mods can replace
+add_custom_command(TARGET game POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_directory
+		${CMAKE_SOURCE_DIR}/stuff/menus
+		${OPTECH2_FONT_DIR}/../menus)
 
 if(${GL1_RENDERER})
 

@@ -663,6 +663,7 @@ void M_Init(void);
 void DataMenu_Init(void); /* optech2: data menus (menu/datamenu.c) */
 qboolean DataMenu_Override(const char *name); /* optech2 */
 qboolean DataMenu_Open(const char *name); /* optech2 */
+qboolean M_MenuCondition(const char *name, qboolean *known); /* optech2: menu/menu.c */
 void M_Free(void);
 void M_Keydown(int key);
 void M_Draw(void);

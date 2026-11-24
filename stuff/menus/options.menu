@@ -1,0 +1,118 @@
+// optech2: the options menu as a data page (stock: menu_builtin options).
+// Copy it into a mod's menus/ folder to change it there.
+{
+"banner" "m_banner_options"
+"y" "-58"
+}
+{
+"type" "slider"
+"label" "effects volume"
+"alttext" "$m_sound_volume"
+"cvar" "s_volume"
+"min" "0" "max" "1" "step" "0.1"
+}
+{
+"type" "slider"
+"label" "OGG volume"
+"alttext" "$m_music_volume"
+"cvar" "ogg_volume"
+"min" "0" "max" "1" "step" "0.1"
+}
+{
+"type" "choice"
+"label" "OGG music"
+"cvar" "ogg_enable"
+"options" "disabled=0;enabled=1"
+"command" "menu_oggenable"
+}
+{
+"type" "choice"
+"label" "OGG playback mode"
+"cvar" "ogg_shuffle"
+"options" "default=0;play once=1;sequential=2;random=3"
+}
+{
+"type" "choice"
+"label" "sound backend"
+"cvar" "s_openal"
+"options" "openal=1;sdl=0"
+"command" "snd_restart"
+}
+{
+"type" "slider"
+"label" "mouse speed"
+"alttext" "$m_sensitivity"
+"cvar" "sensitivity"
+"min" "0" "max" "11" "step" "0.5"
+"gap" "10"
+}
+{
+"type" "toggle"
+"label" "always run"
+"alttext" "$m_always_run"
+"cvar" "cl_run"
+}
+{
+"type" "invert"
+"label" "invert mouse"
+"alttext" "$m_invert_look"
+"cvar" "m_pitch"
+}
+{
+"type" "toggle"
+"label" "lookstrafe"
+"cvar" "lookstrafe"
+}
+{
+"type" "toggle"
+"label" "free look"
+"cvar" "freelook"
+}
+{
+"type" "toggle"
+"label" "third person"
+"cvar" "g_thirdperson"
+"if" "tall"
+}
+{
+"type" "choice"
+"label" "crosshair"
+"alttext" "$m_crosshair_style"
+"cvar" "crosshair"
+"options" "none=0;cross=1;dot=2;angle=3"
+}
+{
+"type" "choice"
+"label" "crosshair color"
+"cvar" "crosshair_color_r crosshair_color_g crosshair_color_b"
+"options" "white=1 1 1;red=1 0 0;green=0 1 0;blue=0 0 1;yellow=1 1 0;cyan=0 1 1;magenta=1 0 1;orange=1 0.5 0"
+}
+{
+"type" "space"
+}
+{
+"type" "action"
+"label" "customize gamepad"
+"command" "menu_joy"
+"align" "right"
+"if" "gamepad"
+}
+{
+"type" "action"
+"label" "customize controls"
+"command" "menu_keys"
+"align" "right"
+}
+{
+"type" "action"
+"label" "reset defaults"
+"alttext" "$m_reset_settings"
+"command" "exec default.cfg; exec yq2.cfg"
+"align" "right"
+}
+{
+"type" "action"
+"label" "go to console"
+"command" "menu_console"
+"align" "right"
+}

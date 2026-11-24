@@ -96,8 +96,11 @@ something unfinished; remove an entry in the commit that fixes it.
   look). Old C menus stay as the fallback.
 - Steps: 1 loader + `menu` command + overrides (done 2026-11-24,
   src/client/menu/datamenu.c, check data-menus); 2 stock menus as data files
-  (needs built-in hooks for the C-only bits: key binding lists, save slots,
-  server list, video modes, player model preview); 3 client Lua state +
+  (options, multiplayer, game done 2026-11-24; still stock: main (pics),
+  keys/buttons (binding lists), load/save (slots), join/start server,
+  address book, player setup (model preview), video, dmoptions (bit
+  flags), download options, joy/gyro/sticks, mods, level select, credits,
+  quit; the lists wait for step 3); 3 client Lua state +
   hooks; 4 restyle; 5 modder docs.
 - Later: game library menus in C through an extension hook (draw + keys),
   for libraries like q2arpg that want their own; engine/data menus stay the

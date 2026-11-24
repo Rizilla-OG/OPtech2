@@ -7377,6 +7377,86 @@ M_Menu_Quit_f(void)
 	M_PushMenu(&s_quit_menu);
 }
 
+/*
+ * optech2: what data menus (datamenu.c) need from the stock menus: their
+ * "if" conditions, and commands for the steps only C can do.
+ */
+
+/* optech2: a named condition; *known false when the name isn't one (then it's a cvar) */
+qboolean
+M_MenuCondition(const char *name, qboolean *known)
+{
+	extern qboolean show_gamepad;
+	float scale = SCR_GetMenuScale();
+
+	*known = true;
+
+	if (!Q_stricmp(name, "gamepad"))
+	{
+		return show_gamepad && (viddef.height > (240 + 20 * scale));
+	}
+
+	if (!Q_stricmp(name, "tall")) /* optech2: room for the stock options menu's extra lines */
+	{
+		return viddef.height > (250 + 20 * scale);
+	}
+
+	if (!Q_stricmp(name, "episodes")) /* optech2: more than one episode to choose (re-release data) */
+	{
+		LevelSelect_NamesInit();
+		return s_episode_count > 1;
+	}
+
+	if (!Q_stricmp(name, "levelselect"))
+	{
+		LevelSelect_NamesInit();
+		return s_campaignnames.num > 0;
+	}
+
+	if (!Q_stricmp(name, "mods")) /* optech2: more than one mod to choose */
+	{
+		Mods_NamesInit();
+		return modnames.num > 1;
+	}
+
+	if (!Q_stricmp(name, "ingame"))
+	{
+		return cls.state == ca_active;
+	}
+
+	*known = false;
+	return false;
+}
+
+/* optech2: menu_newgame <skill>: a new single player game, as the stock difficulty items */
+static void
+M_NewGame_f(void)
+{
+	if (Cmd_Argc() != 2)
+	{
+		Com_Printf("usage: menu_newgame <skill 0-3>\n");
+		return;
+	}
+
+	Cvar_ForceSet("skill", Cmd_Argv(1));
+	StartGame();
+}
+
+/* optech2: menu_console: closes the menus and opens the console, as "go to console" */
+static void
+M_GoToConsole_f(void)
+{
+	ConsoleFunc(NULL);
+}
+
+/* optech2: menu_oggenable: starts or stops OGG music after ogg_enable changed */
+static void
+M_OggEnable_f(void)
+{
+	s_options_oggenable_box.curvalue = (Cvar_VariableValue("ogg_enable") != 0);
+	EnableOGGMusic(NULL);
+}
+
 void
 M_Init(void)
 {
@@ -7387,6 +7467,9 @@ M_Init(void)
 	Cmd_AddCommand("playermodels", ListModels_f);
 
 	DataMenu_Init(); /* optech2: menu, menu_builtin */
+	Cmd_AddCommand("menu_newgame", M_NewGame_f); /* optech2 */
+	Cmd_AddCommand("menu_console", M_GoToConsole_f); /* optech2 */
+	Cmd_AddCommand("menu_oggenable", M_OggEnable_f); /* optech2 */
 	Cmd_AddCommand("menu_main", M_Menu_Main_f);
 	Cmd_AddCommand("menu_game", M_Menu_Game_f);
 	Cmd_AddCommand("menu_levelselect", Menu_LevelSelect_f);
