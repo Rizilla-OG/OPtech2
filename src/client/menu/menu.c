@@ -82,6 +82,13 @@ M_GetActiveMenu(void)
 		m_layers[m_menudepth - 1] : NULL;
 }
 
+/* optech2: the menu on top, NULL if none */
+menuframework_s *
+M_GetTopMenu(void)
+{
+	return M_GetActiveMenu();
+}
+
 /* optech2: is this menu open, anywhere in the stack */
 qboolean
 M_MenuOnStack(const menuframework_s *menu)
@@ -158,7 +165,7 @@ M_ForceMenuOff(void)
 	Cvar_Set("paused", "0");
 }
 
-static void
+void
 M_PopMenu(qboolean silent)
 {
 	menuframework_s *menu;
@@ -4844,6 +4851,98 @@ Create_Savestrings(void)
 	}
 }
 
+/* optech2: is this a save slot name: "quick" or "save<number>" */
+static qboolean
+M_SaveSlotName(const char *slot)
+{
+	const char *digit;
+
+	if (!strcmp(slot, "quick"))
+	{
+		return true;
+	}
+
+	if (strncmp(slot, "save", 4) || !slot[4] || (strlen(slot) > 8))
+	{
+		return false;
+	}
+
+	for (digit = slot + 4; *digit; digit++)
+	{
+		if (!isdigit((unsigned char)*digit))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/* optech2: a save slot's menu line ("12:44 11/21  Outer Base", "QUICKSAVE Outer Base",
+   "<empty>") and whether it holds a save; for data pages (menu.save) */
+qboolean
+M_SaveSlot(const char *slot, char *comment, size_t size)
+{
+	char name[MAX_QPATH];
+	char text[32]; /* optech2: the comment's length in server.ssv */
+	fileHandle_t f;
+	qboolean quick = !strcmp(slot, "quick");
+
+	Q_strlcpy(comment, quick ? "QUICKSAVE <empty>" : "<empty>", size);
+
+	if (!M_SaveSlotName(slot))
+	{
+		return false;
+	}
+
+	Com_sprintf(name, sizeof(name), "save/%s/server.ssv", slot);
+	FS_FOpenFile(name, &f, true);
+
+	if (!f)
+	{
+		return false;
+	}
+
+	FS_Read(text, sizeof(text), f);
+	FS_FCloseFile(f);
+	text[sizeof(text) - 1] = 0;
+
+	/* optech2: as the stock menu: the quicksave's date gives way to QUICKSAVE */
+	if (quick && (strlen(text) > 12))
+	{
+		Com_sprintf(comment, size, "QUICKSAVE %s", text + 13);
+	}
+	else
+	{
+		Q_strlcpy(comment, text, size);
+	}
+
+	return true;
+}
+
+/* optech2: menu_close: closes every menu (after a page's load or save) */
+static void
+M_Close_f(void)
+{
+	M_ForceMenuOff();
+}
+
+/* optech2: menu_deletesave <slot>: removes a save ("quick", "save3") */
+static void
+M_DeleteSave_f(void)
+{
+	char name[MAX_OSPATH];
+
+	if ((Cmd_Argc() != 2) || !M_SaveSlotName(Cmd_Argv(1)))
+	{
+		Com_Printf("usage: menu_deletesave <quick | saveN>\n");
+		return;
+	}
+
+	Com_sprintf(name, sizeof(name), "%s/save/%s/", FS_Gamedir(), Cmd_Argv(1));
+	Sys_RemoveDir(name);
+}
+
 static void
 LoadSave_AdjustPage(int dir)
 {
@@ -7542,6 +7641,11 @@ M_MenuCondition(const char *name, qboolean *known)
 		return s_episode_count > 1;
 	}
 
+	if (!Q_stricmp(name, "restart")) /* optech2: single player with its level-start autosave */
+	{
+		return RestartLevel_Available();
+	}
+
 	if (!Q_stricmp(name, "levelselect"))
 	{
 		LevelSelect_NamesInit();
@@ -7682,6 +7786,8 @@ M_Init(void)
 	Cmd_AddCommand("menu_console", M_GoToConsole_f); /* optech2 */
 	Cmd_AddCommand("menu_oggenable", M_OggEnable_f); /* optech2 */
 	Cmd_AddCommand("menu_episode", M_Episode_f); /* optech2 */
+	Cmd_AddCommand("menu_deletesave", M_DeleteSave_f); /* optech2 */
+	Cmd_AddCommand("menu_close", M_Close_f); /* optech2 */
 	Cmd_AddCommand("menu_main", M_Menu_Main_f);
 	Cmd_AddCommand("menu_game", M_Menu_Game_f);
 	Cmd_AddCommand("menu_levelselect", Menu_LevelSelect_f);

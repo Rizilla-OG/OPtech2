@@ -1,0 +1,30 @@
+// optech2: the load game menu as a data page (stock: menu_builtin loadgame).
+// saves.lua lists the slots, 14 a page: left and right turn the page, del
+// (then y) deletes the selected save.
+{
+"banner" "m_banner_load_game"
+"script" "saves"
+"keys" "save_keys"
+"open" "show_pages"
+"x" "-120"
+"y" "-58"
+}
+{
+"type" "action"
+"label" "Restart level"
+"gap" "-12"
+"command" "load save0; menu_close"
+"if" "restart"
+}
+{
+"type" "list"
+"source" "load_quick"
+"gap" "2"
+}
+{
+"type" "space"
+}
+{
+"type" "list"
+"source" "load_slots"
+}

@@ -1,0 +1,23 @@
+// optech2: the save game menu as a data page (stock: menu_builtin savegame).
+// saves.lua lists the slots, 14 a page: left and right turn the page, del
+// (then y) deletes the selected save. The quicksave and the autosave (save0)
+// slots are kept for those.
+{
+"banner" "m_banner_save_game"
+"script" "saves"
+"keys" "save_keys"
+"open" "show_pages"
+"x" "-120"
+"y" "-58"
+}
+{
+"type" "list"
+"source" "save_quick"
+}
+{
+"type" "space"
+}
+{
+"type" "list"
+"source" "save_slots"
+}

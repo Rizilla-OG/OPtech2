@@ -24,6 +24,8 @@ them with "presskey" (developer 1), then prints the cvars they changed:
      mouse works it: menu_pointer + a click steps a choice and sets a slider
      from the pointer, right click goes back, a click on a key binding row
      binds the next key
+ 12. optech2: the load and save pages (saves.lua): save to a slot, turn the
+     page, delete with del then y; they look like the stock menus
  11. optech2: an open page outlives more pages than there are slots, and
      reopening it drops back to it (it is at the bottom of the stack); list
      tables with hostile __len / __index neither abort nor hang the game
@@ -337,6 +339,28 @@ def main():
     report(cvar(slot_log, "metatest_after") == "1" and "slots done" in slot_log and "PANIC" not in slot_log,
            "Lua: hostile __len / __index in a list's tables neither abort nor hang the game")
     log += slot_log
+
+    # optech2: the shipped load / save pages: enter on save3 saves there and closes the menus; the load page
+    # turns its page (right, left), del then y deletes save3 (a later "load save3" finds nothing); the pages
+    # line shows; the classic look matches the stock menus' (the cursor blinks, so only nearly)
+    filler = ["#pause"] * 14
+    saves_log, saves_shots = run("saves", ["map base1"] + filler[:10] + [
+        "menu_savegame", "presskey downarrow", "presskey downarrow", "presskey downarrow", "presskey downarrow",
+        "presskey enter", "#", "#", "menu_loadgame", "clear", "screenshot png", "presskey escape",
+        "menu_builtin loadgame"] + filler[:11] + ["clear", "screenshot png", "presskey escape", "#",
+        "menu_loadgame", "presskey rightarrow", "presskey leftarrow", "presskey downarrow", "presskey downarrow",
+        "presskey downarrow", "presskey downarrow", "presskey downarrow", "presskey del", "presskey y", "#",
+        "presskey escape", "load save3", "echo saves done"], mods=False)
+    report("SV_CopySaveGame(current, save3)" in saves_log, "save page: enter on a slot saves there")
+    report("No such savegame" in saves_log and "saves done" in saves_log,
+           "load page: del then y deletes the save; left and right turn the page")
+    if len(saves_shots) < 2:
+        report(False, "load page: a screenshot is missing (see saves.log)")
+    else:
+        report(differing(saves_shots[0][:-40], saves_shots[1][:-40]) < 3000,
+               f"load page draws as the stock menu, but for the cursor "
+               f"({differing(saves_shots[0][:-40], saves_shots[1][:-40])} pixels differ)")
+    log += saves_log
 
     # optech2: shots 1.5 s apart: the menu cursor animates in 15 frames of 100 ms, so they catch the same frame
     filler = ["#pause"] * 14

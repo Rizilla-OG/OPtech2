@@ -112,6 +112,7 @@ typedef struct
 	char command[256];
 	char lua[64]; /* optech2: "lua": the page script's function run on enter */
 	int lua_action; /* optech2: a list entry's action function, 0 = none */
+	char id[64]; /* optech2: "id" (or a list entry's id): handed to the page's keys function */
 	qboolean invert; /* optech2: "invert": yes makes the cvar negative, keeping its size */
 	int mask; /* optech2: "mask": the choice sets only these bits of the cvar (dmflags) */
 	char format[16];
@@ -131,6 +132,8 @@ typedef struct
 	int y_offset;
 	char status[128]; /* optech2: "status": the page's status line; $cvar expands */
 	char status_text[256];
+	char status_override[128]; /* optech2: menu.status(): replaces the status line until the page reloads */
+	char keys[64]; /* optech2: "keys": the page script's function asked first about each key */
 	qboolean has_script; /* optech2: menus/<name>.lua ran */
 	menuframework_s frame;
 	int item_count;
@@ -138,6 +141,7 @@ typedef struct
 } datamenu_page_t;
 
 static datamenu_page_t datamenu_pages[DATAMENU_MAX_PAGES];
+static datamenu_page_t *datamenu_loading; /* optech2: the page being built (its open hook may set the status) */
 static cvar_t *ui_menustyle; /* optech2: 1 = the re-release look (panel, row bar, mouse), 0 = classic, -1 = by data set */
 
 /* optech2: is the re-release look on (ui_menustyle, or by data set) */
@@ -642,7 +646,11 @@ DataMenu_Draw(menuframework_s *frame)
 		Menu_DrawString((viddef.width - width) / 2, frame->y - 30, page->title);
 	}
 
-	if (page->status[0])
+	if (page->status_override[0])
+	{
+		frame->statusbar = page->status_override;
+	}
+	else if (page->status[0])
 	{
 		DataMenu_ExpandStatus(page);
 		frame->statusbar = page->status_text;
@@ -667,6 +675,7 @@ DataMenu_BuildItem(datamenu_item_t *item, const datamenu_pair_t *pairs, int pair
 	Q_strlcpy(item->cvar, DataMenu_Value(pairs, pair_count, "cvar", ""), sizeof(item->cvar));
 	Q_strlcpy(item->command, DataMenu_Value(pairs, pair_count, "command", ""), sizeof(item->command));
 	Q_strlcpy(item->lua, DataMenu_Value(pairs, pair_count, "lua", ""), sizeof(item->lua));
+	Q_strlcpy(item->id, DataMenu_Value(pairs, pair_count, "id", ""), sizeof(item->id));
 
 	generic->name = item->label;
 	generic->alttext = item->alttext[0] ? item->alttext : NULL;
@@ -764,13 +773,14 @@ DataMenu_AddListEntry(const menulua_entry_t *entry, void *context)
 	Q_strlcpy(item->status, entry->status, sizeof(item->status));
 	Q_strlcpy(item->command, entry->command, sizeof(item->command));
 	item->lua_action = entry->action;
+	Q_strlcpy(item->id, entry->id, sizeof(item->id));
 	generic->type = MTYPE_ACTION;
 	generic->flags = QMF_LEFT_JUSTIFY | (DataMenu_OpensMenu(item) ? QMF_SUBMENU : 0);
 	generic->name = item->label;
 	generic->alttext = item->alttext[0] ? item->alttext : NULL;
 	generic->statusbar = item->status[0] ? item->status : NULL;
 	generic->y = list->y;
-	generic->callback = DataMenu_ActionSelected;
+	generic->callback = entry->disabled ? NULL : DataMenu_ActionSelected; /* optech2: disabled: there, does nothing */
 
 	list->page->item_count++;
 	list->y += DATAMENU_LINE_HEIGHT;
@@ -830,9 +840,21 @@ DataMenu_PageSlot(const char *name)
 	return NULL;
 }
 
+static datamenu_page_t *DataMenu_LoadPage(const char *name);
+
 /* optech2: loads menus/<name>.menu into a page; NULL if it doesn't exist or is empty */
 static datamenu_page_t *
 DataMenu_Load(const char *name)
+{
+	datamenu_page_t *page;
+
+	page = DataMenu_LoadPage(name);
+	datamenu_loading = NULL;
+	return page;
+}
+
+static datamenu_page_t *
+DataMenu_LoadPage(const char *name)
 {
 	char file_name[MAX_QPATH];
 	datamenu_pair_t pairs[DATAMENU_MAX_PAIRS];
@@ -863,19 +885,23 @@ DataMenu_Load(const char *name)
 	}
 
 	memset(page, 0, sizeof(*page));
+	datamenu_loading = page;
 	Q_strlcpy(page->name, name, sizeof(page->name));
-	page->has_script = MenuLua_LoadPage(name); /* optech2: menus/<name>.lua, if there is one */
 	cursor = text;
 
 	/* optech2: the page block */
 	if (DataMenu_ReadBlock(&cursor, file_name, pairs, &pair_count))
 	{
+		/* optech2: menus/<name>.lua (or "script"'s), if there is one; before the "if", which may ask it */
+		page->has_script = MenuLua_LoadPage(name, DataMenu_Value(pairs, pair_count, "script", ""));
+
 		Q_strlcpy(page->banner, DataMenu_Value(pairs, pair_count, "banner", ""), sizeof(page->banner));
 		Q_strlcpy(page->title, DataMenu_Value(pairs, pair_count, "title", ""), sizeof(page->title));
 		page->x_offset = atoi(DataMenu_Value(pairs, pair_count, "x", "0"));
 		Q_strlcpy(page->status, DataMenu_Value(pairs, pair_count, "status", ""), sizeof(page->status));
 		page->fixed_y = (DataMenu_Value(pairs, pair_count, "y", NULL) != NULL);
 		page->y_offset = atoi(DataMenu_Value(pairs, pair_count, "y", "0"));
+		Q_strlcpy(page->keys, DataMenu_Value(pairs, pair_count, "keys", ""), sizeof(page->keys));
 
 		/* optech2: a page whose "if" doesn't hold isn't there: the stock menu opens instead */
 		if (!DataMenu_Condition(page, DataMenu_Value(pairs, pair_count, "if", "")))
@@ -972,6 +998,67 @@ DataMenu_Exists(const char *name)
 	return FS_LoadFile(file_name, NULL) > 0;
 }
 
+/* optech2: the page a frame is (frames of data pages only) */
+static datamenu_page_t *
+DataMenu_FramePage(menuframework_s *frame)
+{
+	return (datamenu_page_t *)((byte *)frame - offsetof(datamenu_page_t, frame));
+}
+
+/* optech2: keys go to the page script's "keys" function first (with the
+   selected item's id); it returns true when it used the key */
+static const char *
+DataMenu_Key(menuframework_s *frame, int key)
+{
+	const datamenu_page_t *page = DataMenu_FramePage(frame);
+	int menu_key = Key_GetMenuKey(key);
+
+	if (page->has_script && page->keys[0] && ((key < K_MOUSE1) || (key > K_MOUSE5)) &&
+		(key != K_MWHEELUP) && (key != K_MWHEELDOWN))
+	{
+		const datamenu_item_t *item = (const datamenu_item_t *)Menu_ItemAtCursor(frame);
+		char key_name[32];
+		int i;
+
+		Q_strlcpy(key_name, Key_KeynumToString(menu_key), sizeof(key_name));
+
+		for (i = 0; key_name[i]; i++)
+		{
+			key_name[i] = (char)tolower((unsigned char)key_name[i]);
+		}
+
+		if (MenuLua_Key(page->name, page->keys, key_name, item ? item->id : ""))
+		{
+			return menu_move_sound;
+		}
+	}
+
+	return Default_MenuKey(frame, key);
+}
+
+/* optech2: menu.status(text): the top data page's status line until it reloads ("" = its own again) */
+void
+DataMenu_SetStatus(const char *text)
+{
+	const menuframework_s *frame = M_GetTopMenu();
+	int i;
+
+	if (datamenu_loading)
+	{
+		Q_strlcpy(datamenu_loading->status_override, text, sizeof(datamenu_loading->status_override));
+		return;
+	}
+
+	for (i = 0; i < DATAMENU_MAX_PAGES; i++)
+	{
+		if (frame && (&datamenu_pages[i].frame == frame))
+		{
+			Q_strlcpy(datamenu_pages[i].status_override, text, sizeof(datamenu_pages[i].status_override));
+			return;
+		}
+	}
+}
+
 /* optech2: opens the data page of this name; false if there is none */
 qboolean
 DataMenu_Open(const char *name)
@@ -998,7 +1085,7 @@ DataMenu_Open(const char *name)
 	page->frame.nitems = 0;
 	page->frame.cursor = 0;
 	page->frame.draw = DataMenu_Draw;
-	page->frame.key = Default_MenuKey;
+	page->frame.key = DataMenu_Key;
 	page->frame.close = DataMenu_Close;
 
 	for (i = 0; i < page->item_count; i++)
@@ -1043,6 +1130,49 @@ DataMenu_Menu_f(void)
 	if (!DataMenu_Open(Cmd_Argv(1)))
 	{
 		Com_Printf("No menu page menus/%s.menu (or its \"if\" doesn't hold)\n", Cmd_Argv(1));
+	}
+}
+
+/* optech2: menu_reload: builds the top data page again (its script's lists
+   change: saves deleted, another page of slots), keeping the selected line */
+static void
+DataMenu_Reload_f(void)
+{
+	menuframework_s *frame = M_GetTopMenu();
+	char name[MAX_QPATH];
+	int cursor, i;
+
+	if (!frame)
+	{
+		return;
+	}
+
+	for (i = 0; i < DATAMENU_MAX_PAGES; i++)
+	{
+		if (&datamenu_pages[i].frame == frame)
+		{
+			break;
+		}
+	}
+
+	if (i == DATAMENU_MAX_PAGES)
+	{
+		return; /* optech2: the top menu isn't a data page */
+	}
+
+	Q_strlcpy(name, datamenu_pages[i].name, sizeof(name));
+	cursor = frame->cursor;
+	M_PopMenu(true);
+
+	if (DataMenu_Open(name))
+	{
+		frame = M_GetTopMenu();
+
+		if (frame && frame->nitems)
+		{
+			frame->cursor = Q_clamp(cursor, 0, frame->nitems - 1);
+			Menu_AdjustCursor(frame, 1);
+		}
 	}
 }
 
@@ -1093,4 +1223,5 @@ DataMenu_Init(void)
 	Cmd_AddCommand("menu_pointer", DataMenu_Pointer_f);
 	Cmd_AddCommand("menu", DataMenu_Menu_f);
 	Cmd_AddCommand("menu_builtin", DataMenu_Builtin_f);
+	Cmd_AddCommand("menu_reload", DataMenu_Reload_f);
 }

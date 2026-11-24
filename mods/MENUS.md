@@ -62,6 +62,8 @@ comment. The first block is the page, every block after it an item:
 | `status` | a status line; `$name` is a cvar's value (`dmflags = $dmflags`) |
 | `if` | a condition (below): when it doesn't hold, the page isn't there and the stock menu of the same name opens instead |
 | `open` | a function of the page's script, run before the items are built |
+| `script` | the script file to use instead of `menus/<name>.lua` (pages sharing one: `loadgame` and `savegame` use `saves`) |
+| `keys` | a function of the page's script asked first about each key: `fn(key, id)` gets the key's name (`leftarrow`, `del`, `y`, `enter`...) and the selected item's `id` (`""` if none), and returns true when it used the key |
 | `x`, `y` | the classic look only: pixels (menu scale) from the screen's middle; centered without `y` (the re-release look always centers its panel under the banner's place) |
 
 ### Items
@@ -121,6 +123,7 @@ deathmatch flags do (`dmflags` 8 is "no falling damage"):
 | `tall` | the screen has room for the long options page |
 | `episodes` | the game data has several episodes (the re-release) |
 | `levelselect`, `mods` | the stock menus would offer them |
+| `restart` | a single player game runs and its level-start autosave is there (load's "Restart level") |
 | `curl` | the engine was built with HTTP downloads |
 | `game=<name>` | the `game` cvar is that (`game=ctf`; `game=baseq2` also when it's empty) |
 | `lua:<fn>` | the page script's function returns true |
@@ -174,7 +177,13 @@ end
 ```
 
 A `list` function returns entries, each one becoming an action: `label`,
-`command`, `alttext`, `status`, and `action`, a function run on enter.
+`command`, `alttext`, `status`, `action` (a function run on enter), `id`
+(handed to the page's `keys` function while the entry is selected; items in
+the file take an `"id"` too) and `disabled` (shown, but enter does nothing).
+
+The shipped load and save pages (`menus/loadgame.menu`, `savegame.menu`,
+`saves.lua`) are a fuller example: a page of slots at a time, left and right
+turn the page, del asks and y deletes.
 
 The `menu` table:
 
@@ -189,6 +198,9 @@ The `menu` table:
 | `menu.episodes()` | `{ { name = "Quake II", index = 0 }, ... }`; `menu_episode <index>` asks for the skill |
 | `menu.mods()` | the mod folder names the mods menu offers |
 | `menu.print(...)` | to the console |
+| `menu.save(slot)` | a save slot's (`"quick"`, `"save3"`) menu line and whether it holds a save: `line, valid` |
+| `menu.status(text)` | the page's status line until it reloads (`""` gives its own back); in `open` it sets the page being built |
+| `menu.reload()` | builds the page again after the call (its lists changed), keeping the selected line |
 
 The shipped single player page is a small example: `baseq2/menus/game.menu`
 and `game.lua` (in the source: `stuff/menus/`).
@@ -201,6 +213,9 @@ and `game.lua` (in the source: `stuff/menus/`).
 | `menu_builtin <name>` | opens a stock menu even when a page replaces it |
 | `menu_newgame <skill>` | a new single player game (0 easy to 3 hard+) |
 | `menu_episode <index>` | picks an episode, then asks for the skill |
+| `menu_close` | closes every menu (after a load or a save) |
+| `menu_reload` | builds the top data page again |
+| `menu_deletesave <slot>` | deletes a save (`quick`, `save3`) |
 | `menu_console` | closes the menus and opens the console |
 | `menu_oggenable` | starts or stops OGG music after `ogg_enable` changed |
 

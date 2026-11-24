@@ -174,6 +174,35 @@ MenuLua_ApiCondition(lua_State *L)
 	return 1;
 }
 
+/* optech2: menu.save(slot): a save slot's ("quick", "save3") line and whether it holds a save */
+static int
+MenuLua_Save(lua_State *L)
+{
+	char comment[64];
+	qboolean valid = M_SaveSlot(luaL_checkstring(L, 1), comment, sizeof(comment));
+
+	lua_pushstring(L, comment);
+	lua_pushboolean(L, valid);
+	return 2;
+}
+
+/* optech2: menu.reload(): builds the page again after the call (its lists changed) */
+static int
+MenuLua_Reload(lua_State *L)
+{
+	(void)L;
+	Cbuf_AddText("menu_reload\n");
+	return 0;
+}
+
+/* optech2: menu.status(text): the page's status line until it reloads; "" gives it back */
+static int
+MenuLua_Status(lua_State *L)
+{
+	DataMenu_SetStatus(luaL_optstring(L, 1, ""));
+	return 0;
+}
+
 static int
 MenuLua_Episodes(lua_State *L)
 {
@@ -275,6 +304,9 @@ MenuLua_OpenState(void)
 		{"episodes", MenuLua_Episodes},
 		{"mods", MenuLua_Mods},
 		{"print", MenuLua_Print},
+		{"save", MenuLua_Save},
+		{"reload", MenuLua_Reload},
+		{"status", MenuLua_Status},
 		{NULL, NULL}};
 	static const char *removed[] = {"dofile", "loadfile", "require", NULL};
 	const luaL_Reg *library;
@@ -356,14 +388,20 @@ MenuLua_PushPage(const char *page)
 
 /* optech2: runs menus/<page>.lua in a fresh environment; false if there is none or it failed */
 qboolean
-MenuLua_LoadPage(const char *page)
+MenuLua_LoadPage(const char *page, const char *script)
 {
 	char file_name[MAX_QPATH];
 	char chunk_name[MAX_QPATH + 1];
 	char *text;
 	int length;
 
-	Com_sprintf(file_name, sizeof(file_name), "menus/%s.lua", page);
+	/* optech2: "script" names another page's script file (pages sharing one) */
+	if (!script || !script[0] || strchr(script, '/') || strchr(script, '\\') || strstr(script, ".."))
+	{
+		script = page;
+	}
+
+	Com_sprintf(file_name, sizeof(file_name), "menus/%s.lua", script);
 	length = FS_LoadFile(file_name, (void **)&text);
 
 	if (length <= 0 || !text)
@@ -525,6 +563,10 @@ MenuLua_List(const char *page, const char *function, menulua_entry_f add_entry, 
 		MenuLua_EntryText("alttext", entry.alttext, sizeof(entry.alttext));
 		MenuLua_EntryText("status", entry.status, sizeof(entry.status));
 		MenuLua_EntryText("command", entry.command, sizeof(entry.command));
+		MenuLua_EntryText("id", entry.id, sizeof(entry.id));
+		MenuLua_RawField(-1, "disabled");
+		entry.disabled = lua_toboolean(menulua_state, -1);
+		lua_pop(menulua_state, 1);
 
 		/* optech2: an action function is kept in the page's __menu_actions by number */
 		MenuLua_RawField(-1, "action");
@@ -585,6 +627,25 @@ MenuLua_CallAction(const char *page, int action)
 
 	MenuLua_PCall(0, "a list entry's action");
 	lua_pop(menulua_state, 1);
+}
+
+/* optech2: the page's keys function, fn(key, id): true when it used the key */
+qboolean
+MenuLua_Key(const char *page, const char *function, const char *key, const char *id)
+{
+	qboolean used;
+
+	if (!MenuLua_PushFunction(page, function))
+	{
+		return false;
+	}
+
+	lua_pushstring(menulua_state, key);
+	lua_pushstring(menulua_state, id);
+	MenuLua_PCall(2, function);
+	used = lua_toboolean(menulua_state, -1);
+	lua_pop(menulua_state, 1);
+	return used;
 }
 
 void

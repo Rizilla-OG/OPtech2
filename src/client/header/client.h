@@ -670,6 +670,8 @@ int M_ModCount(void); /* optech2 */
 const char *M_ModName(int index); /* optech2 */
 qboolean DataMenu_Exists(const char *name); /* optech2 */
 qboolean DataMenu_IsOpen(const char *name); /* optech2 */
+void DataMenu_SetStatus(const char *text); /* optech2 */
+qboolean M_SaveSlot(const char *slot, char *comment, size_t size); /* optech2: menu/menu.c */
 void Menu_MouseMove(float dx, float dy); /* optech2: the menu pointer (menu/menustyle.c) */
 qboolean DataMenu_Styled(void); /* optech2: the re-release menu look is on */
 
@@ -681,15 +683,18 @@ typedef struct
 	char status[128];
 	char command[256];
 	int action; /* optech2: its action function's number in the page, 0 = none */
+	char id[64]; /* optech2: handed to the page's keys function while the entry is selected */
+	qboolean disabled; /* optech2: shown, but enter does nothing */
 } menulua_entry_t;
 
 typedef qboolean (*menulua_entry_f)(const menulua_entry_t *entry, void *context);
 
-qboolean MenuLua_LoadPage(const char *page); /* optech2 */
+qboolean MenuLua_LoadPage(const char *page, const char *script); /* optech2 */
 void MenuLua_Call(const char *page, const char *function); /* optech2 */
 qboolean MenuLua_Condition(const char *page, const char *function); /* optech2 */
 int MenuLua_List(const char *page, const char *function, menulua_entry_f add_entry, void *context); /* optech2 */
 void MenuLua_CallAction(const char *page, int action); /* optech2 */
+qboolean MenuLua_Key(const char *page, const char *function, const char *key, const char *id); /* optech2 */
 void MenuLua_Shutdown(void); /* optech2 */
 void M_Free(void);
 void M_Keydown(int key);
