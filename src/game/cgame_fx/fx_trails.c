@@ -1174,3 +1174,42 @@ FX_EntityTrails(optech2_fx_entity_t *info)
 	info->fly_stoptime = cent->fly_stoptime;
 	return true;
 }
+
+/* optech2: the re-release's hologram (EF_HOLOGRAM): a sphere of green
+   points turning around the model, as the engine's CL_HologramParticles */
+void
+CL_HologramParticles(const vec3_t org, float radius)
+{
+	vec3_t axis[3], dir;
+	float ltime;
+	int i;
+
+	ltime = cl.time * 0.03f;
+	VectorSet(dir, ltime, ltime, 0);
+	AngleVectors(dir, axis[0], axis[1], axis[2]);
+	VectorInverse(axis[1]);
+
+	for (i = 0; i < NUMVERTEXNORMALS; i++)
+	{
+		cparticle_t *p = CL_AllocParticle();
+
+		if (!p)
+		{
+			return;
+		}
+
+		p->time = cl.time;
+		p->color = 0xff00ff00; /* classic 0xd0 palette index */
+
+		dir[0] = DotProduct(bytedirs[i], axis[0]);
+		dir[1] = DotProduct(bytedirs[i], axis[1]);
+		dir[2] = DotProduct(bytedirs[i], axis[2]);
+
+		VectorMA(org, radius, dir, p->org);
+		VectorClear(p->vel);
+		VectorClear(p->accel);
+
+		p->alpha = 0.6f;
+		p->alphavel = INSTANT_PARTICLE;
+	}
+}

@@ -416,6 +416,7 @@ set(Game-Source
 	${GAME_SRC_DIR}/lua/lzio.c
 	${GAME_SRC_DIR}/cgame_fx/fx_muzzleflash.c
 	${GAME_SRC_DIR}/cgame_fx/fx_trails.c
+	${GAME_SRC_DIR}/cgame_fx/fx_entities.c
 	${GAME_SRC_DIR}/cgame_fx/fx_events.c
 	${GAME_SRC_DIR}/cgame_fx/fx_effects.c
 	${GAME_SRC_DIR}/cgame_fx/fx_tempentities.c

@@ -41,6 +41,7 @@ typedef char cg_stats_fit[(MAX_XSTATS >= CG_MAX_STATS) ? 1 : -1];
 #define CGAME_TAG_OFFSET 1000
 
 static cvar_t *cl_cgame; /* library to load instead of the game folder's game library */
+static cvar_t *cl_cgame_entities; /* optech2: 0 = the engine draws entities, not the game library (A/B) */
 static cvar_t *cl_hud_safezone; /* optech2: share of the screen the HUD keeps clear at its edges */
 static void *cgame_library;
 static cgame_export_t *cgame;
@@ -712,6 +713,88 @@ FX_CvarValue(const char *name)
 {
 	return Cvar_VariableValue(name);
 }
+/* optech2: version 7, for the game library drawing entities */
+static struct model_s *
+FX_ModelForIndex(int index)
+{
+	return ((index > 0) && (index < MAX_MODELS)) ? cl.model_draw[index] : NULL;
+}
+
+static const char *
+FX_ModelName(int index)
+{
+	return ((index > 0) && (index < MAX_MODELS)) ? cl.configstrings[CS_MODELS + index] : "";
+}
+
+static qboolean
+FX_ModelBounds(const char *name, vec3_t mins, vec3_t maxs)
+{
+	return Mod_GetModelInfo(name, NULL, mins, maxs) != NULL;
+}
+
+/* a player's model and skin, as CL_AddPacketEntities picks them */
+static void
+FX_PlayerModel(int skinnum, qboolean disguise, struct model_s **model, struct image_s **skin)
+{
+	static const char *const models[] = {"players/male", "players/female", "players/cyborg"};
+	const clientinfo_t *ci = &cl.clientinfo[skinnum & 0xff];
+	int i;
+
+	*skin = ci->skin;
+	*model = ci->model;
+
+	if (!*skin || !*model)
+	{
+		*skin = cl.baseclientinfo.skin;
+		*model = cl.baseclientinfo.model;
+	}
+
+	if (!disguise || !*skin)
+	{
+		return;
+	}
+
+	/* the skin pointer starts with its name (image_t) */
+	for (i = 0; i < 3; i++)
+	{
+		if (!strncmp((const char *)*skin, models[i], strlen(models[i])))
+		{
+			*skin = R_RegisterSkin(va("%s/disguise.pcx", models[i]));
+			*model = R_RegisterModel(va("%s/tris.md2", models[i]));
+			return;
+		}
+	}
+}
+
+/* a player's weapon model (view weapon models, cl_vwep) */
+static struct model_s *
+FX_PlayerWeaponModel(int skinnum)
+{
+	const clientinfo_t *ci = &cl.clientinfo[skinnum & 0xff];
+	int i = skinnum >> 8; /* 0 is the default weapon model */
+	struct model_s *model;
+
+	if (!cl_vwep->value || (i < 0) || (i > MAX_CLIENTWEAPONMODELS - 1))
+	{
+		i = 0;
+	}
+
+	model = ci->weaponmodel[i];
+
+	if (!model && (i != 0))
+	{
+		model = ci->weaponmodel[0];
+	}
+
+	return model ? model : cl.baseclientinfo.weaponmodel[0];
+}
+
+static const char *
+FX_CvarString(const char *name)
+{
+	return Cvar_VariableString(name);
+}
+
 static unsigned
 FX_PaletteColor(byte index)
 {
@@ -775,7 +858,7 @@ FX_Time(void)
 static int
 FX_Rand(void)
 {
-	return randk() & 0x7fff;
+	return randk(); /* optech2: the engine's generator, full range, as the engine's effects used it */
 }
 
 static optech2_particle_t *
@@ -832,7 +915,9 @@ static const optech2_fx_import_t fx_import = {
 	FX_Trace,
 	FX_GetState, FX_EntityState, FX_CvarValue, FX_PaletteColor,
 	R_RegisterModel, FX_RegisterPic, FX_AddEntity, FX_AddLight,
-	CL_MaterialFootstepSfx};
+	CL_MaterialFootstepSfx,
+	FX_ModelForIndex, FX_ModelName, FX_ModelBounds, FX_PlayerModel, FX_PlayerWeaponModel,
+	FX_CvarString};
 
 /* the game library's effects, if it has them */
 static void
@@ -952,6 +1037,52 @@ CL_CGame_EntityTrails(centity_t *cent, const entity_xstate_t *s1, unsigned int e
 	return true;
 }
 
+/* optech2: an entity's models: true when the game library drew them.
+   ent holds the interpolated origin, oldorigin, angles, oldframe and
+   backlerp; on true, ent->origin is where it was drawn and *trails says
+   whether its trail is still to be added */
+qboolean
+CL_CGame_EntityModels(const entity_xstate_t *s1, unsigned int effects, entity_t *ent, qboolean *trails)
+{
+	optech2_fx_entity_model_t info;
+
+	if (!cgame_fx || !cgame_fx->AddEntityModels || (cl_cgame_entities && !cl_cgame_entities->value))
+	{
+		return false;
+	}
+
+	info.number = s1->number;
+	info.modelindex = s1->modelindex;
+	info.modelindex2 = s1->modelindex2;
+	info.modelindex3 = s1->modelindex3;
+	info.modelindex4 = s1->modelindex4;
+	info.skinnum = s1->skinnum;
+	info.frame = s1->frame;
+	info.effects = effects;
+	info.rr_effects = s1->rr_effects;
+	info.renderfx = s1->renderfx;
+	info.alpha = s1->rr_alpha;
+	VectorCopy(s1->scale, info.scale);
+	info.rr_mesh = s1->rr_mesh;
+	VectorCopy(s1->angles, info.state_angles);
+	info.oldframe = ent->oldframe;
+	info.backlerp = ent->backlerp;
+	VectorCopy(ent->origin, info.origin);
+	VectorCopy(ent->oldorigin, info.oldorigin);
+	VectorCopy(ent->angles, info.angles);
+	info.trails = false;
+
+	if (!cgame_fx->AddEntityModels(&info))
+	{
+		return false;
+	}
+
+	VectorCopy(info.origin, ent->origin);
+	VectorCopy(info.angles, ent->angles);
+	*trails = info.trails;
+	return true;
+}
+
 /* an entity event: true when the game library played it */
 qboolean
 CL_CGame_EntityEvent(const entity_xstate_t *ent)
@@ -1019,6 +1150,7 @@ CL_CGame_Load(void)
 	if (!cl_cgame)
 	{
 		cl_cgame = Cvar_Get("cl_cgame", "", 0);
+		cl_cgame_entities = Cvar_Get("cl_cgame_entities", "1", 0);
 		cl_hud_safezone = Cvar_Get("cl_hud_safezone", "0.02", CVAR_ARCHIVE);
 	}
 

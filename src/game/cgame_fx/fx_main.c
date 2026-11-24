@@ -141,4 +141,5 @@ const optech2_fx_ext_t fx_extension = {
 	FX_RegisterMedia,
 	FX_AddFrameEffects,
 	FX_ClearEffects,
-	FX_ClearModels};
+	FX_ClearModels,
+	FX_AddEntityModels};

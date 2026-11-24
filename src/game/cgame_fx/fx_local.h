@@ -98,6 +98,21 @@ extern fx_client_state_t fx_cl;
 #define cl fx_cl
 
 void FX_RefreshState(void);
+
+/* optech2: effects draw their random numbers from the engine (fxi->Rand),
+   as they did in the engine. The game library's own randk() belongs to
+   the server game: effects using it changed the game's random numbers
+   with every particle drawn (a weapon's idle fidget moved when a laser
+   was in view) */
+#undef randk
+#undef frandk
+#undef crandk
+#define randk() (fxi->Rand())
+#define frandk() ((float)((fxi->Rand() & 32767) * (1.0 / 32767)))
+#define crandk() ((float)((fxi->Rand() & 32767) * (2.0 / 32767) - 1))
+struct model_s *CL_PowerScreenModel(void); /* fx_tempentities.c */
+void CL_HologramParticles(const vec3_t org, float radius); /* fx_trails.c */
+qboolean FX_AddEntityModels(optech2_fx_entity_model_t *info); /* fx_entities.c */
 void CL_NewFrameTEntSounds(void); /* optech2 */
 
 /* messages: the engine's current temp entity message */

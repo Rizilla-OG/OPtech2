@@ -1282,6 +1282,7 @@ GAME_OBJS_ = \
 	src/game/lua/lzio.o \
 	src/game/cgame_fx/fx_muzzleflash.o \
 	src/game/cgame_fx/fx_trails.o \
+	src/game/cgame_fx/fx_entities.o \
 	src/game/cgame_fx/fx_events.o \
 	src/game/cgame_fx/fx_effects.o \
 	src/game/cgame_fx/fx_tempentities.o \

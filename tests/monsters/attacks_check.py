@@ -51,10 +51,11 @@ GUNNER_FLASHES = set(range(45, 57))            # MZ2_GUNNER_MACHINEGUN_1-8, GREN
 GUNCMDR_FLASHES = set(range(240, 251))         # MZ2_GUNCMDR_CHAINGUN_1 - GRENADE_CROUCH_3
 
 
-def run_monster(data_name, monster):
-    """Spawns one monster against the player; returns ({flash: shots}, log)."""
+def run_monster(data_name, monster, spawn_time=2300, tag=""):
+    """Spawns one monster against the player at spawn_time (ms); returns ({flash: shots}, log).
+    A different spawn_time meets a different point of the game's random sequence."""
     script = ["set g_damagelog 1", "map optech2_cover", 'delay 2000 "god"', f'delay 2100 "teleport {PLAYER_SPOT}"',
-              f'delay 2300 "cmd spawnentity {monster} {MONSTER_SPOT}"', 'delay 22000 "quit"']
+              f'delay {spawn_time} "cmd spawnentity {monster} {MONSTER_SPOT}"', f'delay {spawn_time + 19700} "quit"']
     with tempfile.TemporaryDirectory(prefix="opentech2-attacks-") as home:
         user_dir = Path(home) / ".opentech2" / "baseq2"
         (user_dir / "maps").mkdir(parents=True)
@@ -102,10 +103,18 @@ def main():
                f"{data_name}: infantry fires ({sum(flashes.values())} shots), run-and-shoot shots {run_shots}"
                f" ({'expected' if rerelease else 'none expected'})")
 
-        flashes, log = run_monster(data_name, "monster_gunner")
-        logs.append(log)
-        stock = sum(count for flash, count in flashes.items() if flash in GUNNER_GRENADE_FLASHES)
-        second = sum(count for flash, count in flashes.items() if flash in GUNNER_GRENADE2_FLASHES)
+        # each grenade volley picks its animation once (a coin flip) and the gunner throws about three
+        # volleys in a run, so one run misses the second animation 1 time in 8 on the fixed random
+        # sequence: on the re-release data, fights starting at other moments (other random numbers)
+        # until one shows it, four at most
+        stock = second = 0
+        for spawn_time in ((2300, 2700, 3100, 3500) if rerelease else (2300,)):
+            flashes, log = run_monster(data_name, "monster_gunner", spawn_time)
+            logs.append(log)
+            stock += sum(count for flash, count in flashes.items() if flash in GUNNER_GRENADE_FLASHES)
+            second += sum(count for flash, count in flashes.items() if flash in GUNNER_GRENADE2_FLASHES)
+            if second:
+                break
         report((stock + second) > 0 and (second > 0) == rerelease,
                f"{data_name}: gunner grenades {stock} stock, {second} second animation"
                f" ({'second expected' if rerelease else 'stock only expected'})")

@@ -73,10 +73,10 @@ something unfinished; remove an entry in the commit that fixes it.
 
 ## Effects (M2 step 4)
 
-- Temp entities, muzzle flashes, entity trails and events run in the game
-  library; still in the engine: how an entity's own model is drawn (powerup shells, translucency, rotation,
-  linked weapon models) - the latter means the module drawing entities,
-  Quake 3 style.
+- Done: temp entities, muzzle flashes, trails, events and entity drawing
+  (AddEntityModels, 2026-11-23) all run in the game library. Not yet: the
+  view weapon (CL_AddViewWeapon) and player shadows (RF_CASTSHADOW) are
+  still drawn by the engine.
 - `fxtest` only sends position + direction; stock types with other data
   can't be sent with it.
 

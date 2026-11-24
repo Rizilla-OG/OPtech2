@@ -73,6 +73,7 @@ CHECKS = [
     Check("screenshots-vk", "screenshots/screenshot_check.py", kind="window", arguments=("--renderer", "vk")),
     Check("cgame", "cgame/cgame_check.py", data="own"),
     Check("crash-report", "crash/crash_check.py", data="own"),
+    Check("cgame-entities", "cgame/entities_check.py", data="own"),
     Check("pmove", "pmove/pmove_check.py", slow=True),
     Check("lift", "pmove/lift_check.py", needs_map=("optech2_lift.bsp", "maps/make_lift_map.py")),
     Check("tickrate", "tickrate/tick_check.py"),

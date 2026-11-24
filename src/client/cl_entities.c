@@ -377,6 +377,34 @@ CL_AddPacketEntities(const frame_t *frame)
 			}
 		}
 
+		/* optech2: the game library draws the entity's models when it can
+		   (shells, translucency, rotation, linked models); it gets the
+		   interpolated origin and angles and the state as sent */
+		{
+			qboolean trails;
+			int i;
+
+			for (i = 0; i < 3; i++)
+			{
+				ent.angles[i] = LerpAngle(cent->prev.angles[i], cent->current.angles[i], moveLerp);
+			}
+
+			if (CL_CGame_EntityModels(s1, s1->effects, &ent, &trails))
+			{
+				if (trails)
+				{
+					if (!CL_CGame_EntityTrails(cent, s1, effects, &ent))
+					{
+						CL_EntityTrails(cent, s1, effects, &ent);
+					}
+
+					VectorCopy(ent.origin, cent->lerp_origin);
+				}
+
+				continue;
+			}
+		}
+
 		if (effects & EF_BOB)
 		{
 			ent.origin[2] += autobob;

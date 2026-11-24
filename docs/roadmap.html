@@ -28,7 +28,7 @@
     <h1>Roadmap</h1>
     <p class="lead">Six milestones, in order. Each builds on the data formats the one before it settles.
       M0 and M1 are done; M2, the modding milestone, is close to half way through.</p>
-    <p class="updated">Updated 2026-11-21</p>
+    <p class="updated">Updated 2026-11-23</p>
     <div class="legend">
       <span><i class="mark done"></i>Done</span>
       <span><i class="mark part"></i>Partly done</span>
@@ -64,11 +64,11 @@
         <ul class="tasks">
           <li class="done">Client game API (the 2022 re-release cgame API)</li>
           <li class="done">HUD in the module (id's re-release HUD code)</li>
-          <li class="done">Effects in the module: explosions, beams, muzzle flashes, trails, footsteps</li>
+          <li class="done">Effects in the module: explosions, beams, muzzle flashes, trails, footsteps, and how every entity is drawn (powerup shells, translucency, rotating items, linked weapons, flares)</li>
           <li>Menus in the module or a data-driven UI</li>
           <li class="done">Match the re-release APIs so re-release mods load unchanged: client and server game APIs, with the re-release's features (compass, wheels, co-op lives, end-of-unit screen, debug drawing, monster paths); bots come later</li>
         </ul>
-        <p class="note">Still drawn by the engine: an entity's own model (powerup shells, translucency, linked weapons).</p>
+        <p class="note">Still drawn by the engine: the view weapon and player shadows.</p>
       </div>
 
       <div class="task-group">
@@ -101,7 +101,7 @@
           <li class="done">Monster navigation (Recast / Detour): a navigation mesh built for every map in three monster sizes, with ledge drops; walking monsters follow it, ride lifts, and use the re-release's jump, leap, ladder and teleporter links</li>
           <li>Animation system on IQM: blending, layers, events</li>
           <li>Physics: Jolt for rigid bodies, ragdolls and debris</li>
-          <li>Scalable Unicode text; HUD and menus that scale</li>
+          <li class="part">Scalable Unicode text; HUD and menus that scale (TrueType console and menu text done)</li>
           <li>Achievements defined in data files</li>
         </ul>
       </div>
@@ -114,6 +114,17 @@
           <li>Undo and redo</li>
           <li>Entity panel with live respawn</li>
           <li>Entity override files loaded at map start</li>
+        </ul>
+      </div>
+
+      <div class="task-group">
+        <h3>Also done (not in the plan)</h3>
+        <ul class="tasks">
+          <li class="done">Re-release monster AI: clear-shot checks before firing, active dodging, the re-release's per-monster tweaks, and the Gunner Commander</li>
+          <li class="done">Runs on the classic or the re-release game data, whichever it is pointed at; re-release-only models and sounds are detected and fall back to the classic ones</li>
+          <li class="done">The re-release's episodes in the Game menu: Quake II, The Reckoning, Ground Zero, Call of the Machine, Quake II 64</li>
+          <li class="done">Vulkan renderer built and shipped with every release</li>
+          <li class="done">Automated checks: over forty game checks, most of them headless, run on both data sets</li>
         </ul>
       </div>
     </div>
@@ -136,6 +147,9 @@
         <span class="id">M3</span><h3>Multi-threaded renderer</h3><span class="status">PLANNED · 0 / 8</span>
         <p>Self-contained scene description, frontend and backend split, everything through the command list,
           OpenGL on its own thread, a job system, a single-thread switch for debugging.</p>
+        <p class="note">Known issue for M3: the Vulkan renderer is slow on big maps (16 fps on Call of the Machine's
+          mgu2m1, where OpenGL is fast). It is bound by the CPU, rebuilding the world's geometry every frame; M3 keeps
+          that geometry on the GPU.</p>
       </li>
       <li class="milestone later">
         <span class="id">M4</span><h3>Lighting and shadows</h3><span class="status">PLANNED · 0 / 24</span>
@@ -143,8 +157,8 @@
           fitted, shadow maps, a light editor, decals, lit particles, post-processing.</p>
       </li>
       <li class="milestone later">
-        <span class="id">M5</span><h3>Supporting systems</h3><span class="status">PLANNED · 0 / 12</span>
-        <p>Sound occlusion and reverb, large outdoor spaces, hot reload, crash reports, a Blender pipeline,
+        <span class="id">M5</span><h3>Supporting systems</h3><span class="status">PLANNED · 1 / 12</span>
+        <p>Sound occlusion and reverb, large outdoor spaces, hot reload, crash reports (done early: a report with a backtrace on every crash), a Blender pipeline,
           TrenchBroom documentation, more editor panels.</p>
       </li>
     </ol>

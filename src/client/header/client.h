@@ -526,6 +526,7 @@ qboolean CL_CGame_ParseTempEntity(int type); /* optech2 */
 qboolean CL_CGame_ParseMuzzleFlash(int kind); /* optech2 */
 qboolean CL_CGame_EntityEvent(const entity_xstate_t *ent); /* optech2 */
 qboolean CL_CGame_EntityTrails(centity_t *cent, const entity_xstate_t *s1, unsigned int effects, entity_t *ent); /* optech2 */
+qboolean CL_CGame_EntityModels(const entity_xstate_t *s1, unsigned int effects, entity_t *ent, qboolean *trails); /* optech2 */
 void CL_CGame_RegisterEffects(void); /* optech2 */
 void CL_CGame_NewLevel(void); /* optech2 */
 void CL_CGame_AddEffects(void); /* optech2 */

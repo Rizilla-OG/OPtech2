@@ -51,7 +51,7 @@ typedef struct
  * ones; types it doesn't handle get the engine's built-in effects.
  */
 #define OPTECH2_EXT_FX "optech2_fx"
-#define OPTECH2_FX_EXT_VERSION 6 /* optech2: 6 adds ClearModels */
+#define OPTECH2_FX_EXT_VERSION 7 /* optech2: 6 adds ClearModels, 7 AddEntityModels */
 
 struct sfx_s;
 struct model_s;
@@ -117,6 +117,30 @@ typedef struct
 	int fly_stoptime; /* in/out: EF_FLIES */
 } optech2_fx_entity_t;
 
+/* an entity from the server, to draw this frame (AddEntityModels). The
+   engine has interpolated it already: origin, oldorigin, angles, oldframe
+   and backlerp are ready to draw; the rest is its state as sent. */
+typedef struct
+{
+	int number;
+	int modelindex, modelindex2, modelindex3, modelindex4;
+	int skinnum;
+	int frame;
+	unsigned int effects; /* EF_* */
+	unsigned int rr_effects; /* the re-release's EF_* (flashlight, hologram) */
+	int renderfx; /* RF_* */
+	float alpha; /* the re-release's s.alpha, 0 = not set */
+	vec3_t scale;
+	unsigned rr_mesh;
+	vec3_t state_angles; /* its angles as sent this frame (spinning lights) */
+	int oldframe;
+	float backlerp;
+	vec3_t origin; /* in/out: where it is drawn; trails and sounds follow */
+	vec3_t oldorigin;
+	vec3_t angles; /* interpolated */
+	qboolean trails; /* out: add its trail and flying light afterwards */
+} optech2_fx_entity_model_t;
+
 /* the client state effects need, for the frame being drawn */
 typedef struct
 {
@@ -143,9 +167,9 @@ typedef struct
 	void (*ReadPos)(vec3_t pos); /* a position as the server wrote it (gi.WritePosition) */
 	void (*ReadDir)(vec3_t dir); /* a direction (gi.WriteDir) */
 
-	/* client time in msec, and a random number 0..0x7fff */
+	/* client time in msec, and a random number (0..INT_MAX) */
 	int (*Time)(void);
-	int (*Rand)(void);
+	int (*Rand)(void); /* the engine's randk(), not the game's: effects must not move the game's random numbers */
 
 	/* effects. AllocParticle is NULL when the particle list is full;
 	   AllocDlight never is (it reuses the oldest light) */
@@ -174,6 +198,18 @@ typedef struct
 	/* a random step sound for this surface material ("clank", "ladder"...)
 	   from player/steps/; NULL when the material has none */
 	struct sfx_s *(*FootstepSfx)(const char *material);
+
+	/* version 7: drawing entities (AddEntityModels) */
+	struct model_s *(*ModelForIndex)(int index); /* the model of configstring CS_MODELS + index */
+	const char *(*ModelName)(int index); /* its name, "" if none */
+	qboolean (*ModelBounds)(const char *name, vec3_t mins, vec3_t maxs);
+	/* a player's model and skin from its skinnum (client number in the low
+	   byte); disguise: the spy skin of its model, if it has one */
+	void (*PlayerModel)(int skinnum, qboolean disguise, struct model_s **model, struct image_s **skin);
+	/* a player's weapon model: client number in the low byte of skinnum,
+	   weapon in the next (cl_vwep off or unknown: the default one) */
+	struct model_s *(*PlayerWeaponModel)(int skinnum);
+	const char *(*CvarString)(const char *name);
 } optech2_fx_import_t;
 
 typedef struct
@@ -215,6 +251,11 @@ typedef struct
 	/* the renderer is going away (vid_restart): drop every model pointer
 	   effects hold; they are registered again with RegisterMedia */
 	void (*ClearModels)(void);
+
+	/* version 7: draw an entity's models (and shells, linked models, its
+	   own lights) and return true; set ent->trails to have its trail
+	   added after. Return false to leave the entity to the engine. */
+	qboolean (*AddEntityModels)(optech2_fx_entity_model_t *ent);
 } optech2_fx_ext_t;
 
 /*

@@ -78,14 +78,15 @@
         <span class="id">M2</span><h3>Modding architecture</h3><span class="status">IN PROGRESS</span>
         <p>Client game module, shared movement code, data-driven definitions, mod stacking, monster navigation,
           animation system and an in-game editor for entities and lights. Done so far: the client game module
-          with its HUD and effects, player movement as game code, stacked mod folders, Lua scripts, item, weapon and
+          with its HUD, effects and entity drawing, player movement as game code, stacked mod folders, Lua scripts, item, weapon and
           monster definitions, monster navigation, re-release game libraries (id's own and mods built on it) with
           their movement, HUD, kill feed and weapon wheels, a modern console, and the re-release's game features
-          (compass, co-op lives, end-of-unit screen) in the stock game.</p>
+          (compass, co-op lives, end-of-unit screen) in the stock game, the re-release's monster AI and the Gunner
+          Commander, and play on either the classic or the re-release game data.</p>
       </li>
       <li class="milestone later">
         <span class="id">M3</span><h3>Multi-threaded renderer</h3><span class="status">PLANNED</span>
-        <p>Frontend / backend split with OpenGL on its own thread, following the Doom 3 BFG design.</p>
+        <p>Frontend / backend split with OpenGL on its own thread, following the Doom 3 BFG design. Also fixes the Vulkan renderer's speed on big maps.</p>
       </li>
       <li class="milestone later">
         <span class="id">M4</span><h3>Lighting and shadows</h3><span class="status">PLANNED</span>
@@ -94,10 +95,51 @@
       </li>
       <li class="milestone later">
         <span class="id">M5</span><h3>Supporting systems</h3><span class="status">PLANNED</span>
-        <p>Sound occlusion and reverb, large outdoor spaces, hot reload, crash reports, a Blender asset pipeline.</p>
+        <p>Sound occlusion and reverb, large outdoor spaces, hot reload, a Blender asset pipeline. Crash reports are done already.</p>
       </li>
     </ol>
     <p class="roadmap-link"><a href="roadmap.html">Full roadmap, task by task &rarr;</a></p>
+  </div>
+</section>
+
+<section id="next">
+  <div class="wrap">
+    <h2>Coming in M2 preview 5</h2>
+    <p class="lead">In the main branch now, in the next download: the re-release's monster AI, the Gunner Commander,
+      crash reports, and every entity drawn by the game library.</p>
+    <div class="features">
+      <div class="feature">
+        <h3>Monsters that fight smarter</h3>
+        <p>From the re-release: monsters check their shot is clear before firing, so a soldier behind cover moves
+          instead of shooting the wall, and they dodge rockets, grenades and blaster bolts in flight, ducking or
+          stepping aside. Each monster gets the re-release's own tweaks: soldiers cock and refire, gunners aim
+          their grenades, infantry shoot on the run, Tanks fire blind, Stalkers drop from the ceiling.</p>
+      </div>
+      <div class="feature">
+        <h3>The Gunner Commander</h3>
+        <p>Call of the Machine's big gunner, with the re-release game data: a flechette chaingun it fires on the
+          run and while dodging, mortar and grenade volleys aimed to land, a crouching counter that slams the
+          floor, a kick for anyone too close, and a power shield. On the classic data it stays a gunner.</p>
+      </div>
+      <div class="feature">
+        <h3>Crash reports</h3>
+        <p>A fatal error or a crash writes a report to <code>crashes/</code> in the user folder: the reason, a
+          backtrace, the map and settings, and the last console lines, ready to attach to a bug report. Fatal
+          errors also reach the console log now.</p>
+      </div>
+      <div class="feature">
+        <h3>Entities from the game library</h3>
+        <p>How every entity is drawn now comes from the game library too: powerup shells, see-through models,
+          rotating items, linked weapon models and flares. A new check draws the same scenes both ways and
+          compares them pixel for pixel.</p>
+      </div>
+      <div class="feature">
+        <h3>Fixes from playing</h3>
+        <p>The screen no longer turns orange or white near the re-release's lens flares (OpenGL 3 and 4); saves
+          take milliseconds instead of seconds; the software renderer draws Call of the Machine's big maps; level
+          changes find their spawn points on maps where two sit close together.</p>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -553,7 +595,15 @@ cmake --workflow --preset default</code></pre>
           <tr><td><code>+set fs_mods hires,testmod</code></td><td>Stack mod folders on top of the game, lowest
             first: files in a later folder replace the same files in an earlier one, and <code>+set game</code> goes on
             top of them all. Saves and settings still go to the game folder. Players joining a server get its list.</td></tr>
-          <tr><td><code>cl_shownav 1</code></td><td>Draws the navigation mesh around you in single player
+          <tr><td><code>viewpos</code>, then<br><code>cmd spawnentity monster_guncmdr x y z</code></td><td>Spawns any
+monster or item at a spot (single player; in co-op and deathmatch it's a cheat). <code>viewpos</code> prints where you
+stand: add some distance to it. Try the Gunner Commander with the re-release data: it dodges your rockets mid-burst
+and kicks you if you get close.</td></tr>
+<tr><td><code>g_monster_freeze 1</code></td><td>Every living monster stops where it is, mid-step, until you set
+it back to <code>0</code>. Handy for a close look or a screenshot; they still take damage and die.</td></tr>
+<tr><td><code>g_damagelog 1</code></td><td>Prints every hit in the console, every shot a monster fires
+and every dodge it makes: watch soldiers duck your rockets and refuse to fire into cover.</td></tr>
+<tr><td><code>cl_shownav 1</code></td><td>Draws the navigation mesh around you in single player
             (<code>2</code> and <code>3</code>: the meshes for medium and large monsters), with ledge drops as lines going
             down.</td></tr>
           <tr><td><code>g_monster_nav 3</code></td><td>Draws every monster's path as it follows it (single player).
@@ -573,11 +623,24 @@ cmake --workflow --preset default</code></pre>
             see the difference on any elevator.</td></tr>
           <tr><td><code>sv_tickrate 10</code> to <code>120</code></td><td>Server frames per second (default 60,
             stock Quake II 10). Takes effect on the next map.</td></tr>
-          <tr><td><code>+set game testmod</code></td><td>Plays the test mod (built from <code>mods/testmod</code>);
+          <tr><td><code>g_classic_balance 1</code></td><td>The 1997 numbers for weapons and monsters (railgun 150,
+Jorg 3000 health...) instead of the re-release's. Health changes on the next map.</td></tr>
+<tr><td><code>g_skip_cameras 1</code></td><td>Lets you skip any camera scene by pressing a button (attack, jump, use...).</td></tr>
+<tr><td><code>cl_wheel_slowtime 1</code></td><td>Keeps time running at full speed while a weapon or
+powerup wheel is open (default <code>0.1</code>: slow motion, single player).</td></tr>
+<tr><td><code>cl_hud_safezone 0</code></td><td>Moves the HUD right to the screen edges (default
+<code>0.02</code>: 2% margin, for TVs).</td></tr>
+<tr><td>Crash reports</td><td>If the game crashes, a report with the reason, a backtrace and the last
+console lines lands in <code>crashes/</code> in your user folder (<code>~/.local/share/OpenTech2</code>,
+<code>Documents/OpenTech2</code> on Windows). Attach it to a bug report. <code>crashtest segv</code>
+(with <code>developer 1</code>) makes one on purpose.</td></tr>
+<tr><td><code>+set game testmod</code></td><td>Plays the test mod (built from <code>mods/testmod</code>);
             <code>give test gun</code> (cheat) hands you its weapon.</td></tr>
           <tr><td><code>fxtest 200</code></td><td>Cheat, for modders: sends a temp entity of that type in front of
             you, to try a new effect from the game library.</td></tr>
-          <tr><td><code>cmd playerinfo</code></td><td>Cheat: prints game time, health, ammo and your position in
+          <tr><td><code>cl_cgame_entities 0</code></td><td>For modders: the engine draws the server's entities
+instead of the game library (shells, linked models, flares), to compare the two.</td></tr>
+<tr><td><code>cmd playerinfo</code></td><td>Cheat: prints game time, health, ammo and your position in
             one line; the automated checks use it.</td></tr>
         </tbody>
       </table>
