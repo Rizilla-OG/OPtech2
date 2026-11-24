@@ -962,6 +962,7 @@ D_SolidSurf(const entity_t *currententity, surf_t *s)
 		mipadjust = 0.01;
 	}
 	miplevel = D_MipLevelForScale(s->nearzi * scale_for_mip * mipadjust);
+	miplevel = D_SurfaceMipLevel(pface, miplevel); /* optech2: one the cache can hold */
 
 	// FIXME: make this passed in to D_CacheSurface
 	pcurrentcache = D_CacheSurface (currententity, pface, miplevel);

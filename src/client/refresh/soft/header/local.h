@@ -312,6 +312,8 @@ void TurbulentPow2(espan_t *pspan, float d_ziorigin, float d_zistepu, float d_zi
 void NonTurbulentPow2(espan_t *pspan, float d_ziorigin, float d_zistepu, float d_zistepv);
 
 surfcache_t *D_CacheSurface(const entity_t *currententity, msurface_t *surface, int miplevel);
+#define SURFCACHE_MAX_WIDTH 4096 /* optech2: widest surface cache block */
+int D_SurfaceMipLevel(const msurface_t *surface, int miplevel); /* optech2 */
 
 extern int	d_vrectx, d_vrecty, d_vrectright_particle, d_vrectbottom_particle;
 

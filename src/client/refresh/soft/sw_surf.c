@@ -282,6 +282,10 @@ R_InitCaches(void)
 		size *= 2;
 	}
 
+	/* optech2: 4x the 1997 size: re-release QBSP surfaces are big and a few
+	   MB more is nothing now (too small a cache drops them to coarser mips) */
+	size *= 4;
+
 	if (sw_surfcacheoverride->value > size)
 	{
 		size = sw_surfcacheoverride->value;
@@ -333,6 +337,30 @@ D_FlushCaches(void)
 }
 
 /*
+ * optech2: the mip level a surface is cached at: the one asked for, or a
+ * coarser one when that would be wider than a cache block may be or take
+ * more than a quarter of the cache (big re-release QBSP surfaces)
+ */
+int
+D_SurfaceMipLevel(const msurface_t *surface, int miplevel)
+{
+	while (miplevel < NUM_MIPS - 1)
+	{
+		int width = surface->extents[0] >> miplevel;
+		int height = surface->extents[1] >> miplevel;
+
+		if ((width <= SURFCACHE_MAX_WIDTH) && (width * height <= sc_size / 4))
+		{
+			break;
+		}
+
+		miplevel++;
+	}
+
+	return miplevel;
+}
+
+/*
 =================
 D_SCAlloc
 =================
@@ -342,13 +370,15 @@ D_SCAlloc(int width, int size)
 {
 	surfcache_t	*new;
 
-	if ((width < 0) || (width > 256))
+	/* optech2: big re-release surfaces go past the old 256 wide / 64 KB
+	   blocks; the cache size check below is the real limit */
+	if ((width < 0) || (width > SURFCACHE_MAX_WIDTH))
 	{
 		Com_Error(ERR_FATAL, "%s: bad cache width %d\n", __func__, width);
 		return NULL;
 	}
 
-	if ((size <= 0) || (size > 0x10000))
+	if (size <= 0)
 	{
 		Com_Error(ERR_FATAL, "%s: bad cache size %d\n", __func__, size);
 		return NULL;
@@ -509,6 +539,13 @@ D_CacheSurface(const entity_t *currententity, msurface_t *surface, int miplevel)
 
 	// rasterize the surface into the cache
 	R_DrawSurface(&r_drawsurf, blocklights, blocklight_max);
+
+	/* optech2: built without lights (the light buffers grow next frame):
+	   build it again then instead of keeping the garbage cached */
+	if (r_outoflights)
+	{
+		cache->dlight = 1;
+	}
 
 	return cache;
 }

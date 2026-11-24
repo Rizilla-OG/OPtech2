@@ -80,6 +80,7 @@ CHECKS = [
     Check("coop", "multiplayer/coop_check.py"),
     Check("network", "multiplayer/net_check.py", slow=True),
     Check("packet-split", "multiplayer/split_check.py"),
+    Check("big-maps", "maps/big_map_check.py", data="own"),
     Check("limits-map", "maps/limits_check.py", needs_map=("optech2_limits.bsp", "maps/make_limits_map.py")),
     Check("stress-map", "maps/stress_check.py", kind="window", slow=True,
           needs_map=("optech2_stress.bsp", "maps/make_stress_map.py")),

@@ -137,12 +137,6 @@ something unfinished; remove an entry in the commit that fixes it.
   geometry in static GPU buffers (as GL3) and only record draws per frame;
   profile first (perf on ref_vk at that spot). Fits M3 (renderer work).
 
-- Soft renderer: fatal "D_SCAlloc: bad cache width 304" on big re-release maps
-  (mgu3m3, mgu3m2 near from_m3a; 2026-11-23). Surface cache blocks are capped
-  at 256 pixels wide; re-release QBSP surfaces go wider. sw_mipcap 2 doesn't
-  help. Raise the cap (check blocklight / surface buffer sizes) or split wide
-  surfaces. Headless checks use soft, so these maps can't be tested headless.
-
 ## Builds and releases
 
 - TrueType console text looks blocky in GL4 at small window sizes (800x600, con_textscale 0.8); Vulkan draws it smoothly since 2026-11-22. Check the GL renderers' font sampling.
