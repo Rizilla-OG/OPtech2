@@ -82,7 +82,8 @@
           monster definitions, monster navigation, re-release game libraries (id's own and mods built on it) with
           their movement, HUD, kill feed and weapon wheels, a modern console, and the re-release's game features
           (compass, co-op lives, end-of-unit screen) in the stock game, the re-release's monster AI and the Gunner
-          Commander, and play on either the classic or the re-release game data.</p>
+          Commander, every menu as a data page mods can change, and play on either the classic or the re-release
+          game data.</p>
       </li>
       <li class="milestone later">
         <span class="id">M3</span><h3>Multi-threaded renderer</h3><span class="status">PLANNED</span>
@@ -99,6 +100,80 @@
       </li>
     </ol>
     <p class="roadmap-link"><a href="roadmap.html">Full roadmap, task by task &rarr;</a></p>
+  </div>
+</section>
+
+<section id="latest">
+  <div class="wrap">
+    <h2>New since M2 preview 5</h2>
+    <p class="lead">On <code>main</code> now, in the next preview: every menu as a data page, mods with their own
+      game library from the Mods menu, monsters that know how far they can drop, and Call of the Machine's
+      watching cameras. Screenshots at 2560&times;1440, OpenGL 3.</p>
+    <div class="features">
+      <div class="feature">
+        <h3>Every menu is a data page</h3>
+        <p>All the stock menus are text files a mod can change now: load and save (with pages and deleting),
+          the key and gamepad bindings, video, start and join server, player setup with its turning model, mods,
+          level select, credits and quit. They look like the old ones; <code>menu_builtin &lt;name&gt;</code> still
+          opens the C version. See mods/MENUS.md.</p>
+      </div>
+      <div class="feature">
+        <h3>More settings in the menus</h3>
+        <p>A new Options &rarr; game and HUD page: FPS counter, speed meter, performance overlay, HUD safe zone,
+          crosshair size, message time, console text size, gun hand, view kick, footsteps and more. The video page
+          gains a frame cap and dynamic lights, and multisampling offers only what the graphics card can do.</p>
+      </div>
+      <div class="feature">
+        <h3>Mods from the Mods menu</h3>
+        <p>A folder with a game library is a mod even without a pak, so q2arpg starts from the Mods menu with
+          its own game code, no launcher script needed. Mods with a single episode, like the re-release's
+          Quake II PSX, start that episode from New Game.</p>
+      </div>
+      <div class="feature">
+        <h3>Monsters know their limits</h3>
+        <p>Each monster drops off ledges only as far as it should: most up to 256 units, Gladiators and Medics 192,
+          Tanks 128, the Supertank 64, bosses never. Monster definitions take <code>drop_height</code>. Re-release
+          games' monsters now path on the mesh for their own size too.</p>
+      </div>
+      <div class="feature">
+        <h3>Cameras that watch you</h3>
+        <p>The hanging cameras in Call of the Machine's hub turn to follow you while you are in view, fire
+          their map events the first time they see you, and turn back when you leave.</p>
+      </div>
+      <div class="feature">
+        <h3>Fixes from playing</h3>
+        <p>Bloom no longer hides the menu panels (OpenGL 3 and 4); the CTF HUD shows the right team, flag and
+          tech; a single player game after CTF is no longer deathmatch; level select starts the picked level on the
+          re-release's data; a save of a missing map is refused instead of a fatal error.</p>
+      </div>
+    </div>
+    <div class="gallery" style="margin-top:16px">
+      <figure class="wide">
+        <a href="assets/img/menus-gameoptions.jpg"><img src="assets/img/menus-gameoptions.jpg" width="2560" height="1440" loading="lazy"
+          alt="A menu page with HUD, view and game settings: show FPS, HUD safe zone, gun hand, footsteps"></a>
+        <figcaption>Options &rarr; game and HUD: settings the stock menus never had, as a data page.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/menus-loadgame.jpg"><img src="assets/img/menus-loadgame.jpg" width="2560" height="1440" loading="lazy"
+          alt="The load game page listing save slots, with pages 1 to 4 at the bottom"></a>
+        <figcaption>Load game as a data page: slots a page at a time, del then y deletes.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/menus-video.jpg"><img src="assets/img/menus-video.jpg" width="2560" height="1440" loading="lazy"
+          alt="The video page: renderer, mode, max fps, brightness and the renderer's own settings"></a>
+        <figcaption>The video page: settings that restart the video wait for Apply.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/rr-func-eye.jpg"><img src="assets/img/rr-func-eye.jpg" width="2560" height="1440" loading="lazy"
+          alt="A camera hanging from the ceiling, its red lens turned toward the viewer"></a>
+        <figcaption>One of the hub's cameras in Call of the Machine, turned to look at you.</figcaption>
+      </figure>
+      <figure>
+        <a href="assets/img/nav-drop-height.jpg"><img src="assets/img/nav-drop-height.jpg" width="2560" height="1440" loading="lazy"
+          alt="A Supertank standing on top of a wall of crates, above the player"></a>
+        <figcaption>A Supertank stays on a 128-unit ledge and fires from it; a Berserker would drop down.</figcaption>
+      </figure>
+    </div>
   </div>
 </section>
 
@@ -152,7 +227,7 @@
         <a href="assets/img/menus-options.jpg"><img src="assets/img/menus-options.jpg" width="2560" height="1440" loading="lazy"
           alt="The options menu in the re-release look: a dark panel, a highlighted row, sliders as bars, values on the right"></a>
         <figcaption>The options menu in the re-release look, a data page mods can replace: the crosshair list names the
-          re-release's own 29 crosshairs.</figcaption>
+          re-release's own 29 crosshairs, and the last line opens the new game and HUD page.</figcaption>
       </figure>
       <figure class="wide">
         <a href="assets/img/menus-main.jpg"><img src="assets/img/menus-main.jpg" width="2560" height="1440" loading="lazy"
@@ -228,9 +303,9 @@
       <div class="feature">
         <h3>Re-release game libraries</h3>
         <p>Game libraries built for the 2023 re-release (its game API, <code>game_x64</code>) load and play:
-          id's own game code and mods built on it, such as the loot mod q2arpg. Saves, loads and level changes
-          use the game's own save files, and the client predicts with the library's movement code, so it moves
-          exactly like the server.</p>
+          id's own game code and mods built on it, such as the loot mod q2arpg, picked from the Mods menu. Saves,
+          loads and level changes use the game's own save files, and the client predicts with the library's movement
+          code, so it moves exactly like the server.</p>
       </div>
       <div class="feature">
         <h3>Wheels, kill feed, chat</h3>
@@ -281,8 +356,9 @@
       <div class="feature">
         <h3>Monsters find their way</h3>
         <p>Every map gets a navigation mesh when it loads (Recast/Detour, built in under a second and cached), in
-          three sizes so a Tank isn't sent through a gap only a soldier fits. Walking monsters follow it around
-          walls, step off ledges and ride lifts to reach you, where stock monsters gave up. On the re-release's
+          three sizes so a Tank isn't sent through a gap only a soldier fits (in re-release games too). Walking
+          monsters follow it around walls, step off ledges as high as each can take, and ride lifts to reach you,
+          where stock monsters gave up. On the re-release's
           maps, the jumps in its bot navigation files are read too, so monsters that can jump leap onto
           ledges and across gaps, climb ladders and take teleporters to get at you.</p>
       </div>
@@ -554,8 +630,8 @@
           who plays together needs OpenTech2.</p>
         <p>What does carry over is the re-release's <em>data</em>: if you own it, point OpenTech2 at its
           <code>rerelease</code> folder to get its episodes, texts and videos. Re-release game libraries (a mod
-          folder's <code>game_x64.dll</code>, or <code>game_x64.so</code> built for Linux) load too, but
-          multiplayer still means everyone runs OpenTech2.</p>
+          folder's <code>game_x64.dll</code>, or <code>game_x64.so</code> built for Linux) load too, from the
+          Mods menu, but multiplayer still means everyone runs OpenTech2.</p>
       </details>
       <details>
         <summary>Where are my saves and settings?</summary>
@@ -662,6 +738,10 @@ console lines lands in <code>crashes/</code> in your user folder (<code>~/.local
 instead of the game library (shells, linked models, flares), to compare the two.</td></tr>
 <tr><td><code>cmd playerinfo</code></td><td>Cheat: prints game time, health, ammo and your position in
             one line; the automated checks use it.</td></tr>
+          <tr><td><code>ui_menustyle 0</code> / <code>1</code></td><td>The classic menu look / the
+            re-release's (default: the re-release look on its data, classic on the classic data).</td></tr>
+          <tr><td><code>menu_builtin options</code></td><td>For modders: opens the stock C menu even when a data
+            page replaces it, to compare the two (<code>menu &lt;name&gt;</code> opens any data page).</td></tr>
         </tbody>
       </table>
     </div>
@@ -706,9 +786,15 @@ instead of the game library (shells, linked models, flares), to compare the two.
         <h3>Item and monster definitions</h3>
         <p>Change items or add new ones in a text file, <code>defs/&lt;folder&gt;.items</code>: a new item copies an
           existing one (<code>"base" "weapon_shotgun"</code>) and changes its name, ammo, models or amounts, and weapons
-          take their damage, pellets, spread and projectile speed. Monsters get their health, skin, size and damage
-          from <code>defs/&lt;folder&gt;.monsters</code>. See
+          take their damage, pellets, spread and projectile speed. Monsters get their health, skin, size, damage
+          and how far they drop off ledges from <code>defs/&lt;folder&gt;.monsters</code>. See
           <code>mods/DEFINITIONS.md</code>.</p>
+      </div>
+      <div class="feature">
+        <h3>Menus</h3>
+        <p>Every menu is a text file, <code>menus/&lt;name&gt;.menu</code>: a mod replaces a stock page by its
+          name or adds its own, with sliders, choices, fields, key bindings and lists made by a small Lua script.
+          They take the re-release look on its data. See <code>mods/MENUS.md</code>.</p>
       </div>
     </div>
   </div>

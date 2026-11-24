@@ -32,7 +32,10 @@ and assets keep loading and serve as test content.
   Hack TrueType font), the Vulkan renderer in the default build, and the re-release's game features in
   the stock game: compass trail, co-op squad respawn and lives, end-of-unit screen, re-release weapon and
   monster balance (`g_classic_balance 1` for the original), monsters that see before they listen, and
-  footsteps by floor material. Two full code reviews with every finding fixed. Network protocol 2027.
+  footsteps by floor material; the re-release's monster AI (clear shots, dodging, per-monster tweaks) and
+  the Gunner Commander; every menu as a data page mods can change, with an Options > game and HUD page;
+  crash reports; per-monster ledge drop heights; Call of the Machine's watching cameras. Code reviews with
+  every finding fixed. Network protocol 2027.
 
 Downloads (pre-releases, Windows and Linux): https://github.com/Rizilla-OG/OPtech2/releases
 
@@ -63,6 +66,8 @@ each starting with its own intro.
 
 Game libraries built for the re-release (its game API 2023) load too: a game or mod folder with
 `game_x64.so` (`game_x64.dll` on Windows) and no `game.so` gets it, for both server and client game.
+Such a folder shows in the Mods menu even without a pak file (q2arpg), and a mod whose map list has one
+episode (Quake II PSX) starts it from New Game.
 Saves, loads and level changes use the game's own save files. `tools/rerelease/stock_game` builds
 id's stock game for Linux.
 
@@ -125,7 +130,8 @@ HUD, movement), see [mods/testmod](mods/testmod/README.md).
 
 Every map gets a navigation mesh when it loads (Recast/Detour; one per monster size, built in under
 a second, cached in `navigation/<map>.otnav` in the game folder). Walking monsters that can't walk
-straight at you follow it: around walls, off ledges up to 256 units high, and onto lifts
+straight at you follow it: around walls, off ledges as high as each can take (most 256 units, Tanks 128,
+the Supertank 64, bosses never; `drop_height` in a monster definition), and onto lifts
 (`func_plat`), which they call and ride. With the re-release's data, the barrier jumps in its bot
 navigation files (`bots/navigation/<map>.nav`) are added too: monsters that can jump (Berserker,
 Gunner, Infantry, Mutant, Parasite) jump up onto ledges, over barriers and across gaps where those
@@ -172,7 +178,9 @@ clock. `run_all.py --headless` runs only the checks that need no window or sound
 - `python3 tests/maps/make_jump_map.py`, then `tests/nav/jump_check.py`: a Berserker jumps up a ledge through a gap, using a re-release navigation file's barrier jump
 - `python3 tests/maps/make_leap_map.py`, then `tests/nav/leap_check.py`: a Berserker leaps a pit, using a re-release navigation file's long jump
 - `python3 tests/maps/make_ladder_map.py`, then `tests/nav/ladder_check.py`: a Berserker climbs a ladder to a balcony and takes a teleporter into a vault
-- `python3 tests/run_all.py`: all of the above
+- `python3 tests/menus/datamenu_check.py`: menu pages from files, the shipped pages against the stock menus, scripts, mouse
+- `python3 tests/rerelease/rr_path_check.py`: a re-release game's monsters path on our mesh (a Berserker through a slot, a Tank around)
+- `python3 tests/run_all.py`: all of the above and more (`--list` names them)
 
 ## Code scanning
 

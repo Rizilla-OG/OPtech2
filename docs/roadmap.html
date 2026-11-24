@@ -65,7 +65,7 @@
           <li class="done">Client game API (the 2022 re-release cgame API)</li>
           <li class="done">HUD in the module (id's re-release HUD code)</li>
           <li class="done">Effects in the module: explosions, beams, muzzle flashes, trails, footsteps, and how every entity is drawn (powerup shells, translucency, rotating items, linked weapons, flares, the view weapon and its powerup shell, shadow lights)</li>
-          <li class="done">Menus as data: pages are text files with Lua scripts for lists; every menu in the re-release's look on its data, with the mouse</li>
+          <li class="done">Menus as data: every stock menu is a text file mods can change or add to, with Lua scripts for lists; every menu in the re-release's look on its data, with the mouse</li>
           <li class="done">Match the re-release APIs so re-release mods load unchanged: client and server game APIs, with the re-release's features (compass, wheels, co-op lives, end-of-unit screen, debug drawing, monster paths); bots come later</li>
         </ul>
       </div>
@@ -97,7 +97,7 @@
       <div class="task-group">
         <h3>Gameplay systems <span>1 / 5</span></h3>
         <ul class="tasks">
-          <li class="done">Monster navigation (Recast / Detour): a navigation mesh built for every map in three monster sizes, with ledge drops; walking monsters follow it, ride lifts, and use the re-release's jump, leap, ladder and teleporter links</li>
+          <li class="done">Monster navigation (Recast / Detour): a navigation mesh built for every map in three monster sizes, with ledge drops as high as each monster can take; walking monsters follow it, ride lifts, and use the re-release's jump, leap, ladder and teleporter links; re-release games' monsters path on the mesh for their size</li>
           <li>Animation system on IQM: blending, layers, events</li>
           <li>Physics: Jolt for rigid bodies, ragdolls and debris</li>
           <li class="part">Scalable Unicode text; HUD and menus that scale (TrueType console and menu text done)</li>
@@ -124,6 +124,9 @@
           <li class="done">The re-release's episodes in the Game menu: Quake II, The Reckoning, Ground Zero, Call of the Machine, Quake II 64</li>
           <li class="done">Vulkan renderer built and shipped with every release</li>
           <li class="done">Menus in the re-release's look on its data, the classic look on the classic data; the mouse works every menu</li>
+          <li class="done">Options &rarr; game and HUD: settings the stock menus never had (FPS counter, HUD safe zone, gun hand, footsteps...); the video page offers only the multisampling the graphics card can do</li>
+          <li class="done">Mods with only a game library (q2arpg) start from the Mods menu; a mod's single episode (Quake II PSX) starts from New Game</li>
+          <li class="done">Call of the Machine's watching cameras (<code>func_eye</code>) follow the player</li>
           <li class="done">Automated checks: over forty game checks, most of them headless, run on both data sets</li>
         </ul>
       </div>
