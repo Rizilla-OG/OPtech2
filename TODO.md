@@ -80,6 +80,18 @@ something unfinished; remove an entry in the commit that fixes it.
 - `fxtest` only sends position + direction; stock types with other data
   can't be sent with it.
 
+## Menus (M2)
+
+- Plan (riz, 2026-11-24): data menus (menu files in mod folders: pages of
+  buttons, sliders, toggles, lists bound to cvars and commands; stock menus
+  become data files) + sandboxed Lua hooks for live parts (save slots,
+  server browser, conditions, custom widgets; needs a client-side Lua
+  state), drawn by a restyled qmenu (TTF, scaling, mouse, gamepad, re-release
+  look). Old C menus stay as the fallback.
+- Later: game library menus in C through an extension hook (draw + keys),
+  for libraries like q2arpg that want their own; engine/data menus stay the
+  fallback for re-release games.
+
 ## Monster AI
 
 - FindTarget keeps a noise or sight for FRAMETIME * tickrate framenums, and
