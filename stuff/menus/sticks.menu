@@ -1,0 +1,88 @@
+// optech2: the sticks menu as a data page (stock: menu_builtin sticks).
+{
+"open" "on_open"
+}
+{
+"type" "list"
+"source" "layout"
+}
+{
+"type" "label"
+"label" "left stick"
+"x" "48"
+"gap" "12"
+}
+{
+"type" "slider"
+"label" "expo"
+"cvar" "joy_left_expo"
+"min" "1"
+"max" "5"
+"gap" "4"
+}
+{
+"type" "slider"
+"label" "snap to axis"
+"cvar" "joy_left_snapaxis"
+"min" "0"
+"max" "0.5"
+"step" "0.01"
+"format" "%.2f"
+}
+{
+"type" "slider"
+"label" "deadzone"
+"cvar" "joy_left_deadzone"
+"min" "0"
+"max" "0.5"
+"step" "0.01"
+"format" "%.2f"
+}
+{
+"type" "label"
+"label" "right stick"
+"x" "48"
+"gap" "12"
+}
+{
+"type" "slider"
+"label" "expo"
+"cvar" "joy_right_expo"
+"min" "1"
+"max" "5"
+"gap" "4"
+}
+{
+"type" "slider"
+"label" "snap to axis"
+"cvar" "joy_right_snapaxis"
+"min" "0"
+"max" "0.5"
+"step" "0.01"
+"format" "%.2f"
+}
+{
+"type" "slider"
+"label" "deadzone"
+"cvar" "joy_right_deadzone"
+"min" "0"
+"max" "0.5"
+"step" "0.01"
+"format" "%.2f"
+}
+{
+"type" "label"
+"label" "both sticks"
+"x" "48"
+"gap" "12"
+}
+{
+"type" "slider"
+"label" "outer thresh"
+"cvar" "joy_outer_threshold"
+"min" "0"
+"max" "0.3"
+"step" "0.01"
+"format" "%.2f"
+"gap" "4"
+}

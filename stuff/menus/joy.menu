@@ -1,0 +1,126 @@
+// optech2: the gamepad menu as a data page (stock: menu_builtin joy).
+{
+"open" "on_open"
+}
+{
+"type" "slider"
+"label" "look sensitivity"
+"cvar" "joy_sensitivity"
+"min" "0"
+"max" "8"
+"step" "1"
+"format" "%.0f"
+"command" "menu_joypreset; menu_reload"
+"if" "joypreset"
+}
+{
+"type" "choice"
+"label" "look sensitivity"
+"cvar" "ui_joycustom"
+"options" "custom=1"
+"command" "menu_joypreset; menu_reload"
+"if" "!joypreset"
+}
+{
+"type" "toggle"
+"label" "show advanced"
+"cvar" "joy_advanced"
+"command" "menu_reload"
+}
+{
+"type" "slider"
+"label" "yaw speed"
+"cvar" "joy_yawspeed"
+"min" "0"
+"max" "720"
+"step" "10"
+"format" "%.0f"
+"command" "menu_reload"
+"if" "joy_advanced"
+}
+{
+"type" "slider"
+"label" "pitch speed"
+"cvar" "joy_pitchspeed"
+"min" "0"
+"max" "720"
+"step" "10"
+"format" "%.0f"
+"command" "menu_reload"
+"if" "joy_advanced"
+"abs" "yes"
+}
+{
+"type" "slider"
+"label" "extra yaw speed"
+"cvar" "joy_extra_yawspeed"
+"min" "0"
+"max" "720"
+"step" "10"
+"format" "%.0f"
+"command" "menu_reload"
+"if" "joy_advanced"
+}
+{
+"type" "slider"
+"label" "extra pitch speed"
+"cvar" "joy_extra_pitchspeed"
+"min" "0"
+"max" "720"
+"step" "10"
+"format" "%.0f"
+"command" "menu_reload"
+"if" "joy_advanced"
+}
+{
+"type" "slider"
+"label" "ramp time"
+"cvar" "joy_ramp_time"
+"min" "0"
+"max" "1"
+"step" "0.05"
+"format" "%.2f"
+"command" "menu_reload"
+"if" "joy_advanced"
+}
+{
+"type" "invert"
+"label" "invert pitch"
+"cvar" "joy_pitchspeed"
+}
+{
+"type" "slider"
+"label" "rumble intensity"
+"cvar" "joy_haptic_magnitude"
+"min" "0"
+"max" "2"
+"gap" "10"
+"if" "haptic"
+}
+{
+"type" "action"
+"label" "sticks config"
+"align" "right"
+"command" "menu_sticks"
+"gap" "10"
+}
+{
+"type" "action"
+"label" "gyro options"
+"align" "right"
+"command" "menu_gyro"
+"if" "gyro"
+}
+{
+"type" "action"
+"label" "customize buttons"
+"align" "right"
+"command" "menu_buttons"
+"gap" "10"
+}
+{
+"type" "action"
+"label" "custom. alt buttons"
+"align" "right"
+"command" "menu_altbuttons"
+}

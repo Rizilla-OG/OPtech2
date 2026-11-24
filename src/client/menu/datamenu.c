@@ -568,7 +568,15 @@ DataMenu_ChangedLua(const datamenu_item_t *item)
 static void
 DataMenu_SliderChanged(void *self)
 {
-	DataMenu_ChangedLua((const datamenu_item_t *)self);
+	const datamenu_item_t *item = (const datamenu_item_t *)self;
+
+	if (item->command[0]) /* optech2: "command": run after a change, as a choice's */
+	{
+		Cbuf_AddText(item->command);
+		Cbuf_AddText("\n");
+	}
+
+	DataMenu_ChangedLua(item);
 }
 
 static void
@@ -746,6 +754,8 @@ DataMenu_BuildItem(datamenu_item_t *item, const datamenu_pair_t *pairs, int pair
 		Q_strlcpy(item->format, DataMenu_Value(pairs, pair_count, "format", "%.1f"), sizeof(item->format));
 		item->widget.slider.printformat = item->format;
 		generic->callback = DataMenu_SliderChanged; /* optech2: its "lua", if any */
+		/* optech2: "abs" yes: the slider shows and sets the size, keeping the cvar's sign (inverted pitch) */
+		item->widget.slider.abs = !Q_stricmp(DataMenu_Value(pairs, pair_count, "abs", "no"), "yes");
 	}
 	else if (!Q_stricmp(type, "choice") || !Q_stricmp(type, "toggle") || !Q_stricmp(type, "invert"))
 	{

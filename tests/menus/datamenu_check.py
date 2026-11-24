@@ -215,7 +215,7 @@ end
 
 # optech2: the shipped pages compared with the stock menus they replace
 SHIPPED_PAGES = ("options", "multiplayer", "game", "downloadoptions", "dmoptions", "keys", "multiplayer_keys",
-                 "buttons", "altbuttons", "addressbook", "mods")
+                 "buttons", "altbuttons", "addressbook", "mods", "joy", "sticks", "gyro")
 
 results = []
 
@@ -451,13 +451,21 @@ def main():
         shipped += ["menu_game", "presskey enter", "clear", "screenshot png", "presskey escape", "presskey escape",
                     "menu_builtin game", "presskey enter"] + filler[:9] + ["clear", "screenshot png",
                     "presskey escape", "presskey escape"]
-    shipped_log, shipped_shots = run("shipped", shipped, mods=False)
+    # optech2: in two runs, each under the run's time limit
+    pages_per_step = [f"menu_{page}" for page in SHIPPED_PAGES]
+    split = shipped.index(pages_per_step[7])
+    first_log, first_shots = run("shipped", shipped[:split], mods=False)
+    second_log, second_shots = run("shipped2", shipped[:6] + shipped[split:], mods=False)
+    shipped_log, shipped_shots = first_log + second_log, first_shots + second_shots
     for index, page in enumerate(SHIPPED_PAGES):
         if len(shipped_shots) < 2 * index + 2:
             report(False, f"shipped {page}: a screenshot is missing (see shipped.log)")
             continue
         # optech2: the bottom strip holds the version line, which can flicker between shots
         data, stock = shipped_shots[2 * index][:-40], shipped_shots[2 * index + 1][:-40]
+        if page in ("joy", "gyro"):
+            # optech2: the data pages mark items opening a page with ">" (the stock C ones don't)
+            data, stock = data[:, :488], stock[:, :488]
         if page == "options":
             # optech2: options adds "game and HUD" under the stock lines (fixed y: nothing above moves)
             data, stock = data[:370], stock[:370]

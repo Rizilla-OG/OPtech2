@@ -2097,6 +2097,13 @@ CalibrateGyroFunc(void *unused)
 	StartCalibration();
 }
 
+/* optech2: menu_calibrategyro: as the gyro menu's calibrate */
+static void
+M_CalibrateGyro_f(void)
+{
+	CalibrateGyroFunc(NULL);
+}
+
 void
 CalibrationFinishedCallback(void)
 {
@@ -7916,6 +7923,27 @@ M_MenuCondition(const char *name, qboolean *known)
 		return s_episode_count > 1;
 	}
 
+	if (!Q_stricmp(name, "haptic")) /* optech2: the gamepad rumbles */
+	{
+		extern qboolean show_haptic;
+		return show_haptic;
+	}
+
+	if (!Q_stricmp(name, "gyro")) /* optech2: the gamepad has a gyro */
+	{
+		return show_gyro;
+	}
+
+	if (!Q_stricmp(name, "uncalibrated")) /* optech2: the gyro has no calibration yet */
+	{
+		return IsCalibrationZero();
+	}
+
+	if (!Q_stricmp(name, "joypreset")) /* optech2: the gamepad speeds match a sensitivity preset */
+	{
+		return IN_MatchJoyPreset();
+	}
+
 	if (!Q_stricmp(name, "restart")) /* optech2: single player with its level-start autosave */
 	{
 		return RestartLevel_Available();
@@ -8065,6 +8093,8 @@ M_Init(void)
 	Cmd_AddCommand("menu_close", M_Close_f); /* optech2 */
 	Cmd_AddCommand("menu_setmod", M_SetMod_f); /* optech2 */
 	Cmd_AddCommand("menu_pickstart", M_PickStart_f); /* optech2 */
+	Cmd_AddCommand("menu_joypreset", IN_ApplyJoyPreset); /* optech2: joy_sensitivity's preset speeds */
+	Cmd_AddCommand("menu_calibrategyro", M_CalibrateGyro_f); /* optech2: the gyro page's calibrate */
 	Cmd_AddCommand("menu_main", M_Menu_Main_f);
 	Cmd_AddCommand("menu_game", M_Menu_Game_f);
 	Cmd_AddCommand("menu_levelselect", Menu_LevelSelect_f);

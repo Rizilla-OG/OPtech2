@@ -72,7 +72,7 @@ comment. The first block is the page, every block after it an item:
 
 | type | what it is | its keys |
 |---|---|---|
-| `slider` | a number between two values | `cvar`, `min`, `max`, `step`, `format` (`%.1f`) |
+| `slider` | a number between two values | `cvar`, `min`, `max`, `step`, `format` (`%.1f`), `abs` (yes: keeps the cvar's sign), `command` and `lua` (run after a change) |
 | `choice` | one of several values | `cvar`, `options` (`name=value;name=value`), `command` and `lua` (run after a change), `mask` |
 | `toggle` | a choice of `no=0;yes=1` | `cvar` |
 | `invert` | yes makes the cvar negative, keeping its size (invert mouse: `m_pitch`) | `cvar` |
@@ -126,6 +126,9 @@ deathmatch flags do (`dmflags` 8 is "no falling damage"):
 | `tall` | the screen has room for the long options page |
 | `episodes` | the game data has several episodes (the re-release) |
 | `levelselect`, `mods` | the stock menus would offer them |
+| `haptic`, `gyro` | the gamepad rumbles / has a gyro |
+| `joypreset` | the gamepad speeds match a `joy_sensitivity` preset |
+| `uncalibrated` | the gyro has no calibration yet |
 | `restart` | a single player game runs and its level-start autosave is there (load's "Restart level") |
 | `curl` | the engine was built with HTTP downloads |
 | `game=<name>` | the `game` cvar is that (`game=ctf`; `game=baseq2` also when it's empty) |
@@ -226,6 +229,8 @@ and `game.lua` (in the source: `stuff/menus/`).
 | `menu_episode <index>` | picks an episode, then asks for the skill |
 | `menu_setmod <folder>` | switches to a mod (as the mods page's apply) |
 | `menu_pickstart <campaign> <level>` | picks a level for the next new game (level select) |
+| `menu_joypreset` | applies `joy_sensitivity`'s preset speeds |
+| `menu_calibrategyro` | calibrates the gyro |
 | `menu_close` | closes every menu (after a load or a save) |
 | `menu_reload` | builds the top data page again |
 | `menu_deletesave <slot>` | deletes a save (`quick`, `save3`) |
