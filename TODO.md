@@ -73,10 +73,16 @@ something unfinished; remove an entry in the commit that fixes it.
 
 ## Effects (M2 step 4)
 
-- Done: temp entities, muzzle flashes, trails, events and entity drawing
-  (AddEntityModels, 2026-11-23) all run in the game library. Not yet: the
-  view weapon (CL_AddViewWeapon) and player shadows (RF_CASTSHADOW) are
-  still drawn by the engine.
+- Done: temp entities, muzzle flashes, trails, events, entity drawing
+  (AddEntityModels, 2026-11-23), the view weapon (AddViewWeapon, with
+  powerup shells) and shadow lights (AddShadowLight, 2026-11-24) all run in
+  the game library.
+- Re-release shadow lights (RF_CASTSHADOW, game library's AddShadowLight
+  since fx ext 8) light as plain dlights with the map's intensity (1.3-5)
+  as the dlight's radius, so they barely show (upstream did the same).
+  Real shadow lights (radius, cone, shadow maps) belong to M3 renderer work.
+- Flaky: `q2arpg` check failed once in the full suite (save loaded 15 units
+  off the saved spot, 2026-11-24), passed 3/3 alone. Watch it.
 - `fxtest` only sends position + direction; stock types with other data
   can't be sent with it.
 

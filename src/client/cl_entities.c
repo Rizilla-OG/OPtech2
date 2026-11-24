@@ -894,21 +894,6 @@ CL_AddViewWeapon(const player_xstate_t *ps, const player_xstate_t *ops)
 	entity_t gun = {0}; /* view model */
 	int i;
 
-	/* allow the gun to be completely removed */
-	if (!cl_gun->value)
-	{
-		return;
-	}
-
-	/* don't draw gun if in wide angle view and drawing not forced */
-	if (ps->fov > 90)
-	{
-		if (cl_gun->value < 2)
-		{
-			return;
-		}
-	}
-
 	if (gun_model)
 	{
 		gun.model = gun_model;
@@ -917,11 +902,6 @@ CL_AddViewWeapon(const player_xstate_t *ps, const player_xstate_t *ops)
 	else
 	{
 		gun.model = cl.model_draw[ps->gunindex];
-	}
-
-	if (!gun.model)
-	{
-		return;
 	}
 
 	/* set up gun position */
@@ -952,10 +932,38 @@ CL_AddViewWeapon(const player_xstate_t *ps, const player_xstate_t *ops)
 		}
 	}
 
-	gun.flags = RF_MINLIGHT | RF_DEPTHHACK | RF_WEAPONMODEL;
 	/* optech2: blend over the time since the previous frame change, not one server frame */
 	gun.backlerp = gun_frame ? (1.0f - cl.lerpfrac) : (1.0f - CL_EntityLerpFraction(cl.gun_change_time, cl.gun_lerp_msec));
 	VectorCopy(gun.origin, gun.oldorigin); /* don't lerp at all */
+
+	/* optech2: the game library draws it when it can (cl_gun, wide angle
+	   views and powerup shells are its call then) */
+	if (CL_CGame_ViewWeapon(&gun, ps->gunindex, ps->fov))
+	{
+		return;
+	}
+
+	/* allow the gun to be completely removed */
+	if (!cl_gun->value)
+	{
+		return;
+	}
+
+	/* don't draw gun if in wide angle view and drawing not forced */
+	if (ps->fov > 90)
+	{
+		if (cl_gun->value < 2)
+		{
+			return;
+		}
+	}
+
+	if (!gun.model)
+	{
+		return;
+	}
+
+	gun.flags = RF_MINLIGHT | RF_DEPTHHACK | RF_WEAPONMODEL;
 	V_AddEntity(&gun);
 }
 

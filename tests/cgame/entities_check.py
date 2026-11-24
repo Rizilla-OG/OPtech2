@@ -15,6 +15,11 @@ Scenes:
   base1-rr   the same on the re-release data (its models and effects)
   mgu2m2     re-release data, Call of the Machine: flares and their fade
 
+optech2: since extension 8 the view weapon is the game library's too: the
+scenes above match with it in view, cl_gun 0 hides it both ways, and with
+quad damage the game library adds the re-release's blue shell to the gun
+(the engine never drew one), so there the two must differ.
+
 Usage: entities_check.py   (exit 1 on failure)
 Logs and shots land in build/entities-check/.
 """
@@ -48,6 +53,8 @@ MGU2M2_SCENE = [
     "set g_monster_freeze 1", "map mgu2m2", 'delay 3000 "god"', 'delay 3100 "notarget"',
     'delay 3200 "teleport 24 1723 -2 23 270 0"',
 ]
+# optech2: quad damage on: the view weapon gets its shell
+QUAD_SCENE = BASE1_SCENE + ['delay 2700 "give quad damage"', 'delay 2750 "use quad damage"']
 SCENES = [
     ("base1", STEAM_DIR, BASE1_SCENE, 4000),
     ("base1-rr", RERELEASE_DIR, BASE1_SCENE, 4000),
@@ -111,6 +118,24 @@ def main():
                f"{name}: entities in view ({differing(library, bare)} pixels are theirs)")
         report(differing(library, engine) == 0,
                f"{name}: game library draws them as the engine did ({differing(library, engine)} pixels differ)")
+
+    # optech2: the view weapon (effects extension 8)
+    if (STEAM_DIR / "baseq2").exists():
+        library = shoot("nogun", STEAM_DIR, BASE1_SCENE, 4000, [("cl_cgame_entities", 1), ("cl_gun", 0)])
+        engine = shoot("nogun", STEAM_DIR, BASE1_SCENE, 4000, [("cl_cgame_entities", 0), ("cl_gun", 0)])
+        with_gun = shoot("nogun", STEAM_DIR, BASE1_SCENE, 4000, [("cl_cgame_entities", 1)])
+        quad_library = shoot("quad", STEAM_DIR, QUAD_SCENE, 4000, [("cl_cgame_entities", 1)])
+        quad_engine = shoot("quad", STEAM_DIR, QUAD_SCENE, 4000, [("cl_cgame_entities", 0)])
+        if any(shot is None for shot in (library, engine, with_gun, quad_library, quad_engine)):
+            report(False, "view weapon: a screenshot is missing (see the logs)")
+        else:
+            report(differing(library, with_gun) > 500,
+                   f"view weapon: cl_gun 0 hides it ({differing(library, with_gun)} pixels are the gun's)")
+            report(differing(library, engine) == 0,
+                   f"view weapon: cl_gun 0 the same both ways ({differing(library, engine)} pixels differ)")
+            report(differing(quad_library, quad_engine) > 200,
+                   f"view weapon: quad shell on the gun from the game library "
+                   f"({differing(quad_library, quad_engine)} pixels are the shell's)")
 
     print(f"\n{'PASS' if all(results) else 'FAIL'}: {sum(results)}/{len(results)} entity drawing checks")
     return 0 if all(results) else 1

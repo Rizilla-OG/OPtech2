@@ -51,7 +51,7 @@ typedef struct
  * ones; types it doesn't handle get the engine's built-in effects.
  */
 #define OPTECH2_EXT_FX "optech2_fx"
-#define OPTECH2_FX_EXT_VERSION 7 /* optech2: 6 adds ClearModels, 7 AddEntityModels */
+#define OPTECH2_FX_EXT_VERSION 8 /* optech2: 6 adds ClearModels, 7 AddEntityModels, 8 AddViewWeapon + AddShadowLight */
 
 struct sfx_s;
 struct model_s;
@@ -140,6 +140,39 @@ typedef struct
 	vec3_t angles; /* interpolated */
 	qboolean trails; /* out: add its trail and flying light afterwards */
 } optech2_fx_entity_model_t;
+
+/* optech2: a re-release shadow light (RF_CASTSHADOW entity + CS_SHADOWLIGHTS
+   configstring), to light this frame (AddShadowLight). Renderers have no
+   shadow maps yet, so it is drawn as a dynamic light faded by distance. */
+typedef struct
+{
+	int number; /* optech2: its entity */
+	vec3_t origin;
+	int color; /* optech2: bytes R, G, B in memory order; -1 = white */
+	float radius;
+	int resolution;
+	float intensity;
+	float fade_start, fade_end;
+	float style_white; /* optech2: its light style's brightness now, 1 with none */
+	float coneangle; /* optech2: a spot light if non-zero */
+	vec3_t conedirection;
+} optech2_fx_shadow_light_t;
+
+/* optech2: our own view weapon, to draw this frame (AddViewWeapon). The engine has
+   interpolated it: origin, angles, frame, oldframe and backlerp are ready
+   to draw. */
+typedef struct
+{
+	int gunindex; /* optech2: configstring CS_MODELS index of the weapon model, 0 = none */
+	struct model_s *model; /* optech2: the model to draw: gunindex's, or the gun_model command's */
+	int frame, oldframe;
+	float backlerp;
+	vec3_t origin; /* optech2: view origin plus the gun offset */
+	vec3_t angles;
+	float fov; /* optech2: the player state's, before the aspect fix (wide angle: > 90) */
+	unsigned int player_effects; /* optech2: EF_* of our player's entity (powerup shells) */
+	int player_renderfx; /* optech2: RF_* of our player's entity */
+} optech2_fx_view_weapon_t;
 
 /* the client state effects need, for the frame being drawn */
 typedef struct
@@ -256,6 +289,14 @@ typedef struct
 	   own lights) and return true; set ent->trails to have its trail
 	   added after. Return false to leave the entity to the engine. */
 	qboolean (*AddEntityModels)(optech2_fx_entity_model_t *ent);
+
+	/* optech2: version 8: draw our view weapon (and its powerup shell) and return
+	   true, or return false to leave it to the engine */
+	qboolean (*AddViewWeapon)(const optech2_fx_view_weapon_t *gun);
+
+	/* optech2: version 8: light a shadow light and return true, or return
+	   false to leave it to the engine */
+	qboolean (*AddShadowLight)(const optech2_fx_shadow_light_t *light);
 } optech2_fx_ext_t;
 
 /*

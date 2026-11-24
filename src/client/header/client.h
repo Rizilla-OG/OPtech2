@@ -526,6 +526,7 @@ qboolean CL_CGame_ParseTempEntity(int type); /* optech2 */
 qboolean CL_CGame_ParseMuzzleFlash(int kind); /* optech2 */
 qboolean CL_CGame_EntityEvent(const entity_xstate_t *ent); /* optech2 */
 qboolean CL_CGame_EntityTrails(centity_t *cent, const entity_xstate_t *s1, unsigned int effects, entity_t *ent); /* optech2 */
+qboolean CL_CGame_ViewWeapon(const entity_t *gun, int gunindex, float fov); /* optech2 */
 qboolean CL_CGame_EntityModels(const entity_xstate_t *s1, unsigned int effects, entity_t *ent, qboolean *trails); /* optech2 */
 void CL_CGame_RegisterEffects(void); /* optech2 */
 void CL_CGame_NewLevel(void); /* optech2 */
@@ -635,6 +636,8 @@ void V_AddParticle(vec3_t org, unsigned int color, float alpha);
 void V_AddLight(vec3_t org, float intensity, float r, float g, float b);
 void V_AddLightStyle(int style, float r, float g, float b);
 void V_AddLightShadow(cl_shadow_light_t *light);
+float V_LightStyleWhite(int style); /* optech2 */
+qboolean CL_CGame_ShadowLight(int number, const cl_shadow_light_t *light); /* optech2 */
 void VID_GetPalette(byte **colormap, unsigned *d_8to24table);
 void VID_GetPalette24to8(const byte *d_8to24table, byte** d_16to8table);
 unsigned VID_PaletteColor(byte color);

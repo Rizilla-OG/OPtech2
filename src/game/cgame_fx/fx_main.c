@@ -142,4 +142,6 @@ const optech2_fx_ext_t fx_extension = {
 	FX_AddFrameEffects,
 	FX_ClearEffects,
 	FX_ClearModels,
-	FX_AddEntityModels};
+	FX_AddEntityModels,
+	FX_AddViewWeapon,
+	FX_AddShadowLight};

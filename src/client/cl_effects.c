@@ -2357,7 +2357,11 @@ CL_AddShadowLights(void)
 		VectorCopy(ent->current.origin, shadow->light.origin);
 		shadow->light.color = color;
 
-		V_AddLightShadow(&shadow->light);
+		/* optech2: the game library lights it when it can */
+		if (!CL_CGame_ShadowLight(shadow->number, &shadow->light))
+		{
+			V_AddLightShadow(&shadow->light);
+		}
 	}
 }
 

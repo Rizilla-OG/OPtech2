@@ -113,6 +113,8 @@ void FX_RefreshState(void);
 struct model_s *CL_PowerScreenModel(void); /* fx_tempentities.c */
 void CL_HologramParticles(const vec3_t org, float radius); /* fx_trails.c */
 qboolean FX_AddEntityModels(optech2_fx_entity_model_t *info); /* fx_entities.c */
+qboolean FX_AddViewWeapon(const optech2_fx_view_weapon_t *gun); /* optech2: fx_entities.c */
+qboolean FX_AddShadowLight(const optech2_fx_shadow_light_t *light); /* optech2: fx_entities.c */
 void CL_NewFrameTEntSounds(void); /* optech2 */
 
 /* messages: the engine's current temp entity message */

@@ -1083,6 +1083,61 @@ CL_CGame_EntityModels(const entity_xstate_t *s1, unsigned int effects, entity_t 
 	return true;
 }
 
+/* optech2: a shadow light: true when the game library lit it */
+qboolean
+CL_CGame_ShadowLight(int number, const cl_shadow_light_t *light)
+{
+	optech2_fx_shadow_light_t info;
+
+	if (!cgame_fx || !cgame_fx->AddShadowLight || (cl_cgame_entities && !cl_cgame_entities->value))
+	{
+		return false;
+	}
+
+	info.number = number;
+	VectorCopy(light->origin, info.origin);
+	info.color = light->color;
+	info.radius = light->radius;
+	info.resolution = light->resolution;
+	info.intensity = light->intensity;
+	info.fade_start = light->fade_start;
+	info.fade_end = light->fade_end;
+	info.style_white = (light->lightstyle != -1) ? V_LightStyleWhite(light->lightstyle) : 1.0f;
+	info.coneangle = light->coneangle;
+	VectorCopy(light->conedirection, info.conedirection);
+
+	return cgame_fx->AddShadowLight(&info);
+}
+
+/* optech2: our view weapon: true when the game library drew it. gun holds
+   the interpolated origin, angles, frames and backlerp */
+qboolean
+CL_CGame_ViewWeapon(const entity_t *gun, int gunindex, float fov)
+{
+	optech2_fx_view_weapon_t info;
+	const centity_t *player;
+
+	if (!cgame_fx || !cgame_fx->AddViewWeapon || (cl_cgame_entities && !cl_cgame_entities->value))
+	{
+		return false;
+	}
+
+	player = &cl_entities[cl.playernum + 1];
+
+	info.gunindex = gunindex;
+	info.model = gun->model;
+	info.frame = gun->frame;
+	info.oldframe = gun->oldframe;
+	info.backlerp = gun->backlerp;
+	VectorCopy(gun->origin, info.origin);
+	VectorCopy(gun->angles, info.angles);
+	info.fov = fov;
+	info.player_effects = player->current.effects;
+	info.player_renderfx = player->current.renderfx;
+
+	return cgame_fx->AddViewWeapon(&info);
+}
+
 /* an entity event: true when the game library played it */
 qboolean
 CL_CGame_EntityEvent(const entity_xstate_t *ent)

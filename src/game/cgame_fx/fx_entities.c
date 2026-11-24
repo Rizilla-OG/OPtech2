@@ -535,3 +535,144 @@ FX_AddEntityModels(optech2_fx_entity_model_t *info)
 	info->trails = true;
 	return true;
 }
+
+/*
+ * optech2: our own view weapon (effects extension version 8). The engine
+ * hands it interpolated; cl_gun and wide angle views decide whether it is
+ * drawn, and our powerups put their shell on it, as the re-release does
+ * (team colour shells, EF_COLOR_SHELL, stay off the gun).
+ */
+qboolean
+FX_AddViewWeapon(const optech2_fx_view_weapon_t *gun)
+{
+	float gun_setting = fxi->CvarValue("cl_gun"); /* optech2: 0 off, 1 not in wide angle views, 2 always */
+	unsigned int effects = gun->player_effects;
+	int shell = 0; /* optech2: RF_SHELL_* of our powerups */
+	entity_t ent = {0};
+
+	if (!gun_setting)
+	{
+		return true;
+	}
+
+	/* optech2: don't draw it in a wide angle view unless forced */
+	if ((gun->fov > 90) && (gun_setting < 2))
+	{
+		return true;
+	}
+
+	if (!gun->model)
+	{
+		return true;
+	}
+
+	ent.model = gun->model;
+	ent.frame = gun->frame;
+	ent.oldframe = gun->oldframe;
+	ent.backlerp = gun->backlerp;
+	VectorCopy(gun->origin, ent.origin);
+	VectorCopy(gun->origin, ent.oldorigin); /* optech2: don't lerp at all */
+	VectorCopy(gun->angles, ent.angles);
+	ent.flags = RF_MINLIGHT | RF_DEPTHHACK | RF_WEAPONMODEL;
+	V_AddEntity(&ent);
+
+	/* optech2: powerup shells, the same colours as on our player model */
+	if (effects & EF_PENT)
+	{
+		shell |= RF_SHELL_RED;
+	}
+
+	if (effects & EF_QUAD)
+	{
+		shell |= RF_SHELL_BLUE;
+	}
+
+	if (effects & EF_DOUBLE)
+	{
+		shell |= RF_SHELL_DOUBLE;
+	}
+
+	if (effects & EF_HALF_DAMAGE)
+	{
+		shell |= RF_SHELL_HALF_DAM;
+	}
+
+	if (shell)
+	{
+		ent.flags = FX_ShellColors(shell) | RF_TRANSLUCENT | RF_DEPTHHACK | RF_WEAPONMODEL;
+		ent.alpha = 0.30f;
+		V_AddEntity(&ent);
+	}
+
+	return true;
+}
+
+/* optech2: smoothstep as GLSL has it */
+static float
+FX_SmoothStep(float edge0, float edge1, float x)
+{
+	float t = Q_clamp((x - edge0) / (edge1 - edge0), 0.0f, 1.0f);
+
+	return t * t * (3.0f - 2.0f * t);
+}
+
+/* optech2: how much of a shadow light shows from the view, by its fade
+   distances (the re-release's rules, as the engine had them) */
+static float
+FX_ShadowLightFade(float fade_start, float fade_end, const vec3_t light_origin)
+{
+	float dist_to_light, frac_to_end, min_frag_dist;
+	vec3_t diff;
+
+	if ((fade_start <= 1.0f) && (fade_end <= 1.0f))
+	{
+		return 1.0f;
+	}
+	else if (fade_start > fade_end)
+	{
+		return 1.0f;
+	}
+
+	VectorSubtract(cl.refdef.vieworg, light_origin, diff);
+	dist_to_light = VectorLengthSquared(diff);
+	frac_to_end = Q_clamp(dist_to_light / fade_end, 0.0f, 1.0f);
+	min_frag_dist = fade_start / fade_end;
+
+	if (min_frag_dist > 1.0f)
+	{
+		return 1.0f;
+	}
+	else if (min_frag_dist <= 0)
+	{
+		return frac_to_end;
+	}
+
+	return 1.0f - FX_SmoothStep(min_frag_dist, 1.0f, frac_to_end);
+}
+
+/*
+ * optech2: a re-release shadow light (effects extension version 8). No
+ * renderer has shadow maps yet, so it lights as a dynamic light, faded by
+ * the distance from the view. Radius, cone and resolution wait for them.
+ */
+qboolean
+FX_AddShadowLight(const optech2_fx_shadow_light_t *light)
+{
+	unsigned int color = (unsigned int)light->color;
+	float fade;
+
+	FX_RefreshState();
+
+	fade = FX_ShadowLightFade(light->fade_start, light->fade_end, light->origin);
+
+	if (fade <= 0.0f)
+	{
+		return true;
+	}
+
+	/* optech2: color bytes in memory order, as the engine read them */
+	V_AddLight(light->origin, light->intensity * fade * light->style_white,
+		(color & 0xff) / 255.f, ((color >> 8) & 0xff) / 255.f, ((color >> 16) & 0xff) / 255.f);
+
+	return true;
+}

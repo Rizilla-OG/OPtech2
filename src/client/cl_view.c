@@ -392,6 +392,18 @@ fade_distance_to_light(float fade_start, float fade_end, const vec3_t light_orig
 	return 1.0f - smoothstep(min_frag_dist, 1.0f, frac_to_end);
 }
 
+/* optech2: a light style's brightness now (r+g+b), for the game library's shadow lights */
+float
+V_LightStyleWhite(int style)
+{
+	if ((style < 0) || (style >= MAX_LIGHTSTYLES))
+	{
+		return 1.0f;
+	}
+
+	return r_lightstyles[style].white;
+}
+
 void
 V_AddLightShadow(cl_shadow_light_t *light)
 {
