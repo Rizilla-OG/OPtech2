@@ -1,0 +1,62 @@
+// optech2: the address book as a data page (stock: menu_builtin addressbook).
+// Nine server addresses for the join server page, adr0 - adr8.
+{
+"banner" "m_banner_addressbook"
+"x" "-142"
+"y" "-58"
+"line" "18"
+}
+{
+"type" "field"
+"cvar" "adr0"
+"length" "60"
+"visible" "30"
+}
+{
+"type" "field"
+"cvar" "adr1"
+"length" "60"
+"visible" "30"
+}
+{
+"type" "field"
+"cvar" "adr2"
+"length" "60"
+"visible" "30"
+}
+{
+"type" "field"
+"cvar" "adr3"
+"length" "60"
+"visible" "30"
+}
+{
+"type" "field"
+"cvar" "adr4"
+"length" "60"
+"visible" "30"
+}
+{
+"type" "field"
+"cvar" "adr5"
+"length" "60"
+"visible" "30"
+}
+{
+"type" "field"
+"cvar" "adr6"
+"length" "60"
+"visible" "30"
+}
+{
+"type" "field"
+"cvar" "adr7"
+"length" "60"
+"visible" "30"
+}
+{
+"type" "field"
+"cvar" "adr8"
+"length" "60"
+"visible" "30"
+}

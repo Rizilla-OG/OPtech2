@@ -215,7 +215,7 @@ end
 
 # optech2: the shipped pages compared with the stock menus they replace
 SHIPPED_PAGES = ("options", "multiplayer", "game", "downloadoptions", "dmoptions", "keys", "multiplayer_keys",
-                 "buttons", "altbuttons")
+                 "buttons", "altbuttons", "addressbook")
 
 results = []
 

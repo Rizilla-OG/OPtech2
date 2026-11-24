@@ -76,7 +76,7 @@ comment. The first block is the page, every block after it an item:
 | `toggle` | a choice of `no=0;yes=1` | `cvar` |
 | `invert` | yes makes the cvar negative, keeping its size (invert mouse: `m_pitch`) | `cvar` |
 | `action` | runs a command on enter | `command`, `lua` |
-| `field` | text typed into a cvar, saved when the page closes | `cvar`, `length` |
+| `field` | text typed into a cvar, saved when the page closes; without a `label` the box alone | `cvar`, `length` (characters), `visible` (the box's width, `length` by default) |
 | `bind` | the keys bound to a command, in the value column: enter waits for a key and binds it, del or backspace unbinds | `command`, `scope`: `keyboard` (keyboard and mouse, the default), `gamepad`, `gamepad_alt` (with the alt selector held), `all` |
 | `label` | text only (a section heading) | |
 | `space` | a blank line | |

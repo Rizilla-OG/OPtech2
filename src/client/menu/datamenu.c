@@ -761,11 +761,14 @@ DataMenu_BuildItem(datamenu_item_t *item, const datamenu_pair_t *pairs, int pair
 	else if (!Q_stricmp(type, "field"))
 	{
 		int length = atoi(DataMenu_Value(pairs, pair_count, "length", "20"));
+		/* optech2: "visible": characters shown (the box's width), "length" by default */
+		int visible = atoi(DataMenu_Value(pairs, pair_count, "visible", va("%d", length)));
 
 		item->kind = DATAMENU_FIELD;
 		generic->type = MTYPE_FIELD;
+		generic->name = item->label[0] ? item->label : NULL; /* optech2: no label: the box alone */
 		Field_InitState(&item->widget.field, item->cvar[0] ? Cvar_VariableString(item->cvar) : "",
-			length, length);
+			length, visible);
 	}
 	else if (!Q_stricmp(type, "label") || !Q_stricmp(type, "space"))
 	{
