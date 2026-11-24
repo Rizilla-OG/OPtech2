@@ -62,6 +62,8 @@ comment. The first block is the page, every block after it an item:
 | `status` | a status line; `$name` is a cvar's value (`dmflags = $dmflags`) |
 | `if` | a condition (below): when it doesn't hold, the page isn't there and the stock menu of the same name opens instead |
 | `open` | a function of the page's script, run before the items are built |
+| `scroll` | a text file scrolled up the screen as the credits (`+` starts a bold line); the page needs no items; escape leaves |
+| `picture`, `picture_text` | the classic look draws this picture alone (quit), `picture_text` when it's missing; the items still take keys; the re-release look draws the items |
 | `height` | the classic look: centered as if the page were this tall (pixels) |
 | `line` | pixels between rows in the classic look (10; the binding pages use 9 as the stock ones) |
 | `script` | the script file to use instead of `menus/<name>.lua` (pages sharing one: `loadgame` and `savegame` use `saves`) |
@@ -231,6 +233,7 @@ and `game.lua` (in the source: `stuff/menus/`).
 | `menu_pickstart <campaign> <level>` | picks a level for the next new game (level select) |
 | `menu_joypreset` | applies `joy_sensitivity`'s preset speeds |
 | `menu_calibrategyro` | calibrates the gyro |
+| `menu_back` | closes the top menu, as escape |
 | `menu_close` | closes every menu (after a load or a save) |
 | `menu_reload` | builds the top data page again |
 | `menu_deletesave <slot>` | deletes a save (`quick`, `save3`) |

@@ -1,0 +1,19 @@
+// optech2: the quit menu as a data page (stock: menu_builtin quit). The classic
+// look shows the quit picture (y or enter quits, n or escape goes back); the
+// re-release look asks with two lines.
+{
+"title" "Quit?"
+"picture" "quit"
+"picture_text" "Quit Y/N?"
+"keys" "keys"
+}
+{
+"type" "action"
+"label" "yes"
+"command" "menu_close; quit"
+}
+{
+"type" "action"
+"label" "no"
+"command" "menu_back"
+}

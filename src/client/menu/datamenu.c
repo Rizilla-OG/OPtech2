@@ -138,6 +138,9 @@ typedef struct
 	char keys[64]; /* optech2: "keys": the page script's function asked first about each key */
 	int line_height; /* optech2: "line": pixels between rows in the classic look (10; the binding pages 9) */
 	int center_height; /* optech2: "height": centered as if this tall (classic look); 0 = its rows */
+	char scroll[MAX_QPATH]; /* optech2: "scroll": a text file scrolled up the screen, as the credits */
+	char picture[MAX_QPATH]; /* optech2: "picture": the classic look draws it alone (quit) */
+	char picture_text[64]; /* optech2: "picture_text": instead when the picture is missing */
 	qboolean has_script; /* optech2: menus/<name>.lua ran */
 	menuframework_s frame;
 	int item_count;
@@ -602,11 +605,18 @@ DataMenu_ActionSelected(void *self)
 	}
 }
 
+static datamenu_page_t *DataMenu_FramePage(menuframework_s *frame);
+
 /* optech2: fields are committed to their cvars when the page closes */
 static void
 DataMenu_Close(menuframework_s *frame)
 {
 	int i;
+
+	if (DataMenu_FramePage(frame)->scroll[0])
+	{
+		M_CreditsStop();
+	}
 
 	for (i = 0; i < DATAMENU_MAX_PAGES; i++)
 	{
@@ -637,7 +647,7 @@ DataMenu_OpensMenu(const datamenu_item_t *item)
 	/* optech2: the menu_ commands that don't open a menu */
 	static const char *not_menus[] = {"menu_newgame", "menu_console", "menu_reload", "menu_close",
 		"menu_deletesave", "menu_oggenable", "menu_pointer", "menu_pickstart",
-		"menu_setmod", NULL};
+		"menu_setmod", "menu_back", "menu_joypreset", "menu_calibrategyro", NULL};
 	int i;
 
 	if (Q_strncasecmp(item->command, "menu", 4))
@@ -660,6 +670,24 @@ static void
 DataMenu_Draw(menuframework_s *frame)
 {
 	datamenu_page_t *page = (datamenu_page_t *)((byte *)frame - offsetof(datamenu_page_t, frame));
+
+	if (page->scroll[0])
+	{
+		M_CreditsDraw(); /* optech2: a scrolling page draws only its text, in both looks */
+		return;
+	}
+
+	/* optech2: "picture" in the classic look: the picture alone, centered (the items still take keys) */
+	if (page->picture[0] && !Menu_Styled())
+	{
+		float scale = SCR_GetMenuScale();
+		int width, height;
+
+		Draw_GetPicSize(&width, &height, page->picture);
+		Draw_PicScaledAltText((viddef.width - width * scale) / 2, (viddef.height - height * scale) / 2,
+			page->picture, scale, page->picture_text[0] ? page->picture_text : NULL);
+		return;
+	}
 
 	/* optech2: choices follow their cvars (a command like "reset defaults" may change them) */
 	for (int i = 0; i < page->item_count; i++)
@@ -1007,6 +1035,9 @@ DataMenu_LoadPage(const char *name)
 		Q_strlcpy(page->keys, DataMenu_Value(pairs, pair_count, "keys", ""), sizeof(page->keys));
 		page->line_height = Q_clamp(atoi(DataMenu_Value(pairs, pair_count, "line", "10")), 4, 40);
 		page->center_height = atoi(DataMenu_Value(pairs, pair_count, "height", "0"));
+		Q_strlcpy(page->scroll, DataMenu_Value(pairs, pair_count, "scroll", ""), sizeof(page->scroll));
+		Q_strlcpy(page->picture, DataMenu_Value(pairs, pair_count, "picture", ""), sizeof(page->picture));
+		Q_strlcpy(page->picture_text, DataMenu_Value(pairs, pair_count, "picture_text", ""), sizeof(page->picture_text));
 
 		/* optech2: a page whose "if" doesn't hold isn't there: the stock menu opens instead */
 		if (!DataMenu_Condition(page, DataMenu_Value(pairs, pair_count, "if", "")))
@@ -1071,7 +1102,7 @@ DataMenu_LoadPage(const char *name)
 
 	FS_FreeFile(text);
 
-	if (!page->item_count)
+	if (!page->item_count && !page->scroll[0]) /* optech2: a scrolling page needs none */
 	{
 		Com_Printf("%s: no items\n", file_name);
 		page->name[0] = '\0';
@@ -1118,8 +1149,20 @@ DataMenu_Key(menuframework_s *frame, int key)
 	const datamenu_page_t *page = DataMenu_FramePage(frame);
 	int menu_key = Key_GetMenuKey(key);
 
-	const datamenu_item_t *selected = (const datamenu_item_t *)Menu_ItemAtCursor(frame);
+	const datamenu_item_t *selected;
 	const char *bind_sound;
+
+	if (page->scroll[0])
+	{
+		if (menu_key == K_ESCAPE)
+		{
+			M_PopMenu(false); /* optech2: a scrolling page: escape only, as the credits */
+		}
+
+		return NULL;
+	}
+
+	selected = (const datamenu_item_t *)Menu_ItemAtCursor(frame);
 
 	/* optech2: a bind item takes enter, del, backspace and the key it waits for */
 	if (selected && (selected->kind == DATAMENU_BIND) &&
@@ -1216,11 +1259,20 @@ DataMenu_Open(const char *name)
 	{
 		page->frame.y = (int)((viddef.height / SCR_GetMenuScale() - page->center_height) / 2);
 	}
-	else
+	else if (page->frame.nitems)
 	{
 		Menu_Center(&page->frame);
 	}
-	Menu_AdjustCursor(&page->frame, 1);
+
+	if (page->frame.nitems)
+	{
+		Menu_AdjustCursor(&page->frame, 1);
+	}
+
+	if (page->scroll[0])
+	{
+		M_CreditsStart(page->scroll);
+	}
 
 	/* optech2: a page of bind items without its own status line shows the stock prompt */
 	for (i = 0; i < page->item_count; i++)

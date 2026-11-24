@@ -1,0 +1,6 @@
+// optech2: the credits as a data page (stock: menu_builtin credits). "scroll"
+// names a text file scrolled up the screen ("+" starts a bold line); without
+// that file the id credits scroll. A mod ships its own "credits" file.
+{
+"scroll" "credits"
+}

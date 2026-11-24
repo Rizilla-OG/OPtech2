@@ -415,6 +415,21 @@ def main():
            f"{cvar(video_log, 'fov')}, r_vsync {vsync})")
     log += video_log
 
+    # optech2: the credits page scrolls as the stock credits; quit: classic look shows the stock picture,
+    # n goes back, y quits (the game ends before the script's own quit)
+    quit_log, quit_shots = run("quit", ["menu_quit", "clear", "screenshot png", "presskey n", "menu_builtin quit"] +
+                               filler[:11] + ["clear", "screenshot png", "presskey escape", "#", "menu_credits", "clear",
+                               "screenshot png", "presskey escape", "menu_builtin credits", "clear", "screenshot png",
+                               "presskey escape", "echo before quit", "menu_quit", "presskey y", "#", "#",
+                               "echo after quit"], mods=False)
+    if len(quit_shots) < 4:
+        report(False, "quit / credits: a screenshot is missing (see quit.log)")
+    else:
+        report(differing(quit_shots[0][:-40], quit_shots[1][:-40]) == 0, "quit page draws the stock quit picture")
+        report(differing(quit_shots[2][:-40], quit_shots[3][:-40]) == 0, "credits page scrolls as the stock credits")
+    report("before quit" in quit_log and "after quit" not in quit_log, "quit page: n goes back, y quits")
+    log += quit_log
+
     # optech2: a click on a key binding row (re-release look) starts binding, as enter
     bind_log, _ = run("bind-click", ["unbind k", "menu_keys", "menu_pointer 320 171", "presskey mouse1",
                                      "presskey k", "presskey escape", "bind k"], mods=False, style=1)

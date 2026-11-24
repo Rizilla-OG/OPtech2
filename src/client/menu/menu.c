@@ -3525,44 +3525,19 @@ M_Credits_Draw(menuframework_s *m)
 	}
 }
 
-static void
-M_Credits_Close(menuframework_s *m)
+/* optech2: loads a scrolling text file ("+" starts a bold line) and starts it at
+   the bottom; the id credits when the file isn't there. For the credits and for
+   data pages with "scroll" */
+void
+M_CreditsStart(const char *file_name)
 {
-	if (creditsBuffer)
-	{
-		FS_FreeFile(creditsBuffer);
-		creditsBuffer = NULL;
-	}
-}
-
-static const char *
-M_Credits_Key(menuframework_s *m, int key)
-{
-	key = Key_GetMenuKey(key);
-
-	if (key == K_ESCAPE)
-	{
-		M_PopMenu(false);
-	}
-
-	return NULL;
-}
-
-static void
-M_Menu_Credits_f(void)
-{
-	if (DataMenu_Override("credits")) /* optech2: menus/credits.menu replaces it */
-	{
-		return;
-	}
-
 	int count;
 	char *p;
 
-	creditsBuffer = NULL;
-	count = FS_LoadFile("credits", (void **)&creditsBuffer);
+	M_CreditsStop();
+	count = FS_LoadFile(file_name, (void **)&creditsBuffer);
 
-	if (count != -1)
+	if (count > 0) /* optech2: was != -1: an empty file ran past its end */
 	{
 		int n;
 		p = creditsBuffer;
@@ -3612,6 +3587,54 @@ M_Menu_Credits_f(void)
 	}
 
 	credits_start_time = cls.realtime;
+}
+
+/* optech2: draws the scrolling text (M_CreditsStart) */
+void
+M_CreditsDraw(void)
+{
+	M_Credits_Draw(NULL);
+}
+
+/* optech2: frees the scrolling text's file */
+void
+M_CreditsStop(void)
+{
+	if (creditsBuffer)
+	{
+		FS_FreeFile(creditsBuffer);
+		creditsBuffer = NULL;
+	}
+}
+
+static void
+M_Credits_Close(menuframework_s *m)
+{
+	M_CreditsStop();
+}
+
+static const char *
+M_Credits_Key(menuframework_s *m, int key)
+{
+	key = Key_GetMenuKey(key);
+
+	if (key == K_ESCAPE)
+	{
+		M_PopMenu(false);
+	}
+
+	return NULL;
+}
+
+static void
+M_Menu_Credits_f(void)
+{
+	if (DataMenu_Override("credits")) /* optech2: menus/credits.menu replaces it */
+	{
+		return;
+	}
+
+	M_CreditsStart("credits");
 
 	s_credits.draw  = M_Credits_Draw;
 	s_credits.key   = M_Credits_Key;
@@ -5200,6 +5223,13 @@ M_SaveSlot(const char *slot, char *comment, size_t size)
 	}
 
 	return true;
+}
+
+/* optech2: menu_back: closes the top menu, as escape */
+static void
+M_Back_f(void)
+{
+	M_PopMenu(false);
 }
 
 /* optech2: menu_close: closes every menu (after a page's load or save) */
@@ -8091,6 +8121,7 @@ M_Init(void)
 	Cmd_AddCommand("menu_episode", M_Episode_f); /* optech2 */
 	Cmd_AddCommand("menu_deletesave", M_DeleteSave_f); /* optech2 */
 	Cmd_AddCommand("menu_close", M_Close_f); /* optech2 */
+	Cmd_AddCommand("menu_back", M_Back_f); /* optech2 */
 	Cmd_AddCommand("menu_setmod", M_SetMod_f); /* optech2 */
 	Cmd_AddCommand("menu_pickstart", M_PickStart_f); /* optech2 */
 	Cmd_AddCommand("menu_joypreset", IN_ApplyJoyPreset); /* optech2: joy_sensitivity's preset speeds */

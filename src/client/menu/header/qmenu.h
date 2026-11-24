@@ -188,7 +188,11 @@ void M_BindingPrompt(menuframework_s *m, int scope);
 void M_BindingDraw(const void *self, const char *command, int scope);
 qboolean M_BindingKey(menuframework_s *m, const char *command, int scope, int key, const char **key_sound);
 qboolean M_BindingWaiting(void);
-void M_BindingCursorDraw(menuframework_s *menu); /* optech2: is it open (anywhere in the stack) */
+void M_BindingCursorDraw(menuframework_s *menu);
+/* optech2: scrolling text (the credits), for data pages with "scroll" */
+void M_CreditsStart(const char *file_name);
+void M_CreditsDraw(void);
+void M_CreditsStop(void); /* optech2: is it open (anywhere in the stack) */
 
 void Menu_DrawCharacter(int cx, int cy, int num);
 void Menu_DrawString(int x, int y, const char *string);
