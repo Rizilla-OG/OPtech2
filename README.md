@@ -115,7 +115,9 @@ its list.
 Each mod folder can run a gameplay script in sandboxed Lua 5.4, `scripts/<folder>.lua`: see
 [mods/SCRIPTING.md](mods/SCRIPTING.md). Items can be changed or added in a text file,
 `defs/<folder>.items` (weapons take damage, spread and speed numbers there too), and monsters in
-`defs/<folder>.monsters`: see [mods/DEFINITIONS.md](mods/DEFINITIONS.md). [mods/survival](mods/survival/README.md)
+`defs/<folder>.monsters`: see [mods/DEFINITIONS.md](mods/DEFINITIONS.md). Menu pages are text files too,
+`menus/<name>.menu`, with an optional Lua script for lists: a mod can change the stock menus or add its
+own, see [mods/MENUS.md](mods/MENUS.md). [mods/survival](mods/survival/README.md)
 is a small example script mod. For a mod with its own game library (new weapons, effects,
 HUD, movement), see [mods/testmod](mods/testmod/README.md).
 

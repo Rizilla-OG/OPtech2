@@ -105,7 +105,9 @@ something unfinished; remove an entry in the commit that fixes it.
   game page lists episodes; next lists to port: save/load slots, key
   bindings, servers, mods, level select — need menu.* functions for each); 4 restyle (done 2026-11-24 for data pages: ui_menustyle 1, panel,
   row bar, mouse; the stock C menus and the main menu keep the classic
-  look until they're data pages); 5 modder docs.
+  look until they're data pages); 5 modder docs (done 2026-11-24: mods/MENUS.md).
+  Left: more stock menus as pages (keys, load/save, servers, player setup,
+  video, gamepad, main menu with its pics), each needing menu.* functions.
 - Later: game library menus in C through an extension hook (draw + keys),
   for libraries like q2arpg that want their own; engine/data menus stay the
   fallback for re-release games.
