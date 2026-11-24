@@ -163,7 +163,7 @@ static qboolean datamenu_builtin_only; /* optech2: menu_builtin is opening a sto
 typedef struct
 {
 	char key[64];
-	char value[256];
+	char value[1024]; /* optech2: room for long "options" (the re-release's 29 crosshairs) */
 } datamenu_pair_t;
 
 #define DATAMENU_MAX_PAIRS 32

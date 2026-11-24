@@ -7496,6 +7496,11 @@ M_MenuCondition(const char *name, qboolean *known)
 		return M_IsGame(name + 5);
 	}
 
+	if (!Q_stricmp(name, "rerelease")) /* optech2: running on the re-release's data */
+	{
+		return FS_RereleaseData();
+	}
+
 	if (!Q_stricmp(name, "styled")) /* optech2: the re-release menu look is on */
 	{
 		return Menu_Styled();

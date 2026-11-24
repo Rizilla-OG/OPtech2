@@ -80,6 +80,16 @@
 "alttext" "$m_crosshair_style"
 "cvar" "crosshair"
 "options" "none=0;cross=1;dot=2;angle=3"
+"if" "!rerelease"
+}
+// optech2: the re-release's data has 29 crosshairs of its own (pics/ch1-ch29), in another order
+{
+"type" "choice"
+"label" "crosshair"
+"alttext" "$m_crosshair_style"
+"cvar" "crosshair"
+"options" "none=0;ring and dot=1;plus=2;small gapped cross=3;filled circle=4;thin ring and dot=5;dot=6;ring and plus=7;tiny cross=8;long gapped cross=9;broken ring=10;tiny ring=11;scope=12;small circle=13;bracket ring=14;small ring and dot=15;parentheses=16;big scope=17;four arrows=18;gapped cross and dot=19;big ring=20;bold plus=21;gapped dots=22;big filled circle=23;ring=24;small dot=25;big ring and plus=26;thin plus=27;wide gapped cross=28;big broken ring=29"
+"if" "rerelease"
 }
 {
 "type" "choice"

@@ -322,7 +322,8 @@ def main():
                f"a stock C menu (key bindings) takes the re-release look ({differing(keys_shots[0], keys_shots[1])} pixels)")
 
     # optech2: the shipped pages against the stock menus, shots 1.5 s apart (same cursor frame)
-    shipped = ["set crosshair 2", "set crosshair_color_r 0", "set crosshair_color_g 1", "set crosshair_color_b 1",
+    # optech2: crosshair 0: "none" in both lists (the re-release's data names its own 29; stock's names are classic)
+    shipped = ["set crosshair 0", "set crosshair_color_r 0", "set crosshair_color_g 1", "set crosshair_color_b 1",
                "set m_pitch -0.022", "set dmflags 16656"]  # optech2: some bits on, teamplay by skin
     for page in SHIPPED_PAGES:
         shipped += [f"menu_{page}", "clear", "screenshot png", "presskey escape", f"menu_builtin {page}"] + filler[:11] + [
