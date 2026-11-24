@@ -249,7 +249,7 @@ WriteCvar(FILE *report, const char *label, const char *name)
 /*
  * Writes the crash report. reason is what happened ("Fatal error",
  * "Signal 11 (SIGSEGV)"), message the error text or NULL. Returns the
- * report's path (also when an earlier call already wrote it), or NULL if
+ * report's path (optech2: also when an earlier call already wrote it), or NULL if
  * none could be made.
  */
 const char *

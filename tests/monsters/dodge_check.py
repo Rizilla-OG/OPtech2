@@ -96,7 +96,7 @@ def dodges(log, monster):
 
 
 def failed_rolls(log, monster):
-    # the skill roll said no: logged once per projectile, then no new roll until it arrives
+    # optech2: the skill roll said no: logged once per projectile, then no new roll until it arrives
     return re.findall(rf"dodgelog time [\d.]+ monster {monster} nododge eta", log)
 
 
@@ -120,7 +120,7 @@ def main():
            f"soldier dodges rockets in flight: {len(rocket_dodges)} dodges of {SHOTS} rockets "
            f"({sum(kind == 'sidestep' for kind, _ in rocket_dodges)} sidesteps, "
            f"{sum(kind == 'duck' for kind, _ in rocket_dodges)} ducks), {hits} hits")
-    # one roll per rocket: it used to roll again every think and nearly always dodge
+    # optech2: one roll per rocket: it used to roll again every think and nearly always dodge
     report(rolls <= SHOTS,
            f"soldier rolls once per rocket: {rolls} rolls for {SHOTS} rockets")
 
