@@ -600,7 +600,9 @@ FX_AddViewWeapon(const optech2_fx_view_weapon_t *gun)
 	if (shell)
 	{
 		ent.flags = FX_ShellColors(shell) | RF_TRANSLUCENT | RF_DEPTHHACK | RF_WEAPONMODEL;
-		ent.alpha = 0.30f;
+		/* optech2: the re-release tints the whole gun strongly, much
+		   more than the faint 0.3 shell on models out in the world */
+		ent.alpha = 1.0f;
 		V_AddEntity(&ent);
 	}
 

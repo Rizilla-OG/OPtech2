@@ -212,7 +212,14 @@ R_StaticVerts(qboolean powerUpEffect, int nverts,
 	   tighter one, or two plates float off a flat card with nothing between */
 	/* powerUpEffect 2: the view weapon's shell; it is close to the camera,
 	   growing it pushed it through the view */
-	if (powerUpEffect == 1)
+	/* optech2: the view weapon sits a few units from the eye (1 unit is
+	   ~50 pixels there), so the full 4 unit push blew its shell up into big
+	   plates across the view; a thin rim like the re-release's instead */
+	if (powerUpEffect == 2)
+	{
+		job.shell_push = 0.15f;
+	}
+	else if (powerUpEffect == 1)
 	{
 		unsigned short low[3] = {65535, 65535, 65535}, high[3] = {0, 0, 0};
 		float extent = 0;
