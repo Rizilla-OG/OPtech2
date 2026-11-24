@@ -106,15 +106,12 @@ something unfinished; remove an entry in the commit that fixes it.
   bindings, servers, mods, level select — need menu.* functions for each); 4 restyle (done 2026-11-24 for data pages: ui_menustyle 1, panel,
   row bar, mouse; the stock C menus and the main menu keep the classic
   look until they're data pages); 5 modder docs (done 2026-11-24: mods/MENUS.md).
-  Done 2026-11-24 (later): load/save (saves.lua), keys + multiplayer keys +
-  gamepad buttons/alt buttons ("bind" item), video (video.lua, pending until
-  apply; + max fps, dynamic light), address book; new page options > game
-  and HUD (gameoptions.menu). Still stock C (with the re-release look):
-  gamepad joy/gyro/sticks (presets, calibration), join server (LAN scan),
-  start server, player setup (model preview), mods (filesystem restart),
-  credits, quit, level select; ask riz before converting those. Still
-  classic inside the new look: join server's "searching" popup, credits,
-  the quit picture.
+  Done 2026-11-24: every stock menu is a data page (load/save, all binding
+  pages, video, address book, mods, level select, joy/gyro/sticks, quit,
+  credits, start/join server, player setup) + options > game and HUD;
+  stock C menus kept as menu_builtin fallbacks. Left: the main menu's
+  classic picture page (still C; data main.menu only in the re-release
+  look), the "searching" popup is still the classic text box.
 - Later: game library menus in C through an extension hook (draw + keys),
   for libraries like q2arpg that want their own; engine/data menus stay the
   fallback for re-release games.
