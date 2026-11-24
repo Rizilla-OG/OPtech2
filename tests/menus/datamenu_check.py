@@ -214,7 +214,8 @@ end
 """
 
 # optech2: the shipped pages compared with the stock menus they replace
-SHIPPED_PAGES = ("options", "multiplayer", "game", "downloadoptions", "dmoptions")
+SHIPPED_PAGES = ("options", "multiplayer", "game", "downloadoptions", "dmoptions", "keys", "multiplayer_keys",
+                 "buttons", "altbuttons")
 
 results = []
 
@@ -393,6 +394,15 @@ def main():
            f"mouse: a click on the slider bar's middle sets it (menutest_slider {cvar(style_log, 'menutest_slider')})")
     report("style done" in style_log, "mouse: right click goes back without trouble")
     log += style_log
+
+    # optech2: the shipped key binding page: enter then a key binds, escape cancels, del unbinds
+    binds_log, _ = run("binds", ["unbind k", "menu_keys", "presskey downarrow", "presskey enter", "presskey k",
+                                 "bind k", "presskey enter", "presskey escape", "bind k", "presskey del", "bind k"],
+                       mods=False)
+    bound = re.findall(r'"k" = "([^"]*)"|"k" is not bound', binds_log)
+    report(bool(bound) and bound[0] == "weapnext" and bound[-1] == "",
+           f"bind page: enter + key binds, del unbinds ({bound})")
+    log += binds_log
 
     # optech2: a click on a key binding row (re-release look) starts binding, as enter
     bind_log, _ = run("bind-click", ["unbind k", "menu_keys", "menu_pointer 320 171", "presskey mouse1",

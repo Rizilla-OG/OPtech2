@@ -969,7 +969,7 @@ KeyCursorDrawFunc(menuframework_s *menu)
 	}
 	else
 	{
-		c = 12 + ((int)(Sys_Milliseconds() / 250) & 1);
+		c = 12 + ((cls.realtime / 250) & 1); /* optech2: engine time, as the other cursors (checks under fixedtime) */
 	}
 
 	scale = SCR_GetMenuScale();
@@ -1360,6 +1360,175 @@ GamepadMenu_StatusPrompt(menuframework_s *m)
 		Key_KeynumToString_Joy(btn_cancel));
 
 	Menu_SetStatusBar(m, m_gamepadbind_statusbar);
+}
+
+/* optech2: ---- "bind" items of data pages: any command, a scope of keys ---- */
+
+/* optech2: "keyboard" (keyboard and mouse), "gamepad", "gamepad_alt" (with the
+   alt selector held), "all" */
+int
+M_BindScope(const char *name)
+{
+	if (!Q_stricmp(name, "gamepad"))
+	{
+		return KEYS_CONTROLLER;
+	}
+
+	if (!Q_stricmp(name, "gamepad_alt"))
+	{
+		return KEYS_CONTROLLER_ALT;
+	}
+
+	if (!Q_stricmp(name, "all"))
+	{
+		return KEYS_ALL;
+	}
+
+	return KEYS_KEYBOARD_MOUSE;
+}
+
+void
+M_BindingPrompt(menuframework_s *m, int scope)
+{
+	if ((scope == KEYS_CONTROLLER) || (scope == KEYS_CONTROLLER_ALT))
+	{
+		GamepadMenu_StatusPrompt(m);
+	}
+	else
+	{
+		Menu_SetStatusBar(m, "ENTER to change, BACKSPACE to clear");
+	}
+}
+
+/* optech2: the keys bound to the command, drawn in the value column as the stock binding pages do */
+void
+M_BindingDraw(const void *self, const char *command, int scope)
+{
+	const menuaction_s *a = (const menuaction_s *)self;
+	qboolean gamepad = (scope == KEYS_CONTROLLER) || (scope == KEYS_CONTROLLER_ALT);
+	float scale = SCR_GetMenuScale();
+	int keys[2];
+	int x, y;
+
+	M_FindKeysForCommand(command, keys, scope);
+
+	if (M_StyledBindingValue(a, keys, gamepad))
+	{
+		return;
+	}
+
+	x = a->generic.x + a->generic.parent->x;
+	y = a->generic.y + a->generic.parent->y;
+
+	if (keys[0] == -1)
+	{
+		Menu_DrawString(x + RCOLUMN_OFFSET * scale, y, "???");
+	}
+	else
+	{
+		const char *name = gamepad ? Key_KeynumToString_Joy(keys[0]) : Key_KeynumToString(keys[0]);
+		int width = (int)(strlen(name) * Draw_CharAdvance()); /* optech2: the font's width */
+
+		Menu_DrawString(x + RCOLUMN_OFFSET * scale, y, name);
+
+		if (keys[1] != -1)
+		{
+			Menu_DrawString(x + 24 * scale + (width * scale), y, "or");
+			Menu_DrawString(x + 48 * scale + (width * scale), y,
+				gamepad ? Key_KeynumToString_Joy(keys[1]) : Key_KeynumToString(keys[1]));
+		}
+	}
+}
+
+/* optech2: a key on a bind item: enter (or a click) waits for a key, the next
+   one is bound (escape cancels), del or backspace unbinds; NULL in *sound and
+   false when it isn't the binding's key (the page handles it) */
+qboolean
+M_BindingKey(menuframework_s *m, const char *command, int scope, int key, const char **key_sound)
+{
+	*key_sound = NULL;
+
+	if (menukeyitem_bind)
+	{
+		qboolean allowed;
+
+		switch (scope)
+		{
+			case KEYS_CONTROLLER:
+				allowed = (key >= K_JOY_FIRST_BTN);
+				break;
+			case KEYS_CONTROLLER_ALT:
+				allowed = (key >= K_JOY_FIRST_BTN) && (key < K_JOY_FIRST_BTN_ALT) &&
+						  (!keybindings[key] || strcmp(keybindings[key], "+joyaltselector"));
+				break;
+			case KEYS_KEYBOARD_MOUSE:
+				allowed = (key != K_ESCAPE) && (key != '`') && (key < K_JOY_FIRST_BTN);
+				break;
+			default:
+				allowed = (key != K_ESCAPE) && (key != '`');
+				break;
+		}
+
+		if (allowed)
+		{
+			int bound = (scope == KEYS_CONTROLLER_ALT) ? key + (K_JOY_FIRST_BTN_ALT - K_JOY_FIRST_BTN) : key;
+
+			Cbuf_InsertText(va("bind \"%s\" \"%s\"\n", Key_KeynumToString(bound), command));
+		}
+
+		M_BindingPrompt(m, scope);
+		menukeyitem_bind = false;
+		*key_sound = menu_out_sound;
+		return true;
+	}
+
+	if (M_BindingMenuClick(m, &key, key_sound))
+	{
+		return true;
+	}
+
+	switch (Key_GetMenuKey(key))
+	{
+		case K_ENTER:
+		{
+			int keys[2];
+
+			M_FindKeysForCommand(command, keys, scope);
+
+			if (keys[1] != -1)
+			{
+				M_UnbindCommand(command, scope);
+			}
+
+			menukeyitem_bind = true;
+			Menu_SetStatusBar(m, ((scope == KEYS_CONTROLLER) || (scope == KEYS_CONTROLLER_ALT)) ? "press a button for this action" : "press a key or button for this action");
+			*key_sound = menu_in_sound;
+			return true;
+		}
+
+		case K_DEL:
+		case K_BACKSPACE:
+			M_UnbindCommand(command, scope);
+			*key_sound = menu_out_sound;
+			return true;
+
+		default:
+			return false;
+	}
+}
+
+/* optech2: a binding page's cursor (blinks; "=" while waiting for the key), for data pages too */
+void
+M_BindingCursorDraw(menuframework_s *menu)
+{
+	KeyCursorDrawFunc(menu);
+}
+
+/* optech2: is a bind item waiting for its key */
+qboolean
+M_BindingWaiting(void)
+{
+	return menukeyitem_bind;
 }
 
 char *controller_bindnames[][2] =

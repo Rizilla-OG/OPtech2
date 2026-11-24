@@ -1,0 +1,149 @@
+// optech2: keyboard and mouse bindings (stock: menu_builtin keys).
+// Each "bind" shows the keys bound to its command: enter binds, del unbinds.
+{
+"line" "9"
+}
+{
+"type" "bind"
+"label" "attack"
+"command" "+attack"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "next weapon"
+"command" "weapnext"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "previous weapon"
+"command" "weapprev"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "walk forward"
+"command" "+forward"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "backpedal"
+"command" "+back"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "turn left"
+"command" "+left"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "turn right"
+"command" "+right"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "run"
+"command" "+speed"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "step left"
+"command" "+moveleft"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "step right"
+"command" "+moveright"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "sidestep"
+"command" "+strafe"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "look up"
+"command" "+lookup"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "look down"
+"command" "+lookdown"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "center view"
+"command" "centerview"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "mouse look"
+"command" "+mlook"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "keyboard look"
+"command" "+klook"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "up / jump"
+"command" "+moveup"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "down / crouch"
+"command" "+movedown"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "inventory"
+"command" "inven"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "use item"
+"command" "invuse"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "drop item"
+"command" "invdrop"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "prev item"
+"command" "invprev"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "next item"
+"command" "invnext"
+"scope" "keyboard"
+}
+{
+"type" "bind"
+"label" "help computer"
+"command" "cmd help"
+"scope" "keyboard"
+}

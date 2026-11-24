@@ -89,7 +89,8 @@ enum
 	DATAMENU_ACTION,
 	DATAMENU_FIELD,
 	DATAMENU_LABEL,
-	DATAMENU_SPACE
+	DATAMENU_SPACE,
+	DATAMENU_BIND
 };
 
 /* optech2: one item; the widget comes first, so the widget pointer qmenu
@@ -113,6 +114,7 @@ typedef struct
 	char lua[64]; /* optech2: "lua": the page script's function run on enter */
 	int lua_action; /* optech2: a list entry's action function, 0 = none */
 	char id[64]; /* optech2: "id" (or a list entry's id): handed to the page's keys function */
+	int scope; /* optech2: a bind item's keys: KEYS_KEYBOARD_MOUSE, KEYS_CONTROLLER... */
 	qboolean invert; /* optech2: "invert": yes makes the cvar negative, keeping its size */
 	int mask; /* optech2: "mask": the choice sets only these bits of the cvar (dmflags) */
 	char format[16];
@@ -134,6 +136,7 @@ typedef struct
 	char status_text[256];
 	char status_override[128]; /* optech2: menu.status(): replaces the status line until the page reloads */
 	char keys[64]; /* optech2: "keys": the page script's function asked first about each key */
+	int line_height; /* optech2: "line": pixels between rows in the classic look (10; the binding pages 9) */
 	qboolean has_script; /* optech2: menus/<name>.lua ran */
 	menuframework_s frame;
 	int item_count;
@@ -646,7 +649,11 @@ DataMenu_Draw(menuframework_s *frame)
 		Menu_DrawString((viddef.width - width) / 2, frame->y - 30, page->title);
 	}
 
-	if (page->status_override[0])
+	if (M_BindingWaiting())
+	{
+		/* optech2: a bind item's "press a key" prompt stays */
+	}
+	else if (page->status_override[0])
 	{
 		frame->statusbar = page->status_override;
 	}
@@ -660,6 +667,13 @@ DataMenu_Draw(menuframework_s *frame)
 	Menu_Draw(frame);
 }
 
+static void
+DataMenu_BindDraw(void *self)
+{
+	const datamenu_item_t *item = (const datamenu_item_t *)self;
+
+	M_BindingDraw(self, item->command, item->scope);
+}
 
 /* optech2: fills an item from its block; false for an unknown type */
 static qboolean
@@ -715,6 +729,21 @@ DataMenu_BuildItem(datamenu_item_t *item, const datamenu_pair_t *pairs, int pair
 		generic->flags = Q_stricmp(DataMenu_Value(pairs, pair_count, "align", "left"), "right") ? QMF_LEFT_JUSTIFY : 0;
 		generic->flags |= DataMenu_OpensMenu(item) ? QMF_SUBMENU : 0;
 		generic->callback = DataMenu_ActionSelected;
+	}
+	else if (!Q_stricmp(type, "bind"))
+	{
+		/* optech2: the keys bound to "command" in the value column; enter binds, del unbinds */
+		item->kind = DATAMENU_BIND;
+		item->scope = M_BindScope(DataMenu_Value(pairs, pair_count, "scope", "keyboard"));
+		generic->type = MTYPE_ACTION;
+		generic->flags = QMF_GRAYED; /* optech2: as the stock binding pages */
+		generic->ownerdraw = DataMenu_BindDraw;
+
+		if (!item->command[0])
+		{
+			Com_Printf("%s: a bind needs a \"command\"\n", file_name);
+			return false;
+		}
 	}
 	else if (!Q_stricmp(type, "field"))
 	{
@@ -783,7 +812,7 @@ DataMenu_AddListEntry(const menulua_entry_t *entry, void *context)
 	generic->callback = entry->disabled ? NULL : DataMenu_ActionSelected; /* optech2: disabled: there, does nothing */
 
 	list->page->item_count++;
-	list->y += DATAMENU_LINE_HEIGHT;
+	list->y += list->page->line_height;
 	return true;
 }
 
@@ -886,6 +915,7 @@ DataMenu_LoadPage(const char *name)
 
 	memset(page, 0, sizeof(*page));
 	datamenu_loading = page;
+	page->line_height = DATAMENU_LINE_HEIGHT;
 	Q_strlcpy(page->name, name, sizeof(page->name));
 	cursor = text;
 
@@ -902,6 +932,7 @@ DataMenu_LoadPage(const char *name)
 		page->fixed_y = (DataMenu_Value(pairs, pair_count, "y", NULL) != NULL);
 		page->y_offset = atoi(DataMenu_Value(pairs, pair_count, "y", "0"));
 		Q_strlcpy(page->keys, DataMenu_Value(pairs, pair_count, "keys", ""), sizeof(page->keys));
+		page->line_height = Q_clamp(atoi(DataMenu_Value(pairs, pair_count, "line", "10")), 4, 40);
 
 		/* optech2: a page whose "if" doesn't hold isn't there: the stock menu opens instead */
 		if (!DataMenu_Condition(page, DataMenu_Value(pairs, pair_count, "if", "")))
@@ -960,7 +991,7 @@ DataMenu_LoadPage(const char *name)
 		if (DataMenu_BuildItem(item, pairs, pair_count, y, file_name))
 		{
 			page->item_count++;
-			y += DATAMENU_LINE_HEIGHT;
+			y += page->line_height;
 		}
 	}
 
@@ -1012,6 +1043,16 @@ DataMenu_Key(menuframework_s *frame, int key)
 {
 	const datamenu_page_t *page = DataMenu_FramePage(frame);
 	int menu_key = Key_GetMenuKey(key);
+
+	const datamenu_item_t *selected = (const datamenu_item_t *)Menu_ItemAtCursor(frame);
+	const char *bind_sound;
+
+	/* optech2: a bind item takes enter, del, backspace and the key it waits for */
+	if (selected && (selected->kind == DATAMENU_BIND) &&
+		M_BindingKey(frame, selected->command, selected->scope, key, &bind_sound))
+	{
+		return bind_sound;
+	}
 
 	if (page->has_script && page->keys[0] && ((key < K_MOUSE1) || (key > K_MOUSE5)) &&
 		(key != K_MWHEELUP) && (key != K_MWHEELDOWN))
@@ -1102,6 +1143,28 @@ DataMenu_Open(const char *name)
 		Menu_Center(&page->frame);
 	}
 	Menu_AdjustCursor(&page->frame, 1);
+
+	/* optech2: a page of bind items without its own status line shows the stock prompt */
+	for (i = 0; i < page->item_count; i++)
+	{
+		if ((page->items[i].kind == DATAMENU_BIND) && !page->status[0] && !page->status_override[0])
+		{
+			M_BindingPrompt(&page->frame, page->items[i].scope);
+			break;
+		}
+	}
+
+	page->frame.cursordraw = NULL;
+
+	for (i = 0; i < page->item_count; i++)
+	{
+		if (page->items[i].kind == DATAMENU_BIND)
+		{
+			page->frame.cursordraw = M_BindingCursorDraw; /* optech2: as the stock binding pages */
+			break;
+		}
+	}
+
 	M_PushMenu(&page->frame);
 	return true;
 }

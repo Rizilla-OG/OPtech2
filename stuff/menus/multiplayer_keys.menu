@@ -1,0 +1,47 @@
+// optech2: multiplayer bindings (stock: menu_builtin multiplayer_keys).
+// Each "bind" shows the keys bound to its command: enter binds, del unbinds.
+{
+"line" "9"
+}
+{
+"type" "bind"
+"label" "score"
+"command" "score"
+"scope" "all"
+}
+{
+"type" "bind"
+"label" "chat"
+"command" "messagemode"
+"scope" "all"
+}
+{
+"type" "bind"
+"label" "team chat"
+"command" "messagemode2"
+"scope" "all"
+}
+{
+"type" "bind"
+"label" "wave 1"
+"command" "wave 1"
+"scope" "all"
+}
+{
+"type" "bind"
+"label" "wave 2"
+"command" "wave 2"
+"scope" "all"
+}
+{
+"type" "bind"
+"label" "wave 3"
+"command" "wave 3"
+"scope" "all"
+}
+{
+"type" "bind"
+"label" "wave 4"
+"command" "wave 4"
+"scope" "all"
+}

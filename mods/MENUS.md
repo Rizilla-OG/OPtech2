@@ -62,6 +62,7 @@ comment. The first block is the page, every block after it an item:
 | `status` | a status line; `$name` is a cvar's value (`dmflags = $dmflags`) |
 | `if` | a condition (below): when it doesn't hold, the page isn't there and the stock menu of the same name opens instead |
 | `open` | a function of the page's script, run before the items are built |
+| `line` | pixels between rows in the classic look (10; the binding pages use 9 as the stock ones) |
 | `script` | the script file to use instead of `menus/<name>.lua` (pages sharing one: `loadgame` and `savegame` use `saves`) |
 | `keys` | a function of the page's script asked first about each key: `fn(key, id)` gets the key's name (`leftarrow`, `del`, `y`, `enter`...) and the selected item's `id` (`""` if none), and returns true when it used the key |
 | `x`, `y` | the classic look only: pixels (menu scale) from the screen's middle; centered without `y` (the re-release look always centers its panel under the banner's place) |
@@ -76,6 +77,7 @@ comment. The first block is the page, every block after it an item:
 | `invert` | yes makes the cvar negative, keeping its size (invert mouse: `m_pitch`) | `cvar` |
 | `action` | runs a command on enter | `command`, `lua` |
 | `field` | text typed into a cvar, saved when the page closes | `cvar`, `length` |
+| `bind` | the keys bound to a command, in the value column: enter waits for a key and binds it, del or backspace unbinds | `command`, `scope`: `keyboard` (keyboard and mouse, the default), `gamepad`, `gamepad_alt` (with the alt selector held), `all` |
 | `label` | text only (a section heading) | |
 | `space` | a blank line | |
 | `list` | items made by the page's script | `source` |

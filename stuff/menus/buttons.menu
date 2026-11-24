@@ -1,0 +1,125 @@
+// optech2: gamepad button bindings (stock: menu_builtin buttons).
+// Each "bind" shows the keys bound to its command: enter binds, del unbinds.
+{
+"line" "9"
+}
+{
+"type" "bind"
+"label" "attack"
+"command" "+attack"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "up / jump"
+"command" "+moveup"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "down / crouch"
+"command" "+movedown"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "next weapon"
+"command" "weapnext"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "previous weapon"
+"command" "weapprev"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "long range: quickswitch 1"
+"command" "cycleweap weapon_plasmabeam weapon_boomer weapon_chaingun weapon_etf_rifle weapon_machinegun weapon_blaster"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "close range: quickswitch 2"
+"command" "cycleweap weapon_supershotgun weapon_shotgun weapon_chainfist"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "explosives: quickswitch 3"
+"command" "cycleweap weapon_phalanx weapon_rocketlauncher weapon_proxlauncher weapon_grenadelauncher ammo_grenades"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "special: quickswitch 4"
+"command" "cycleweap weapon_bfg weapon_disintegrator weapon_railgun weapon_hyperblaster ammo_tesla ammo_trap"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "best safe weapon"
+"command" "prefweap weapon_railgun weapon_plasmabeam weapon_boomer weapon_hyperblaster weapon_chaingun weapon_supershotgun weapon_etf_rifle weapon_machinegun weapon_shotgun weapon_blaster"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "best unsafe weapon"
+"command" "prefweap weapon_bfg weapon_disintegrator weapon_phalanx weapon_railgun weapon_rocketlauncher weapon_plasmabeam weapon_boomer weapon_hyperblaster weapon_grenadelauncher weapon_chaingun weapon_proxlauncher ammo_grenades weapon_supershotgun"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "center view"
+"command" "centerview"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "inventory"
+"command" "inven"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "use item"
+"command" "invuse"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "drop item"
+"command" "invdrop"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "prev item"
+"command" "invprev"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "next item"
+"command" "invnext"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "help computer"
+"command" "cmd help"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "gyro off / on"
+"command" "+gyroaction"
+"scope" "gamepad"
+}
+{
+"type" "bind"
+"label" "alt buttons modifier"
+"command" "+joyaltselector"
+"scope" "gamepad"
+}

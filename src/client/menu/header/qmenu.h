@@ -181,7 +181,14 @@ qboolean Menu_StyledMouse(menuframework_s *menu, int key, int *replacement, cons
 void Menu_SetPointer(float x, float y);
 void M_PopMenu(qboolean silent); /* optech2: data pages reload */
 menuframework_s *M_GetTopMenu(void); /* optech2: the menu on top, NULL if none */
-qboolean M_MenuOnStack(const menuframework_s *menu); /* optech2: is it open (anywhere in the stack) */
+qboolean M_MenuOnStack(const menuframework_s *menu);
+/* optech2: "bind" items of data pages (menu.c) */
+int M_BindScope(const char *name);
+void M_BindingPrompt(menuframework_s *m, int scope);
+void M_BindingDraw(const void *self, const char *command, int scope);
+qboolean M_BindingKey(menuframework_s *m, const char *command, int scope, int key, const char **key_sound);
+qboolean M_BindingWaiting(void);
+void M_BindingCursorDraw(menuframework_s *menu); /* optech2: is it open (anywhere in the stack) */
 
 void Menu_DrawCharacter(int cx, int cy, int num);
 void Menu_DrawString(int x, int y, const char *string);

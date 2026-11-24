@@ -251,7 +251,7 @@ Field_Draw(menufield_s *f)
 
 	if (Menu_ItemAtCursor(f->generic.parent) == f)
 	{
-		if (((int)(Sys_Milliseconds() / 250)) & 1)
+		if ((cls.realtime / 250) & 1) /* optech2: engine time */
 		{
 			int offset;
 
@@ -546,15 +546,15 @@ Menu_Draw(menuframework_s *menu)
 		if (item->flags & QMF_LEFT_JUSTIFY)
 		{
 			Draw_CharScaled(menu->x + (item->x / scale - 24 + item->cursor_offset) * scale,
-					(menu->y + item->y) * scale,
-					12 + ((int)(Sys_Milliseconds() / 250) & 1), scale);
+				(menu->y + item->y) * scale,
+				12 + ((cls.realtime / 250) & 1), scale); /* optech2: engine time */
 		}
 		else
 		{
 			// FIXME:: menu->x + (item->x / scale + 24 + item->cursor_offset) * scale
 			Draw_CharScaled(menu->x + (item->cursor_offset) * scale,
-					(menu->y + item->y) * scale,
-					12 + ((int)(Sys_Milliseconds() / 250) & 1), scale);
+				(menu->y + item->y) * scale,
+				12 + ((cls.realtime / 250) & 1), scale); /* optech2: engine time */
 		}
 	}
 
