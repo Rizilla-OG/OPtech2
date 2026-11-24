@@ -376,6 +376,37 @@ MenuLua_Servers(lua_State *L)
 	return 1;
 }
 
+/* optech2: menu.playermodels(): scans them; { { name = "male", skins = { "grunt", ... } }, ... } */
+static int
+MenuLua_PlayerModels(lua_State *L)
+{
+	int count = M_PlayerModelsScan();
+	int i, skin;
+
+	lua_createtable(L, count, 0);
+
+	for (i = 0; i < count; i++)
+	{
+		int skins = M_PlayerSkinCount(i);
+
+		lua_createtable(L, 0, 2);
+		lua_pushstring(L, M_PlayerModelName(i));
+		lua_setfield(L, -2, "name");
+		lua_createtable(L, skins, 0);
+
+		for (skin = 0; skin < skins; skin++)
+		{
+			lua_pushstring(L, M_PlayerSkinName(i, skin));
+			lua_rawseti(L, -2, skin + 1);
+		}
+
+		lua_setfield(L, -2, "skins");
+		lua_rawseti(L, -2, i + 1);
+	}
+
+	return 1;
+}
+
 static int
 MenuLua_Print(lua_State *L)
 {
@@ -447,6 +478,7 @@ MenuLua_OpenState(void)
 		{"campaigns", MenuLua_Campaigns},
 		{"maps", MenuLua_Maps},
 		{"servers", MenuLua_Servers},
+		{"playermodels", MenuLua_PlayerModels},
 		{NULL, NULL}};
 	static const char *removed[] = {"dofile", "loadfile", "require", NULL};
 	const luaL_Reg *library;

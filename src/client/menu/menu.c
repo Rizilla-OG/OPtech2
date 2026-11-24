@@ -7670,6 +7670,67 @@ ListModels_f(void)
 	PlayerModelFree();
 }
 
+static void PlayerConfig_ModelDraw(void);
+
+/* optech2: for data pages (menu.playermodels): the player models and their skins, scanned afresh */
+int
+M_PlayerModelsScan(void)
+{
+	PlayerModelFree();
+
+	if (!PlayerConfig_ScanDirectories())
+	{
+		Menu_StartPopup(&m_popup, "No player models\nwere found", 3000);
+		return 0;
+	}
+
+	return s_modelname.num;
+}
+
+const char *
+M_PlayerModelName(int model)
+{
+	return ((model >= 0) && (model < s_modelname.num)) ? s_modelname.data[model] : "";
+}
+
+int
+M_PlayerSkinCount(int model)
+{
+	return ((model >= 0) && (model < s_modelname.num)) ? s_skinnames[model].num : 0;
+}
+
+const char *
+M_PlayerSkinName(int model, int skin)
+{
+	return ((skin >= 0) && (skin < M_PlayerSkinCount(model))) ? s_skinnames[model].data[skin] : "";
+}
+
+/* optech2: the player setup page's preview ("preview" "player"): the turning model of
+   ui_pmodel / ui_pskin and, in the classic look, the skin's icon, as the stock page draws them */
+void
+M_PlayerPreviewDraw(void)
+{
+	float scale = SCR_GetMenuScale();
+	int model = (int)Cvar_VariableValue("ui_pmodel");
+
+	if ((model < 0) || (model >= s_modelname.num))
+	{
+		return;
+	}
+
+	s_player_model_box.curvalue = model;
+	s_player_skin_box.itemnames = (const char **)s_skinnames[model].data;
+	s_player_skin_box.curvalue = (int)Cvar_VariableValue("ui_pskin");
+	SkinCallback(NULL);
+	PlayerConfig_ModelDraw();
+
+	if (!Menu_Styled() && player_icon_path[0])
+	{
+		Draw_PicScaledAltText((((viddef.width / scale - 95) / 2) - 87) * scale,
+			(((viddef.height / (2 * scale))) - 72) * scale, player_icon_path, scale, NULL);
+	}
+}
+
 static int
 CurrentRateIndex(void)
 {

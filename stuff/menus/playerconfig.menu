@@ -1,0 +1,70 @@
+// optech2: the player setup menu as a data page (stock: menu_builtin playerconfig).
+// playerconfig.lua lists the player models and skins; the page draws the
+// turning model ("preview" "player"; the classic look adds the skin's icon).
+// Headings and their values are separate items, placed as the stock page.
+{
+"preview" "player"
+"open" "on_open"
+"x" "-95"
+"y" "-97"
+"panel_right" "-8"
+}
+{
+"type" "field"
+"label" "name"
+"alttext" "$m_name"
+"cvar" "name"
+"length" "20"
+}
+{
+"type" "label"
+"label" "model"
+"alttext" "$m_model"
+"x" "-8"
+"gap" "50"
+}
+{
+"type" "list"
+"source" "model_choice"
+}
+{
+"type" "label"
+"label" "skin"
+"alttext" "$m_skin"
+"x" "-16"
+"gap" "4"
+}
+{
+"type" "list"
+"source" "skin_choice"
+}
+{
+"type" "label"
+"label" "handedness"
+"x" "32"
+"gap" "4"
+}
+{
+"type" "choice"
+"cvar" "hand"
+"options" "right=0;left=1;center=2"
+"x" "-56"
+"cursor" "-48"
+}
+{
+"type" "label"
+"label" "connect speed"
+"x" "56"
+"gap" "28"
+}
+{
+"type" "list"
+"source" "rate_choice"
+}
+{
+"type" "action"
+"label" "download options"
+"command" "menu_downloadoptions"
+"x" "-24"
+"gap" "10"
+}

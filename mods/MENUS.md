@@ -64,6 +64,8 @@ comment. The first block is the page, every block after it an item:
 | `open` | a function of the page's script, run before the items are built |
 | `scroll` | a text file scrolled up the screen as the credits (`+` starts a bold line); the page needs no items; escape leaves |
 | `picture`, `picture_text` | the classic look draws this picture alone (quit), `picture_text` when it's missing; the items still take keys; the re-release look draws the items |
+| `preview` | `player`: draws the player setup's turning model of `ui_pmodel` / `ui_pskin` (and, classic look, the skin's icon) |
+| `panel_right` | the re-release look: the panel ends this many units right of the middle (room for a preview) |
 | `height` | the classic look: centered as if the page were this tall (pixels) |
 | `line` | pixels between rows in the classic look (10; the binding pages use 9 as the stock ones) |
 | `script` | the script file to use instead of `menus/<name>.lua` (pages sharing one: `loadgame` and `savegame` use `saves`) |
@@ -74,6 +76,7 @@ comment. The first block is the page, every block after it an item:
 
 | type | what it is | its keys |
 |---|---|---|
+| (any) | without a `label` the widget alone (a value under a heading); `cursor` moves the cursor (the stock player setup's -48) | |
 | `slider` | a number between two values | `cvar`, `min`, `max`, `step`, `format` (`%.1f`), `abs` (yes: keeps the cvar's sign), `command` and `lua` (run after a change) |
 | `choice` | one of several values | `cvar`, `options` (`name=value;name=value`), `command` and `lua` (run after a change), `mask` |
 | `toggle` | a choice of `no=0;yes=1` | `cvar` |
@@ -216,6 +219,7 @@ The `menu` table:
 | `menu.campaigns()` | `{ { name, index, levels = { "Unit 1: Base", ... } }, ... }`; `menu_pickstart <index> <level - 1>` picks one |
 | `menu.maps()` | the start server maps: `{ { title = "Outer Base", name = "base1", line = "title\nname" }, ... }`; `menu_beginserver <map> <rules>` starts one |
 | `menu.servers()` | the join server list's 8 slots: `{ { name = "<no server>", address = "" }, ... }`; the joinserver page is built again as servers answer |
+| `menu.playermodels()` | scans the player models: `{ { name = "male", skins = { "grunt", ... } }, ... }` |
 | `menu.save(slot)` | a save slot's (`"quick"`, `"save3"`) menu line and whether it holds a save: `line, valid` |
 | `menu.status(text)` | the page's status line until it reloads (`""` gives its own back); in `open` it sets the page being built |
 | `menu.reload()` | builds the page again after the call (its lists changed), keeping the selected line |

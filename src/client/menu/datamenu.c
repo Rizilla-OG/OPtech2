@@ -141,6 +141,8 @@ typedef struct
 	char scroll[MAX_QPATH]; /* optech2: "scroll": a text file scrolled up the screen, as the credits */
 	char picture[MAX_QPATH]; /* optech2: "picture": the classic look draws it alone (quit) */
 	char picture_text[64]; /* optech2: "picture_text": instead when the picture is missing */
+	qboolean player_preview; /* optech2: "preview" "player": the player setup's turning model */
+	int panel_right; /* optech2: "panel_right": the re-release look's panel ends this far right of the middle */
 	qboolean has_script; /* optech2: menus/<name>.lua ran */
 	menuframework_s frame;
 	int item_count;
@@ -690,6 +692,11 @@ DataMenu_Draw(menuframework_s *frame)
 		return;
 	}
 
+	if (page->player_preview)
+	{
+		M_PlayerPreviewDraw(); /* optech2: under the items, as the stock page */
+	}
+
 	/* optech2: choices follow their cvars (a command like "reset defaults" may change them) */
 	for (int i = 0; i < page->item_count; i++)
 	{
@@ -766,8 +773,10 @@ DataMenu_BuildItem(datamenu_item_t *item, const datamenu_pair_t *pairs, int pair
 	Q_strlcpy(item->lua, DataMenu_Value(pairs, pair_count, "lua", ""), sizeof(item->lua));
 	Q_strlcpy(item->id, DataMenu_Value(pairs, pair_count, "id", ""), sizeof(item->id));
 
-	generic->name = item->label;
+	generic->name = item->label[0] ? item->label : NULL; /* optech2: no label: the widget alone (a value under a heading) */
 	generic->alttext = item->alttext[0] ? item->alttext : NULL;
+	/* optech2: "cursor": the cursor's offset from the item (the stock player setup's -48) */
+	generic->cursor_offset = atoi(DataMenu_Value(pairs, pair_count, "cursor", "0"));
 	/* optech2: "x": pixels (menu scale) right of the item column */
 	generic->x = (int)(atoi(DataMenu_Value(pairs, pair_count, "x", "0")) * SCR_GetMenuScale());
 	generic->y = y;
@@ -1043,6 +1052,8 @@ DataMenu_LoadPage(const char *name)
 		Q_strlcpy(page->scroll, DataMenu_Value(pairs, pair_count, "scroll", ""), sizeof(page->scroll));
 		Q_strlcpy(page->picture, DataMenu_Value(pairs, pair_count, "picture", ""), sizeof(page->picture));
 		Q_strlcpy(page->picture_text, DataMenu_Value(pairs, pair_count, "picture_text", ""), sizeof(page->picture_text));
+		page->player_preview = !Q_stricmp(DataMenu_Value(pairs, pair_count, "preview", ""), "player");
+		page->panel_right = atoi(DataMenu_Value(pairs, pair_count, "panel_right", "0"));
 
 		/* optech2: a page whose "if" doesn't hold isn't there: the stock menu opens instead */
 		if (!DataMenu_Condition(page, DataMenu_Value(pairs, pair_count, "if", "")))
@@ -1259,6 +1270,7 @@ DataMenu_Open(const char *name)
 	page->frame.draw = DataMenu_Draw;
 	page->frame.key = DataMenu_Key;
 	page->frame.close = DataMenu_Close;
+	page->frame.style_right = page->panel_right;
 
 	for (i = 0; i < page->item_count; i++)
 	{

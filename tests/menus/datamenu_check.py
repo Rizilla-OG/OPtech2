@@ -215,7 +215,8 @@ end
 
 # optech2: the shipped pages compared with the stock menus they replace
 SHIPPED_PAGES = ("options", "multiplayer", "game", "downloadoptions", "dmoptions", "keys", "multiplayer_keys",
-                 "buttons", "altbuttons", "addressbook", "mods", "joy", "sticks", "gyro", "startserver", "joinserver")
+                 "buttons", "altbuttons", "addressbook", "mods", "joy", "sticks", "gyro", "startserver", "joinserver",
+                 "playerconfig")
 
 results = []
 
@@ -437,6 +438,14 @@ def main():
            "start server page: begin starts the picked map with its settings")
     log += server_log
 
+    # optech2: the player setup page: right on the skin line picks the next skin and stores it in "skin"
+    player_log, _ = run("playerconfig", ["set skin male/grunt", "menu_playerconfig", "presskey downarrow",
+                                         "presskey downarrow", "presskey rightarrow", "skin", "presskey escape"],
+                        mods=False)
+    report(cvar(player_log, "skin") not in (None, "male/grunt") and cvar(player_log, "skin").startswith("male/"),
+           f"player setup page: a skin choice sets the skin cvar ({cvar(player_log, 'skin')})")
+    log += player_log
+
     # optech2: a click on a key binding row (re-release look) starts binding, as enter
     bind_log, _ = run("bind-click", ["unbind k", "menu_keys", "menu_pointer 320 171", "presskey mouse1",
                                      "presskey k", "presskey escape", "bind k"], mods=False, style=1)
@@ -488,6 +497,9 @@ def main():
         if page in ("joy", "gyro", "startserver", "joinserver"):
             # optech2: the data pages mark items opening a page with ">" (the stock C ones don't)
             data, stock = data[:, :488], stock[:, :488]
+        if page == "playerconfig":
+            # optech2: the turning model right of x 310 moves with time; the rest must match
+            data, stock = data[:, :305], stock[:, :305]
         if page == "options":
             # optech2: options adds "game and HUD" under the stock lines (fixed y: nothing above moves)
             data, stock = data[:370], stock[:370]

@@ -193,7 +193,8 @@ void M_BindingCursorDraw(menuframework_s *menu);
 void M_CreditsStart(const char *file_name);
 void M_CreditsDraw(void);
 void M_CreditsStop(void);
-void M_DrawPopup(void); /* optech2 */ /* optech2: is it open (anywhere in the stack) */
+void M_DrawPopup(void); /* optech2 */
+void M_PlayerPreviewDraw(void); /* optech2: data pages' "preview" "player" */ /* optech2: is it open (anywhere in the stack) */
 
 void Menu_DrawCharacter(int cx, int cy, int num);
 void Menu_DrawString(int x, int y, const char *string);

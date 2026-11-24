@@ -672,6 +672,10 @@ const char *M_ModDisplayName(int index); /* optech2 */
 const char *M_ModDescription(const char *mod); /* optech2 */
 int M_CampaignCount(void); /* optech2 */
 int M_MapCount(void); /* optech2 */
+int M_PlayerModelsScan(void); /* optech2 */
+const char *M_PlayerModelName(int model); /* optech2 */
+int M_PlayerSkinCount(int model); /* optech2 */
+const char *M_PlayerSkinName(int model, int skin); /* optech2 */
 const char *M_MapPart(int index, int part); /* optech2 */
 const char *M_CampaignName(int campaign); /* optech2 */
 int M_CampaignLevelCount(int campaign); /* optech2 */
