@@ -119,7 +119,7 @@ typedef struct
 	int mask; /* optech2: "mask": the choice sets only these bits of the cvar (dmflags) */
 	char format[16];
 	int option_count;
-	char option_names[DATAMENU_MAX_OPTIONS][32];
+	char option_names[DATAMENU_MAX_OPTIONS][64]; /* optech2: 64: map titles with their file name */
 	char option_values[DATAMENU_MAX_OPTIONS][32];
 	const char *option_name_list[DATAMENU_MAX_OPTIONS + 1]; /* optech2: NULL ended, for qmenu */
 } datamenu_item_t;
@@ -411,6 +411,7 @@ DataMenu_CurrentOption(const datamenu_item_t *item)
 }
 
 static void DataMenu_ChangedLua(const datamenu_item_t *item);
+static void DataMenu_CommitFields(const datamenu_page_t *page);
 
 static void
 DataMenu_ChoiceChanged(void *self)
@@ -588,6 +589,8 @@ DataMenu_ActionSelected(void *self)
 	const datamenu_item_t *item = (const datamenu_item_t *)self;
 	const datamenu_page_t *page = DataMenu_ItemPage(item);
 
+	DataMenu_CommitFields(page); /* optech2: an action may read what the fields hold (begin, apply) */
+
 	if (item->command[0])
 	{
 		Cbuf_AddText(item->command);
@@ -607,37 +610,35 @@ DataMenu_ActionSelected(void *self)
 
 static datamenu_page_t *DataMenu_FramePage(menuframework_s *frame);
 
+/* optech2: fields write their text into their cvars */
+static void
+DataMenu_CommitFields(const datamenu_page_t *page)
+{
+	int j;
+
+	for (j = 0; j < page->item_count; j++)
+	{
+		const datamenu_item_t *item = &page->items[j];
+
+		if ((item->kind == DATAMENU_FIELD) && item->cvar[0])
+		{
+			Cvar_Set(item->cvar, item->widget.field.buffer);
+		}
+	}
+}
+
 /* optech2: fields are committed to their cvars when the page closes */
 static void
 DataMenu_Close(menuframework_s *frame)
 {
-	int i;
+	const datamenu_page_t *page = DataMenu_FramePage(frame);
 
-	if (DataMenu_FramePage(frame)->scroll[0])
+	if (page->scroll[0])
 	{
 		M_CreditsStop();
 	}
 
-	for (i = 0; i < DATAMENU_MAX_PAGES; i++)
-	{
-		datamenu_page_t *page = &datamenu_pages[i];
-		int j;
-
-		if (&page->frame != frame)
-		{
-			continue;
-		}
-
-		for (j = 0; j < page->item_count; j++)
-		{
-			const datamenu_item_t *item = &page->items[j];
-
-			if ((item->kind == DATAMENU_FIELD) && item->cvar[0])
-			{
-				Cvar_Set(item->cvar, item->widget.field.buffer);
-			}
-		}
-	}
+	DataMenu_CommitFields(page);
 }
 
 /* optech2: does pressing the item open another menu (the re-release look shows ">") */
@@ -647,7 +648,7 @@ DataMenu_OpensMenu(const datamenu_item_t *item)
 	/* optech2: the menu_ commands that don't open a menu */
 	static const char *not_menus[] = {"menu_newgame", "menu_console", "menu_reload", "menu_close",
 		"menu_deletesave", "menu_oggenable", "menu_pointer", "menu_pickstart",
-		"menu_setmod", "menu_back", "menu_joypreset", "menu_calibrategyro", NULL};
+		"menu_setmod", "menu_beginserver", "menu_back", "menu_joypreset", "menu_calibrategyro", NULL};
 	int i;
 
 	if (Q_strncasecmp(item->command, "menu", 4))
@@ -830,6 +831,7 @@ DataMenu_BuildItem(datamenu_item_t *item, const datamenu_pair_t *pairs, int pair
 		item->kind = DATAMENU_FIELD;
 		generic->type = MTYPE_FIELD;
 		generic->name = item->label[0] ? item->label : NULL; /* optech2: no label: the box alone */
+		generic->flags |= Q_stricmp(DataMenu_Value(pairs, pair_count, "numbers", "no"), "yes") ? 0 : QMF_NUMBERSONLY;
 		Field_InitState(&item->widget.field, item->cvar[0] ? Cvar_VariableString(item->cvar) : "",
 			length, visible);
 	}
@@ -884,6 +886,8 @@ DataMenu_AddListEntry(const menulua_entry_t *entry, void *context)
 			{
 				return true; /* optech2: left out, as an item whose "if" doesn't hold */
 			}
+
+			list->y += atoi(DataMenu_Value(entry->pairs, entry->pair_count, "gap", "0")); /* optech2: as a file item's */
 
 			if (DataMenu_BuildItem(item, entry->pairs, entry->pair_count, list->y, "a list entry"))
 			{

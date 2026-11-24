@@ -5908,6 +5908,137 @@ GetStartSpot(const char *startmap)
 	return NULL;
 }
 
+static strlist_t GetMapsDBList(void);
+static strlist_t MapsInLst(void);
+static void MapsInFolder(strlist_t *maps);
+
+/* optech2: the start server menu's maps, read once (until the game dir changes) */
+static void
+M_MapListInit(void)
+{
+	if (maplist.num)
+	{
+		return;
+	}
+
+	s_startmap_list.curvalue = 0;
+	maplist = GetMapsDBList();
+
+	if (!maplist.num)
+	{
+		maplist = MapsInLst();
+	}
+
+	MapsInFolder(&maplist);
+	StrList_Compress(&maplist);
+
+	if (!maplist.num)
+	{
+		Menu_StartPopup(&m_popup, "No maps were found\nin maps.lst or folders", 2000);
+	}
+}
+
+/* optech2: for data pages (menu.maps): the maps' titles and file names */
+int
+M_MapCount(void)
+{
+	M_MapListInit();
+	return maplist.num;
+}
+
+/* optech2: an entry is "title\nname"; part 0 the title, 1 the name, 2 the whole entry */
+const char *
+M_MapPart(int index, int part)
+{
+	static char text[MAX_QPATH * 2];
+	const char *newline;
+
+	if ((index < 0) || (index >= M_MapCount()))
+	{
+		return "";
+	}
+
+	if (part == 2)
+	{
+		return maplist.data[index];
+	}
+
+	newline = strchr(maplist.data[index], '\n');
+
+	if (!newline)
+	{
+		return maplist.data[index];
+	}
+
+	if (part)
+	{
+		return newline + 1;
+	}
+
+	Q_strlcpy(text, maplist.data[index], sizeof(text));
+	text[newline - maplist.data[index]] = '\0';
+	return text;
+}
+
+/* optech2: menu_beginserver <map> <rules: 0 deathmatch, 1 coop, 2 tag, 3 ctf>: starts a server as
+   the stock start server menu's begin, from the cvars its page set (timelimit, fraglimit,
+   capturelimit, hostname, ui_maxclients) */
+static void
+M_StartServer_f(void)
+{
+	const char *startmap, *spot = NULL;
+	float value;
+	int rules;
+
+	if (Cmd_Argc() != 3)
+	{
+		Com_Printf("usage: menu_beginserver <map> <rules 0-3>\n");
+		return;
+	}
+
+	startmap = Cmd_Argv(1);
+	rules = atoi(Cmd_Argv(2));
+
+	if (M_IsGame("ctf"))
+	{
+		value = Cvar_VariableValue("capturelimit");
+		Cvar_SetValue("capturelimit", (value < 0) ? 0 : value);
+		rules = 3;
+	}
+
+	value = Cvar_VariableValue("ui_maxclients");
+	Cvar_SetValue("maxclients", (value < 0) ? 0 : value);
+	value = Cvar_VariableValue("timelimit");
+	Cvar_SetValue("timelimit", (value < 0) ? 0 : value);
+	value = Cvar_VariableValue("fraglimit");
+	Cvar_SetValue("fraglimit", (value < 0) ? 0 : value);
+	Cvar_SetValue("singleplayer", 0);
+	Cvar_SetValue("deathmatch", ((rules == 3) || (rules == 0)) ? 1 : 0);
+	Cvar_SetValue("coop", (rules == 1) ? 1 : 0);
+	Cvar_SetValue("ctf", (rules == 3) ? 1 : 0);
+
+	if (rules == 1)
+	{
+		spot = GetStartSpot(startmap);
+	}
+
+	if (spot)
+	{
+		if (Com_ServerState())
+		{
+			Cbuf_AddText("disconnect\n");
+		}
+
+		Cbuf_AddText(va("gamemap \"*%s$%s\"\n", startmap, spot));
+	}
+	else
+	{
+		Cbuf_AddText(va("map %s\n", startmap));
+	}
+
+	M_ForceMenuOff();
+}
+
 static void
 StartServerActionFunc(void *self)
 {
@@ -6154,26 +6285,7 @@ StartServer_MenuInit(void)
 
 	float scale = SCR_GetMenuScale();
 
-	/* initialize list of maps once, reuse it afterwards (=> it isn't freed unless the game dir is changed) */
-	if (!maplist.num)
-	{
-		s_startmap_list.curvalue = 0;
-
-		maplist = GetMapsDBList();
-		if (!maplist.num)
-		{
-			maplist = MapsInLst();
-		}
-
-		MapsInFolder(&maplist);
-
-		StrList_Compress(&maplist);
-
-		if (!maplist.num)
-		{
-			Menu_StartPopup(&m_popup, "No maps were found\nin maps.lst or folders", 2000);
-		}
-	}
+	M_MapListInit(); /* optech2: once, reused until the game dir changes */
 
 	/* initialize the menu stuff */
 	s_startserver_menu.x = (int)(viddef.width * 0.50f);
@@ -8122,6 +8234,7 @@ M_Init(void)
 	Cmd_AddCommand("menu_deletesave", M_DeleteSave_f); /* optech2 */
 	Cmd_AddCommand("menu_close", M_Close_f); /* optech2 */
 	Cmd_AddCommand("menu_back", M_Back_f); /* optech2 */
+	Cmd_AddCommand("menu_beginserver", M_StartServer_f); /* optech2 */
 	Cmd_AddCommand("menu_setmod", M_SetMod_f); /* optech2 */
 	Cmd_AddCommand("menu_pickstart", M_PickStart_f); /* optech2 */
 	Cmd_AddCommand("menu_joypreset", IN_ApplyJoyPreset); /* optech2: joy_sensitivity's preset speeds */

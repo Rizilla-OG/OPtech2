@@ -330,6 +330,30 @@ MenuLua_Campaigns(lua_State *L)
 	return 1;
 }
 
+/* optech2: menu.maps(): the start server maps, { { title = "Outer Base", name = "base1" }, ... } */
+static int
+MenuLua_Maps(lua_State *L)
+{
+	int count = M_MapCount();
+	int i;
+
+	lua_createtable(L, count, 0);
+
+	for (i = 0; i < count; i++)
+	{
+		lua_createtable(L, 0, 2);
+		lua_pushstring(L, M_MapPart(i, 0));
+		lua_setfield(L, -2, "title");
+		lua_pushstring(L, M_MapPart(i, 1));
+		lua_setfield(L, -2, "name");
+		lua_pushstring(L, M_MapPart(i, 2));
+		lua_setfield(L, -2, "line"); /* optech2: as the stock menu shows it: the title, the file name under it */
+		lua_rawseti(L, -2, i + 1);
+	}
+
+	return 1;
+}
+
 static int
 MenuLua_Print(lua_State *L)
 {
@@ -399,6 +423,7 @@ MenuLua_OpenState(void)
 		{"renderers", MenuLua_Renderers},
 		{"modlist", MenuLua_ModList},
 		{"campaigns", MenuLua_Campaigns},
+		{"maps", MenuLua_Maps},
 		{NULL, NULL}};
 	static const char *removed[] = {"dofile", "loadfile", "require", NULL};
 	const luaL_Reg *library;

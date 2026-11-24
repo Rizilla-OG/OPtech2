@@ -79,7 +79,7 @@ comment. The first block is the page, every block after it an item:
 | `toggle` | a choice of `no=0;yes=1` | `cvar` |
 | `invert` | yes makes the cvar negative, keeping its size (invert mouse: `m_pitch`) | `cvar` |
 | `action` | runs a command on enter | `command`, `lua` |
-| `field` | text typed into a cvar, saved when the page closes; without a `label` the box alone | `cvar`, `length` (characters), `visible` (the box's width, `length` by default) |
+| `field` | text typed into a cvar, saved when the page closes (and before any action runs); without a `label` the box alone | `cvar`, `length` (characters), `visible` (the box's width, `length` by default), `numbers` (yes: digits only) |
 | `bind` | the keys bound to a command, in the value column: enter waits for a key and binds it, del or backspace unbinds | `command`, `scope`: `keyboard` (keyboard and mouse, the default), `gamepad`, `gamepad_alt` (with the alt selector held), `all` |
 | `label` | text only (a section heading) | |
 | `space` | a blank line | |
@@ -214,6 +214,7 @@ The `menu` table:
 | `menu.renderers()` | the renderers this build has: `{ { name = "[OpenGL 3.2]", value = "gl3" }, ... }` |
 | `menu.modlist()` | `{ { name = "ctf", display = "...", description = "Quake II Capture The Flag" }, ... }`; `menu_setmod <name>` switches |
 | `menu.campaigns()` | `{ { name, index, levels = { "Unit 1: Base", ... } }, ... }`; `menu_pickstart <index> <level - 1>` picks one |
+| `menu.maps()` | the start server maps: `{ { title = "Outer Base", name = "base1", line = "title\nname" }, ... }`; `menu_beginserver <map> <rules>` starts one |
 | `menu.save(slot)` | a save slot's (`"quick"`, `"save3"`) menu line and whether it holds a save: `line, valid` |
 | `menu.status(text)` | the page's status line until it reloads (`""` gives its own back); in `open` it sets the page being built |
 | `menu.reload()` | builds the page again after the call (its lists changed), keeping the selected line |
@@ -233,6 +234,7 @@ and `game.lua` (in the source: `stuff/menus/`).
 | `menu_pickstart <campaign> <level>` | picks a level for the next new game (level select) |
 | `menu_joypreset` | applies `joy_sensitivity`'s preset speeds |
 | `menu_calibrategyro` | calibrates the gyro |
+| `menu_beginserver <map> <rules>` | starts a server as start server's begin (rules 0 deathmatch, 1 coop, 2 tag, 3 ctf), from `timelimit`, `fraglimit`, `capturelimit`, `hostname`, `ui_maxclients` |
 | `menu_back` | closes the top menu, as escape |
 | `menu_close` | closes every menu (after a load or a save) |
 | `menu_reload` | builds the top data page again |

@@ -215,7 +215,7 @@ end
 
 # optech2: the shipped pages compared with the stock menus they replace
 SHIPPED_PAGES = ("options", "multiplayer", "game", "downloadoptions", "dmoptions", "keys", "multiplayer_keys",
-                 "buttons", "altbuttons", "addressbook", "mods", "joy", "sticks", "gyro")
+                 "buttons", "altbuttons", "addressbook", "mods", "joy", "sticks", "gyro", "startserver")
 
 results = []
 
@@ -430,6 +430,13 @@ def main():
     report("before quit" in quit_log and "after quit" not in quit_log, "quit page: n goes back, y quits")
     log += quit_log
 
+    # optech2: the start server page: right picks the second map, begin starts it as a deathmatch
+    server_log, _ = run("startserver", ["set maxclients 1", "set deathmatch 1", "menu_startserver", "presskey rightarrow", "presskey uparrow",
+                                        "presskey enter"] + filler[:14] + ["maxclients"], mods=False)
+    report(re.search(r"SpawnServer: \S+", server_log) is not None and cvar(server_log, "maxclients") == "8",
+           "start server page: begin starts the picked map with its settings")
+    log += server_log
+
     # optech2: a click on a key binding row (re-release look) starts binding, as enter
     bind_log, _ = run("bind-click", ["unbind k", "menu_keys", "menu_pointer 320 171", "presskey mouse1",
                                      "presskey k", "presskey escape", "bind k"], mods=False, style=1)
@@ -478,7 +485,7 @@ def main():
             continue
         # optech2: the bottom strip holds the version line, which can flicker between shots
         data, stock = shipped_shots[2 * index][:-40], shipped_shots[2 * index + 1][:-40]
-        if page in ("joy", "gyro"):
+        if page in ("joy", "gyro", "startserver"):
             # optech2: the data pages mark items opening a page with ">" (the stock C ones don't)
             data, stock = data[:, :488], stock[:, :488]
         if page == "options":

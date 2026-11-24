@@ -1,0 +1,81 @@
+// optech2: the start server menu as a data page (stock: menu_builtin startserver).
+// startserver.lua lists the maps (left/right on "initial map"); begin starts the
+// server with menu_beginserver <map> <rules>.
+{
+"banner" "m_banner_start_server"
+"open" "on_open"
+"keys" "keys"
+}
+{
+"type" "list"
+"source" "map_line"
+}
+{
+"type" "choice"
+"label" "rules"
+"cvar" "ui_rules"
+"options" "deathmatch=0;cooperative=1;tag=2;ctf=3"
+"gap" "10"
+"if" "!game=ctf"
+}
+{
+"type" "field"
+"label" "capture limit"
+"alttext" "$m_capturelimit"
+"cvar" "capturelimit"
+"length" "3"
+"numbers" "yes"
+"status" "0 = no limit"
+"gap" "16"
+"if" "game=ctf"
+}
+{
+"type" "field"
+"label" "time limit"
+"alttext" "$m_timelimit"
+"cvar" "timelimit"
+"length" "3"
+"numbers" "yes"
+"status" "0 = no limit"
+"gap" "8"
+}
+{
+"type" "field"
+"label" "frag limit"
+"alttext" "$m_fraglimit"
+"cvar" "fraglimit"
+"length" "3"
+"numbers" "yes"
+"status" "0 = no limit"
+"gap" "8"
+}
+{
+"type" "field"
+"label" "max players"
+"alttext" "$m_max_players"
+"cvar" "ui_maxclients"
+"length" "3"
+"numbers" "yes"
+"gap" "8"
+}
+{
+"type" "field"
+"label" "hostname"
+"cvar" "hostname"
+"length" "12"
+"gap" "8"
+}
+{
+"type" "action"
+"label" " deathmatch flags"
+"x" "24"
+"command" "menu_dmoptions"
+"gap" "8"
+}
+{
+"type" "action"
+"label" " begin"
+"x" "24"
+"lua" "begin"
+"gap" "10"
+}
