@@ -271,6 +271,65 @@ MenuLua_Mods(lua_State *L)
 	return 1;
 }
 
+/* optech2: menu.modlist(): { { name = "ctf", display = "...", description = "Quake II Capture The Flag" }, ... } */
+static int
+MenuLua_ModList(lua_State *L)
+{
+	int count = M_ModCount();
+	int i;
+
+	lua_createtable(L, count, 0);
+
+	for (i = 0; i < count; i++)
+	{
+		lua_createtable(L, 0, 3);
+		lua_pushstring(L, M_ModName(i));
+		lua_setfield(L, -2, "name");
+		lua_pushstring(L, M_ModDisplayName(i));
+		lua_setfield(L, -2, "display");
+		lua_pushstring(L, M_ModDescription(M_ModName(i)));
+		lua_setfield(L, -2, "description");
+		lua_rawseti(L, -2, i + 1);
+	}
+
+	return 1;
+}
+
+/* optech2: menu.campaigns(): { { name = "Quake II", index = 0, levels = { "Unit 1: Base", ... } }, ... };
+   menu_pickstart <index> <level - 1> picks one */
+static int
+MenuLua_Campaigns(lua_State *L)
+{
+	int count, i, level;
+
+	M_MenuCondition("levelselect", &(qboolean){false}); /* optech2: reads the lists */
+	count = M_CampaignCount();
+	lua_createtable(L, count, 0);
+
+	for (i = 0; i < count; i++)
+	{
+		int levels = M_CampaignLevelCount(i);
+
+		lua_createtable(L, 0, 3);
+		lua_pushstring(L, M_CampaignName(i));
+		lua_setfield(L, -2, "name");
+		lua_pushinteger(L, i);
+		lua_setfield(L, -2, "index");
+		lua_createtable(L, levels, 0);
+
+		for (level = 0; level < levels; level++)
+		{
+			lua_pushstring(L, M_CampaignLevelName(i, level));
+			lua_rawseti(L, -2, level + 1);
+		}
+
+		lua_setfield(L, -2, "levels");
+		lua_rawseti(L, -2, i + 1);
+	}
+
+	return 1;
+}
+
 static int
 MenuLua_Print(lua_State *L)
 {
@@ -338,6 +397,8 @@ MenuLua_OpenState(void)
 		{"reload", MenuLua_Reload},
 		{"status", MenuLua_Status},
 		{"renderers", MenuLua_Renderers},
+		{"modlist", MenuLua_ModList},
+		{"campaigns", MenuLua_Campaigns},
 		{NULL, NULL}};
 	static const char *removed[] = {"dofile", "loadfile", "require", NULL};
 	const luaL_Reg *library;

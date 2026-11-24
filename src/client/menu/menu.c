@@ -3695,13 +3695,35 @@ Mods_NamesInit(void)
 	}
 }
 
+/* optech2: the line the mods menu shows for a mod ("" if it knows none) */
+const char *
+M_ModDescription(const char *mod)
+{
+	static const char *known[][2] = {
+		{BASEDIRNAME, "Quake II"},
+		{"ctf", "Quake II Capture The Flag"},
+		{"rogue", "Quake II Mission Pack: Ground Zero"},
+		{"xatrix", "Quake II Mission Pack: The Reckoning"},
+		{"zaero", "Unofficial: Team Evolve's Zaero"},
+		{"infinity", "Unofficial: The Kai'Ren Threat"},
+		{"roarke", "Unofficial: Dawn of Darkness"}};
+	int i;
+
+	for (i = 0; i < (int)ARRLEN(known); i++)
+	{
+		if (!strcmp(known[i][0], mod))
+		{
+			return known[i][1];
+		}
+	}
+
+	return "";
+}
+
 static void
 ModsListFunc(void *unused)
 {
-	const char *m, *sb;
-	int i;
-
-	i = s_mods_list.curvalue;
+	int i = s_mods_list.curvalue;
 
 	if ((i < 0) || (i >= modnames.num))
 	{
@@ -3709,49 +3731,12 @@ ModsListFunc(void *unused)
 		return;
 	}
 
-	m = modnames.data[i];
-
-	if (!strcmp(BASEDIRNAME, m))
-	{
-		sb = "Quake II";
-	}
-	else if (!strcmp("ctf", m))
-	{
-		sb = "Quake II Capture The Flag";
-	}
-	else if (!strcmp("rogue", m))
-	{
-		sb = "Quake II Mission Pack: Ground Zero";
-	}
-	else if (!strcmp("xatrix", m))
-	{
-		sb = "Quake II Mission Pack: The Reckoning";
-	}
-	else if (strcmp("zaero", m) == 0)
-	{
-		sb = "Unofficial: Team Evolve's Zaero";
-	}
-	else if (strcmp("infinity", m) == 0)
-	{
-		sb = "Unofficial: The Kai'Ren Threat";
-	}
-	else if (strcmp("roarke", m) == 0)
-	{
-		sb = "Unofficial: Dawn of Darkness";
-	}
-	else
-	{
-		sb = "";
-	}
-
-	strcpy(mods_statusbar, sb);
+	Q_strlcpy(mods_statusbar, M_ModDescription(modnames.data[i]), sizeof(mods_statusbar));
 }
 
 static void
-ModsApplyActionFunc(void *unused)
+Mods_Apply(int i)
 {
-	int i = s_mods_list.curvalue;
-
 	if ((i < 0) || (i >= modnames.num))
 	{
 		return;
@@ -3781,6 +3766,46 @@ ModsApplyActionFunc(void *unused)
 	menu_startdemoloop = true;
 
 	M_ForceMenuOff();
+}
+
+static void
+ModsApplyActionFunc(void *unused)
+{
+	Mods_Apply(s_mods_list.curvalue);
+}
+
+/* optech2: menu_setmod <folder>: switches to that mod, as the mods menu's apply */
+static void
+M_SetMod_f(void)
+{
+	int i;
+
+	if (Cmd_Argc() != 2)
+	{
+		Com_Printf("usage: menu_setmod <mod folder>\n");
+		return;
+	}
+
+	Mods_NamesInit();
+
+	for (i = 0; i < modnames.num; i++)
+	{
+		if (!strcmp(modnames.data[i], Cmd_Argv(1)))
+		{
+			Mods_Apply(i);
+			return;
+		}
+	}
+
+	Com_Printf("menu_setmod: no mod %s\n", Cmd_Argv(1));
+}
+
+/* optech2: a mod's name as the mods menu shows it */
+const char *
+M_ModDisplayName(int index)
+{
+	Mods_NamesInit();
+	return ((index >= 0) && (index < moddispnames.num)) ? moddispnames.data[index] : "";
 }
 
 static int
@@ -4464,6 +4489,86 @@ LevelSelectFunc(void *unused)
 	}
 }
 
+/* optech2: for data pages (menu.campaigns): the campaigns and their level starts */
+int
+M_CampaignCount(void)
+{
+	return s_campaignnames.num;
+}
+
+const char *
+M_CampaignName(int campaign)
+{
+	return ((campaign >= 0) && (campaign < s_campaignnames.num)) ? s_campaignnames.data[campaign] : "";
+}
+
+int
+M_CampaignLevelCount(int campaign)
+{
+	const campaign_t *c;
+
+	if ((campaign < 0) || (campaign >= s_campaignnames.num))
+	{
+		return 0;
+	}
+
+	c = &s_campaigns[campaign];
+	return (c->names.num < c->cmds.num) ? c->names.num : c->cmds.num;
+}
+
+const char *
+M_CampaignLevelName(int campaign, int level)
+{
+	return (level < M_CampaignLevelCount(campaign)) ? s_campaigns[campaign].names.data[level] : "";
+}
+
+/* optech2: menu_pickstart <campaign> <level>: as picking that line in the stock
+   level select: remembered for the next new game (or, with episodes, the skill now) */
+static void
+M_PickStart_f(void)
+{
+	int campaign, level;
+	const char *campaign_name;
+
+	if (Cmd_Argc() != 3)
+	{
+		Com_Printf("usage: menu_pickstart <campaign> <level>\n");
+		return;
+	}
+
+	LevelSelect_NamesInit();
+	campaign = atoi(Cmd_Argv(1));
+	level = atoi(Cmd_Argv(2));
+
+	if ((level < 0) || (level >= M_CampaignLevelCount(campaign)))
+	{
+		Com_Printf("menu_pickstart: no level %d in campaign %d\n", level, campaign);
+		return;
+	}
+
+	s_ls_cmd = s_campaigns[campaign].cmds.data[level];
+	campaign_name = M_CampaignName(campaign);
+
+	if (strcmp(campaign_name, "(noname)"))
+	{
+		Com_sprintf(s_ls_status, sizeof(s_ls_status), "%s: %s", campaign_name, M_CampaignLevelName(campaign, level));
+	}
+	else
+	{
+		Q_strlcpy(s_ls_status, M_CampaignLevelName(campaign, level), sizeof(s_ls_status));
+	}
+
+	M_PopMenu(false);
+	Menu_SetStatusBar(&s_game_menu, s_ls_status);
+	DataMenu_SetStatus(s_ls_status); /* optech2: the data game page under it, if that's open */
+
+	if (s_episode_count > 1)
+	{
+		s_selected_episode = -1;
+		M_Menu_Skill_f();
+	}
+}
+
 static int
 LevelSelect_MenuInit(void)
 {
@@ -4521,15 +4626,16 @@ LevelSelect_MenuInit(void)
 static void
 Menu_LevelSelect_f(void)
 {
-	if (DataMenu_Override("levelselect")) /* optech2: menus/levelselect.menu replaces it */
-	{
-		return;
-	}
-
 	/* optech2: not over the data game page either: reopening it would close it */
 	if ((M_GetActiveMenu() != &s_game_menu) && !DataMenu_IsOpen("game"))
 	{
 		M_Menu_Game_f();
+	}
+
+	/* optech2: menus/levelselect.menu replaces it, over the game page as the stock one */
+	if (M_MenuCondition("levelselect", &(qboolean){false}) && DataMenu_Override("levelselect"))
+	{
+		return;
 	}
 
 	if (LevelSelect_MenuInit())
@@ -7957,6 +8063,8 @@ M_Init(void)
 	Cmd_AddCommand("menu_episode", M_Episode_f); /* optech2 */
 	Cmd_AddCommand("menu_deletesave", M_DeleteSave_f); /* optech2 */
 	Cmd_AddCommand("menu_close", M_Close_f); /* optech2 */
+	Cmd_AddCommand("menu_setmod", M_SetMod_f); /* optech2 */
+	Cmd_AddCommand("menu_pickstart", M_PickStart_f); /* optech2 */
 	Cmd_AddCommand("menu_main", M_Menu_Main_f);
 	Cmd_AddCommand("menu_game", M_Menu_Game_f);
 	Cmd_AddCommand("menu_levelselect", Menu_LevelSelect_f);

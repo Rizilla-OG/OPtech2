@@ -215,7 +215,7 @@ end
 
 # optech2: the shipped pages compared with the stock menus they replace
 SHIPPED_PAGES = ("options", "multiplayer", "game", "downloadoptions", "dmoptions", "keys", "multiplayer_keys",
-                 "buttons", "altbuttons", "addressbook")
+                 "buttons", "altbuttons", "addressbook", "mods")
 
 results = []
 
@@ -476,6 +476,13 @@ def main():
     # optech2: with episodes, a level picked in level select asks for the skill and starts that level
     # (an episode line used to replace the pick); unit 2 starts with its cinematic
     if episodes:
+        # optech2: and the data level select page: the second campaign's first level starts after the skill
+        pick_log, _ = run("levelpick", ["map base1"] + filler[:10] + [
+            "menu_game", "menu_levelselect", "presskey rightarrow", "presskey downarrow", "presskey enter",
+            "presskey enter"] + filler[:14] + ["mapname"], mods=False)
+        report(cvar(pick_log, "mapname") not in (None, "base1"),
+               f"level select page: a campaign's level starts after the skill (mapname {cvar(pick_log, 'mapname')})")
+        log += pick_log
         level_log, _ = run("levelselect", ["map base1"] + filler[:10] + [
             "menu_game", "menu_levelselect", "presskey downarrow", "presskey downarrow", "presskey enter",
             "presskey enter"] + filler[:14] + ["mapname"], mods=False)

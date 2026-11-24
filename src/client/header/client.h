@@ -668,6 +668,12 @@ int M_EpisodeCount(void); /* optech2 */
 const char *M_EpisodeName(int index); /* optech2 */
 int M_ModCount(void); /* optech2 */
 const char *M_ModName(int index); /* optech2 */
+const char *M_ModDisplayName(int index); /* optech2 */
+const char *M_ModDescription(const char *mod); /* optech2 */
+int M_CampaignCount(void); /* optech2 */
+const char *M_CampaignName(int campaign); /* optech2 */
+int M_CampaignLevelCount(int campaign); /* optech2 */
+const char *M_CampaignLevelName(int campaign, int level); /* optech2 */
 qboolean DataMenu_Exists(const char *name); /* optech2 */
 qboolean DataMenu_IsOpen(const char *name); /* optech2 */
 void DataMenu_SetStatus(const char *text); /* optech2 */

@@ -1,0 +1,19 @@
+// optech2: the level select menu as a data page (stock: menu_builtin levelselect).
+// levelselect.lua lists the campaigns (yq2_levelsel.lst or mapdb.json) and
+// their level starts; picking one remembers it for the next new game (with
+// episodes, the re-release's data, it asks for the skill at once).
+{
+"open" "on_open"
+"height" "180"
+}
+{
+"type" "list"
+"source" "campaign_choice"
+}
+{
+"type" "space"
+}
+{
+"type" "list"
+"source" "levels"
+}

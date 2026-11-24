@@ -62,6 +62,7 @@ comment. The first block is the page, every block after it an item:
 | `status` | a status line; `$name` is a cvar's value (`dmflags = $dmflags`) |
 | `if` | a condition (below): when it doesn't hold, the page isn't there and the stock menu of the same name opens instead |
 | `open` | a function of the page's script, run before the items are built |
+| `height` | the classic look: centered as if the page were this tall (pixels) |
 | `line` | pixels between rows in the classic look (10; the binding pages use 9 as the stock ones) |
 | `script` | the script file to use instead of `menus/<name>.lua` (pages sharing one: `loadgame` and `savegame` use `saves`) |
 | `keys` | a function of the page's script asked first about each key: `fn(key, id)` gets the key's name (`leftarrow`, `del`, `y`, `enter`...) and the selected item's `id` (`""` if none), and returns true when it used the key |
@@ -72,7 +73,7 @@ comment. The first block is the page, every block after it an item:
 | type | what it is | its keys |
 |---|---|---|
 | `slider` | a number between two values | `cvar`, `min`, `max`, `step`, `format` (`%.1f`) |
-| `choice` | one of several values | `cvar`, `options` (`name=value;name=value`), `command` (run after a change), `mask` |
+| `choice` | one of several values | `cvar`, `options` (`name=value;name=value`), `command` and `lua` (run after a change), `mask` |
 | `toggle` | a choice of `no=0;yes=1` | `cvar` |
 | `invert` | yes makes the cvar negative, keeping its size (invert mouse: `m_pitch`) | `cvar` |
 | `action` | runs a command on enter | `command`, `lua` |
@@ -206,6 +207,8 @@ The `menu` table:
 | `menu.mods()` | the mod folder names the mods menu offers |
 | `menu.print(...)` | to the console |
 | `menu.renderers()` | the renderers this build has: `{ { name = "[OpenGL 3.2]", value = "gl3" }, ... }` |
+| `menu.modlist()` | `{ { name = "ctf", display = "...", description = "Quake II Capture The Flag" }, ... }`; `menu_setmod <name>` switches |
+| `menu.campaigns()` | `{ { name, index, levels = { "Unit 1: Base", ... } }, ... }`; `menu_pickstart <index> <level - 1>` picks one |
 | `menu.save(slot)` | a save slot's (`"quick"`, `"save3"`) menu line and whether it holds a save: `line, valid` |
 | `menu.status(text)` | the page's status line until it reloads (`""` gives its own back); in `open` it sets the page being built |
 | `menu.reload()` | builds the page again after the call (its lists changed), keeping the selected line |
@@ -221,6 +224,8 @@ and `game.lua` (in the source: `stuff/menus/`).
 | `menu_builtin <name>` | opens a stock menu even when a page replaces it |
 | `menu_newgame <skill>` | a new single player game (0 easy to 3 hard+) |
 | `menu_episode <index>` | picks an episode, then asks for the skill |
+| `menu_setmod <folder>` | switches to a mod (as the mods page's apply) |
+| `menu_pickstart <campaign> <level>` | picks a level for the next new game (level select) |
 | `menu_close` | closes every menu (after a load or a save) |
 | `menu_reload` | builds the top data page again |
 | `menu_deletesave <slot>` | deletes a save (`quick`, `save3`) |

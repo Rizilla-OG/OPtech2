@@ -137,6 +137,7 @@ typedef struct
 	char status_override[128]; /* optech2: menu.status(): replaces the status line until the page reloads */
 	char keys[64]; /* optech2: "keys": the page script's function asked first about each key */
 	int line_height; /* optech2: "line": pixels between rows in the classic look (10; the binding pages 9) */
+	int center_height; /* optech2: "height": centered as if this tall (classic look); 0 = its rows */
 	qboolean has_script; /* optech2: menus/<name>.lua ran */
 	menuframework_s frame;
 	int item_count;
@@ -406,6 +407,8 @@ DataMenu_CurrentOption(const datamenu_item_t *item)
 	return nearest;
 }
 
+static void DataMenu_ChangedLua(const datamenu_item_t *item);
+
 static void
 DataMenu_ChoiceChanged(void *self)
 {
@@ -454,6 +457,8 @@ DataMenu_ChoiceChanged(void *self)
 		Cbuf_AddText(item->command);
 		Cbuf_AddText("\n");
 	}
+
+	DataMenu_ChangedLua(item); /* optech2: "lua": the page script's function, after the change */
 }
 
 /* optech2: "if": space separated names, all must hold; "!name" for not.
@@ -548,6 +553,24 @@ DataMenu_ItemPage(const datamenu_item_t *item)
 	return (const datamenu_page_t *)((const byte *)item->widget.generic.parent - offsetof(datamenu_page_t, frame));
 }
 
+/* optech2: a choice's or slider's "lua" function, run after a change */
+static void
+DataMenu_ChangedLua(const datamenu_item_t *item)
+{
+	const datamenu_page_t *page = DataMenu_ItemPage(item);
+
+	if (page->has_script && item->lua[0])
+	{
+		MenuLua_Call(page->name, item->lua);
+	}
+}
+
+static void
+DataMenu_SliderChanged(void *self)
+{
+	DataMenu_ChangedLua((const datamenu_item_t *)self);
+}
+
 static void
 DataMenu_ActionSelected(void *self)
 {
@@ -605,7 +628,8 @@ DataMenu_OpensMenu(const datamenu_item_t *item)
 {
 	/* optech2: the menu_ commands that don't open a menu */
 	static const char *not_menus[] = {"menu_newgame", "menu_console", "menu_reload", "menu_close",
-		"menu_deletesave", "menu_oggenable", "menu_pointer", NULL};
+		"menu_deletesave", "menu_oggenable", "menu_pointer", "menu_pickstart",
+		"menu_setmod", NULL};
 	int i;
 
 	if (Q_strncasecmp(item->command, "menu", 4))
@@ -721,6 +745,7 @@ DataMenu_BuildItem(datamenu_item_t *item, const datamenu_pair_t *pairs, int pair
 		item->widget.slider.slidestep = (float)atof(DataMenu_Value(pairs, pair_count, "step", "0.1"));
 		Q_strlcpy(item->format, DataMenu_Value(pairs, pair_count, "format", "%.1f"), sizeof(item->format));
 		item->widget.slider.printformat = item->format;
+		generic->callback = DataMenu_SliderChanged; /* optech2: its "lua", if any */
 	}
 	else if (!Q_stricmp(type, "choice") || !Q_stricmp(type, "toggle") || !Q_stricmp(type, "invert"))
 	{
@@ -971,6 +996,7 @@ DataMenu_LoadPage(const char *name)
 		page->y_offset = atoi(DataMenu_Value(pairs, pair_count, "y", "0"));
 		Q_strlcpy(page->keys, DataMenu_Value(pairs, pair_count, "keys", ""), sizeof(page->keys));
 		page->line_height = Q_clamp(atoi(DataMenu_Value(pairs, pair_count, "line", "10")), 4, 40);
+		page->center_height = atoi(DataMenu_Value(pairs, pair_count, "height", "0"));
 
 		/* optech2: a page whose "if" doesn't hold isn't there: the stock menu opens instead */
 		if (!DataMenu_Condition(page, DataMenu_Value(pairs, pair_count, "if", "")))
@@ -1175,6 +1201,10 @@ DataMenu_Open(const char *name)
 	if (page->fixed_y)
 	{
 		page->frame.y = viddef.height / (2 * SCR_GetMenuScale()) + page->y_offset; /* optech2: as the stock menus place it */
+	}
+	else if (page->center_height > 0)
+	{
+		page->frame.y = (int)((viddef.height / SCR_GetMenuScale() - page->center_height) / 2);
 	}
 	else
 	{

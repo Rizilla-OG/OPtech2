@@ -1,0 +1,16 @@
+// optech2: the mods menu as a data page (stock: menu_builtin mods).
+{
+"open" "on_open"
+}
+{
+"type" "list"
+"source" "mod_choice"
+}
+{
+"type" "action"
+"label" "apply"
+"alttext" "$m_apply_settings"
+"lua" "apply"
+"gap" "10"
+"align" "right"
+}
