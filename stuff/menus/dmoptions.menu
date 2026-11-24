@@ -1,0 +1,172 @@
+// optech2: the deathmatch flags menu as a data page (stock: menu_builtin dmoptions).
+// Each item is one bit of dmflags ("mask"); "no" first, as the stock menu.
+{
+"status" "dmflags = $dmflags"
+}
+{
+"type" "choice"
+"label" "falling damage"
+"alttext" "$m_falling_damage"
+"cvar" "dmflags"
+"mask" "8"
+"options" "no=8;yes=0"
+}
+{
+"type" "choice"
+"label" "weapons stay"
+"alttext" "$m_weapons_stay"
+"cvar" "dmflags"
+"mask" "4"
+"options" "no=0;yes=4"
+}
+{
+"type" "choice"
+"label" "instant powerups"
+"cvar" "dmflags"
+"mask" "16"
+"options" "no=0;yes=16"
+}
+{
+"type" "choice"
+"label" "allow powerups"
+"cvar" "dmflags"
+"mask" "2"
+"options" "no=2;yes=0"
+}
+{
+"type" "choice"
+"label" "allow health"
+"cvar" "dmflags"
+"mask" "1"
+"options" "no=1;yes=0"
+}
+{
+"type" "choice"
+"label" "allow armor"
+"cvar" "dmflags"
+"mask" "2048"
+"options" "no=2048;yes=0"
+}
+{
+"type" "choice"
+"label" "spawn farthest"
+"cvar" "dmflags"
+"mask" "512"
+"options" "no=0;yes=512"
+}
+{
+"type" "choice"
+"label" "same map"
+"cvar" "dmflags"
+"mask" "32"
+"options" "no=0;yes=32"
+}
+{
+"type" "choice"
+"label" "force respawn"
+"cvar" "dmflags"
+"mask" "1024"
+"options" "no=0;yes=1024"
+}
+{
+"type" "choice"
+"label" "teamplay"
+"cvar" "dmflags"
+"mask" "192"
+"options" "disabled=0;by skin=64;by model=128"
+"if" "!game=ctf"
+}
+{
+"type" "choice"
+"label" "allow exit"
+"cvar" "dmflags"
+"mask" "4096"
+"options" "no=0;yes=4096"
+}
+{
+"type" "choice"
+"label" "infinite ammo"
+"alttext" "$m_infinite_ammo"
+"cvar" "dmflags"
+"mask" "8192"
+"options" "no=0;yes=8192"
+}
+{
+"type" "choice"
+"label" "fixed FOV"
+"cvar" "dmflags"
+"mask" "32768"
+"options" "no=0;yes=32768"
+}
+{
+"type" "choice"
+"label" "quad drop"
+"cvar" "dmflags"
+"mask" "16384"
+"options" "no=0;yes=16384"
+}
+{
+"type" "choice"
+"label" "friendly fire"
+"cvar" "dmflags"
+"mask" "256"
+"options" "no=256;yes=0"
+"alttext" "$m_friendly_fire"
+"if" "!game=ctf"
+}
+{
+"type" "choice"
+"label" "remove mines"
+"cvar" "dmflags"
+"mask" "131072"
+"options" "no=0;yes=131072"
+"if" "game=rogue"
+}
+{
+"type" "choice"
+"label" "remove nukes"
+"cvar" "dmflags"
+"mask" "524288"
+"options" "no=0;yes=524288"
+"if" "game=rogue"
+}
+{
+"type" "choice"
+"label" "2x/4x stacking off"
+"cvar" "dmflags"
+"mask" "262144"
+"options" "no=0;yes=262144"
+"if" "game=rogue"
+}
+{
+"type" "choice"
+"label" "remove spheres"
+"cvar" "dmflags"
+"mask" "1048576"
+"options" "no=0;yes=1048576"
+"if" "game=rogue"
+}
+{
+"type" "choice"
+"label" "force join"
+"cvar" "dmflags"
+"mask" "131072"
+"options" "no=0;yes=131072"
+"if" "game=ctf"
+}
+{
+"type" "choice"
+"label" "armor protect"
+"cvar" "dmflags"
+"mask" "262144"
+"options" "no=0;yes=262144"
+"if" "game=ctf"
+}
+{
+"type" "choice"
+"label" "techs off"
+"cvar" "dmflags"
+"mask" "524288"
+"options" "no=0;yes=524288"
+"if" "game=ctf"
+}

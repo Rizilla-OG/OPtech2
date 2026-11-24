@@ -1,0 +1,45 @@
+// optech2: the download options menu as a data page (stock: menu_builtin downloadoptions)
+{
+}
+{
+"type" "label"
+"label" "Download Options"
+"x" "48"
+}
+{
+"type" "toggle"
+"label" "allow downloading"
+"cvar" "allow_download"
+"gap" "10"
+}
+{
+"type" "toggle"
+"label" "http downloading"
+"cvar" "cl_http_downloads"
+"gap" "10"
+"if" "curl"
+}
+{
+"type" "space"
+"if" "!curl"
+}
+{
+"type" "toggle"
+"label" "maps"
+"cvar" "allow_download_maps"
+}
+{
+"type" "toggle"
+"label" "player models/skins"
+"cvar" "allow_download_players"
+}
+{
+"type" "toggle"
+"label" "models"
+"cvar" "allow_download_models"
+}
+{
+"type" "toggle"
+"label" "sounds"
+"cvar" "allow_download_sounds"
+}

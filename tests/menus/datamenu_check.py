@@ -14,7 +14,8 @@ them with "presskey" (developer 1), then prints the cvars they changed:
   6. "menu_options" opens the data page (same shot as "menu options"),
      "menu_builtin options" the stock one (a different shot)
   7. "menu nothere" says there is no such page; no errors in the logs
-  8. optech2: the shipped pages (baseq2/menus: options, multiplayer, game)
+  8. optech2: the shipped pages (baseq2/menus: options, multiplayer, game,
+     download options, deathmatch flags)
      draw exactly as the stock menus they replace (menu_builtin), and their
      choices show the cvars' values (crosshair colour from three cvars,
      invert mouse from m_pitch's sign)
@@ -93,6 +94,9 @@ OPTIONS_PAGE = """
 }
 """
 
+# optech2: the shipped pages compared with the stock menus they replace
+SHIPPED_PAGES = ("options", "multiplayer", "game", "downloadoptions", "dmoptions")
+
 results = []
 
 
@@ -112,7 +116,9 @@ def run(name, script, mods=True):
         game_dir.mkdir(parents=True)
         lines = ["set developer 1"]
         for step, command in enumerate(script):
-            lines.append(f'delay {1000 + step * 100} "{command}"')
+            # optech2: "#" steps only pass time: "delay" holds at most 128 commands
+            if not command.startswith("#"):
+                lines.append(f'delay {1000 + step * 100} "{command}"')
         lines.append(f'delay {1000 + len(script) * 100 + 300} "quit"')
         (game_dir / "m.cfg").write_text("\n".join(lines) + "\n")
         environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
@@ -155,6 +161,11 @@ def main():
         "set menutest_name Changed", "presskey escape",
         "menutest_slider", "crosshair", "menutest_choice_command", "menutest_action", "menutest_name",
         "menu nothere",
+        # optech2: dmflags bits: falling damage yes -> no sets bit 8; teamplay (10th item) by skin adds 64
+        "set dmflags 16656", "menu_dmoptions", "presskey leftarrow", "dmflags",
+        "presskey downarrow", "presskey downarrow", "presskey downarrow", "presskey downarrow", "presskey downarrow",
+        "presskey downarrow", "presskey downarrow", "presskey downarrow", "presskey downarrow", "presskey rightarrow",
+        "presskey escape", "dmflags",
     ])
     if len(shots) < 2:
         report(False, "page drawn: a screenshot is missing (see drive.log)")
@@ -168,10 +179,13 @@ def main():
     # optech2: the field held "Tester" from when the page opened and commits it on close, over the console's "Changed"
     report(cvar(log, "menutest_name") == "Tester",
            f"field: keeps the cvar's value and commits it on close (menutest_name {cvar(log, 'menutest_name')})")
+    dmflags = re.findall(r'"dmflags" is "([^"]*)"', log)
+    report(dmflags[-2:] == ["16664", "16728"],
+           f"dmflags bits: falling damage off sets 8, teamplay by skin sets 64 (dmflags {', '.join(dmflags[-2:])})")
     report("No menu page menus/nothere.menu" in log, "a missing page is reported")
 
     # optech2: shots 1.5 s apart: the menu cursor animates in 15 frames of 100 ms, so they catch the same frame
-    filler = ["echo"] * 14
+    filler = ["#pause"] * 14
     _, override_shots = run("override", [
         "menu options", "clear", "screenshot png", "presskey escape", "menu_options"] + filler[:11] + [
         "clear", "screenshot png", "presskey escape", "menu_builtin options"] + filler[:11] + [
@@ -188,12 +202,12 @@ def main():
 
     # optech2: the shipped pages against the stock menus, shots 1.5 s apart (same cursor frame)
     shipped = ["set crosshair 2", "set crosshair_color_r 0", "set crosshair_color_g 1", "set crosshair_color_b 1",
-               "set m_pitch -0.022"]
-    for page in ("options", "multiplayer", "game"):
+               "set m_pitch -0.022", "set dmflags 16656"]  # optech2: some bits on, teamplay by skin
+    for page in SHIPPED_PAGES:
         shipped += [f"menu_{page}", "clear", "screenshot png", "presskey escape", f"menu_builtin {page}"] + filler[:11] + [
                     "clear", "screenshot png", "presskey escape"] + filler[:12]
     shipped_log, shipped_shots = run("shipped", shipped, mods=False)
-    for index, page in enumerate(("options", "multiplayer", "game")):
+    for index, page in enumerate(SHIPPED_PAGES):
         if len(shipped_shots) < 2 * index + 2:
             report(False, f"shipped {page}: a screenshot is missing (see shipped.log)")
             continue

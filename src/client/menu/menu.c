@@ -7419,6 +7419,20 @@ M_MenuCondition(const char *name, qboolean *known)
 		return modnames.num > 1;
 	}
 
+	if (!Q_stricmp(name, "curl")) /* optech2: built with HTTP downloads */
+	{
+#ifdef USE_CURL
+		return true;
+#else
+		return false;
+#endif
+	}
+
+	if (!Q_strncasecmp(name, "game=", 5)) /* optech2: game=ctf, game=rogue... (game=baseq2 for none) */
+	{
+		return M_IsGame(name + 5);
+	}
+
 	if (!Q_stricmp(name, "ingame"))
 	{
 		return cls.state == ca_active;

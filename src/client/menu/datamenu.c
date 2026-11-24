@@ -31,22 +31,27 @@
  *
  * Page keys: banner or title, "x" (pixels from the screen's middle, menu
  * scale), "y" (the same for the top; centered without it), "if" (when it
- * doesn't hold the page isn't there and the stock menu opens instead).
+ * doesn't hold the page isn't there and the stock menu opens instead),
+ * "status" (a status line; $name gives a cvar's value: "dmflags = $dmflags").
  *
  * Items: slider (cvar, min, max, step, format), choice (cvar, options
  * "name=value;name=value", command run after a change; several cvars,
  * space separated, take space separated values: "1 0.5 0"), toggle (a
  * choice of no=0;yes=1), invert (yes makes the cvar negative, keeping its
  * size: m_pitch), action (command, run on enter; "align" "right" lines it
- * up with the other labels), field (cvar, length, committed when the page
+ * up with the other labels), choice with "mask" (only those bits of the
+ * cvar change: "mask" "64" "options" "no=0;yes=64" for one dmflags bit),
+ * field (cvar, length, committed when the page
  * closes), label (text only), space (a blank line). Any item takes "gap"
- * (extra pixels above it), "status" (status bar text), "alttext" (a
+ * (extra pixels above it), "x" (pixels right of the item column), "status"
+ * (status bar text), "alttext" (a
  * localization key for the label) and "if" (left out when it doesn't
  * hold).
  *
  * "if": names separated by spaces, all must hold, "!name" for not: gamepad,
  * tall (room for the long options page), episodes, levelselect, mods,
- * ingame, or else a cvar (true when not 0).
+ * curl (built with HTTP downloads), ingame, game=<name> (the game cvar;
+ * game=baseq2 also when it's empty), or else a cvar (true when not 0).
  *
  * The stock options, multiplayer and game menus ship as pages in
  * baseq2/menus/ (stuff/menus/ in the source).
@@ -56,6 +61,7 @@
  * "menu_builtin <name>" opens the stock one anyway.
  */
 
+#include <ctype.h>
 #include <stddef.h>
 
 #include "../header/client.h"
@@ -99,6 +105,7 @@ typedef struct
 	char cvar[128]; /* optech2: a choice may set several, space separated */
 	char command[256];
 	qboolean invert; /* optech2: "invert": yes makes the cvar negative, keeping its size */
+	int mask; /* optech2: "mask": the choice sets only these bits of the cvar (dmflags) */
 	char format[16];
 	int option_count;
 	char option_names[DATAMENU_MAX_OPTIONS][32];
@@ -114,6 +121,8 @@ typedef struct
 	int x_offset; /* optech2: "x": pixels (menu scale) from the screen's middle */
 	qboolean fixed_y; /* optech2: "y" given: pixels from the screen's middle; else centered */
 	int y_offset;
+	char status[128]; /* optech2: "status": the page's status line; $cvar expands */
+	char status_text[256];
 	menuframework_s frame;
 	int item_count;
 	datamenu_item_t items[DATAMENU_MAX_ITEMS];
@@ -296,6 +305,21 @@ DataMenu_CurrentOption(const datamenu_item_t *item)
 		return (Cvar_VariableValue(item->cvar) < 0) ? 1 : 0;
 	}
 
+	if (item->mask)
+	{
+		int bits = (int)Cvar_VariableValue(item->cvar) & item->mask;
+
+		for (i = 0; i < item->option_count; i++)
+		{
+			if ((atoi(item->option_values[i]) & item->mask) == bits)
+			{
+				return i;
+			}
+		}
+
+		return 0;
+	}
+
 	cvar_count = DataMenu_Words(item->cvar, cvars, DATAMENU_MAX_CHOICE_CVARS);
 
 	for (i = 0; i < item->option_count; i++)
@@ -368,6 +392,12 @@ DataMenu_ChoiceChanged(void *self)
 
 		Cvar_SetValue(item->cvar, option ? -size : size);
 	}
+	else if (item->mask)
+	{
+		int bits = (int)Cvar_VariableValue(item->cvar) & ~item->mask;
+
+		Cvar_SetValue(item->cvar, (float)(bits | (atoi(item->option_values[option]) & item->mask)));
+	}
 	else if (item->cvar[0])
 	{
 		char cvars[DATAMENU_MAX_CHOICE_CVARS][64];
@@ -430,6 +460,44 @@ DataMenu_Condition(const char *expression)
 	}
 
 	return true;
+}
+
+/* optech2: the page's status line with each $cvar replaced by its value */
+static void
+DataMenu_ExpandStatus(datamenu_page_t *page)
+{
+	const char *in = page->status;
+	size_t out = 0;
+
+	while (*in && (out < sizeof(page->status_text) - 1))
+	{
+		if ((*in == '$') && (isalnum((unsigned char)in[1]) || (in[1] == '_')))
+		{
+			char name[64];
+			size_t length = 0;
+
+			in++;
+
+			while ((isalnum((unsigned char)*in) || (*in == '_')) && (length < sizeof(name) - 1))
+			{
+				name[length++] = *in++;
+			}
+
+			name[length] = '\0';
+			out += Q_strlcpy(page->status_text + out, Cvar_VariableString(name), sizeof(page->status_text) - out);
+
+			if (out > sizeof(page->status_text) - 1)
+			{
+				out = sizeof(page->status_text) - 1;
+			}
+		}
+		else
+		{
+			page->status_text[out++] = *in++;
+		}
+	}
+
+	page->status_text[out] = '\0';
 }
 
 static void
@@ -500,6 +568,12 @@ DataMenu_Draw(menuframework_s *frame)
 		}
 	}
 
+	if (page->status[0])
+	{
+		DataMenu_ExpandStatus((datamenu_page_t *)page);
+		frame->statusbar = page->status_text;
+	}
+
 	Menu_AdjustCursor(frame, 1);
 	Menu_Draw(frame);
 }
@@ -520,7 +594,8 @@ DataMenu_BuildItem(datamenu_item_t *item, const datamenu_pair_t *pairs, int pair
 
 	generic->name = item->label;
 	generic->alttext = item->alttext[0] ? item->alttext : NULL;
-	generic->x = 0;
+	/* optech2: "x": pixels (menu scale) right of the item column */
+	generic->x = (int)(atoi(DataMenu_Value(pairs, pair_count, "x", "0")) * SCR_GetMenuScale());
 	generic->y = y;
 	generic->statusbar = item->status[0] ? item->status : NULL;
 
@@ -539,6 +614,7 @@ DataMenu_BuildItem(datamenu_item_t *item, const datamenu_pair_t *pairs, int pair
 	{
 		item->kind = DATAMENU_CHOICE;
 		item->invert = !Q_stricmp(type, "invert");
+		item->mask = atoi(DataMenu_Value(pairs, pair_count, "mask", "0"));
 		generic->type = MTYPE_SPINCONTROL;
 		generic->callback = DataMenu_ChoiceChanged;
 		DataMenu_ParseOptions(item, DataMenu_Value(pairs, pair_count, "options",
@@ -643,6 +719,7 @@ DataMenu_Load(const char *name)
 		Q_strlcpy(page->banner, DataMenu_Value(pairs, pair_count, "banner", ""), sizeof(page->banner));
 		Q_strlcpy(page->title, DataMenu_Value(pairs, pair_count, "title", ""), sizeof(page->title));
 		page->x_offset = atoi(DataMenu_Value(pairs, pair_count, "x", "0"));
+		Q_strlcpy(page->status, DataMenu_Value(pairs, pair_count, "status", ""), sizeof(page->status));
 		page->fixed_y = (DataMenu_Value(pairs, pair_count, "y", NULL) != NULL);
 		page->y_offset = atoi(DataMenu_Value(pairs, pair_count, "y", "0"));
 
