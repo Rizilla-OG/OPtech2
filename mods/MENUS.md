@@ -62,7 +62,8 @@ comment. The first block is the page, every block after it an item:
 | `status` | a status line; `$name` is a cvar's value (`dmflags = $dmflags`) |
 | `if` | a condition (below): when it doesn't hold, the page isn't there and the stock menu of the same name opens instead |
 | `open` | a function of the page's script, run before the items are built |
-| `x`, `y` | where the classic look places it: pixels (menu scale) from the screen's middle; centered without `y` |
+| `x` | pixels (menu scale) right of the screen's middle (left if negative) |
+| `y` | the classic look only: the top, in pixels from the screen's middle; centered without it (the re-release look always puts the panel under the banner's place) |
 
 ### Items
 
