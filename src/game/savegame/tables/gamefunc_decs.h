@@ -249,6 +249,8 @@ extern void flare_think (edict_t *);
 extern void flymonster_start_go (edict_t *);
 extern void force_wall_think (edict_t *);
 extern void func_clock_think (edict_t *);
+extern void func_eye_think(edict_t *); /* optech2 */
+extern void func_eye_setup(edict_t *); /* optech2 */
 extern void func_object_release (edict_t *);
 extern void func_timer_think (edict_t *);
 extern void func_train_find (edict_t *);

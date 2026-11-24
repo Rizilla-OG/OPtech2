@@ -47,6 +47,8 @@
 	{"delay", FOFS(delay), F_FLOAT},
 	{"random", FOFS(random), F_FLOAT},
 	{"move_origin", FOFS(move_origin), F_VECTOR},
+	{"eye_position", FOFS(move_origin), F_VECTOR}, /* optech2: func_eye (re-release) */
+	{"vision_cone", FOFS(yaw_speed), F_FLOAT}, /* optech2: func_eye (re-release) */
 	{"move_angles", FOFS(move_angles), F_VECTOR},
 	{"style", FOFS(style), F_INT},
 	{"style_on", FOFS(style_on), F_LSTRING},

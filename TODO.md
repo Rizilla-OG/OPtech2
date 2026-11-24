@@ -22,8 +22,6 @@ something unfinished; remove an entry in the commit that fixes it.
   Linux extras: NVML for NVIDIA load/VRAM beside amdgpu's sysfs.
   Look: a compact panel in the top right corner, in a smaller font, instead
   of covering the top half of the screen.
-- **`func_eye` and `target_poi` are stand-ins** (`src/game/g_misc.c`): the eyes
-  don't turn to the player, objective markers are removed instead of shown.
 - **Re-release content fixes have no common home**: Quake II 64 changelevel
   flags, Q2Game.kpf / localization paths, map key handling. Fold them into the
   data-driven definitions.

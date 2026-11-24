@@ -4555,10 +4555,137 @@ SP_npc_timeminder(edict_t *self)
 /*
  * QUAKED func_eye (0 1 0) ?
  *
- * optech2: Call of the Machine's watching eyes (re-release). For now a
- * solid brush model that stays put; the re-release turns it towards the
- * player.
+ * optech2: Call of the Machine's watching eyes (re-release): turns to watch
+ * the nearest player. "eye_position": the eye, forward right up from the
+ * brush's origin along its angles (or "pathtarget": an info_notnull there);
+ * "radius" (512) how far it sees; "vision_cone" (0.5) how wide, as a dot
+ * product with its angles; "speed" (45) degrees a second it turns; its
+ * targets fire the first time it sees a player.
  */
+#define SPAWNFLAG_FUNC_EYE_FIRED_TARGETS 0x10000 /* optech2: internal: targets fired once */
+
+/* optech2: the re-release's func_eye: a brush that turns to watch the nearest
+   player in its view cone and radius, fires its targets the first time it
+   sees one, and turns back to its own angles "wait" seconds after losing them */
+void
+func_eye_think(edict_t *self)
+{
+	edict_t *closest_player = NULL;
+	float closest_dist = 0;
+	vec3_t wanted_angles, forward, right, up, eye_pos;
+	int i;
+
+	for (i = 1; i <= maxclients->value; i++)
+	{
+		edict_t *player = &g_edicts[i];
+		vec3_t dir;
+		float dist;
+
+		if (!player->inuse || !player->client || (player->svflags & SVF_NOCLIENT))
+		{
+			continue;
+		}
+
+		VectorSubtract(player->s.origin, self->s.origin, dir);
+		dist = VectorNormalize(dir);
+
+		if ((DotProduct(dir, self->movedir) < self->yaw_speed) || (dist >= self->dmg_radius))
+		{
+			continue;
+		}
+
+		if (!closest_player || (dist < closest_dist))
+		{
+			closest_player = player;
+			closest_dist = dist;
+		}
+	}
+
+	self->enemy = closest_player;
+
+	AngleVectors(self->s.angles, forward, right, up);
+	VectorCopy(self->s.origin, eye_pos);
+	VectorMA(eye_pos, self->move_origin[0], forward, eye_pos);
+	VectorMA(eye_pos, self->move_origin[1], right, eye_pos);
+	VectorMA(eye_pos, self->move_origin[2], up, eye_pos);
+
+	if (self->enemy)
+	{
+		vec3_t dir;
+
+		if (!(self->spawnflags & SPAWNFLAG_FUNC_EYE_FIRED_TARGETS))
+		{
+			G_UseTargets(self, self->enemy);
+			self->spawnflags |= SPAWNFLAG_FUNC_EYE_FIRED_TARGETS;
+		}
+
+		VectorSubtract(self->enemy->s.origin, eye_pos, dir);
+		VectorNormalize(dir);
+		vectoangles(dir, wanted_angles);
+		self->s.frame = 2;
+		self->timestamp = level.time + self->wait;
+	}
+	else if (self->timestamp <= level.time)
+	{
+		VectorCopy(self->move_angles, wanted_angles); /* back to neutral */
+		self->s.frame = 0;
+	}
+	else
+	{
+		VectorCopy(self->s.angles, wanted_angles);
+	}
+
+	/* optech2: pitch and yaw, at most "speed" degrees a second each */
+	for (i = 0; i < 2; i++)
+	{
+		float current = anglemod(self->s.angles[i]);
+		float ideal = anglemod(wanted_angles[i]);
+		float step = self->speed * level.ticktime;
+		float move = ideal - current;
+
+		if (current == ideal)
+		{
+			continue;
+		}
+
+		if ((ideal > current) && (move >= 180))
+		{
+			move -= 360;
+		}
+		else if ((ideal < current) && (move <= -180))
+		{
+			move += 360;
+		}
+
+		move = Q_clamp(move, -step, step);
+		self->s.angles[i] = anglemod(current + move);
+	}
+
+	gi.linkentity(self);
+	self->nextthink = level.time + level.ticktime;
+}
+
+/* optech2: the eye position from "pathtarget" (an info_notnull), then watching */
+void
+func_eye_setup(edict_t *self)
+{
+	edict_t *eye_pos = G_PickTarget(self->pathtarget);
+
+	if (!eye_pos)
+	{
+		gi.dprintf("%s at %s: bad pathtarget\n", self->classname, vtos(self->s.origin));
+	}
+	else
+	{
+		VectorSubtract(eye_pos->s.origin, self->s.origin, self->move_origin);
+	}
+
+	VectorCopy(self->move_origin, self->movedir);
+	VectorNormalize(self->movedir);
+	self->think = func_eye_think;
+	self->nextthink = level.time + FRAMETIME;
+}
+
 void
 SP_func_eye(edict_t *self)
 {
@@ -4570,6 +4697,41 @@ SP_func_eye(edict_t *self)
 	self->movetype = MOVETYPE_PUSH;
 	self->solid = SOLID_BSP;
 	gi.setmodel(self, self->model);
+
+	self->dmg_radius = st.radius ? st.radius : 512; /* optech2: how far it sees */
+
+	if (!self->speed)
+	{
+		self->speed = 45; /* optech2: degrees a second */
+	}
+
+	if (!self->yaw_speed)
+	{
+		self->yaw_speed = 0.5f; /* optech2: "vision_cone": the dot product it sees within */
+	}
+
+	VectorCopy(self->s.angles, self->move_angles);
+	self->wait = 1.0f;
+
+	if (self->pathtarget)
+	{
+		self->think = func_eye_setup;
+	}
+	else
+	{
+		/* optech2: "eye_position" is forward, right, up from the brush's origin and angles */
+		vec3_t forward, right, up, eye_offset;
+
+		VectorCopy(self->move_origin, eye_offset);
+		AngleVectors(self->move_angles, forward, right, up);
+		VectorScale(forward, eye_offset[0], self->move_origin);
+		VectorMA(self->move_origin, eye_offset[1], right, self->move_origin);
+		VectorMA(self->move_origin, eye_offset[2], up, self->move_origin);
+		VectorCopy(forward, self->movedir);
+		self->think = func_eye_think;
+	}
+
+	self->nextthink = level.time + FRAMETIME;
 	gi.linkentity(self);
 }
 

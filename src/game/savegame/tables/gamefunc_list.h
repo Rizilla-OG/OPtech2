@@ -277,6 +277,8 @@ static const fnlist_entry_t fnentries_think[] =
 		{"flymonster_start_go", (byte *)flymonster_start_go},
 		{"force_wall_think", (byte *)force_wall_think},
 		{"func_clock_think", (byte *)func_clock_think},
+		{"func_eye_think", (byte *)func_eye_think}, /* optech2 */
+		{"func_eye_setup", (byte *)func_eye_setup}, /* optech2 */
 		{"func_object_release", (byte *)func_object_release},
 		{"func_timer_think", (byte *)func_timer_think},
 		{"func_train_find", (byte *)func_train_find},
