@@ -16,6 +16,9 @@ In the game (no window), with the player on the floor (god mode):
     logs it) and hits the player. Stock (g_monster_nav 0) is shown for
     comparison: a Berserker sometimes jumps down on its own.
   - one on the high ledge stays up.
+  - optech2: drop heights per monster: a Supertank (drops 64 at most) on the
+    low ledge stays up; with a monster definition giving it "drop_height"
+    "128" it walks off.
 Positions are sampled every second (listentities).
 
 Usage:
@@ -45,9 +48,12 @@ HIGH_SPOT = "352 128 344 0 270 0"   # on the high ledge near its lip
 SPAWN_MS, END_MS = 3500, 23500
 
 
-def home_with_map(home, config_name, lines):
+def home_with_map(home, config_name, lines, defs=None):
     user_dir = Path(home) / ".opentech2" / "baseq2"
     (user_dir / "maps").mkdir(parents=True, exist_ok=True)
+    if defs:
+        (user_dir / "defs").mkdir(exist_ok=True)
+        (user_dir / "defs" / "baseq2.monsters").write_text(defs)
     shutil.copy(MAP_FILE, user_dir / "maps" / MAP_FILE.name)
     (user_dir / config_name).write_text("\n".join(lines) + "\n")
 
@@ -63,13 +69,13 @@ def run_server(commands):
     return log
 
 
-def run_game(name, nav, spot):
+def run_game(name, nav, spot, monster=MONSTER, defs=None):
     lines = ["set g_damagelog 1", f"set g_monster_nav {nav}", "map optech2_ledge", 'delay 3000 "god"',
-             f'delay {SPAWN_MS} "cmd spawnentity {MONSTER} {spot}"']
+             f'delay {SPAWN_MS} "cmd spawnentity {monster} {spot}"']
     lines += [f'delay {ms} "cmd listentities monsters"' for ms in range(SPAWN_MS + 1000, END_MS, 1000)]
     lines += [f"delay {END_MS} quit"]
     with tempfile.TemporaryDirectory(prefix="opentech2-ledge-") as home:
-        home_with_map(home, "ledgegame.cfg", lines)
+        home_with_map(home, "ledgegame.cfg", lines, defs)
         environment = dict(os.environ, HOME=home, SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy")
         try:
             result = subprocess.run(["stdbuf", "-oL", str(CLIENT_BINARY), "-datadir", str(DATA_DIR), "+set",
@@ -82,9 +88,9 @@ def run_game(name, nav, spot):
         except subprocess.TimeoutExpired as timeout:
             log = (timeout.stdout or b"").decode(errors="replace") + "\nERROR: the game didn't quit\n"
     (OUTPUT_DIR / f"{name}.log").write_text(log)
-    hits = [float(t) for t in re.findall(rf"damagelog time ([\d.]+) attacker {MONSTER} target player", log)]
+    hits = [float(t) for t in re.findall(rf"damagelog time ([\d.]+) attacker {monster} target player", log)]
     route = [tuple(float(v) for v in match) for match in
-             re.findall(rf"^{MONSTER}: (-?[\d.]+) (-?[\d.]+) (-?[\d.]+)", log, re.M)]
+             re.findall(rf"^{monster}: (-?[\d.]+) (-?[\d.]+) (-?[\d.]+)", log, re.M)]
     return hits, route, log
 
 
@@ -140,6 +146,17 @@ def main():
     hits, route, high_log = run_game("high-nav", 2, HIGH_SPOT)
     report(bool(route) and all(z > 300 for _, _, z in route) and not hits and "walks off" not in high_log,
            f"on the high ledge it stayed up: {route_text(route)}")
+
+    # optech2: drop heights per monster; the Supertank needs room, so a bit back from the lip
+    tank_spot = "-256 136 152 0 270 0"
+    _, route, tank_log = run_game("supertank", 2, tank_spot, "monster_supertank")
+    report(bool(route) and all(z > 100 for _, _, z in route) and "walks off" not in tank_log,
+           f"a Supertank (drops 64) stays on the 128 ledge: {route_text(route)}")
+    _, route, tank_def_log = run_game("supertank-def", 2, tank_spot, "monster_supertank",
+                                      '{\n"classname" "monster_supertank"\n"drop_height" "128"\n}\n')
+    report("monster_supertank walks off a ledge" in tank_def_log and any(z < 60 for _, _, z in route),
+           f"with \"drop_height\" \"128\" it walks off: {route_text(route)}")
+    high_log += tank_log + tank_def_log
 
     errors = [line for line in (log + nav_log + stock_log + high_log).splitlines()
               if "ERROR" in line or "crashed" in line or "nav: " in line]

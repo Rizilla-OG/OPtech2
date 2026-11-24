@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Monster navigation: each monster has its own drop height for ledges on its path (stock 256; Gladiators, Medics, Brains, Iron Maidens 192; Tanks, Shamblers, Arachnids 128; Supertank 64; bosses never), and monster definitions take `"drop_height"` (0-256). `ledge-drops` checks a Supertank staying on a 128 ledge and walking off it with `drop_height` 128.
 - Fixed: a single player game after a CTF game was played as deathmatch (ctf stayed 1 and the game forced deathmatch); starting one now clears ctf as it clears deathmatch and coop.
 - Fixed (CTF): the HUD layout still used the CTF stat numbers from before they moved up one (upstream), so a held tech's picture number was drawn as a text string ("#w_etfrifle.md2" over the HUD) and the team, flag and ID-view slots read the wrong stats.
 - Fixed: a mod whose map list (mapdb.json) has one episode, like the re-release's Quake II PSX, started baseq2's base1 from the skill lines; a new game now starts that episode (psx/intro, psx/base0).

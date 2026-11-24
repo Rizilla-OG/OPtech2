@@ -1007,6 +1007,7 @@ int Defs_LoadItems(int item_count);
 #define MDEF_SKIN 0x08
 #define MDEF_SCALE 0x10
 #define MDEF_DAMAGE_PERCENT 0x20
+#define MDEF_DROP_HEIGHT 0x40 /* optech2 */
 
 typedef struct
 {
@@ -1019,6 +1020,7 @@ typedef struct
 	int skin;
 	float scale;
 	int damage_percent;
+	int drop_height; /* optech2: how far it drops off a ledge on a path (0 = never) */
 } monster_def_t;
 
 void Defs_LoadMonsters(void);

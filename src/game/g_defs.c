@@ -742,7 +742,7 @@ Defs_ApplyMonsterBlock(const char *file)
 		if (!Defs_ParseInteger(value, &number))
 		{
 			if (!Q_stricmp(key, "health") || !Q_stricmp(key, "gib_health") || !Q_stricmp(key, "mass") ||
-				!Q_stricmp(key, "skin") || !Q_stricmp(key, "damage_percent"))
+				!Q_stricmp(key, "skin") || !Q_stricmp(key, "damage_percent") || !Q_stricmp(key, "drop_height"))
 			{
 				gi.dprintf("%s: \"%s\" needs a whole number, not \"%s\"\n", where, key, value);
 			}
@@ -779,8 +779,14 @@ Defs_ApplyMonsterBlock(const char *file)
 			def->damage_percent = number;
 			def->set |= MDEF_DAMAGE_PERCENT;
 		}
+		else if (!Q_stricmp(key, "drop_height") && (number >= 0) && (number <= 256))
+		{
+			/* optech2: navigation drops come in steps of 64 up to 256 */
+			def->drop_height = number;
+			def->set |= MDEF_DROP_HEIGHT;
+		}
 		else if (!Q_stricmp(key, "health") || !Q_stricmp(key, "mass") || !Q_stricmp(key, "skin") ||
-				 !Q_stricmp(key, "damage_percent"))
+				 !Q_stricmp(key, "damage_percent") || !Q_stricmp(key, "drop_height"))
 		{
 			gi.dprintf("%s: \"%s\" can't be %d\n", where, key, number);
 		}

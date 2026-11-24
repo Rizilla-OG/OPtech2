@@ -141,6 +141,7 @@ monster, with the changes, and can be placed in maps or spawned by scripts
 | `skin` | Skin number of its model (stock monsters have 0 and 1 for the pain skin; some have more). |
 | `scale` | Drawn size, 0.1 to 10. Only the look: the size it takes up in the world stays. |
 | `damage_percent` | How hard its attacks hit, in percent (`300` = three times, `0` = none). |
+| `drop_height` | How far it drops off a ledge when it follows a path, 0 to 256 (`0` = never; ledges come in steps of 64). Stock: 256 for most, 192 for Gladiators, Medics, Brains and Iron Maidens, 128 for Tanks, Shamblers and Arachnids, 64 for the Supertank, 0 for bosses. A new monster drops as its base. |
 
 Its behaviour, attacks and speed are its base's. Code that checks a monster
 by classname (a few stock special cases) sees the new name.

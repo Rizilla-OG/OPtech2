@@ -39,8 +39,7 @@ something unfinished; remove an entry in the commit that fixes it.
 - **Monster navigation, phase 4**: lifts, ledge drops and the re-release
   `.nav` files' barrier and long jumps, ladders and teleporters are done
   (monsters climb with their run animation: there's no climb animation).
-  Left: trains and doors as lifts, a per-monster drop height (every walking
-  monster may drop 256), and `.nav` links onto spots narrower than a
+  Left: trains and doors as lifts, and `.nav` links onto spots narrower than a
   monster's mesh (crates, narrow ledges) that only bots can use.
 - **GL3/GL4 report every texture as having alpha**: solid and alpha formats
   are both `GL_RGBA`, so `GL3_Upload32`/`GL4_Upload32` always return true.

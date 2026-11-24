@@ -1264,6 +1264,76 @@ static const struct
 	{"monster_parasite", 68, 256},
 };
 
+/* optech2: how far monsters drop off a ledge on a path (the mesh has drops of
+   64 to 256, in steps of 64). The heavy ones drop less, the bosses never;
+   every other walker 256. A monster definition's "drop_height" wins. */
+static const struct
+{
+	const char *classname;
+	int height;
+} nav_drop_heights[] = {
+	{"monster_arachnid", 128},
+	{"monster_boss5", 64},
+	{"monster_brain", 192},
+	{"monster_chick", 192},
+	{"monster_chick_heat", 192},
+	{"monster_gladb", 192},
+	{"monster_gladiator", 192},
+	{"monster_guardian", 0},
+	{"monster_jorg", 0},
+	{"monster_makron", 0},
+	{"monster_medic", 192},
+	{"monster_medic_commander", 192},
+	{"monster_ogre", 128},
+	{"monster_shambler", 128},
+	{"monster_supertank", 64},
+	{"monster_tank", 128},
+	{"monster_tank_commander", 128},
+	{"monster_tankv", 128},
+	{"monster_widow", 0},
+	{"monster_widow2", 0},
+};
+
+static int
+M_NavDropHeightOf(const char *classname)
+{
+	for (int i = 0; i < (int)(sizeof(nav_drop_heights) / sizeof(nav_drop_heights[0])); i++)
+	{
+		if (!Q_stricmp(classname, nav_drop_heights[i].classname))
+		{
+			return nav_drop_heights[i].height;
+		}
+	}
+
+	return MONSTER_DROP_HEIGHT;
+}
+
+static int
+M_NavDropHeight(const edict_t *ent)
+{
+	const monster_def_t *def;
+
+	if (!ent->classname)
+	{
+		return MONSTER_DROP_HEIGHT;
+	}
+
+	def = Defs_FindMonster(ent->classname);
+
+	if (def && (def->set & MDEF_DROP_HEIGHT))
+	{
+		return def->drop_height;
+	}
+
+	/* optech2: a new monster from a definition drops as its base */
+	if (def && def->base[0])
+	{
+		return M_NavDropHeightOf(def->base);
+	}
+
+	return M_NavDropHeightOf(ent->classname);
+}
+
 static int
 M_NavJumper(const edict_t *ent)
 {
@@ -1319,8 +1389,13 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 		request.start[2] += ent->mins[2]; /* the feet */
 		VectorCopy(goal->s.origin, request.goal);
 		request.goal[2] += goal->mins[2];
-		request.path_flags = OPTECH2_PATH_WALK | OPTECH2_PATH_WALK_OFF_LEDGE | OPTECH2_PATH_ELEVATOR |
-							 OPTECH2_PATH_TELEPORT;
+		request.path_flags = OPTECH2_PATH_WALK | OPTECH2_PATH_ELEVATOR | OPTECH2_PATH_TELEPORT;
+		request.drop_height = (float)M_NavDropHeight(ent);
+
+		if (request.drop_height > 0)
+		{
+			request.path_flags |= OPTECH2_PATH_WALK_OFF_LEDGE;
+		}
 
 		/* player-sized monsters climb ladders */
 		if (Q_max(Q_max(-ent->mins[0], ent->maxs[0]), Q_max(-ent->mins[1], ent->maxs[1])) <= 16.5f &&
@@ -1328,7 +1403,6 @@ M_NavStep(edict_t *ent, const edict_t *goal, float dist)
 		{
 			request.path_flags |= OPTECH2_PATH_LADDER;
 		}
-		request.drop_height = MONSTER_DROP_HEIGHT;
 
 		{
 			const int jumper = M_NavJumper(ent);
