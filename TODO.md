@@ -137,6 +137,18 @@ something unfinished; remove an entry in the commit that fixes it.
   geometry in static GPU buffers (as GL3) and only record draws per frame;
   profile first (perf on ref_vk at that spot). Fits M3 (renderer work).
 
+- Vulkan: a flat brown screen-aligned rectangle flickers in the lower right
+  on base1 when standing still at the spawn (riz, 2026-11-23, re-release
+  data, his config: fov 100, r_msaa_samples 8, vk_directrender 1, desktop
+  fullscreen). Gone as soon as the player moves; caught by pausing over and
+  over. Not seen in GL3. Not reproduced in 3 x 25 windowed screenshots (fresh
+  and his config, paused and not). Suspect a 2D or translucent draw from a
+  buffer reused while in flight. For the M3 renderer rework.
+- Vulkan test run with riz's config died on SIGABRT while writing a 2560x1400
+  PNG screenshot (inside miniz, main thread; 2026-11-23), right at the test's
+  90 s timeout. Likely harness noise, but nothing in the game calls abort
+  there: check if it comes back.
+
 ## Builds and releases
 
 - TrueType console text looks blocky in GL4 at small window sizes (800x600, con_textscale 0.8); Vulkan draws it smoothly since 2026-11-22. Check the GL renderers' font sampling.
