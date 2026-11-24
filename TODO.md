@@ -82,30 +82,14 @@ something unfinished; remove an entry in the commit that fixes it.
 
 ## Menus (M2)
 
-- Plan (riz, 2026-11-24): data menus (menu files in mod folders: pages of
-  buttons, sliders, toggles, lists bound to cvars and commands; stock menus
-  become data files) + sandboxed Lua hooks for live parts (save slots,
-  server browser, conditions, custom widgets; needs a client-side Lua
-  state), drawn by a restyled qmenu (TTF, scaling, mouse, gamepad, re-release
-  look). Old C menus stay as the fallback.
-- Steps: 1 loader + `menu` command + overrides (done 2026-11-24,
-  src/client/menu/datamenu.c, check data-menus); 2 stock menus as data files
-  (options, multiplayer, game, download options, deathmatch flags done
-  2026-11-24; still stock: main (pics), keys/buttons (binding lists),
-  load/save (slots), join/start server, address book, player setup (model
-  preview), video, joy/gyro/sticks, mods, level select, credits, quit; the
-  lists wait for step 3); 3 client Lua state +
-  hooks (done 2026-11-24: menu_lua.c, lists, lua actions, if lua:, open;
-  game page lists episodes; next lists to port: save/load slots, key
-  bindings, servers, mods, level select — need menu.* functions for each); 4 restyle (done 2026-11-24 for data pages: ui_menustyle 1, panel,
-  row bar, mouse; the stock C menus and the main menu keep the classic
-  look until they're data pages); 5 modder docs (done 2026-11-24: mods/MENUS.md).
-  Done 2026-11-24: every stock menu is a data page (load/save, all binding
-  pages, video, address book, mods, level select, joy/gyro/sticks, quit,
-  credits, start/join server, player setup) + options > game and HUD;
-  stock C menus kept as menu_builtin fallbacks. Left: the main menu's
-  classic picture page (still C; data main.menu only in the re-release
-  look), the "searching" popup is still the classic text box.
+- Done 2026-11-24: every stock menu is a data page (`stuff/menus/*.menu` +
+  Lua, `src/client/menu/datamenu.c`, `menu_lua.c`, `menustyle.c`; reference
+  `mods/MENUS.md`; check `data-menus`), plus options > game and HUD; the
+  stock C menus stay as `menu_builtin <name>`.
+- Left: the classic picture main menu is still C (`main.menu` only applies in
+  the re-release look); the join server "searching" popup is the classic
+  text box in both looks; the video page's multisampling cap
+  (`vid_msaa_max`) comes from GL3/GL4 only, Vulkan and GL1 list every count.
 - Later: game library menus in C through an extension hook (draw + keys),
   for libraries like q2arpg that want their own; engine/data menus stay the
   fallback for re-release games.
@@ -175,5 +159,7 @@ something unfinished; remove an entry in the commit that fixes it.
 
 - TrueType console text looks blocky in GL4 at small window sizes (800x600, con_textscale 0.8); Vulkan draws it smoothly since 2026-11-22. Check the GL renderers' font sampling.
 
-- Website (`docs/`): no screenshots yet of the barrier jumps, leaps, ladders,
-  teleporters or the new console.
+- Website (`docs/`): no screenshots yet of the barrier jumps, leaps, ladders
+  or teleporters; the monster AI clip is parked (see NOTES.md).
+- Quake II PSX on Linux runs on our game.so (it ships only a Windows
+  `game_x64.dll`); its own game code runs only in the Windows build.
