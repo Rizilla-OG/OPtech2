@@ -103,6 +103,7 @@ int imageindex_sbfctf2;
 int imageindex_ctfsb1;
 int imageindex_ctfsb2;
 
+/* optech2: CTF stats 18-31 (local.h, moved up one upstream; this layout still used 17-30) */
 char *ctf_statusbar =
 	"yb	-24 "
 
@@ -167,72 +168,71 @@ char *ctf_statusbar =
 
 	/* tech */
 	"yb -129 "
-	"if 26 "
+	"if 27 "
 	"xr -26 "
-	"pic 26 "
+	"pic 27 "
 	"endif "
 
 	/* red team */
 	"yb -102 "
-	"if 17 "
+	"if 18 "
 	"xr -26 "
-	"pic 17 "
+	"pic 18 "
 	"endif "
 	"xr -62 "
-	"num 2 18 "
+	"num 2 19 "
 	/* joined overlay */
-	"if 22 "
-	"yb -104 "
-	"xr -28 "
-	"pic 22 "
-	"endif "
-
-	/* blue team */
-	"yb -75 "
-	"if 19 "
-	"xr -26 "
-	"pic 19 "
-	"endif "
-	"xr -62 "
-	"num 2 20 "
 	"if 23 "
-	"yb -77 "
+	"yb -104 "
 	"xr -28 "
 	"pic 23 "
 	"endif "
 
+	/* blue team */
+	"yb -75 "
+	"if 20 "
+	"xr -26 "
+	"pic 20 "
+	"endif "
+	"xr -62 "
+	"num 2 21 "
+	"if 24 "
+	"yb -77 "
+	"xr -28 "
+	"pic 24 "
+	"endif "
+
 	/* have flag graph */
-	"if 21 "
+	"if 22 "
 	"yt 26 "
 	"xr -24 "
-	"pic 21 "
+	"pic 22 "
 	"endif "
 
 	/* id view state */
-	"if 27 "
+	"if 28 "
 	"xv 112 "
 	"yb -58 "
-	"stat_string 27 "
-	"endif "
-
-	"if 29 "
-	"xv 96 "
-	"yb -58 "
-	"pic 29 "
-	"endif "
-
-	"if 28 "
-	"xl 0 "
-	"yb -78 "
 	"stat_string 28 "
 	"endif "
 
 	"if 30 "
+	"xv 96 "
+	"yb -58 "
+	"pic 30 "
+	"endif "
+
+	"if 29 "
+	"xl 0 "
+	"yb -78 "
+	"stat_string 29 "
+	"endif "
+
+	"if 31 "
 	"xl 0 "
 	"yb -88 "
-	"stat_string 30 "
-	"endif "
-	;
+	"stat_string 31 "
+	"endif ";
 
 static char *tnames[] = {
 	"item_tech1", "item_tech2", "item_tech3", "item_tech4",

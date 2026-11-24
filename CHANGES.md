@@ -4,6 +4,7 @@ Changes made on top of Yamagi Quake II Remaster. Upstream history (Yamagi Quake 
 
 ## Unreleased
 
+- Fixed (CTF): the HUD layout still used the CTF stat numbers from before they moved up one (upstream), so a held tech's picture number was drawn as a text string ("#w_etfrifle.md2" over the HUD) and the team, flag and ID-view slots read the wrong stats.
 - Fixed: a mod whose map list (mapdb.json) has one episode, like the re-release's Quake II PSX, started baseq2's base1 from the skill lines; a new game now starts that episode (psx/intro, psx/base0).
 - Video menu: multisampling lists only the sample counts the GPU gives (`vid_msaa_max`, from GL_MAX_SAMPLES in GL3/GL4, lowered when the driver refuses a window with more), with the limit on its status line; picking 16x on a driver that only gives 8x fell back to 8x without a word.
 - Fixed: with bloom on (GL3, GL4) the re-release menu look lost its panels and the sliders showed as white bars: the bloom pass left the blend function additive for the 2D drawing after it. The video page showed the mode [320 240] for auto and custom: choices now hold 64 options (the 35 video modes).
