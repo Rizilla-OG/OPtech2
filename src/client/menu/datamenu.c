@@ -133,6 +133,7 @@ typedef struct
 	qboolean has_script; /* optech2: menus/<name>.lua ran */
 	/* optech2: where the re-release style drew the rows (pixels), for the mouse */
 	int style_x, style_width, style_row_height;
+	float style_scale; /* optech2: the panel's scale (smaller than the menu scale on a tall page) */
 	int style_row_top[DATAMENU_MAX_ITEMS];
 	menuframework_s frame;
 	int item_count;
@@ -636,31 +637,32 @@ DataMenu_DrawStyled(menuframework_s *frame, datamenu_page_t *page)
 	static const float value_color[3] = {1.00f, 0.80f, 0.45f};
 	static const float header_color[3] = {0.55f, 0.72f, 0.95f};
 	static const float status_color[3] = {0.70f, 0.70f, 0.70f};
-	float scale = SCR_GetMenuScale();
+	const datamenu_item_t *last = &page->items[page->item_count - 1];
+	float menu_scale = SCR_GetMenuScale();
+	/* optech2: the panel in menu units: item lines 10 apart in the file, 14
+	   here, padding 10 above and below, and a status line */
+	float panel_units = last->widget.generic.y * 14.0f / 10.0f + 14 + 2 * 10 + 14;
+	/* optech2: the top stays put, under the banner's place, whatever the
+	   rows ("if" items come and go; centering moved the whole panel) */
+	int panel_top = viddef.height / 2 - (int)(76 * menu_scale);
+	/* optech2: a page too tall for the room under it is drawn smaller */
+	float scale = Q_min(menu_scale, (viddef.height - panel_top + 10 * menu_scale - 8 * menu_scale) / panel_units);
 	int padding = (int)(10 * scale);
 	int row_height = (int)(14 * scale);
 	int text_offset = (row_height - (int)(8 * scale)) / 2;
 	int width = (int)(380 * scale);
-	int content_height, panel_top, panel_height, x, i;
+	int content_height, panel_height, x, i;
 	const char *status;
-	const datamenu_item_t *last = &page->items[page->item_count - 1];
 
 	if (width > viddef.width - 2 * padding)
 	{
 		width = viddef.width - 2 * padding;
 	}
 
-	/* optech2: item lines are 10 units apart in the file; 14 here */
 	content_height = (int)((last->widget.generic.y * 14 / 10 + 14) * scale);
-	x = viddef.width / 2 + (int)(page->x_offset * scale) - width / 2;
-	panel_top = (viddef.height - content_height) / 2;
-
-	if (page->banner[0] && (panel_top < viddef.height / 2 - (int)(76 * scale)))
-	{
-		panel_top = viddef.height / 2 - (int)(76 * scale); /* optech2: below the banner */
-	}
-
+	x = viddef.width / 2 + (int)(page->x_offset * menu_scale) - width / 2;
 	panel_height = content_height + 2 * padding + row_height; /* optech2: and a status line */
+	panel_top += padding - (int)(10 * menu_scale); /* optech2: the panel's edge stays put too */
 
 	if (page->banner[0])
 	{
@@ -668,8 +670,8 @@ DataMenu_DrawStyled(menuframework_s *frame, datamenu_page_t *page)
 	}
 	else if (page->title[0])
 	{
-		DataMenu_Text((viddef.width - DataMenu_TextWidth(scale * 1.5f, page->title)) / 2,
-			panel_top - padding - (int)(16 * scale), scale * 1.5f, selected_color, page->title);
+		DataMenu_Text((viddef.width - DataMenu_TextWidth(menu_scale * 1.5f, page->title)) / 2,
+			panel_top - padding - (int)(16 * menu_scale), menu_scale * 1.5f, selected_color, page->title);
 	}
 
 	Draw_FillColor(x, panel_top - padding, width, panel_height, panel_color);
@@ -679,6 +681,7 @@ DataMenu_DrawStyled(menuframework_s *frame, datamenu_page_t *page)
 	page->style_x = x;
 	page->style_width = width;
 	page->style_row_height = row_height;
+	page->style_scale = scale;
 
 	/* optech2: the mouse moved: the row under the pointer becomes the selected one */
 	if (datamenu_pointer_moved)
@@ -941,7 +944,7 @@ DataMenu_Key(menuframework_s *frame, int key)
 			if (item->kind == DATAMENU_SLIDER)
 			{
 				menuslider_s *slider = &item->widget.slider;
-				float scale = SCR_GetMenuScale();
+				float scale = page->style_scale;
 				int right = page->style_x + page->style_width - (int)(10 * scale);
 				int bar_width = (int)(110 * scale);
 				int bar_x = right - (int)(5 * Draw_CharAdvance() * scale) - (int)(6 * scale) - bar_width;

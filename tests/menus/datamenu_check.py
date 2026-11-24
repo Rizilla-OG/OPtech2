@@ -287,11 +287,11 @@ def main():
         report(differing(data, builtin) > 500,
                f"menu_builtin options opens the stock menu ({differing(data, builtin)} pixels differ)")
 
-    # optech2: the re-release style at 640x480 (menu scale 1): the test page's panel is 84 high, its top at
-    # 198; rows 14 high (slider at 198, choice at 212); the slider bar spans x 344-454
+    # optech2: the re-release style at 640x480 (menu scale 1): the panel's rows start at 164 (under the
+    # banner's place: 240 - 76), 14 high (slider at 164, choice at 178); the slider bar spans x 344-454
     style_log, style_shots = run("style", [
         "set crosshair 0", "set menutest_slider 0", "menu test", "clear", "screenshot png",
-        "menu_pointer 320 218", "presskey mouse1", "menu_pointer 399 204", "presskey mouse1",
+        "menu_pointer 320 184", "presskey mouse1", "menu_pointer 399 171", "presskey mouse1",
         "presskey mouse2", "crosshair", "menutest_slider", "echo style done",
     ], style=1)
     report(len(style_shots) == 1 and len(shots) >= 2 and differing(style_shots[0], shots[1]) > 500,
