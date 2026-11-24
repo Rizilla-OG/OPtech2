@@ -103,7 +103,7 @@ MenuLua_CountHook(lua_State *L, lua_Debug *unused)
 	}
 }
 
-/* ---- the menu table ---- */
+/* optech2: ---- the menu table ---- */
 
 static int
 MenuLua_Cvar(lua_State *L)
@@ -309,7 +309,7 @@ MenuLua_OpenState(void)
 	lua_setglobal(menulua_state, "menu");
 }
 
-/* ---- pages ---- */
+/* optech2: ---- pages ---- */
 
 /* optech2: runs the function under its arguments; leaves one result (or nil) on the stack */
 static qboolean
