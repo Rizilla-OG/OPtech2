@@ -14,7 +14,7 @@ once with "+set game testmod", and compares:
   - movement: the mod's jump goes about twice as high, and the client's
     prediction stays with it (the client predicts with the mod's movement),
   - HUD: the mod's "TEST MOD" label is on screen, the stock game has none.
-A screenshot of the Test Gun goes to docs/screenshots/.
+A screenshot of the Test Gun goes to docs/screenshots/ with run_all.py --doc-shots.
 
 Usage:
   mod_check.py
@@ -30,6 +30,7 @@ import tempfile
 from pathlib import Path
 
 REPO_DIR = Path(__file__).resolve().parent.parent.parent
+DOC_SHOTS_WANTED = os.environ.get("OPTECH2_DOC_SHOTS") == "1"  # run_all.py --doc-shots: refresh docs/screenshots/
 MOD_DIR = REPO_DIR / "mods" / "testmod"
 CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 OUTPUT_DIR = REPO_DIR / "build" / "mod-check"
@@ -150,8 +151,9 @@ def main():
     beams = re.findall(r"testmod: beam drawn from (\S+ \S+ \S+) to (\S+ \S+ \S+)", mod_log)
     report(len(beams) >= 2, f"Test Gun fired, its beam (temp entity 201) drawn by the mod {len(beams)} times")
     if mod_shot:
-        DOC_SHOT.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(mod_shot, DOC_SHOT)
+        if DOC_SHOTS_WANTED:
+            DOC_SHOT.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(mod_shot, DOC_SHOT)
 
     # movement
     stock_jump, mod_jump = jump_height(stock_log), jump_height(mod_log)

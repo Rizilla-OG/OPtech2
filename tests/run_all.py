@@ -33,6 +33,8 @@ Usage:
   run_all.py --quick         skip the slow ones (several minutes each)
   run_all.py --only lift pmove   only these (names as in the summary)
   run_all.py --list          list the checks
+  run_all.py --doc-shots     also refresh the shots in docs/screenshots/
+                             (without it checks keep their shots in build/)
 Build first: cmake --workflow --preset default
 """
 
@@ -138,6 +140,8 @@ def main():
     parser.add_argument("--quick", action="store_true", help="skip the slow checks")
     parser.add_argument("--only", nargs="+", metavar="NAME", help="run only these checks")
     parser.add_argument("--list", action="store_true", help="list the checks and exit")
+    parser.add_argument("--doc-shots", action="store_true",
+                        help="refresh docs/screenshots/ from the checks' shots (off: they stay in build/)")
     parser.add_argument("--data", choices=("classic", "rerelease", "both"), default="classic",
                         help="game data the checks run on (default classic)")
     arguments = parser.parse_args()
@@ -195,6 +199,8 @@ def main():
         started = time.monotonic()
         log_path = OUTPUT_DIR / f"{run_name}.log"
         environment = dict(os.environ)
+        if arguments.doc_shots:
+            environment["OPTECH2_DOC_SHOTS"] = "1"
         if data_name:
             environment["OPTECH2_DATA_DIR"] = str(DATA_SETS[data_name])
         with open(log_path, "w") as log_file:

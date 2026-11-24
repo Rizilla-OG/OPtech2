@@ -11,7 +11,8 @@ the stock game's build wrapper, and plays it on the re-release data:
   - its own files (q2rpg/loot_stats.csv, q2rpg/q2rpg_events.log) are written
     only under the folder it runs from (here a temporary one),
   - no errors.
-Screenshots land in build/q2arpg-check/ and docs/screenshots/.
+Screenshots land in build/q2arpg-check/ and, with run_all.py --doc-shots,
+docs/screenshots/.
 
 Usage:
   q2arpg_check.py [<q2arpg snapshot>/rerelease]
@@ -34,6 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import rr_game_check  # noqa: E402  (shares paths)
 
 REPO_DIR = rr_game_check.REPO_DIR
+DOC_SHOTS_WANTED = os.environ.get("OPTECH2_DOC_SHOTS") == "1"  # run_all.py --doc-shots: refresh docs/screenshots/
 GAME_BUILD_DIR = REPO_DIR / "build" / "q2arpg-game"
 OUTPUT_DIR = REPO_DIR / "build" / "q2arpg-check"
 DEFAULT_SOURCE = REPO_DIR.parent / "research" / "q2arpg-snapshot" / "rerelease"
@@ -88,10 +90,13 @@ def run(home, run_dir, mod_dir, script, log_path):
         subprocess.run(["stdbuf", "-oL", str(rr_game_check.CLIENT_BINARY),
                         "-datadir", str(rr_game_check.RERELEASE_DATA_DIR),
                         "+set", "game", MOD_NAME, "+set", "vid_renderer", "soft",
+                        # fixed 60 Hz clock: the delays land on the same tick however busy the
+                        # machine is (a busy full suite once saved the player mid-move)
+                        "+set", "fixedtime", "16667", "+set", "r_vsync", "0", "+set", "cl_maxfps", "60",
                         "+set", "s_initsound", "0", "+set", "r_mode", "-1",
                         "+set", "r_customwidth", "1280", "+set", "r_customheight", "720",
                         "+exec", "c.cfg"],
-                       cwd=run_dir, env=environment, stdout=log_file, stderr=subprocess.STDOUT,
+                       cwd=run_dir, env=environment, stdin=subprocess.DEVNULL, stdout=log_file, stderr=subprocess.STDOUT,
                        timeout=120, check=False)
     return log_path.read_text(errors="replace")
 
@@ -131,7 +136,8 @@ def main():
         shots = sorted((mod_dir / "scrnshot").glob("*.png")) if (mod_dir / "scrnshot").exists() else []
         for shot, name in zip(shots, ["start", "kill"]):
             shutil.copy(shot, OUTPUT_DIR / f"{name}.png")
-            shutil.copy(shot, rr_game_check.DOC_SHOTS / f"m2_q2arpg_{name}.png")
+            if DOC_SHOTS_WANTED:
+                shutil.copy(shot, rr_game_check.DOC_SHOTS / f"m2_q2arpg_{name}.png")
         if (mod_dir / "scrnshot").exists():
             shutil.rmtree(mod_dir / "scrnshot")
 

@@ -5,11 +5,6 @@ something unfinished; remove an entry in the commit that fixes it.
 
 ## Code quality
 
-- q2arpg check flaky (2026-11-23): once in a full `--data both` run the save
-  loaded 10 units off the saved spot (210 -304 vs 200 -300); passes 3/3 alone.
-  The load run likely drifts the player under load (real clock?); pin its time
-  (fixedtime) or read the position right after the load.
-
 - **`cl_perf` overlay is Linux-only, GPU stats AMD-only** (`src/client/cl_stats.c`
   reads `/proc` and amdgpu's sysfs). Plan for one look on every platform:
   1. Split it: the overlay (layout and drawing, no OS code) and a stats layer
@@ -47,9 +42,6 @@ something unfinished; remove an entry in the commit that fixes it.
   Left: trains and doors as lifts, a per-monster drop height (every walking
   monster may drop 256), and `.nav` links onto spots narrower than a
   monster's mesh (crates, narrow ledges) that only bots can use.
-- **`cgame` check rewrites `docs/screenshots/m2_test_cgame_hud.png`** on every
-  run (its particles differ each time): write it under `build/` and copy to
-  `docs/` only on purpose.
 - **GL3/GL4 report every texture as having alpha**: solid and alpha formats
   are both `GL_RGBA`, so `GL3_Upload32`/`GL4_Upload32` always return true.
   Only `imagelist` shows it; return whether a pixel below 255 alpha was seen.

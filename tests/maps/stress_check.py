@@ -17,7 +17,7 @@ Usage:
 
 Opens a 1280x720 window for about 1 minute (vsync off, uncapped frame rate).
 Uses a temporary HOME. Logs and one screenshot per phase land in
-build/stress-check/ (stress map shots also in docs/screenshots/).
+build/stress-check/ (stress map shots also in docs/screenshots/ with --doc-shots).
 """
 
 import argparse
@@ -31,6 +31,7 @@ from pathlib import Path
 
 CHECK_DIR = Path(__file__).resolve().parent
 REPO_DIR = CHECK_DIR.parent.parent
+DOC_SHOTS_WANTED = os.environ.get("OPTECH2_DOC_SHOTS") == "1"  # run_all.py --doc-shots: refresh docs/screenshots/
 CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 MAP_FILE = REPO_DIR / "build" / "maps" / "optech2_stress.bsp"
 OUTPUT_DIR = REPO_DIR / "build" / "stress-check"
@@ -98,7 +99,8 @@ def run_session(map_name, data_dir):
             shutil.copy(shot, OUTPUT_DIR / f"{map_name}_{phase}.png")
             if map_name == "optech2_stress":
                 DOC_SHOT_DIR.mkdir(parents=True, exist_ok=True)
-                shutil.copy(shot, DOC_SHOT_DIR / f"m1_stress_map_{phase}.png")
+                if DOC_SHOTS_WANTED:
+                    shutil.copy(shot, DOC_SHOT_DIR / f"m1_stress_map_{phase}.png")
     return log_path.read_text(errors="replace")
 
 

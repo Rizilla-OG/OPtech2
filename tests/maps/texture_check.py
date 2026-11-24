@@ -18,7 +18,8 @@ Usage:
   texture_check.py --only soft   one run: gl3, gl3-noretex or soft
 
 Needs ericw-tools and Pillow. Uses a temporary HOME. Shots land in
-build/texture-check/ and docs/screenshots/.
+build/texture-check/ and, with run_all.py --doc-shots,
+docs/screenshots/.
 """
 
 import argparse
@@ -31,6 +32,7 @@ from pathlib import Path
 
 CHECK_DIR = Path(__file__).resolve().parent
 REPO_DIR = CHECK_DIR.parent.parent
+DOC_SHOTS_WANTED = os.environ.get("OPTECH2_DOC_SHOTS") == "1"  # run_all.py --doc-shots: refresh docs/screenshots/
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(CHECK_DIR))
 import make_limits_map as map_tools  # noqa: E402
@@ -210,7 +212,8 @@ def main():
             results.append(passed)
             print(f"{'ok' if passed else 'FAIL':<6}{name:<12} {surface:<22} {share:6.1%} of the view in its colors")
             DOC_SHOT_DIR.mkdir(parents=True, exist_ok=True)
-            shutil.copy(path, DOC_SHOT_DIR / f"m1_truecolor_{name}_{surface.split('/')[1]}.png")
+            if DOC_SHOTS_WANTED:
+                shutil.copy(path, DOC_SHOT_DIR / f"m1_truecolor_{name}_{surface.split('/')[1]}.png")
 
     passed = all(results) and bool(results)
     print(f"\nTexture check {'passed' if passed else 'FAILED'}. Shots in {OUTPUT_DIR}")

@@ -9,7 +9,8 @@ it in a mod folder and plays base1 with it on the re-release data:
     listed with rr_edicts),
   - a spawned soldier is shot with the railgun and dies,
   - no errors.
-Screenshots land in build/rr-game-check/ and docs/screenshots/.
+Screenshots land in build/rr-game-check/ and, with run_all.py --doc-shots,
+docs/screenshots/.
 
 Usage:
   rr_game_check.py [<quake2-rerelease-dll>/rerelease]
@@ -28,6 +29,7 @@ import tempfile
 from pathlib import Path
 
 REPO_DIR = Path(__file__).resolve().parent.parent.parent
+DOC_SHOTS_WANTED = os.environ.get("OPTECH2_DOC_SHOTS") == "1"  # run_all.py --doc-shots: refresh docs/screenshots/
 CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 GAME_BUILD_DIR = REPO_DIR / "build" / "rerelease-stock-game"
 OUTPUT_DIR = REPO_DIR / "build" / "rr-game-check"
@@ -130,7 +132,8 @@ def main():
         DOC_SHOTS.mkdir(parents=True, exist_ok=True)
         for shot, name in zip(shots, names):
             shutil.copy(shot, OUTPUT_DIR / f"{name}.png")
-            shutil.copy(shot, DOC_SHOTS / f"m2_rr_game_{name}.png")
+            if DOC_SHOTS_WANTED:
+                shutil.copy(shot, DOC_SHOTS / f"m2_rr_game_{name}.png")
 
     log = log_path.read_text(errors="replace")
     report("re-release game library (game API 2023)" in log, "server loaded the re-release game library")

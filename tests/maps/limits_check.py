@@ -27,6 +27,7 @@ from pathlib import Path
 
 CHECK_DIR = Path(__file__).resolve().parent
 REPO_DIR = CHECK_DIR.parent.parent
+DOC_SHOTS_WANTED = os.environ.get("OPTECH2_DOC_SHOTS") == "1"  # run_all.py --doc-shots: refresh docs/screenshots/
 CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 MAP_FILE = REPO_DIR / "build" / "maps" / "optech2_limits.bsp"
 OUTPUT_DIR = REPO_DIR / "build" / "limits-check"
@@ -186,7 +187,8 @@ def main():
         report(brightness >= MIN_BRIGHTNESS, f"{name} screenshot lit (average brightness {brightness:.0f})")
         if arguments.renderer != "soft":
             DOC_SHOT_DIR.mkdir(parents=True, exist_ok=True)
-            shutil.copy(path, DOC_SHOT_DIR / f"m1_limits_map_{name}.png")
+            if DOC_SHOTS_WANTED:
+                shutil.copy(path, DOC_SHOT_DIR / f"m1_limits_map_{name}.png")
 
     passed = all(results)
     print(f"\nLimits check {'passed' if passed else 'FAILED'}. Log and screenshots in {OUTPUT_DIR}")

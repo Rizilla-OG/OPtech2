@@ -13,7 +13,8 @@ base1 and checks what the module reports about the engine's imports:
   - Localize of "$key" texts with arguments (with the re-release data),
   - the effects extension: "fxtest" sends temp entity 200, the module draws it.
 The screenshot (module HUD instead of the built-in one) lands in
-build/cgame-check/ and docs/screenshots/.
+build/cgame-check/ and, with run_all.py --doc-shots,
+docs/screenshots/.
 
 Usage:
   cgame_check.py
@@ -29,6 +30,7 @@ import tempfile
 from pathlib import Path
 
 REPO_DIR = Path(__file__).resolve().parent.parent.parent
+DOC_SHOTS_WANTED = os.environ.get("OPTECH2_DOC_SHOTS") == "1"  # run_all.py --doc-shots: refresh docs/screenshots/
 CLIENT_BINARY = REPO_DIR / "build" / "release" / "OpenTech2"
 MODULE_SOURCE = REPO_DIR / "tests" / "cgame" / "test_cgame.c"
 OUTPUT_DIR = REPO_DIR / "build" / "cgame-check"
@@ -70,8 +72,9 @@ def main():
         shots = sorted((game_dir / "scrnshot").glob("*.png")) if (game_dir / "scrnshot").exists() else []
         if shots:
             shutil.copy(shots[0], OUTPUT_DIR / "hud.png")
-            DOC_SHOT.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy(shots[0], DOC_SHOT)
+            if DOC_SHOTS_WANTED:
+                DOC_SHOT.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy(shots[0], DOC_SHOT)
 
     log = log_path.read_text(errors="replace")
     report("client game: loaded (cgame API 2022)" in log, "module loaded through cl_cgame")

@@ -28,6 +28,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import rr_game_check  # noqa: E402  (shares the game build and paths)
+DOC_SHOTS_WANTED = rr_game_check.DOC_SHOTS_WANTED
 
 OUTPUT_DIR = rr_game_check.REPO_DIR / "build" / "rr-save-check"
 
@@ -137,7 +138,8 @@ def main():
         menu_shots = sorted(shots.glob("*.png")) if shots.exists() else []
         if menu_shots:
             shutil.copy(menu_shots[0], OUTPUT_DIR / "restart_menu.png")
-            shutil.copy(menu_shots[0], rr_game_check.DOC_SHOTS / "m2_rr_restart_level_menu.png")
+            if DOC_SHOTS_WANTED:
+                shutil.copy(menu_shots[0], rr_game_check.DOC_SHOTS / "m2_rr_restart_level_menu.png")
         saved = sorted(p.name for p in (mod_dir / "save" / "rrcheck").glob("*")) \
             if (mod_dir / "save" / "rrcheck").exists() else []
 

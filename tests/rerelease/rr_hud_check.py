@@ -14,7 +14,8 @@ library (built as in rr_game_check.py):
     give all, and pointing right then letting go switches to the one there
     (the ETF Rifle, 5 of 20 clockwise from the top),
   - no errors.
-Screenshots land in build/rr-hud-check/ and docs/screenshots/.
+Screenshots land in build/rr-hud-check/ and, with run_all.py --doc-shots,
+docs/screenshots/.
 
 Usage:
   rr_hud_check.py [<quake2-rerelease-dll>/rerelease]
@@ -32,6 +33,7 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import rr_game_check  # noqa: E402  (shares the game build and paths)
+DOC_SHOTS_WANTED = rr_game_check.DOC_SHOTS_WANTED
 
 OUTPUT_DIR = rr_game_check.REPO_DIR / "build" / "rr-hud-check"
 FEED_BOX = (0, 0, 480, 70)  # the notify lines' corner at 1280x720
@@ -126,7 +128,8 @@ def main():
             if shot:
                 shots[name] = OUTPUT_DIR / f"{name}.png"
                 shutil.copy(shot, shots[name])
-                shutil.copy(shot, rr_game_check.DOC_SHOTS / f"m2_rr_hud_{name}.png")
+                if DOC_SHOTS_WANTED:
+                    shutil.copy(shot, rr_game_check.DOC_SHOTS / f"m2_rr_hud_{name}.png")
 
     feed = logs["feed"]
     report("Riz: hello from the kill feed" in feed, "say reached everyone as chat")

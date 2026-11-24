@@ -9,7 +9,7 @@ the four copies differ where they should (bent vs straight) in the screenshot.
 
 Usage:
   iqm_check.py                    hidden software renderer
-  iqm_check.py --renderer gl3     real GL3 window; also saves the shot to docs/screenshots/
+  iqm_check.py --renderer gl3     real GL3 window; also saves the shot to docs/screenshots/ (with OPTECH2_DOC_SHOTS=1)
 
 Needs ericw-tools (python3 tools/get_ericw_tools.py). Uses a temporary HOME.
 Logs and the screenshot land in build/iqm-check/.
@@ -25,6 +25,7 @@ from pathlib import Path
 
 CHECK_DIR = Path(__file__).resolve().parent
 REPO_DIR = CHECK_DIR.parent.parent
+DOC_SHOTS_WANTED = os.environ.get("OPTECH2_DOC_SHOTS") == "1"  # run_all.py --doc-shots: refresh docs/screenshots/
 sys.path.insert(0, str(CHECK_DIR))
 sys.path.insert(0, str(REPO_DIR / "tests" / "maps"))
 sys.dont_write_bytecode = True
@@ -142,7 +143,8 @@ def main():
                f"bent copy differs from straight ({straight_vs_bent:.1%} vs {straight_vs_idle:.1%} between the two straight ones)")
         if arguments.renderer != "soft":
             DOC_SHOT_DIR.mkdir(parents=True, exist_ok=True)
-            shutil.copy(shot_path, DOC_SHOT_DIR / "m1_iqm_test_model.png")
+            if DOC_SHOTS_WANTED:
+                shutil.copy(shot_path, DOC_SHOT_DIR / "m1_iqm_test_model.png")
 
     passed = all(results)
     print(f"\nIQM check {'passed' if passed else 'FAILED'}. Log and screenshot in {OUTPUT_DIR}")

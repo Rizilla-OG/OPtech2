@@ -7,7 +7,8 @@ them. base1's start looks at monsters through the window ahead:
   - with g_debug_monster_kills 1 the view has red debug lines,
   - with 0 it has (almost) none,
   - no errors.
-Screenshots land in build/rr-debugdraw-check/ and docs/screenshots/.
+Screenshots land in build/rr-debugdraw-check/ and, with run_all.py --doc-shots,
+docs/screenshots/.
 
 Usage:
   rr_debugdraw_check.py [<quake2-rerelease-dll>/rerelease]
@@ -25,6 +26,7 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import rr_game_check  # noqa: E402  (shares the game build and paths)
+DOC_SHOTS_WANTED = rr_game_check.DOC_SHOTS_WANTED
 
 OUTPUT_DIR = rr_game_check.REPO_DIR / "build" / "rr-debugdraw-check"
 
@@ -89,7 +91,8 @@ def main():
                 shutil.copy(shot, OUTPUT_DIR / f"{name}.png")
                 counts[name] = red_pixels(OUTPUT_DIR / f"{name}.png")
                 if name == "on":
-                    shutil.copy(shot, rr_game_check.DOC_SHOTS / "m2_rr_debugdraw_monster_kills.png")
+                    if DOC_SHOTS_WANTED:
+                        shutil.copy(shot, rr_game_check.DOC_SHOTS / "m2_rr_debugdraw_monster_kills.png")
 
     if "on" in counts and "off" in counts:
         report(counts["on"] > 200, f"red debug boxes drawn with g_debug_monster_kills 1 ({counts['on']} pixels)")
