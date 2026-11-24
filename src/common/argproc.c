@@ -91,6 +91,7 @@ COM_InitArgv(int argc, char **argv)
 	}
 
 	com_argc = argc;
+	Crash_SaveCommandLine(argc, argv); /* optech2: for crash reports */
 
 	for (i = 0; i < argc; i++)
 	{

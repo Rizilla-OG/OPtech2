@@ -1435,6 +1435,7 @@ CLIENT_OBJS_ := \
 	src/client/vid/vid.o \
 	src/common/argproc.o \
 	src/common/clientserver.o \
+	src/common/crashreport.o \
 	src/common/collision.o \
 	src/common/rerelease.o \
 	src/common/debugdraw.o \
@@ -1779,6 +1780,7 @@ SERVER_OBJS_ := \
 	src/backends/generic/misc.o \
 	src/common/argproc.o \
 	src/common/clientserver.o \
+	src/common/crashreport.o \
 	src/common/collision.o \
 	src/common/rerelease.o \
 	src/common/debugdraw.o \

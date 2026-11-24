@@ -27,6 +27,7 @@
  */
 
 #include <signal.h>
+#include <string.h>
 
 #include "../../common/header/common.h"
 
@@ -80,6 +81,18 @@ printBacktrace(int sig)
 static void
 signalhandler(int sig)
 {
+	char reason[64];
+
+	/* optech2: a second crash inside the report goes straight to the OS */
+	signal(SIGSEGV, SIG_DFL);
+	signal(SIGILL, SIG_DFL);
+	signal(SIGFPE, SIG_DFL);
+	signal(SIGABRT, SIG_DFL);
+	signal(SIGBUS, SIG_DFL);
+
+	snprintf(reason, sizeof(reason), "Signal %d (%s)", sig, strsignal(sig));
+	Crash_WriteReport(reason, NULL);
+
 	printf("\n=======================================================\n");
 	printf("\nOpenTech2 crashed! This should not happen...\n");
 	printf("\nMake sure that you're using the last version. It can\n");

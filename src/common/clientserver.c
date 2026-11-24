@@ -151,6 +151,9 @@ Com_VPrintf(int print_level, const char *fmt, va_list argptr)
 		/* also echo to debugging console */
 		Sys_ConsoleOutput(msg);
 
+		/* optech2: keep the recent output for crash reports */
+		Crash_RecordConsole((msg[0] == 0x01 || msg[0] == 0x02) ? msg + 1 : msg);
+
 		/* logfile */
 		if (logfile_active && logfile_active->value)
 		{
@@ -250,6 +253,7 @@ Com_Error(int code, const char *fmt, ...)
 
 	if (recursive)
 	{
+		Crash_WriteReport("Recursive error", msg); /* optech2: the first error */
 		Sys_Error("recursive error after: %s", msg);
 	}
 
@@ -280,6 +284,10 @@ Com_Error(int code, const char *fmt, ...)
 	}
 	else
 	{
+		/* optech2: log the text and write the crash report before shutdown */
+		Com_Printf("********************\nFATAL ERROR: %s\n********************\n", msg);
+		Crash_WriteReport("Fatal error", msg);
+
 		SV_Shutdown(va("Server fatal crashed: %s\n", msg), false);
 #ifndef DEDICATED_ONLY
 		CL_Shutdown();

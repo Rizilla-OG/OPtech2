@@ -577,6 +577,7 @@ set(Client-Source
 	${CLIENT_SRC_DIR}/vid/vid.c
 	${COMMON_SRC_DIR}/argproc.c
 	${COMMON_SRC_DIR}/clientserver.c
+	${COMMON_SRC_DIR}/crashreport.c
 	${COMMON_SRC_DIR}/collision.c
 	${COMMON_SRC_DIR}/rerelease.c
 	${COMMON_SRC_DIR}/debugdraw.c
@@ -705,6 +706,7 @@ set(Client-Header
 set(Server-Source
 	${COMMON_SRC_DIR}/argproc.c
 	${COMMON_SRC_DIR}/clientserver.c
+	${COMMON_SRC_DIR}/crashreport.c
 	${COMMON_SRC_DIR}/collision.c
 	${COMMON_SRC_DIR}/rerelease.c
 	${COMMON_SRC_DIR}/debugdraw.c
