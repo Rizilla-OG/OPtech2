@@ -675,6 +675,15 @@ qboolean M_SaveSlot(const char *slot, char *comment, size_t size); /* optech2: m
 void Menu_MouseMove(float dx, float dy); /* optech2: the menu pointer (menu/menustyle.c) */
 qboolean DataMenu_Styled(void); /* optech2: the re-release menu look is on */
 
+/* optech2: a key/value pair of a data menu item (menu/datamenu.c, menu_lua.c) */
+typedef struct
+{
+	char key[64];
+	char value[1024]; /* optech2: room for long "options" (the re-release's 29 crosshairs) */
+} menu_pair_t;
+
+#define MENULUA_MAX_ENTRY_PAIRS 16
+
 /* optech2: Lua for data menus (menu/menu_lua.c): a list function's entry */
 typedef struct
 {
@@ -685,6 +694,10 @@ typedef struct
 	int action; /* optech2: its action function's number in the page, 0 = none */
 	char id[64]; /* optech2: handed to the page's keys function while the entry is selected */
 	qboolean disabled; /* optech2: shown, but enter does nothing */
+	/* optech2: every text or number field, as an item's keys: with "type" (choice,
+	   slider, toggle, bind...) the entry becomes that item instead of an action */
+	menu_pair_t pairs[MENULUA_MAX_ENTRY_PAIRS];
+	int pair_count;
 } menulua_entry_t;
 
 typedef qboolean (*menulua_entry_f)(const menulua_entry_t *entry, void *context);

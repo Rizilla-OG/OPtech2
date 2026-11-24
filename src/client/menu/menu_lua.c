@@ -47,6 +47,7 @@
  */
 
 #include "../header/client.h"
+#include "../vid/header/vid.h" /* optech2: VID_HasRenderer */
 #include "header/qmenu.h"
 
 #include "../../game/lua/lua.h"
@@ -203,6 +204,35 @@ MenuLua_Status(lua_State *L)
 	return 0;
 }
 
+/* optech2: menu.renderers(): the renderers this build has, { { name = "[OpenGL 3.2]", value = "gl3" }, ... } */
+static int
+MenuLua_Renderers(lua_State *L)
+{
+	static const char *renderers[][2] = {
+		{"[OpenGL 1.4]", "gl1"}, {"[OpenGL ES1]", "gles1"}, {"[OpenGL 3.2]", "gl3"}, {"[OpenGL ES3]", "gles3"},
+		{"[OpenGL 4.6]", "gl4"}, {"[Vulkan    ]", "vk"}, {"[Software  ]", "soft"}};
+	int i, count = 0;
+
+	lua_newtable(L);
+
+	for (i = 0; i < (int)(sizeof(renderers) / sizeof(renderers[0])); i++)
+	{
+		if (!VID_HasRenderer(renderers[i][1]))
+		{
+			continue;
+		}
+
+		lua_createtable(L, 0, 2);
+		lua_pushstring(L, renderers[i][0]);
+		lua_setfield(L, -2, "name");
+		lua_pushstring(L, renderers[i][1]);
+		lua_setfield(L, -2, "value");
+		lua_rawseti(L, -2, ++count);
+	}
+
+	return 1;
+}
+
 static int
 MenuLua_Episodes(lua_State *L)
 {
@@ -307,6 +337,7 @@ MenuLua_OpenState(void)
 		{"save", MenuLua_Save},
 		{"reload", MenuLua_Reload},
 		{"status", MenuLua_Status},
+		{"renderers", MenuLua_Renderers},
 		{NULL, NULL}};
 	static const char *removed[] = {"dofile", "loadfile", "require", NULL};
 	const luaL_Reg *library;
@@ -567,6 +598,25 @@ MenuLua_List(const char *page, const char *function, menulua_entry_f add_entry, 
 		MenuLua_RawField(-1, "disabled");
 		entry.disabled = lua_toboolean(menulua_state, -1);
 		lua_pop(menulua_state, 1);
+
+		/* optech2: all text and number fields as item keys (lua_next is raw: no metamethods) */
+		lua_pushnil(menulua_state);
+
+		while (lua_next(menulua_state, -2))
+		{
+			if ((lua_type(menulua_state, -2) == LUA_TSTRING) && lua_isstring(menulua_state, -1) &&
+				(entry.pair_count < MENULUA_MAX_ENTRY_PAIRS))
+			{
+				menu_pair_t *pair = &entry.pairs[entry.pair_count++];
+
+				Q_strlcpy(pair->key, lua_tostring(menulua_state, -2), sizeof(pair->key));
+				lua_pushvalue(menulua_state, -1); /* optech2: a copy: tostring on a number changes it */
+				Q_strlcpy(pair->value, lua_tostring(menulua_state, -1), sizeof(pair->value));
+				lua_pop(menulua_state, 1);
+			}
+
+			lua_pop(menulua_state, 1);
+		}
 
 		/* optech2: an action function is kept in the page's __menu_actions by number */
 		MenuLua_RawField(-1, "action");

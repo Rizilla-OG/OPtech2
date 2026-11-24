@@ -404,6 +404,16 @@ def main():
            f"bind page: enter + key binds, del unbinds ({bound})")
     log += binds_log
 
+    # optech2: the shipped video page: fov changes at once, vertical sync waits for apply, apply restarts
+    video_log, _ = run("video", ["set r_vsync 0", "set fov 90", "menu_video"] + ["presskey downarrow"] * 4 + [
+        "presskey rightarrow", "fov"] + ["presskey downarrow"] * 3 + ["presskey rightarrow", "r_vsync"] +
+        ["presskey downarrow"] * 5 + ["presskey enter", "#", "#", "#", "#", "#", "r_vsync"], mods=False)
+    vsync = re.findall(r'"r_vsync" is "([^"]*)"', video_log)
+    report(cvar(video_log, "fov") == "91" and vsync == ["0", "1"] and video_log.count("as rendering backend") >= 2,
+           f"video page: a slider changes at once, vsync waits for apply, apply restarts (fov "
+           f"{cvar(video_log, 'fov')}, r_vsync {vsync})")
+    log += video_log
+
     # optech2: a click on a key binding row (re-release look) starts binding, as enter
     bind_log, _ = run("bind-click", ["unbind k", "menu_keys", "menu_pointer 320 171", "presskey mouse1",
                                      "presskey k", "presskey escape", "bind k"], mods=False, style=1)
@@ -447,6 +457,9 @@ def main():
             continue
         # optech2: the bottom strip holds the version line, which can flicker between shots
         data, stock = shipped_shots[2 * index][:-40], shipped_shots[2 * index + 1][:-40]
+        if page == "options":
+            # optech2: options adds "game and HUD" under the stock lines (fixed y: nothing above moves)
+            data, stock = data[:370], stock[:370]
         report(differing(data, stock) == 0,
                f"shipped menus/{page}.menu draws as the stock menu ({differing(data, stock)} pixels differ)")
     if episodes:

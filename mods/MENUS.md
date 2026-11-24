@@ -182,10 +182,15 @@ A `list` function returns entries, each one becoming an action: `label`,
 `command`, `alttext`, `status`, `action` (a function run on enter), `id`
 (handed to the page's `keys` function while the entry is selected; items in
 the file take an `"id"` too) and `disabled` (shown, but enter does nothing).
+An entry with a `type` other than `action` becomes that item instead, every
+text or number field being one of its keys: `{ type = "choice", label =
+"renderer", cvar = "ui_v_renderer", options = "a=1;b=2" }`, a `slider` with
+`min`, `max`, `step`, a `toggle`, a `bind`, a `label`. Its `if` is asked too.
 
 The shipped load and save pages (`menus/loadgame.menu`, `savegame.menu`,
 `saves.lua`) are a fuller example: a page of slots at a time, left and right
-turn the page, del asks and y deletes.
+turn the page, del asks and y deletes. `menus/video.menu` and `video.lua`
+keep the settings that restart the video in `ui_v_*` cvars until apply.
 
 The `menu` table:
 
@@ -200,6 +205,7 @@ The `menu` table:
 | `menu.episodes()` | `{ { name = "Quake II", index = 0 }, ... }`; `menu_episode <index>` asks for the skill |
 | `menu.mods()` | the mod folder names the mods menu offers |
 | `menu.print(...)` | to the console |
+| `menu.renderers()` | the renderers this build has: `{ { name = "[OpenGL 3.2]", value = "gl3" }, ... }` |
 | `menu.save(slot)` | a save slot's (`"quick"`, `"save3"`) menu line and whether it holds a save: `line, valid` |
 | `menu.status(text)` | the page's status line until it reloads (`""` gives its own back); in `open` it sets the page being built |
 | `menu.reload()` | builds the page again after the call (its lists changed), keeping the selected line |

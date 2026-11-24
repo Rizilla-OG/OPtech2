@@ -167,11 +167,7 @@ DataMenu_Styled(void)
 static qboolean datamenu_builtin_only; /* optech2: menu_builtin is opening a stock menu */
 
 /* optech2: a key/value pair of the block being read */
-typedef struct
-{
-	char key[64];
-	char value[1024]; /* optech2: room for long "options" (the re-release's 29 crosshairs) */
-} datamenu_pair_t;
+typedef menu_pair_t datamenu_pair_t;
 
 #define DATAMENU_MAX_PAIRS 32
 
@@ -607,8 +603,25 @@ DataMenu_Close(menuframework_s *frame)
 static qboolean
 DataMenu_OpensMenu(const datamenu_item_t *item)
 {
-	return !Q_strncasecmp(item->command, "menu", 4) && Q_strncasecmp(item->command, "menu_newgame", 12) &&
-		   Q_strncasecmp(item->command, "menu_console", 12);
+	/* optech2: the menu_ commands that don't open a menu */
+	static const char *not_menus[] = {"menu_newgame", "menu_console", "menu_reload", "menu_close",
+		"menu_deletesave", "menu_oggenable", "menu_pointer", NULL};
+	int i;
+
+	if (Q_strncasecmp(item->command, "menu", 4))
+	{
+		return false;
+	}
+
+	for (i = 0; not_menus[i]; i++)
+	{
+		if (!Q_strncasecmp(item->command, not_menus[i], strlen(not_menus[i])))
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 static void
@@ -794,6 +807,28 @@ DataMenu_AddListEntry(const menulua_entry_t *entry, void *context)
 	}
 
 	item = &list->page->items[list->page->item_count];
+
+	/* optech2: an entry with a "type" (choice, slider, toggle, bind, label...) is that item */
+	{
+		const char *type = DataMenu_Value(entry->pairs, entry->pair_count, "type", "action");
+
+		if (Q_stricmp(type, "action"))
+		{
+			if (!DataMenu_Condition(list->page, DataMenu_Value(entry->pairs, entry->pair_count, "if", "")))
+			{
+				return true; /* optech2: left out, as an item whose "if" doesn't hold */
+			}
+
+			if (DataMenu_BuildItem(item, entry->pairs, entry->pair_count, list->y, "a list entry"))
+			{
+				list->page->item_count++;
+				list->y += list->page->line_height;
+			}
+
+			return true;
+		}
+	}
+
 	memset(item, 0, sizeof(*item));
 	generic = &item->widget.generic;
 	item->kind = DATAMENU_ACTION;

@@ -1,0 +1,102 @@
+// optech2: settings the stock menus don't offer (options > game and HUD).
+{
+"banner" "m_banner_options"
+}
+{
+"type" "label"
+"label" "HUD"
+}
+{
+"type" "choice"
+"label" "show FPS"
+"cvar" "cl_showfps"
+"options" "no=0;yes=1;detailed=2"
+}
+{
+"type" "toggle"
+"label" "show speed"
+"cvar" "cl_showspeed"
+"status" "your movement speed under the crosshair"
+}
+{
+"type" "toggle"
+"label" "performance overlay"
+"cvar" "cl_perf"
+"status" "frame, server and render times"
+}
+{
+"type" "toggle"
+"label" "hide HUD"
+"cvar" "cl_skipHud"
+}
+{
+"type" "slider"
+"label" "HUD safe zone"
+"cvar" "cl_hud_safezone"
+"min" "0" "max" "0.1" "step" "0.01" "format" "%.2f"
+"status" "space between the HUD and the screen's edge"
+}
+{
+"type" "choice"
+"label" "crosshair size"
+"cvar" "crosshair_scale"
+"options" "auto=-1;1x=1;2x=2;3x=3;4x=4"
+}
+{
+"type" "slider"
+"label" "message time"
+"cvar" "scr_centertime"
+"min" "1" "max" "6" "step" "0.5" "format" "%.1f"
+"status" "seconds a centered message stays"
+}
+{
+"type" "slider"
+"label" "console text size"
+"cvar" "con_textscale"
+"min" "0.5" "max" "1.5" "step" "0.1" "format" "%.1f"
+}
+{
+"type" "label"
+"label" "view"
+"gap" "5"
+}
+{
+"type" "choice"
+"label" "gun hand"
+"cvar" "hand"
+"options" "right=0;left=1;center=2"
+}
+{
+"type" "toggle"
+"label" "show gun"
+"cvar" "cl_gun"
+}
+{
+"type" "toggle"
+"label" "view kick"
+"cvar" "cl_kickangles"
+"status" "the view jolts when hit or firing"
+}
+{
+"type" "label"
+"label" "game"
+"gap" "5"
+}
+{
+"type" "toggle"
+"label" "footsteps"
+"cvar" "cl_footsteps"
+}
+{
+"type" "slider"
+"label" "wheel slow motion"
+"cvar" "cl_wheel_slowtime"
+"min" "0.05" "max" "1" "step" "0.05" "format" "%.2f"
+"status" "game speed while a weapon or powerup wheel is open (1 = none)"
+}
+{
+"type" "toggle"
+"label" "pause after loading"
+"cvar" "cl_loadpaused"
+"status" "a loaded game waits for a key"
+}

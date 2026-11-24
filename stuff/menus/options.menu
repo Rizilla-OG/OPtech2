@@ -126,3 +126,10 @@
 "command" "menu_console"
 "align" "right"
 }
+{
+"type" "action"
+"label" "game and HUD"
+"command" "menu gameoptions"
+"align" "right"
+"status" "more settings: FPS counter, HUD, view weapon, footsteps..."
+}
