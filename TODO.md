@@ -5,6 +5,11 @@ something unfinished; remove an entry in the commit that fixes it.
 
 ## Code quality
 
+- q2arpg check flaky (2026-11-23): once in a full `--data both` run the save
+  loaded 10 units off the saved spot (210 -304 vs 200 -300); passes 3/3 alone.
+  The load run likely drifts the player under load (real clock?); pin its time
+  (fixedtime) or read the position right after the load.
+
 - **`cl_perf` overlay is Linux-only, GPU stats AMD-only** (`src/client/cl_stats.c`
   reads `/proc` and amdgpu's sysfs). Plan for one look on every platform:
   1. Split it: the overlay (layout and drawing, no OS code) and a stats layer
