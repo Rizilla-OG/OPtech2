@@ -8309,6 +8309,15 @@ M_NewGame_f(void)
 	}
 
 	Cvar_ForceSet("skill", Cmd_Argv(1));
+
+	/* optech2: a mod whose map list has one episode (psx: maps/psx/...) starts it, not baseq2's base1 */
+	LevelSelect_NamesInit();
+
+	if (!s_ls_cmd && (s_episode_count == 1))
+	{
+		s_ls_cmd = s_episodes[0].command;
+	}
+
 	StartGame();
 }
 
