@@ -131,12 +131,21 @@ typedef struct
 	char status[128]; /* optech2: "status": the page's status line; $cvar expands */
 	char status_text[256];
 	qboolean has_script; /* optech2: menus/<name>.lua ran */
+	/* optech2: where the re-release style drew the rows (pixels), for the mouse */
+	int style_x, style_width, style_row_height;
+	int style_row_top[DATAMENU_MAX_ITEMS];
 	menuframework_s frame;
 	int item_count;
 	datamenu_item_t items[DATAMENU_MAX_ITEMS];
 } datamenu_page_t;
 
 static datamenu_page_t datamenu_pages[DATAMENU_MAX_PAGES];
+static cvar_t *ui_menustyle; /* optech2: 1 = the re-release look (panel, row bar, mouse), 0 = classic */
+
+/* optech2: the menu pointer, moved by the mouse while a menu is open */
+static float datamenu_pointer_x, datamenu_pointer_y;
+static qboolean datamenu_pointer_shown; /* optech2: moved since the last keyboard or gamepad key */
+static qboolean datamenu_pointer_moved; /* optech2: hover picks the row under it at the next draw */
 static qboolean datamenu_builtin_only; /* optech2: menu_builtin is opening a stock menu */
 
 /* optech2: a key/value pair of the block being read */
@@ -576,10 +585,261 @@ DataMenu_Close(menuframework_s *frame)
 	}
 }
 
+/* optech2: the label as shown: its localization, or the label itself */
+static const char *
+DataMenu_LabelText(const datamenu_item_t *item)
+{
+	return SV_LocalizationUIMessage(item->alttext[0] ? item->alttext : NULL, item->label);
+}
+
+/* optech2: text in a colour at pixel x, y; returns its width */
+static int
+DataMenu_Text(int x, int y, float scale, const float *color, const char *text)
+{
+	vec3_t rgb = {color[0], color[1], color[2]};
+
+	Draw_StringScaledCol(x, y, scale, rgb, text);
+	return (int)(strlen(text) * Draw_CharAdvance() * scale);
+}
+
+static int
+DataMenu_TextWidth(float scale, const char *text)
+{
+	return (int)(strlen(text) * Draw_CharAdvance() * scale);
+}
+
+/* optech2: does pressing the item open another menu (it shows a ">") */
+static qboolean
+DataMenu_OpensMenu(const datamenu_item_t *item)
+{
+	return !Q_strncasecmp(item->command, "menu", 4) && Q_strncasecmp(item->command, "menu_newgame", 12) &&
+		   Q_strncasecmp(item->command, "menu_console", 12);
+}
+
+/*
+ * optech2: the re-release look: a dark panel, rows 14 units high, a bar
+ * on the selected row, labels on the left and values right-aligned,
+ * sliders as bars, and a pointer for the mouse.
+ */
+static void
+DataMenu_DrawStyled(menuframework_s *frame, datamenu_page_t *page)
+{
+	static const float panel_color[4] = {0.0f, 0.0f, 0.0f, 0.70f};
+	static const float edge_color[4] = {0.95f, 0.60f, 0.15f, 0.60f};
+	static const float bar_color[4] = {0.95f, 0.55f, 0.10f, 0.28f};
+	static const float accent_color[4] = {1.00f, 0.65f, 0.15f, 0.95f};
+	static const float slider_back[4] = {1.0f, 1.0f, 1.0f, 0.15f};
+	static const float slider_fill[4] = {1.00f, 0.65f, 0.15f, 0.90f};
+	static const float field_back[4] = {1.0f, 1.0f, 1.0f, 0.10f};
+	static const float label_color[3] = {0.82f, 0.82f, 0.82f};
+	static const float selected_color[3] = {1.0f, 1.0f, 1.0f};
+	static const float value_color[3] = {1.00f, 0.80f, 0.45f};
+	static const float header_color[3] = {0.55f, 0.72f, 0.95f};
+	static const float status_color[3] = {0.70f, 0.70f, 0.70f};
+	float scale = SCR_GetMenuScale();
+	int padding = (int)(10 * scale);
+	int row_height = (int)(14 * scale);
+	int text_offset = (row_height - (int)(8 * scale)) / 2;
+	int width = (int)(380 * scale);
+	int content_height, panel_top, panel_height, x, i;
+	const char *status;
+	const datamenu_item_t *last = &page->items[page->item_count - 1];
+
+	if (width > viddef.width - 2 * padding)
+	{
+		width = viddef.width - 2 * padding;
+	}
+
+	/* optech2: item lines are 10 units apart in the file; 14 here */
+	content_height = (int)((last->widget.generic.y * 14 / 10 + 14) * scale);
+	x = viddef.width / 2 + (int)(page->x_offset * scale) - width / 2;
+	panel_top = (viddef.height - content_height) / 2;
+
+	if (page->banner[0] && (panel_top < viddef.height / 2 - (int)(76 * scale)))
+	{
+		panel_top = viddef.height / 2 - (int)(76 * scale); /* optech2: below the banner */
+	}
+
+	panel_height = content_height + 2 * padding + row_height; /* optech2: and a status line */
+
+	if (page->banner[0])
+	{
+		M_Banner(page->banner);
+	}
+	else if (page->title[0])
+	{
+		DataMenu_Text((viddef.width - DataMenu_TextWidth(scale * 1.5f, page->title)) / 2,
+			panel_top - padding - (int)(16 * scale), scale * 1.5f, selected_color, page->title);
+	}
+
+	Draw_FillColor(x, panel_top - padding, width, panel_height, panel_color);
+	Draw_FillColor(x, panel_top - padding, width, (int)scale, edge_color);
+	Draw_FillColor(x, panel_top - padding + panel_height - (int)scale, width, (int)scale, edge_color);
+
+	page->style_x = x;
+	page->style_width = width;
+	page->style_row_height = row_height;
+
+	/* optech2: the mouse moved: the row under the pointer becomes the selected one */
+	if (datamenu_pointer_moved)
+	{
+		datamenu_pointer_moved = false;
+
+		for (i = 0; i < page->item_count; i++)
+		{
+			int top = panel_top + (int)(page->items[i].widget.generic.y * 14 / 10 * scale);
+
+			if ((page->items[i].kind != DATAMENU_LABEL) && (page->items[i].kind != DATAMENU_SPACE) &&
+				(datamenu_pointer_x >= x) && (datamenu_pointer_x < x + width) &&
+				(datamenu_pointer_y >= top) && (datamenu_pointer_y < top + row_height))
+			{
+				frame->cursor = i;
+			}
+		}
+	}
+
+	Menu_AdjustCursor(frame, 1);
+
+	for (i = 0; i < page->item_count; i++)
+	{
+		datamenu_item_t *item = &page->items[i];
+		int top = panel_top + (int)(item->widget.generic.y * 14 / 10 * scale);
+		int text_y = top + text_offset;
+		int right = x + width - padding;
+		qboolean selected = (i == frame->cursor);
+		const float *text_color = selected ? selected_color : label_color;
+
+		page->style_row_top[i] = top;
+
+		if (item->kind == DATAMENU_SPACE)
+		{
+			continue;
+		}
+
+		if (item->kind == DATAMENU_LABEL)
+		{
+			DataMenu_Text(x + padding, text_y, scale, header_color, DataMenu_LabelText(item));
+			continue;
+		}
+
+		if (selected)
+		{
+			Draw_FillColor(x + (int)scale, top, width - 2 * (int)scale, row_height, bar_color);
+			Draw_FillColor(x + (int)scale, top, (int)(3 * scale), row_height, accent_color);
+		}
+
+		DataMenu_Text(x + padding, text_y, scale, text_color, DataMenu_LabelText(item));
+
+		switch (item->kind)
+		{
+			case DATAMENU_CHOICE:
+			{
+				const menulist_s *list = &item->widget.list;
+				char value[80];
+
+				Com_sprintf(value, sizeof(value), selected ? "< %s >" : "%s",
+					((list->curvalue >= 0) && (list->curvalue < item->option_count)) ? item->option_names[list->curvalue] : "?");
+				DataMenu_Text(right - DataMenu_TextWidth(scale, value), text_y, scale, value_color, value);
+				break;
+			}
+
+			case DATAMENU_SLIDER:
+			{
+				const menuslider_s *slider = &item->widget.slider;
+				float value = Cvar_VariableValue(slider->cvar);
+				float range = slider->maxvalue - slider->minvalue;
+				float fraction = (range != 0) ? (value - slider->minvalue) / range : 0;
+				int bar_width = (int)(110 * scale);
+				int value_width = (int)(5 * Draw_CharAdvance() * scale);
+				int bar_x = right - value_width - (int)(6 * scale) - bar_width;
+				int bar_height = (int)(4 * scale);
+				char text[32];
+
+				fraction = Q_clamp(fraction, 0.0f, 1.0f);
+				Draw_FillColor(bar_x, top + (row_height - bar_height) / 2, bar_width, bar_height, slider_back);
+				Draw_FillColor(bar_x, top + (row_height - bar_height) / 2, (int)(bar_width * fraction), bar_height,
+					slider_fill);
+				Com_sprintf(text, sizeof(text), slider->printformat ? slider->printformat : "%.1f", value);
+				DataMenu_Text(right - DataMenu_TextWidth(scale, text), text_y, scale, value_color, text);
+				break;
+			}
+
+			case DATAMENU_FIELD:
+			{
+				const menufield_s *field = &item->widget.field;
+				int field_width = (int)((field->visible_length + 1) * Draw_CharAdvance() * scale);
+				char text[96];
+
+				Draw_FillColor(right - field_width - (int)(2 * scale), top + (int)scale, field_width + (int)(4 * scale),
+					row_height - 2 * (int)scale, field_back);
+				Com_sprintf(text, sizeof(text), "%s%s", field->buffer,
+					(selected && ((cls.realtime / 250) & 1)) ? "_" : "");
+				DataMenu_Text(right - field_width, text_y, scale, value_color, text);
+				break;
+			}
+
+			case DATAMENU_ACTION:
+				if (DataMenu_OpensMenu(item))
+				{
+					DataMenu_Text(right - DataMenu_TextWidth(scale, ">"), text_y, scale, value_color, ">");
+				}
+
+				break;
+		}
+	}
+
+	/* optech2: the status line: the selected item's, else the page's */
+	status = NULL;
+
+	if ((frame->cursor >= 0) && (frame->cursor < page->item_count) && page->items[frame->cursor].status[0])
+	{
+		status = page->items[frame->cursor].status;
+	}
+	else if (page->status[0])
+	{
+		DataMenu_ExpandStatus(page);
+		status = page->status_text;
+	}
+
+	if (status)
+	{
+		DataMenu_Text(x + (width - DataMenu_TextWidth(scale, status)) / 2,
+			panel_top + content_height + padding / 2 + text_offset, scale, status_color, status);
+	}
+
+	/* optech2: the pointer, while the mouse is in use */
+	if (datamenu_pointer_shown)
+	{
+		static const float pointer_edge[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+		static const float pointer_fill[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+		int size = (int)(6 * scale);
+
+		Draw_FillColor((int)datamenu_pointer_x - 1, (int)datamenu_pointer_y - 1, size + 2, size + 2, pointer_edge);
+		Draw_FillColor((int)datamenu_pointer_x, (int)datamenu_pointer_y, size, size, pointer_fill);
+	}
+}
+
 static void
 DataMenu_Draw(menuframework_s *frame)
 {
-	const datamenu_page_t *page = (const datamenu_page_t *)((const byte *)frame - offsetof(datamenu_page_t, frame));
+	datamenu_page_t *page = (datamenu_page_t *)((byte *)frame - offsetof(datamenu_page_t, frame));
+
+	/* optech2: choices follow their cvars (a command like "reset defaults" may change them) */
+	for (int i = 0; i < page->item_count; i++)
+	{
+		datamenu_item_t *item = &page->items[i];
+
+		if ((item->kind == DATAMENU_CHOICE) && item->cvar[0])
+		{
+			item->widget.list.curvalue = DataMenu_CurrentOption(item);
+		}
+	}
+
+	if (ui_menustyle && ui_menustyle->value)
+	{
+		DataMenu_DrawStyled(frame, page);
+		return;
+	}
 
 	if (page->banner[0])
 	{
@@ -593,25 +853,145 @@ DataMenu_Draw(menuframework_s *frame)
 		Menu_DrawString((viddef.width - width) / 2, frame->y - 30, page->title);
 	}
 
-	/* optech2: choices follow their cvars (a command like "reset defaults" may change them) */
-	for (int i = 0; i < page->item_count; i++)
-	{
-		datamenu_item_t *item = (datamenu_item_t *)&page->items[i];
-
-		if ((item->kind == DATAMENU_CHOICE) && item->cvar[0])
-		{
-			item->widget.list.curvalue = DataMenu_CurrentOption(item);
-		}
-	}
-
 	if (page->status[0])
 	{
-		DataMenu_ExpandStatus((datamenu_page_t *)page);
+		DataMenu_ExpandStatus(page);
 		frame->statusbar = page->status_text;
 	}
 
 	Menu_AdjustCursor(frame, 1);
 	Menu_Draw(frame);
+}
+
+/* optech2: the row under the menu pointer, -1 if none */
+static int
+DataMenu_RowAtPointer(const datamenu_page_t *page)
+{
+	int i;
+
+	if ((datamenu_pointer_x < page->style_x) || (datamenu_pointer_x >= page->style_x + page->style_width))
+	{
+		return -1;
+	}
+
+	for (i = 0; i < page->item_count; i++)
+	{
+		if ((page->items[i].kind != DATAMENU_LABEL) && (page->items[i].kind != DATAMENU_SPACE) &&
+			(datamenu_pointer_y >= page->style_row_top[i]) &&
+			(datamenu_pointer_y < page->style_row_top[i] + page->style_row_height))
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+/*
+ * optech2: keys on a data page. In the re-release style the mouse works
+ * the rows: a click selects (a choice steps to its next option, wrapping;
+ * a slider takes the value under the pointer), the right button goes
+ * back, the wheel moves the selection. Everything else is the stock keys.
+ */
+static const char *
+DataMenu_Key(menuframework_s *frame, int key)
+{
+	datamenu_page_t *page = (datamenu_page_t *)((byte *)frame - offsetof(datamenu_page_t, frame));
+
+	if (!ui_menustyle || !ui_menustyle->value)
+	{
+		return Default_MenuKey(frame, key);
+	}
+
+	switch (key)
+	{
+		case K_MOUSE2:
+			return Default_MenuKey(frame, K_ESCAPE);
+
+		case K_MWHEELUP:
+			return Default_MenuKey(frame, K_UPARROW);
+
+		case K_MWHEELDOWN:
+			return Default_MenuKey(frame, K_DOWNARROW);
+
+		case K_MOUSE1:
+		{
+			int row = DataMenu_RowAtPointer(page);
+			datamenu_item_t *item;
+
+			if (row < 0)
+			{
+				return NULL;
+			}
+
+			frame->cursor = row;
+			item = &page->items[row];
+
+			if (item->kind == DATAMENU_CHOICE)
+			{
+				if (!Menu_SlideItem(frame, 1) && item->option_count)
+				{
+					item->widget.list.curvalue = 0; /* optech2: wrap to the first option */
+					DataMenu_ChoiceChanged(item);
+				}
+
+				return menu_move_sound;
+			}
+
+			if (item->kind == DATAMENU_SLIDER)
+			{
+				menuslider_s *slider = &item->widget.slider;
+				float scale = SCR_GetMenuScale();
+				int right = page->style_x + page->style_width - (int)(10 * scale);
+				int bar_width = (int)(110 * scale);
+				int bar_x = right - (int)(5 * Draw_CharAdvance() * scale) - (int)(6 * scale) - bar_width;
+				float fraction = (datamenu_pointer_x - bar_x) / (float)bar_width;
+				float step = slider->slidestep ? slider->slidestep : 0.1f;
+				float value;
+
+				if ((fraction < -0.05f) || (fraction > 1.05f))
+				{
+					return NULL; /* optech2: on the label: nothing */
+				}
+
+				value = slider->minvalue + Q_clamp(fraction, 0.0f, 1.0f) * (slider->maxvalue - slider->minvalue);
+				value = slider->minvalue + step * (int)((value - slider->minvalue) / step + 0.5f);
+				Cvar_SetValue(slider->cvar, Q_clamp(value, slider->minvalue, slider->maxvalue));
+				return menu_move_sound;
+			}
+
+			return Default_MenuKey(frame, K_ENTER);
+		}
+
+		case K_MOUSE3:
+		case K_MOUSE4:
+		case K_MOUSE5:
+			return NULL;
+
+		default:
+			datamenu_pointer_shown = false; /* optech2: keyboard or gamepad: the pointer goes */
+			return Default_MenuKey(frame, key);
+	}
+}
+
+/* optech2: the mouse moved while a menu is open (input/sdl2.c, sdl3.c) */
+void
+DataMenu_MouseMove(float dx, float dy)
+{
+	if (!datamenu_pointer_shown)
+	{
+		datamenu_pointer_shown = true;
+
+		if ((datamenu_pointer_x <= 0) && (datamenu_pointer_y <= 0))
+		{
+			datamenu_pointer_x = viddef.width / 2.0f;
+			datamenu_pointer_y = viddef.height / 2.0f;
+		}
+	}
+
+	datamenu_pointer_x = Q_clamp(datamenu_pointer_x + dx, 0.0f, (float)(viddef.width - 1));
+	datamenu_pointer_y = Q_clamp(datamenu_pointer_y + dy, 0.0f, (float)(viddef.height - 1));
+	datamenu_pointer_moved = true;
 }
 
 /* optech2: fills an item from its block; false for an unknown type */
@@ -907,7 +1287,7 @@ DataMenu_Open(const char *name)
 	page->frame.nitems = 0;
 	page->frame.cursor = 0;
 	page->frame.draw = DataMenu_Draw;
-	page->frame.key = Default_MenuKey;
+	page->frame.key = DataMenu_Key;
 	page->frame.close = DataMenu_Close;
 
 	for (i = 0; i < page->item_count; i++)
@@ -980,9 +1360,28 @@ DataMenu_Builtin_f(void)
 	datamenu_builtin_only = false;
 }
 
+/* optech2: menu_pointer <x> <y>: puts the menu pointer there (pixels), as
+   if the mouse moved; developer 1, for checks */
+static void
+DataMenu_Pointer_f(void)
+{
+	if ((Cmd_Argc() != 3) || !Cvar_VariableValue("developer"))
+	{
+		Com_Printf("usage: menu_pointer <x> <y>   (needs developer 1)\n");
+		return;
+	}
+
+	datamenu_pointer_shown = true;
+	datamenu_pointer_x = (float)atof(Cmd_Argv(1));
+	datamenu_pointer_y = (float)atof(Cmd_Argv(2));
+	datamenu_pointer_moved = true;
+}
+
 void
 DataMenu_Init(void)
 {
+	ui_menustyle = Cvar_Get("ui_menustyle", "1", CVAR_ARCHIVE); /* optech2 */
+	Cmd_AddCommand("menu_pointer", DataMenu_Pointer_f);
 	Cmd_AddCommand("menu", DataMenu_Menu_f);
 	Cmd_AddCommand("menu_builtin", DataMenu_Builtin_f);
 }

@@ -865,6 +865,10 @@ IN_Update(void)
 					mouse_x += event.motion.xrel;
 					mouse_y += event.motion.yrel;
 				}
+				else if (cls.key_dest == key_menu)
+				{
+					DataMenu_MouseMove(event.motion.xrel, event.motion.yrel); /* optech2: the menu pointer */
+				}
 				break;
 
 			case SDL_EVENT_TEXT_INPUT :

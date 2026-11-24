@@ -669,6 +669,7 @@ const char *M_EpisodeName(int index); /* optech2 */
 int M_ModCount(void); /* optech2 */
 const char *M_ModName(int index); /* optech2 */
 qboolean DataMenu_Exists(const char *name); /* optech2 */
+void DataMenu_MouseMove(float dx, float dy); /* optech2: the data menu pointer */
 
 /* optech2: Lua for data menus (menu/menu_lua.c): a list function's entry */
 typedef struct

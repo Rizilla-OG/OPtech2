@@ -18,7 +18,10 @@ them with "presskey" (developer 1), then prints the cvars they changed:
      makes items whose action functions and commands run, "if lua:" leaves
      an item out, an endless loop is stopped and the page carries on, and
      a script with a syntax error is reported while its page still opens
-  9. optech2: the shipped pages (baseq2/menus: options, multiplayer, game,
+  9. optech2: the re-release style (ui_menustyle 1) looks different, and the
+     mouse works it: menu_pointer + a click steps a choice and sets a slider
+     from the pointer, right click goes back
+ 10. optech2: the shipped pages (baseq2/menus: options, multiplayer, game,
      download options, deathmatch flags)
      draw exactly as the stock menus they replace (menu_builtin), and their
      choices show the cvars' values (crosshair colour from three cvars,
@@ -170,7 +173,7 @@ def report(passed, text):
     print(f"{'ok' if passed else 'FAIL':<6}{text}")
 
 
-def run(name, script, mods=True):
+def run(name, script, mods=True, style=0):
     """Runs the console script in the test mod; returns (log, [shots as arrays])."""
     with tempfile.TemporaryDirectory(prefix="optech2-datamenu-") as home:
         mod_dir = Path(home) / ".opentech2" / "menutest"
@@ -183,7 +186,8 @@ def run(name, script, mods=True):
         (mod_dir / "menus" / "broken.lua").write_text("this is not lua (\n")
         game_dir = Path(home) / ".opentech2" / "baseq2"
         game_dir.mkdir(parents=True)
-        lines = ["set developer 1"]
+        # optech2: ui_menustyle 0 (classic) for the pixel comparisons with the stock menus
+        lines = ["set developer 1", f"set ui_menustyle {style}"]
         for step, command in enumerate(script):
             # optech2: "#" steps only pass time: "delay" holds at most 128 commands
             if not command.startswith("#"):
@@ -282,6 +286,22 @@ def main():
                f"menu_options opens menus/options.menu ({differing(data, stock_command)} pixels differ)")
         report(differing(data, builtin) > 500,
                f"menu_builtin options opens the stock menu ({differing(data, builtin)} pixels differ)")
+
+    # optech2: the re-release style at 640x480 (menu scale 1): the test page's panel is 84 high, its top at
+    # 198; rows 14 high (slider at 198, choice at 212); the slider bar spans x 344-454
+    style_log, style_shots = run("style", [
+        "set crosshair 0", "set menutest_slider 0", "menu test", "clear", "screenshot png",
+        "menu_pointer 320 218", "presskey mouse1", "menu_pointer 399 204", "presskey mouse1",
+        "presskey mouse2", "crosshair", "menutest_slider", "echo style done",
+    ], style=1)
+    report(len(style_shots) == 1 and len(shots) >= 2 and differing(style_shots[0], shots[1]) > 500,
+           "re-release style draws the page differently from classic")
+    report(cvar(style_log, "crosshair") == "1", f"mouse: a click on a choice steps it (crosshair {cvar(style_log, 'crosshair')})")
+    # optech2: the bar's place moves a little with the font's advance, so any middle value will do
+    report(cvar(style_log, "menutest_slider") in ("3", "4", "5", "6", "7"),
+           f"mouse: a click on the slider bar's middle sets it (menutest_slider {cvar(style_log, 'menutest_slider')})")
+    report("style done" in style_log, "mouse: right click goes back without trouble")
+    log += style_log
 
     # optech2: the shipped pages against the stock menus, shots 1.5 s apart (same cursor frame)
     shipped = ["set crosshair 2", "set crosshair_color_r 0", "set crosshair_color_g 1", "set crosshair_color_b 1",
